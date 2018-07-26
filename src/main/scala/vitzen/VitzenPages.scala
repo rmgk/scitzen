@@ -1,8 +1,4 @@
-import $ivy.`org.asciidoctor:asciidoctorj:1.5.6`
-import $ivy.`com.lihaoyi::scalatags:0.6.7`
-import $file.AsciiData
-
-import AsciiData._
+package vitzen
 
 import java.nio.file.Path
 import java.time.ZoneOffset
@@ -14,17 +10,6 @@ import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{div, h1, h2, head, header, html, link, meta, span, a => anchor}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
-
-import java.io.File
-import java.nio.file.Path
-import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
-import java.time.{DateTimeException, LocalDate, LocalDateTime, LocalTime}
-import java.util
-
-import org.asciidoctor.ast.{Document, DocumentHeader, Title}
-import org.asciidoctor.{AsciiDocDirectoryWalker, Asciidoctor, OptionsBuilder, SafeMode}
-
-import scala.collection.JavaConverters._
 
 
 class VitzenPages(asciiData: AsciiData, contentPath: Path) {

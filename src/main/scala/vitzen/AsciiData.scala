@@ -1,10 +1,12 @@
+package vitzen
+
 import java.io.File
 import java.nio.file.Path
+import java.time.LocalDateTime
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
-import java.time.{DateTimeException, LocalDate, LocalDateTime, LocalTime}
 import java.util
 
-import org.asciidoctor.ast.{Document, DocumentHeader, Title}
+import org.asciidoctor.ast.Document
 import org.asciidoctor.{AsciiDocDirectoryWalker, Asciidoctor, OptionsBuilder, SafeMode}
 
 import scala.collection.JavaConverters._
@@ -24,9 +26,7 @@ object Helper {
   def parseDate(dateString: String): LocalDateTime = {
     if (dateString == null) return LocalDateTime.MIN
     val temporal = Helper.timeFormatter.parse(dateString)
-    val ldate = try {LocalDate.from(temporal)} catch {case _: DateTimeException => LocalDate.MIN}
-    val ltime = try {LocalTime.from(temporal)} catch {case _: DateTimeException => LocalTime.MIN}
-    LocalDateTime.of(ldate, ltime)
+    LocalDateTime.from(temporal)
   }
 
 }
@@ -41,34 +41,28 @@ class AsciiData(asciidoctor: Asciidoctor, basedir: Path) {
   }
 
 
-  private def makePost(path: Path) = {
+  def makePost(path: Path): Post = {
     val document = asciidoctor.loadFile(path.toFile, options)
     val opts = new util.HashMap[AnyRef, AnyRef]
     opts.put("partition", boolean2Boolean(true))
 
-    val header = DocumentHeader.createDocumentHeader(document.doctitle(opts).asInstanceOf[Title],
-      document.getDocumentRuby.getTitle,
-      document.getDocumentRuby.getAttributes)
-    new Post(basedir.relativize(path), header, document)
+    new Post(basedir.relativize(path), document)
   }
 
+  def allFiles(): List[File] = new AsciiDocDirectoryWalker(basedir.toString).scan().iterator().asScala.toList
 
-  lazy val allPosts: List[Post] = {
-    val all = new AsciiDocDirectoryWalker(basedir.toString).scan().iterator().asScala
-      .map { (f: File) => makePost(f.toPath) }.toList
-    all
-  }
+  def allPosts(): List[Post] = allFiles().map { f: File => makePost(f.toPath) }
 }
 
 
-class Post(val path: Path, val header: DocumentHeader, val document: Document) {
-  def categories(): List[String] = header.getAttributes.getOrDefault("categories","").toString.split(',').map(_.trim)(collection.breakOut)
+class Post(val path: Path, val document: Document) {
+  def categories(): List[String] = document.getAttributes.getOrDefault("categories","").toString.split(',').map(_.trim)(collection.breakOut)
 
   def targetPath(): String = path.toString.replace(".adoc", ".html")
   def summary(): String = Option(document.getBlocks.get(0)).fold("")(b => b.convert())
 
-  def title: String = header.getDocumentTitle.getCombined
-  lazy val date: LocalDateTime = Helper.parseDate(header.getRevisionInfo.getDate)
+  def title: String = document.getDoctitle
+  lazy val date: LocalDateTime = Option(document.getAttributes.get("revdate")).fold(LocalDateTime.MIN)(v => Helper.parseDate(v.toString))
   def content: String = document.convert()
-  lazy val modified: Option[LocalDateTime] = Option(header.getAttributes.get("modified")).map(m => Helper.parseDate(m.toString))
+  lazy val modified: Option[LocalDateTime] = Option(document.getAttributes.get("modified")).map(m => Helper.parseDate(m.toString))
 }
