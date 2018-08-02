@@ -11,7 +11,7 @@ object Vitzen {
 
     import org.asciidoctor.Asciidoctor
 
-    val postsdir = Paths.get("testposts/")
+    val postsdir = Paths.get("../Tagebuch/posts")
     println(s"processing $postsdir")
 
 
@@ -35,7 +35,7 @@ object Vitzen {
     }
 
     for (post <- posts) {
-      println(post)
+      println(post.title)
       write(targetdir.resolve(post.targetPath()), vitzen.getContent(post))
     }
 

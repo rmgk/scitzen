@@ -1,8 +1,9 @@
 name := "vitzen"
 scalaVersion := "2.12.6"
 
+enablePlugins(JavaAppPackaging)
+
 libraryDependencies ++= Seq(
-  "org.jruby" % "jruby-complete" % "9.1.16.0",
   "org.asciidoctor" % "asciidoctorj" % "1.6.0-alpha.7",
   "com.lihaoyi" %% "scalatags" % "0.6.7"
 )
