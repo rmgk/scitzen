@@ -11,6 +11,10 @@ libraryDependencies ++= Seq(
   "org.asciidoctor" % "asciidoctorj" % "1.6.0-alpha.7",
   "com.lihaoyi" %% "scalatags" % "0.6.7",
   "com.monovore" %% "decline" % "0.4.1",
+  "com.lihaoyi" %% "ammonite-ops" % "1.1.2",
+  "org.webjars" % "normalize.css" % "5.0.0",
+  "org.webjars.bower" % "highlightjs" % "9.12.0",
+  "org.webjars" % "webjars-locator-core" % "0.35",
 )
 
 Compile / compile / scalacOptions ++= Seq(

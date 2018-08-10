@@ -1,12 +1,14 @@
 package vitzen
 
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
+import ammonite.ops.{Path => ammPath, _}
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import org.asciidoctor.Asciidoctor
+import org.webjars.WebJarAssetLocator
+
 
 object Vitzen {
 
@@ -22,12 +24,14 @@ object Vitzen {
 
         println(s"processing $sourcedir")
 
+        val resourceLocator = new WebJarAssetLocator()
+
+        write.over(ammPath(targetdir)/"vitzen.css", read.bytes(resource()/RelPath(resourceLocator.getFullPath("vitzen.css"))))
+        write.over(ammPath(targetdir)/"highlight.js", read! resource/RelPath(resourceLocator.getFullPath("highlight.pack.js")))
+
 
         lazy val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
         lazy val asciiData: AsciiData = new AsciiData(asciidoctor, sourcedir)
-
-        lazy val vitzen = new VitzenPages(asciiData, sourcedir)
-
 
         val postdir = targetdir.resolve("posts")
         Files.createDirectories(postdir)
@@ -38,18 +42,18 @@ object Vitzen {
 
         println(s"posting to $targetdir")
 
-        def write(path: Path, content: String) = {
-          Files.write(path, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE)
-        }
-
         for (post <- posts) {
           println(post.title)
-          write(postdir.resolve(post.targetPath()), vitzen.getContent(post))
+          write.over(ammPath(postdir.resolve(post.targetPath())), Pages("../").makePostHtml(post))
         }
 
-        write(targetdir.resolve("index.html"), vitzen.archive())
-        Files.copy(Paths.get("target/web/sass/main/stylesheets/vitzen.css"), targetdir.resolve("vitzen.css"))
+        write.over(ammPath(targetdir.resolve("index.html")), Pages().makeIndexOf(posts))
+        Files.copy(Paths.get("target/web/sass/main/stylesheets/vitzen.css"),
+                   targetdir.resolve("vitzen.css"),
+                   StandardCopyOption.REPLACE_EXISTING)
 
+
+        cp.over(ammPath(sourcedir.resolve("images")), ammPath(postdir.resolve("images")))
     }
   }
 

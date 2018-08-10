@@ -1,27 +1,33 @@
 package vitzen
 
-import java.nio.file.Path
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 import scalatags.Text.all.{frag, raw}
-import scalatags.Text.attrs.{`type`, cls, content, href, id, rel, title, name => attrname}
+import scalatags.Text.attrs.{`type`, cls, content, href, id, rel, title, name => attrname, src}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{div, h1, h2, head, header, html, link, meta, span, a => anchor}
+import scalatags.Text.tags.{div, h1, h2, head, header, html, link, meta, span, a => anchor, script}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 
+object Pages {
+  def apply(relative: String = ""): Pages = new Pages(relative)
+}
 
-class VitzenPages(asciiData: AsciiData, contentPath: Path) {
+class Pages(val relative: String) {
 
 
-  val path_css: String = "vitzen.css"
+  val path_css: String = s"${relative}vitzen.css"
+  val path_posts: String = s"${relative}posts"
+  val path_highligh_js: String = s"${relative}highlight.js"
 
 
   private def tHead = {
     head(
       title := "Vitzen",
-       link(href := path_css, rel := "stylesheet", `type` := "text/css"),
+      link(href := path_css, rel := "stylesheet", `type` := "text/css"),
+      script(src := path_highligh_js),
+      script(raw("hljs.initHighlightingOnLoad();")),
       meta(attrname := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"))
   }
 
@@ -71,7 +77,7 @@ class VitzenPages(asciiData: AsciiData, contentPath: Path) {
                 article(cls := "archive-post",
                         tMeta(post),
                         span(cls := "archive-post-title",
-                             anchor(cls := "archive-post-link", href := s"posts/${post.targetPath()}", raw(post.title))
+                             anchor(cls := "archive-post-link", href := s"$path_posts/${post.targetPath()}", raw(post.title))
                         )
                 )
               }: _*)
@@ -83,18 +89,15 @@ class VitzenPages(asciiData: AsciiData, contentPath: Path) {
     html(tHead)(stuff: _*)
 
 
-  def htmlResponse(tag: Tag): String = "<!DOCTYPE html>" + tag.render
+  def htmlDocument(tag: Tag): String = "<!DOCTYPE html>" + tag.render
 
 
-  def getContent(post: Post): String = {
-    val res = htmlResponse(makeHtml(tBody(tSingle(post.title, tMeta(post),
-                                                  raw(post.content)))))
-    res
+  def makePostHtml(post: Post): String = {
+    htmlDocument(makeHtml(tBody(tSingle(post.title, tMeta(post), raw(post.content)))))
   }
 
-  def archive(): String = {
-    val docs: List[Post] = asciiData.allPosts
-    htmlResponse(makeHtml(tBody(tSection(docs))))
+  def makeIndexOf(posts: List[Post]): String = {
+    htmlDocument(makeHtml(tBody(tSection(posts))))
   }
 
 
