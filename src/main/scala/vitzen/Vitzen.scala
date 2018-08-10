@@ -4,56 +4,65 @@ package vitzen
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 
+import cats.implicits._
+import com.monovore.decline.{Command, Opts}
+import org.asciidoctor.Asciidoctor
+
 object Vitzen {
-  def main(args: Array[String]): Unit = {
-
-/// in services
-
-    import org.asciidoctor.Asciidoctor
-
-    val postsdir = Paths.get("../Tagebuch/posts")
-    println(s"processing $postsdir")
 
 
-/* ====== asciidoctor ====== */
+  val optSource = Opts.option[Path]("source", short = "s", metavar = "directory",
+                                    help = "Directory containing Asciidoc source posts")
+  val optTraget = Opts.option[Path]("output", short = "o", metavar = "directory",
+                                    help = "Target output directory")
 
-    lazy val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
-    lazy val asciiData: AsciiData = new AsciiData(asciidoctor, postsdir)
+  val command = Command(name = "vitzen", header = "Convert Asciidoc documents into a webpage format.") {
+    (optSource, optTraget).mapN {
+      (sourcedir, targetdir) =>
 
-    lazy val vitzen = new VitzenPages(asciiData, postsdir)
+        println(s"processing $sourcedir")
 
-    val targetdir = Paths.get("posts/")
-    Files.createDirectories(targetdir)
 
-    val posts = asciiData.allPosts
-    println(s"found ${posts.size} posts")
+        lazy val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
+        lazy val asciiData: AsciiData = new AsciiData(asciidoctor, sourcedir)
 
-    println(s"posting to $targetdir")
+        lazy val vitzen = new VitzenPages(asciiData, sourcedir)
 
-    def write(path: Path, content: String) = {
-      Files.write(path, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE)
+
+        val postdir = targetdir.resolve("posts")
+        Files.createDirectories(postdir)
+
+
+        val posts = asciiData.allPosts
+        println(s"found ${posts.size} posts")
+
+        println(s"posting to $targetdir")
+
+        def write(path: Path, content: String) = {
+          Files.write(path, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE)
+        }
+
+        for (post <- posts) {
+          println(post.title)
+          write(postdir.resolve(post.targetPath()), vitzen.getContent(post))
+        }
+
+        write(targetdir.resolve("index.html"), vitzen.archive())
+        Files.copy(Paths.get("target/web/sass/main/stylesheets/vitzen.css"), targetdir.resolve("vitzen.css"))
+
+    }
+  }
+
+
+  def main(args: Array[String]): Unit = run(args: _*)
+
+  def run(args: String*) = {
+    command.parse(args) match {
+      case Left(help) =>
+        println(help)
+        sys.exit(0)
+      case Right(result) => result
     }
 
-    for (post <- posts) {
-      println(post.title)
-      write(targetdir.resolve(post.targetPath()), vitzen.getContent(post))
-    }
-
-    write(Paths.get("index.html"), vitzen.archive())
-
-/// in server
-
-//pathPrefix("vitzen") {
-//  path("") {
-//    complete(vitzen.archive())
-//  }~
-//  path("posts" / Segments) { name =>
-//    val path = name.filter(_ != "..").mkString("/")
-//    if (path.endsWith("adoc"))
-//      complete(vitzen.getContent(path))
-//    else
-//      getFromFile(postsPath.resolve(path).toFile)
-//  }
-//}
   }
 }
