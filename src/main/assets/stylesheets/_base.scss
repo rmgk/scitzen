@@ -19,6 +19,11 @@ body {
   border-top: 3px solid $theme-color;
 }
 
+main {
+  padding-top: 2em;
+  padding-bottom: 2em;
+}
+
 @include max-screen() {
   body {
     border-top: 0;
@@ -63,35 +68,14 @@ a {
   }
 }
 
-.container {
+main {
   margin: 0 auto;
   width: $global-body-width;
 }
 
 @include max-screen() {
-  .container {
+  main {
     width: 100%;
     box-shadow: -1px -5px 5px $gray;
   }
-}
-
-.content-wrapper {
-  padding: $global-container-padding;
-}
-
-// make video fluid:
-// https://css-tricks.com/NetMag/FluidWidthVideo/Article-FluidWidthVideo.php
-// class video-container is the wrapper used by hexo youtube tag plugin
-.video-container {
-	position: relative;
-	padding-bottom: 56.25%; /* 16:9 */
-	padding-top: 25px;
-	height: 0;
-}
-.video-container iframe {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
 }

@@ -56,6 +56,8 @@ class AsciiData(asciidoctor: Asciidoctor, basedir: Path) {
 
 
 class Post(val path: Path, val document: Document) {
+  def people(): List[String] = document.getAttributes.getOrDefault("people","").toString.split(',').map(_.trim)(collection.breakOut)
+
   def categories(): List[String] = document.getAttributes.getOrDefault("categories","").toString.split(',').map(_.trim)(collection.breakOut)
 
   def targetPath(): String = path.toString.replace(".adoc", ".html")

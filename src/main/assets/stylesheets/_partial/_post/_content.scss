@@ -66,22 +66,6 @@
 
   @import 'code';
 
-  .post-summary {
-    margin-bottom: 1em;
-  }
-
-  .read-more {
-    .read-more-link {
-      color: $theme-color;
-      font-size: 1.1em;
-      font-family: $global-serif-font-family;
-    
-      &:hover {
-        border-bottom: $post-readMore-border-bottom;
-      }
-    }
-  }
-
   kbd {
     display: inline-block;
     padding: 0.25em;

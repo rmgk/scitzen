@@ -3,8 +3,6 @@
 // =============================
 
 .archive {
-  margin: $archive-margin;
-  max-width: $archive-max-width;
 
   .archive-title {
     font-family: $global-serif-font-family;
@@ -42,34 +40,39 @@
   .archive-post {
     padding: $archive-post-padding;
     border-left: $archive-post-border-left;
+    display: flex;
+    justify-content: space-between;
 
-    .archive-post-time {
+    .time {
+      font-family: monospace;
       margin-right: 10px;
       color: $dark-gray;
+      display: inline-block;
     }
 
-    .archive-post-title {
-      
-      .archive-post-link {
-        color: $theme-color;
-      }
+    .title {
+      a { color: $theme-color; }
+      display:inline-block;
+      flex: 1;
     }
 
-    &::first-child {
-      margin-top: 10px;
+    .category {
+      color: $dark-gray;
+      display: inline-block;
     }
+
 
     &:hover {
       border-left: $archive-post-hover-border-left;
       transition: $archive-post-hover-transition;
       transform: $archive-post-hover-transform;
 
-      .archive-post-time {
+      .time, .category {
         color: darken($dark-gray, 10%);
       }
 
-      .archive-post-title .archive-post-link {
-        color: darken($theme-color, 10%);
+      .title {
+        a { color: darken($theme-color, 10%); }
       }
     }
   }

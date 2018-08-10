@@ -4,9 +4,9 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 import scalatags.Text.all.{frag, raw}
-import scalatags.Text.attrs.{`type`, cls, content, href, id, rel, title, name => attrname, src}
+import scalatags.Text.attrs.{`type`, cls, content, href, rel, src, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{div, h1, h2, head, header, html, link, meta, span, a => anchor, script}
+import scalatags.Text.tags.{body, div, h1, h2, head, header, html, link, meta, script, span, a => anchor}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 
@@ -32,25 +32,27 @@ class Pages(val relative: String) {
   }
 
   private def tBody(content: Frag) = {
-    div(cls := "container", id := "mobile-panel",
-        main(cls := "main", id := "main",
-             div(cls := "content-wrapper",
-                 div(cls := "content", id := "content",
-                     content
-                 )
-             )
-        )
-    )
+    body(main(content))
   }
 
   private def tMeta(post: Post) = {
-    div(cls := "post-meta",
-        span(cls := "post-time", s" ${post.date.toLocalDate} ${post.date.toLocalTime}"),
-        frag(post.modified.map(mt => span(cls := "post-time", s" Modified ${mt.toLocalDate} ${mt.toLocalTime} ")).toList: _*),
-        span(cls := "post-category")(post.categories().map(c => stringFrag(s" $c ")): _*)
+    span(cls := "meta",
+         timeSpan(post),
+         frag(post.modified
+              .map(mt => span(cls := "time", s" Modified ${mt.toLocalDate} ${mt.toLocalTime} "))
+              .toList: _*),
+         categoriesSpan(post)
     )
   }
 
+  private def categoriesSpan(post: Post) = {
+    span(cls := "category")((post.categories() ++ post.people()).map(c => stringFrag(s" $c ")): _*)
+  }
+
+  private def timeSpan(post: Post) = {
+    //need time formatter, because to string removes seconds if all zero
+    span(cls := "time", s" ${post.date.toLocalDate} ${post.date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
+  }
   private def tSingle(title: String, meta: Frag, content: Frag) = {
     article(cls := "post",
             header(cls := "post-header",
@@ -69,16 +71,15 @@ class Pages(val relative: String) {
     val byYear: Map[Int, List[Post]] = posts.groupBy(_.date.getYear)
     frag(byYear.keys.toList.sorted(Ordering[Int].reverse).map { year =>
       val dhs = byYear.apply(year).sortBy(_.date.toEpochSecond(ZoneOffset.UTC))(Ordering[Long].reverse)
-      section(id := "archive", cls := "archive",
+      section(cls := "archive",
               div(cls := "collection-title",
                   h2(cls := "archive-year", dhs.head.date.format(DateTimeFormatter.ofPattern("YYYY")))
               ),
-              section(id := "posts", cls := "posts")(dhs.map { post =>
+              section(cls := "posts")(dhs.map { post =>
                 article(cls := "archive-post",
-                        tMeta(post),
-                        span(cls := "archive-post-title",
-                             anchor(cls := "archive-post-link", href := s"$path_posts/${post.targetPath()}", raw(post.title))
-                        )
+                        timeSpan(post),
+                        span(cls := "title", anchor(href := s"$path_posts/${post.targetPath()}", raw(post.title))),
+                        categoriesSpan(post)
                 )
               }: _*)
       )
