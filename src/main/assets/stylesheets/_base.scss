@@ -8,6 +8,12 @@ body {
   border-top: 3px solid $theme-color;
 }
 
+@media print {
+  body {
+    border-top: 0px;
+  }
+}
+
 main {
   padding-top: 2em;
   padding-bottom: 2em;
