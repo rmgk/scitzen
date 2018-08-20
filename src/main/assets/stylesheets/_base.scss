@@ -1,11 +1,10 @@
 @import 'lib/normalize.css/normalize';
 
-
 body {
-  font-family: $global-font-family;
+  font-family: $font-content;
   line-height: $global-lineheight;
-  color: $global-font-color;
-  background: $global-background;
+  color: $color-font;
+  background: $color-background;
   scroll-behavior: smooth;
   border-top: 3px solid $theme-color;
 }
@@ -32,24 +31,11 @@ a {
   text-decoration: none;
 }
 
-// Headings font size of the site.
-$global-headings: (
-        h1: 26px,
-        h2: 24px,
-        h3: 20px,
-        h4: 16px,
-        h5: 14px,
-        h6: 14px
-);
-
-@each $header, $size in $global-headings {
-  #{$header} {
-    font-size: $size;
-    font-family: $global-serif-font-family;
-    font-weight: normal;
-  }
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-headers;
+  font-weight: normal;
 }
 
 .time, .category {
-  color: $metadata-color;
+  color: $color-metadata;
 }

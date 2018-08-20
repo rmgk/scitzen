@@ -1,12 +1,20 @@
-// ==============================
-// Post
-// ==============================
+
+
+// Border bottom of the link when hover it.
+$content-link-border: 1px solid $theme-color !default;
+
+// Background color of the blockquote.
+$content-blockquote-backgroud: rgba($theme-color, 0.05) !default;
+
+// Border left of the blockquote.
+$content-blockquote-border-left: 3px solid rgba($theme-color, 0.3) !default;
+
+// Border color of the table.
+$content-table-border-color: darken($deputy-color, 3%) !default;
+
 
 
 article {
-  // ==============================
-  // Post content
-  // ==============================
 
   .post-content {
     word-wrap: break-word;
@@ -14,7 +22,7 @@ article {
     @for $i from 1 through 6 {
       h#{$i} {
         font-weight: 400;
-        font-family: $global-serif-font-family;
+        font-family: $font-headers;
       }
     }
 

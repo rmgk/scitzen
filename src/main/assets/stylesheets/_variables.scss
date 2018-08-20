@@ -10,107 +10,17 @@ $theme-color: #c05b4d !default;
 // Deputy theme color of the site.
 $deputy-color: #f8f5ec !default;
 
+$color-metadata: #8a8a80 !default;
+$color-background: #fffff8 !default;
 
-$white: #fffff8 !default;
-$light-gray: #e6e6e6 !default;
-$gray: #cacaca !default;
+$color-font: #34495e !default;
 
-$metadata-color: #8a8a80 !default;
-
-
-// ========== Global ========== //
-// Text color of the body.
-$global-font-color: #34495e !default;
-
-// Font size attribute applied to '<html>' and '<body>'.
-$global-font-size: 16px !default;
-
-// Global width of '<body>'.
 $global-body-width: 800px !default;
 
-// Default line height for all type. `$global-lineheight` is 24px while `$global-font-size` is 16px.
 $global-lineheight: 1.5 !default;
 
-// Font family of the site.
-$global-font-family: sans-serif !default;
-
-// Serif font family of the site.
-$global-serif-font-family: serif !default;
-
-// Background color of the site.
-$global-background: $white !default;
-
+// font families in use
+$font-content: sans-serif !default;
+$font-headers: serif !default;
 // Browsers render just monospace in a smaller font size compared to other fonts
 $font-monospace: monospace,monospace;
-
-
-// ========== TOC ========== //
-// Width of the post toc.
-$post-toc-width: 200px !default;
-
-// Backgroud color of the post toc.
-$post-toc-backgroud: rgba($deputy-color, 0.6) !default;
-
-// Margin left of the post toc.
-$post-toc-margin-left: $global-body-width - 15px !default;
-
-// Font size of the post toc title.
-$post-toc-title-size: 20px !default;
-
-// Font size of the post toc content.
-$post-toc-content: 15px !default;
-
-// List style of the post toc list.
-$post-toc-list-style: square !default;
-
-// Max screen media of the post toc.
-$toc-max-sreen-width: 2 * $post-toc-width + $post-toc-margin-left !default;
-
-// ========== Content ========== //
-// Border bottom of the link when hover it.
-$content-link-border: 1px solid $theme-color !default;
-
-// Background color of the blockquote.
-$content-blockquote-backgroud: rgba($theme-color, 0.05) !default;
-
-// Border left of the blockquote.
-$content-blockquote-border-left: 3px solid rgba($theme-color, 0.3) !default;
-
-// Border color of the table.
-$content-table-border-color: darken($deputy-color, 3%) !default;
-
-// ========== Code ========== //
-
-// Color of code highlight, solarized.
-$code-highlight-color: (
-  comment: #93a1a1,
-  keyword: #859900,
-  number: #2aa198,
-  title: #268bd2,
-  attribute: #b58900,
-  symbol: #cb4b16,
-  built_in: #dc322f,
-  formula: #eee8d5
-) !default;
-
-// Color of the code background.
-$code-background: $deputy-color !default;
-
-
-// ========== Archive ========== //
-// Font size of the archive name.
-$archive-name-font-size: 30px !default;
-
-// Font size of the collection title.
-$collection-title-font-size: 28px !default;
-
-// Padding of the archive post.
-$archive-post-padding: 3px 20px !default;
-
-// Padding of the archive post in mobile.
-$archive-post-mobile-padding: 5px 10px !default;
-
-// Font size of the archive post time in mobile.
-$archive-post-mobile-time-font-size: 13px !default;
-
-
