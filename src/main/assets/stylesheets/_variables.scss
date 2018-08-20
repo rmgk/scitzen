@@ -13,14 +13,16 @@ $deputy-color: #f8f5ec !default;
 $color-metadata: #8a8a80 !default;
 $color-background: #fffff8 !default;
 
-$color-font: #34495e !default;
+$color-font: #123 !default;
 
 $global-body-width: 800px !default;
 
 $global-lineheight: 1.5 !default;
 
 // font families in use
-$font-content: sans-serif !default;
+$font-body: sans-serif !default;
+$font-postcontent: sans-serif !default;
 $font-headers: serif !default;
+$font-metadata: sans-serif !default;
 // Browsers render just monospace in a smaller font size compared to other fonts
 $font-monospace: monospace,monospace;

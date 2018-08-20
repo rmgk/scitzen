@@ -36,8 +36,7 @@ class Pages(val relative: String) {
   }
 
   private def tMeta(post: Post) = {
-    span(cls := "meta",
-         timeSpan(post),
+    frag(timeSpan(post),
          frag(post.modified
               .map(mt => span(cls := "time", s" Modified ${mt.toLocalDate} ${mt.toLocalTime} "))
               .toList: _*),
@@ -54,7 +53,7 @@ class Pages(val relative: String) {
     span(cls := "time", s" ${post.date.toLocalDate} ${post.date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
   }
   private def tSingle(title: String, meta: Frag, content: Frag) = {
-    article(cls := "post",
+    article(cls := "fullpost",
             header(h1(raw(title)),
                    meta
             ),

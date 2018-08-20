@@ -1,6 +1,6 @@
 
 body {
-  font-family: $font-content;
+  font-family: $font-body;
   line-height: $global-lineheight;
   color: $color-font;
   background: $color-background;
@@ -32,9 +32,18 @@ a {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: $font-headers;
-  font-weight: normal;
+}
+
+h1, h2 {
+  //font-weight: normal;
 }
 
 .time, .category {
+  font-family: $font-metadata;
   color: $color-metadata;
+  display: inline-block;
+}
+
+.time {
+  margin-right: 1em;
 }

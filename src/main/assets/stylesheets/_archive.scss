@@ -24,20 +24,12 @@ section.year {
 
     .time {
       font-family: $font-monospace;
-      margin-right: 10px;
-      color: $color-metadata;
-      display: inline-block;
     }
 
     a {
       color: $theme-color;
       display: inline-block;
       flex: 1;
-    }
-
-    .category {
-      color: $color-metadata;
-      display: inline-block;
     }
 
 
