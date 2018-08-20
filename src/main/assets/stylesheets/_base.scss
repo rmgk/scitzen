@@ -1,17 +1,8 @@
 @import 'lib/normalize.css/normalize';
 
-html {
-  font-size: $global-font-size;
-  box-sizing: border-box;
-}
 
 body {
-  padding: 0;
-  margin: 0;
   font-family: $global-font-family;
-  font-weight: normal;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   line-height: $global-lineheight;
   color: $global-font-color;
   background: $global-background;
@@ -22,32 +13,13 @@ body {
 main {
   padding-top: 2em;
   padding-bottom: 2em;
-}
-
-@include max-screen() {
-  body {
-    border-top: 0;
-  }
+  margin: 0 auto;
+  max-width: $global-body-width;
 }
 
 ::selection {
-  background: $theme-color;
-  color: #fff; 
+  background: transparentize($theme-color, 0.8);
 }
-// ::-webkit-scrollbar {
-//   width: 8px;
-//   height: 6px; 
-// }
-
-// ::-webkit-scrollbar-thumb {
-//   background: lighten($theme-color, 10%);
-//   border-radius: 5px;
-// }
-
-// ::-webkit-scrollbar-track {
-//   background: rgba(211, 211, 211, 0.4);
-//   border-radius: 5px;
-// }
 
 img {
   max-width: 100%;
@@ -57,7 +29,6 @@ img {
 }
 
 a {
-  color: $global-font-color;
   text-decoration: none;
 }
 
@@ -68,14 +39,6 @@ a {
   }
 }
 
-main {
-  margin: 0 auto;
-  width: $global-body-width;
-}
-
-@include max-screen() {
-  main {
-    width: 100%;
-    box-shadow: -1px -5px 5px $gray;
-  }
+.meta {
+  color: $post-meta-font-color;
 }

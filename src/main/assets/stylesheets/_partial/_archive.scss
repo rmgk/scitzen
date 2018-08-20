@@ -4,28 +4,6 @@
 
 .archive {
 
-  .archive-title {
-    font-family: $global-serif-font-family;
-
-    &.tag,
-    &.category {
-      margin: 15px 0;
-    }
-
-    .archive-name {
-      margin: 0;
-      display: inline-block;
-      font-weight: 400;
-      font-size: $archive-name-font-size;
-      line-height: $archive-name-font-size + 2px;
-    }
-
-    .archive-post-counter {
-      display: none;
-      color: $dark-gray;
-    }
-  }
-
   .collection-title {
     font-family: $global-serif-font-family;
   
