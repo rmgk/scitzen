@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import scalatags.Text.all.{frag, raw}
 import scalatags.Text.attrs.{`type`, cls, content, href, rel, src, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{body, div, h1, head, header, html, link, meta, script, span, a => anchor}
+import scalatags.Text.tags.{body, h1, head, header, html, link, meta, script, span, a => anchor}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 
@@ -55,15 +55,10 @@ class Pages(val relative: String) {
   }
   private def tSingle(title: String, meta: Frag, content: Frag) = {
     article(cls := "post",
-            header(cls := "post-header",
-                   h1(cls := "post-title",
-                      raw(title)
-                   ),
+            header(h1(raw(title)),
                    meta
             ),
-            div(cls := "post-content",
-                content
-            )
+            content
     )
   }
 
