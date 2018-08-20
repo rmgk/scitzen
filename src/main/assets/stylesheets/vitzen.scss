@@ -1,11 +1,13 @@
 /* style based on the hugo theme even: https://github.com/olOwOlo/hugo-theme-even */
 
+@import 'lib/normalize.css/normalize';
+
 @import "_variables";
 
-@import "_common/utils";
+@import "_utils";
 
 @import "_base";
-@import "_partial/post";
-@import '_partial/code';
-@import '_partial/toc';
-@import "_partial/archive";
+@import "_post";
+@import '_code';
+@import '_toc';
+@import "_archive";
