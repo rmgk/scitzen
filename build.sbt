@@ -10,7 +10,7 @@ Compile / compile := ((compile in Compile) dependsOn (Assets / SassKeys.sassify)
 libraryDependencies ++= Seq(
   "org.asciidoctor" % "asciidoctorj" % "1.6.0-alpha.7",
   "com.lihaoyi" %% "scalatags" % "0.6.7",
-  "com.monovore" %% "decline" % "0.4.1",
+  "com.monovore" %% "decline" % "0.4.2",
   "com.lihaoyi" %% "ammonite-ops" % "1.1.2",
   "org.webjars.npm" % "normalize.css" % "8.0.0",
   "org.webjars.bower" % "highlightjs" % "9.12.0",
