@@ -2,6 +2,8 @@
 // Variables
 // ==============================
 
+// ========== Color ========== //
+
 // Default theme color of the site.
 $theme-color: #c05b4d !default;
 
@@ -9,11 +11,11 @@ $theme-color: #c05b4d !default;
 $deputy-color: #f8f5ec !default;
 
 
-// ========== Color ========== //
 $white: #fffff8 !default;
 $light-gray: #e6e6e6 !default;
 $gray: #cacaca !default;
-$dark-gray: #8a8a8a !default;
+
+$metadata-color: #8a8a80 !default;
 
 
 // ========== Global ========== //
@@ -38,21 +40,9 @@ $global-serif-font-family: serif !default;
 // Background color of the site.
 $global-background: $white !default;
 
-// Headings font size of the site.
-$global-headings: (
-  h1: 26px,
-  h2: 24px,
-  h3: 20px,
-  h4: 16px,
-  h5: 14px,
-  h6: 14px
-) !default;
+// Browsers render just monospace in a smaller font size compared to other fonts
+$font-monospace: monospace,monospace;
 
-
-// ========== Post ========== //
-
-// Font color of the post meta.
-$post-meta-font-color: $dark-gray !default;
 
 // ========== TOC ========== //
 // Width of the post toc.
@@ -123,13 +113,4 @@ $archive-post-mobile-padding: 5px 10px !default;
 // Font size of the archive post time in mobile.
 $archive-post-mobile-time-font-size: 13px !default;
 
-// Border left of the archive post, use $archive-post-hover-border-left when hover it.
-$archive-post-border-left: 1px solid $gray !default;
-$archive-post-hover-border-left: 3px solid $theme-color !default;
-
-// Transition of the archive post when hover it.
-$archive-post-hover-transition: 0.2s ease-out !default;
-
-// Transform of the archive post when hover it.
-$archive-post-hover-transform: translateX(4px) !default;
 

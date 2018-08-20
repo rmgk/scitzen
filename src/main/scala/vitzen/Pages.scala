@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import scalatags.Text.all.{frag, raw}
 import scalatags.Text.attrs.{`type`, cls, content, href, rel, src, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{body, div, h1, h2, head, header, html, link, meta, script, span, a => anchor}
+import scalatags.Text.tags.{body, div, h1, head, header, html, link, meta, script, span, a => anchor}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 
@@ -71,14 +71,11 @@ class Pages(val relative: String) {
     val byYear: Map[Int, List[Post]] = posts.groupBy(_.date.getYear)
     frag(byYear.keys.toList.sorted(Ordering[Int].reverse).map { year =>
       val dhs = byYear.apply(year).sortBy(_.date.toEpochSecond(ZoneOffset.UTC))(Ordering[Long].reverse)
-      section(cls := "archive",
-              div(cls := "collection-title",
-                  h2(cls := "archive-year", dhs.head.date.format(DateTimeFormatter.ofPattern("YYYY")))
-              ),
-              section(cls := "posts")(dhs.map { post =>
-                article(cls := "archive-post",
-                        timeSpan(post),
-                        span(cls := "title", anchor(href := s"$path_posts/${post.targetPath()}", raw(post.title))),
+      section(cls := "year",
+              h1(dhs.head.date.format(DateTimeFormatter.ofPattern("YYYY"))),
+              frag(dhs.map { post =>
+                article(timeSpan(post),
+                        anchor(href := s"$path_posts/${post.targetPath()}", raw(post.title)),
                         categoriesSpan(post)
                 )
               }: _*)

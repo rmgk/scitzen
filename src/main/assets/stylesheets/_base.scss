@@ -32,13 +32,24 @@ a {
   text-decoration: none;
 }
 
+// Headings font size of the site.
+$global-headings: (
+        h1: 26px,
+        h2: 24px,
+        h3: 20px,
+        h4: 16px,
+        h5: 14px,
+        h6: 14px
+);
+
 @each $header, $size in $global-headings {
   #{$header} {
     font-size: $size;
     font-family: $global-serif-font-family;
+    font-weight: normal;
   }
 }
 
-.meta {
-  color: $post-meta-font-color;
+.time, .category {
+  color: $metadata-color;
 }
