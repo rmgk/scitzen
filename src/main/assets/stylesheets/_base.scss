@@ -15,8 +15,7 @@ body {
 }
 
 main {
-  padding-top: 2em;
-  padding-bottom: 2em;
+  padding: 1em;
   margin: 0 auto;
   max-width: $global-body-width;
 }
@@ -38,6 +37,8 @@ a {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: $font-headers;
+  // do not specially align headers even in justified content
+  text-align: initial;
 }
 
 h1, h2 {
@@ -48,6 +49,8 @@ h1, h2 {
   font-family: $font-metadata;
   color: $color-metadata;
   display: inline-block;
+  // do not break meta categories into weird linebreaks
+  white-space: nowrap;
 }
 
 .time {

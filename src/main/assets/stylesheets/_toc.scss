@@ -22,32 +22,31 @@ $toc-max-swreen-width: 2 * $post-toc-width + $post-toc-margin-left !default;
   position: fixed;
   width: $post-toc-width;
   margin-left: $post-toc-margin-left;
-  padding: 10px;
+  padding: 1em;
   font-family: $font-headers;
   border-radius: 5px;
   background: $post-toc-backgroud;
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.125);
   box-sizing: border-box;
 
+  font-size: initial;
+
   #toctitle {
-    margin: 0 20px;
+    display: none;
   }
 
   .sectlevel1 {
-    font-size: small;
-
-    padding-left: 20px;
-    list-style: square;
-
     ul {
-      padding-left: 15px;
       display: none;
     }
   }
 }
 
-@include max-screen($toc-max-swreen-width) {
-  .fullpost .toc {
-    display: none;
+@media screen and (max-width: $toc-max-swreen-width) {
+  .toc {
+    position: initial;
+    margin-left: initial;
+    width: auto;
+    max-width: 100%;
   }
 }

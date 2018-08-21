@@ -21,6 +21,13 @@ section.year {
     border-left: $archive-post-border-left;
     display: flex;
     justify-content: space-between;
+    hyphens: auto;
+
+    @media screen and (max-width: $global-body-width) {
+      flex-direction: column;
+      margin-top: 1em;
+      margin-bottom: 1em;
+    }
 
     .time {
       font-family: $font-monospace;
