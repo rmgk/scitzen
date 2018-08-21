@@ -28,11 +28,8 @@ section.year {
       margin-bottom: 1em;
     }
 
-    .time {
-      font-family: $font-monospace;
-    }
-
     a {
+      font-family: $font-archive-titles;
       color: $theme-color;
       display: inline-block;
       flex: 1;
