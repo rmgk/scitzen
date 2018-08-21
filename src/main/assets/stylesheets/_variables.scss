@@ -15,7 +15,8 @@ $color-background: #fffff8 !default;
 
 $color-font: #123 !default;
 
-$global-body-width: 800px !default;
+// a4 paper has 21cm, subtract 1.5 inch for print margins
+$global-body-width: 171.9mm !default;
 
 $global-lineheight: 1.5 !default;
 

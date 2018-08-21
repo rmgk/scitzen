@@ -21,12 +21,19 @@ code {
 
 code, pre {
   background: $code-background;
+  @media print {
+    white-space: pre-wrap;
+  }
 }
+
 
 .highlight {
   border-radius: 5px;
   overflow-x: auto;
-  box-shadow: 1px 1px 2px rgba(0,0,0,0.125);
+  @media screen {
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.125);
+  }
+
 
   code {
     .hljs-comment,

@@ -39,7 +39,9 @@ article.fullpost {
     color: rgba(#34495e, 0.8);
     background-color: $content-blockquote-backgroud;
     border-left: $content-blockquote-border-left;
-    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.125);
+    @media screen {
+      box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.125);
+    }
 
     p {
       margin: 0;
@@ -55,7 +57,9 @@ article.fullpost {
     max-width: 100%;
     margin: 10px 0;
     border-spacing: 0;
-    box-shadow: 2px 2px 3px rgba(0, 0, 0, .125);
+    @media screen {
+      box-shadow: 2px 2px 3px rgba(0, 0, 0, .125);
+    }
 
     thead {
       background: $deputy-color;
@@ -78,7 +82,9 @@ article.fullpost {
     border: 1px solid #dbdbdb;
     border-bottom-color: #b5b5b5;
     border-radius: 3px;
-    box-shadow: inset 0 -1px 0 #b5b5b5;
+    @media screen {
+      box-shadow: inset 0 -1px 0 #b5b5b5;
+    }
     font-size: 0.8em;
     line-height: 1.25;
     font-family: $font-monospace;
