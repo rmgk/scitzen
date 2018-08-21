@@ -21,10 +21,8 @@ $global-body-width: 171.9mm !default;
 $global-lineheight: 1.5 !default;
 
 // font families in use
-$font-postcontent: sans-serif !default;
-$font-postcontent-print: serif !default;
+$font-content: sans-serif !default;
+$font-content-print: serif !default;
 $font-headers: serif !default;
-$font-metadata: sans-serif !default;
-$font-archive-titles: sans-serif !default;
 // Browsers render just monospace in a smaller font size compared to other fonts
 $font-monospace: monospace,monospace;

@@ -4,13 +4,15 @@ body {
   color: $color-font;
   background: $color-background;
   scroll-behavior: smooth;
-  border-top: 3px solid $theme-color;
-}
-
-@media print {
-  body {
-    border-top: 0px;
+  @media screen {
+    border-top: 3px solid $theme-color;
   }
+  font-family: $font-content;
+
+  @media (min-resolution: 192dpi) {
+    font-family: $font-content-print;
+  }
+
 }
 
 main {
@@ -37,16 +39,9 @@ a {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: $font-headers;
-  // do not specially align headers even in justified content
-  text-align: initial;
-}
-
-h1, h2 {
-  //font-weight: normal;
 }
 
 .time, .category {
-  font-family: $font-metadata;
   color: $color-metadata;
   display: inline-block;
   // do not break meta categories into weird linebreaks

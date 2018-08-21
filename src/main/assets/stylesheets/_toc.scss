@@ -1,36 +1,34 @@
 
 // ========== TOC ========== //
 // Width of the post toc.
-$post-toc-width: 200px !default;
+$post-toc-width: 5cm !default;
 
 // Backgroud color of the post toc.
 $post-toc-backgroud: rgba($deputy-color, 0.6) !default;
 
 // Margin left of the post toc.
-$post-toc-margin-left: $global-body-width + 20px !default;
-
-// Font size of the post toc title.
-$post-toc-title-size: large !default;
+$post-toc-margin-left: $global-body-width !default;
 
 // List style of the post toc list.
 $post-toc-list-style: square !default;
 
 // Max screen media of the post toc.
-$toc-max-swreen-width: 2 * $post-toc-width + $post-toc-margin-left !default;
+$toc-max-swreen-width: 2.5 * $post-toc-width + $post-toc-margin-left !default;
 
 .toc {
-  position: fixed;
-  width: $post-toc-width;
-  margin-left: $post-toc-margin-left;
+
   padding: 1em;
-  font-family: $font-postcontent;
   border-radius: 5px;
   background: $post-toc-backgroud;
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.125);
   box-sizing: border-box;
+  max-width: 100%;
 
-  text-align: initial;
-  font-size: initial;
+  @media screen and (min-width: $toc-max-swreen-width) {
+    position: fixed;
+    margin-left: $post-toc-margin-left;
+    max-width: $post-toc-width;
+  }
 
   #toctitle {
     display: none;
@@ -43,11 +41,3 @@ $toc-max-swreen-width: 2 * $post-toc-width + $post-toc-margin-left !default;
   }
 }
 
-@media screen and (max-width: $toc-max-swreen-width) {
-  .toc {
-    position: initial;
-    margin-left: initial;
-    width: auto;
-    max-width: 100%;
-  }
-}
