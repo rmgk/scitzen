@@ -3,9 +3,6 @@
 // Width of the post toc.
 $post-toc-width: 5cm !default;
 
-// Backgroud color of the post toc.
-$post-toc-backgroud: rgba($deputy-color, 0.6) !default;
-
 // Margin left of the post toc.
 $post-toc-margin-left: $global-body-width !default;
 
@@ -16,11 +13,9 @@ $post-toc-list-style: square !default;
 $toc-max-swreen-width: 2.5 * $post-toc-width + $post-toc-margin-left !default;
 
 .toc {
+  @extend %boxed;
 
   padding: 1em;
-  border-radius: 5px;
-  background: $post-toc-backgroud;
-  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.125);
   box-sizing: border-box;
   max-width: 100%;
 

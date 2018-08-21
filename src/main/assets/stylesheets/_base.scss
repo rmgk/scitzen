@@ -1,14 +1,14 @@
 
 body {
   line-height: $global-lineheight;
-  color: $color-font;
-  background: $color-background;
   scroll-behavior: smooth;
   @media screen {
     border-top: 3px solid $theme-color;
+    color: $color-font;
+    background: $color-background;
   }
-  font-family: $font-content;
 
+  font-family: $font-content;
   @media (min-resolution: 192dpi) {
     font-family: $font-content-print;
   }
@@ -35,6 +35,10 @@ img {
 
 a {
   text-decoration: none;
+  color: $theme-color;
+  @media print {
+    color: black;
+  }
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -42,7 +46,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .time, .category {
-  color: $color-metadata;
+  @media screen {
+    color: $color-metadata;
+  }
   display: inline-block;
   // do not break meta categories into weird linebreaks
   white-space: nowrap;
@@ -50,4 +56,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .time {
   margin-right: 1em;
+}
+
+%boxed {
+  padding: 1em;
+  background: $deputy-color;
+  border-radius: 5px;
+  border-left: 3px solid rgba($theme-color, 0.3);
+  @media screen {
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.125);
+  }
 }

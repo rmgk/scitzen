@@ -29,22 +29,24 @@ section.year {
     }
 
     a {
-      color: $theme-color;
       display: inline-block;
       flex: 1;
     }
 
+    @media screen {
+      &:hover {
+        border-left: $archive-post-hover-border-left;
+        transition: $archive-post-hover-transition;
+        transform: $archive-post-hover-transform;
 
-    &:hover {
-      border-left: $archive-post-hover-border-left;
-      transition: $archive-post-hover-transition;
-      transform: $archive-post-hover-transform;
+        .time, .category {
+          color: darken($color-metadata, 10%);
+        }
 
-      .time, .category {
-        color: darken($color-metadata, 10%);
+        a {
+          color: darken($theme-color, 10%);
+        }
       }
-
-      a { color: darken($theme-color, 10%); }
     }
   }
 }
