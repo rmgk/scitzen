@@ -50,7 +50,7 @@ class Pages(val relative: String) {
 
   private def timeSpan(post: Post) = {
     //need time formatter, because to string removes seconds if all zero
-    span(cls := "time", s" ${post.date.toLocalDate} ${post.date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
+    span(cls := "time", s" ${post.date.toLocalDate} ${post.date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)} ")
   }
   private def tSingle(title: String, meta: Frag, content: Frag) = {
     article(cls := "fullpost",
