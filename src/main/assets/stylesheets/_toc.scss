@@ -29,7 +29,10 @@ $toc-max-swreen-width: 2.5 * $post-toc-width + $post-toc-margin-left !default;
     display: none;
   }
 
-  .sectlevel1 {
+  ul.sectlevel1 {
+    // make toc spacing equal to all sides
+    padding-left: 1em;
+    margin: 0;
     ul {
       display: none;
     }
