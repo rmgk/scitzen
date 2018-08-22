@@ -20,6 +20,12 @@ article.fullpost {
       border-bottom: $content-link-border;
     }
   }
+
+  // Images are wrapped in spans in asciidoc. But we display them as their own blocks.
+  span.image {
+    display: block;
+    text-align: center;
+  }
 }
 
 blockquote {
