@@ -26,3 +26,19 @@ $font-content-print: serif !default;
 $font-headers: serif !default;
 // Browsers render just monospace in a smaller font size compared to other fonts
 $font-monospace: monospace,monospace;
+
+
+@mixin rounded-borders {
+  border-radius: 5px;
+}
+
+%boxed {
+  @include rounded-borders;
+  padding: 1em;
+  @media screen {
+    background: $deputy-color;
+    border-left: 3px solid $theme-color;
+    color: #456;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.125);
+  }
+}
