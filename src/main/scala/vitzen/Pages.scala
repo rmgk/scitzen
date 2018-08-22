@@ -4,7 +4,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 import scalatags.Text.all.{frag, raw}
-import scalatags.Text.attrs.{`type`, cls, content, href, rel, src, title, name => attrname}
+import scalatags.Text.attrs.{`type`, cls, content, href, rel, src, title, name => attrname, charset}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, h1, head, header, html, link, meta, script, span, a => anchor}
 import scalatags.Text.tags2.{article, main, section}
@@ -28,7 +28,9 @@ class Pages(val relative: String) {
       link(href := path_css, rel := "stylesheet", `type` := "text/css"),
       script(src := path_highligh_js),
       script(raw("hljs.initHighlightingOnLoad();")),
-      meta(attrname := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"))
+      meta(attrname := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
+      meta(charset := "UTF-8")
+      )
   }
 
   private def tBody(content: Frag) = {
