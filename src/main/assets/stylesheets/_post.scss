@@ -22,9 +22,9 @@ article.fullpost {
   }
 
   // Images are wrapped in spans in asciidoc. But we display them as their own blocks.
-  span.image {
-    display: block;
+  div.imageblock {
     text-align: center;
+    @extend %oversized;
   }
 }
 

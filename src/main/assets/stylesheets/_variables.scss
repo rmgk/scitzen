@@ -44,3 +44,14 @@ $font-monospace: monospace,monospace;
     color: #456;
   }
 }
+
+%oversized {
+  // this super weird hack allows blocks to be bigger than the actual content, but restricts them still to the viewport
+  @media screen {
+    max-width: 161.8034%;
+    margin-left: 50%;
+    // subtracting some from the width to get same padding as main content
+    width: calc(100vw - 3em);
+    transform: translateX(-50%);
+  }
+}
