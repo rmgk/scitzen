@@ -1,7 +1,7 @@
 package vitzen
 
 
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.nio.file.{Files, Path}
 
 import ammonite.ops.{Path => ammPath, _}
 import cats.implicits._
@@ -20,9 +20,13 @@ object Vitzen {
 
   val command = Command(name = "vitzen", header = "Convert Asciidoc documents into a webpage format.") {
     (optSource, optTraget).mapN {
-      (sourcedir, targetdir) =>
+      (sourcedirRel, targetdirRel) =>
+
+        val sourcedir = sourcedirRel.toAbsolutePath.normalize()
+        val targetdir = targetdirRel.toAbsolutePath.normalize()
 
         println(s"processing $sourcedir")
+        println(s"to $targetdir")
 
         val resourceLocator = new WebJarAssetLocator()
 
@@ -48,9 +52,6 @@ object Vitzen {
         }
 
         write.over(ammPath(targetdir.resolve("index.html")), Pages().makeIndexOf(posts))
-        Files.copy(Paths.get("target/web/sass/main/stylesheets/vitzen.css"),
-                   targetdir.resolve("vitzen.css"),
-                   StandardCopyOption.REPLACE_EXISTING)
 
 
         cp.over(ammPath(sourcedir.resolve("images")), ammPath(postdir.resolve("images")))
