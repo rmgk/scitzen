@@ -1,9 +1,10 @@
 package vitzen
 
 
-import java.nio.file.{Files, Path}
+import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.file.Path
 
-import ammonite.ops.{Path => ammPath, _}
+import better.files.{File, InputStreamOps, Resource}
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import org.asciidoctor.Asciidoctor
@@ -22,24 +23,28 @@ object Vitzen {
     (optSource, optTraget).mapN {
       (sourcedirRel, targetdirRel) =>
 
-        val sourcedir = sourcedirRel.toAbsolutePath.normalize()
-        val targetdir = targetdirRel.toAbsolutePath.normalize()
+        implicit val charset: Charset = StandardCharsets.UTF_8
+
+        val sourcedir = File(sourcedirRel)
+        val targetdir = File(targetdirRel)
 
         println(s"processing $sourcedir")
         println(s"to $targetdir")
 
         val resourceLocator = new WebJarAssetLocator()
 
-        write.over(ammPath(targetdir)/"vitzen.css", read.bytes(resource()/RelPath(resourceLocator.getFullPath("vitzen.css"))))
-        write.over(ammPath(targetdir)/"highlight.js", read! resource/RelPath(resourceLocator.getFullPath("highlight.pack.js")))
+        (targetdir/"vitzen.css").writeBytes(
+          Resource.getAsStream(resourceLocator.getFullPath("vitzen.css")).buffered.bytes)
+        (targetdir/"highlight.js").writeBytes(
+          Resource.getAsStream(resourceLocator.getFullPath("highlight.pack.js")).buffered.bytes)
+//        write.over(ammPath(targetdir), read! resource/RelPath(resourceLocator.getFullPath()))
 
 
         lazy val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
-        lazy val asciiData: AsciiData = new AsciiData(asciidoctor, sourcedir)
+        lazy val asciiData: AsciiData = new AsciiData(asciidoctor, sourcedir.path)
 
-        val postdir = targetdir.resolve("posts")
-        Files.createDirectories(postdir)
-
+        val postdir = targetdir/"posts"
+        postdir.createDirectories()
 
         val posts = asciiData.allPosts
         println(s"found ${posts.size} posts")
@@ -48,13 +53,13 @@ object Vitzen {
 
         for (post <- posts) {
           println(post.title)
-          write.over(ammPath(postdir.resolve(post.targetPath())), Pages("../").makePostHtml(post))
+          (postdir/post.targetPath()).write(Pages("../").makePostHtml(post))
         }
 
-        write.over(ammPath(targetdir.resolve("index.html")), Pages().makeIndexOf(posts))
+        targetdir./("index.html").write(Pages().makeIndexOf(posts))
 
 
-        cp.over(ammPath(sourcedir.resolve("images")), ammPath(postdir.resolve("images")))
+        sourcedir./("images").copyTo(postdir./("images"), overwrite = true)
     }
   }
 
