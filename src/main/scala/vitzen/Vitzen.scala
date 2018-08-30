@@ -16,11 +16,11 @@ object Vitzen {
 
   val optSource = Opts.option[Path]("source", short = "s", metavar = "directory",
                                     help = "Directory containing Asciidoc source posts")
-  val optTraget = Opts.option[Path]("output", short = "o", metavar = "directory",
+  val optOutput = Opts.option[Path]("output", short = "o", metavar = "directory",
                                     help = "Target output directory")
 
   val command = Command(name = "vitzen", header = "Convert Asciidoc documents into a webpage format.") {
-    (optSource, optTraget).mapN {
+    (optSource, optOutput).mapN {
       (sourcedirRel, targetdirRel) =>
 
         implicit val charset: Charset = StandardCharsets.UTF_8
