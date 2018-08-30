@@ -4,13 +4,15 @@ scalaVersion := "2.12.6"
 enablePlugins(JavaAppPackaging)
 enablePlugins(SbtSassify)
 
+Compile/mainClass := Some("vitzen.Vitzen")
+
 Compile / compile := ((compile in Compile) dependsOn (Assets / SassKeys.sassify)).value
 //Compile / resources ++= (Assets / SassKeys.sassify).value
 
 libraryDependencies ++= Seq(
   "org.asciidoctor" % "asciidoctorj" % "1.6.0-alpha.7",
   "com.lihaoyi" %% "scalatags" % "0.6.7",
-  "com.monovore" %% "decline" % "0.4.2",
+  "com.monovore" %% "decline" % "0.5.0",
   "org.webjars.npm" % "normalize.css" % "8.0.0",
   "org.webjars.bower" % "highlightjs" % "9.12.0",
   "org.webjars" % "webjars-locator-core" % "0.35",
