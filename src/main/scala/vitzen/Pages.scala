@@ -1,10 +1,10 @@
 package vitzen
 
-import java.time.ZoneOffset
+import java.time.{LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 
 import scalatags.Text.all.{frag, raw}
-import scalatags.Text.attrs.{`type`, cls, content, href, rel, src, title, name => attrname, charset}
+import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, src, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, h1, head, header, html, link, meta, script, span, a => anchor}
 import scalatags.Text.tags2.{article, main, section}
@@ -38,11 +38,10 @@ class Pages(val relative: String) {
   }
 
   private def tMeta(post: Post) = {
-    frag(timeSpan(post),
-         frag(post.modified
-              .map(mt => span(cls := "time", s" Modified ${mt.toLocalDate} ${mt.toLocalTime} "))
-              .toList: _*),
-         categoriesSpan(post)
+    frag(timeSpan(post.date),
+         frag(post.modified.map(timeSpan).toList: _*),
+         categoriesSpan(post),
+         frag(post.folder().map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*),
     )
   }
 
@@ -50,9 +49,9 @@ class Pages(val relative: String) {
     span(cls := "category")((post.categories() ++ post.people()).map(c => stringFrag(s" $c ")): _*)
   }
 
-  private def timeSpan(post: Post) = {
+  private def timeSpan(date: LocalDateTime) = {
     //need time formatter, because to string removes seconds if all zero
-    span(cls := "time", s" ${post.date.toLocalDate} ${post.date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)} ")
+    span(cls := "time", s" ${date.toLocalDate} ${date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)} ")
   }
   private def tSingle(title: String, meta: Frag, content: Frag) = {
     article(cls := "fullpost",
@@ -70,7 +69,7 @@ class Pages(val relative: String) {
       section(cls := "year",
               h1(dhs.head.date.format(DateTimeFormatter.ofPattern("yyyy"))),
               frag(dhs.map { post =>
-                article(timeSpan(post),
+                article(timeSpan(post.date),
                         anchor(href := s"$path_posts/${post.targetPath()}", raw(post.title)),
                         categoriesSpan(post)
                 )
