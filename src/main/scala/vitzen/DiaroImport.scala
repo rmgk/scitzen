@@ -53,8 +53,8 @@ object DiaroImport {
     outdir.delete(swallowIOExceptions = true)
 
     entries.foreach{ e =>
-      val date = e.date.toLocalDate.toString
-      val time = e.date.toLocalTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+      val date = e.date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+      val time = e.date.format(DateTimeFormatter.ISO_LOCAL_TIME)
       val url = e.title.replaceAll("[^\\p{L}]", "-")
       val slug = s"${date}T${time}_$url.adoc"
       val target = outdir / e.folder.getOrElse("") / slug
