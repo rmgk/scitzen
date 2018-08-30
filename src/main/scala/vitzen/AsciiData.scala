@@ -63,6 +63,8 @@ class Post(val path: Path, val document: Document) {
 
   def people(): List[String] = commaSeparatedAttribute("people")
 
+  def folder(): Option[String] = Option(document.getAttributes.get("folder")).map(_.toString)
+
   def categories(): List[String] = commaSeparatedAttribute("categories")
 
   def targetPath(): String = path.toString.replace(".adoc", ".html")
