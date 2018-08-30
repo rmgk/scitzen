@@ -27,6 +27,7 @@ object Vitzen {
 
         val sourcedir = File(sourcedirRel)
         val targetdir = File(targetdirRel)
+        targetdir.createDirectories()
 
         println(s"processing $sourcedir")
         println(s"to $targetdir")
