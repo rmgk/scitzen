@@ -1,5 +1,6 @@
 name := "vitzen"
 scalaVersion := "2.12.6"
+organization := "de.rmgk"
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(SbtSassify)
