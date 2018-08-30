@@ -68,7 +68,7 @@ class Pages(val relative: String) {
     frag(byYear.keys.toList.sorted(Ordering[Int].reverse).map { year =>
       val dhs = byYear.apply(year).sortBy(_.date.toEpochSecond(ZoneOffset.UTC))(Ordering[Long].reverse)
       section(cls := "year",
-              h1(dhs.head.date.format(DateTimeFormatter.ofPattern("YYYY"))),
+              h1(dhs.head.date.format(DateTimeFormatter.ofPattern("yyyy"))),
               frag(dhs.map { post =>
                 article(timeSpan(post),
                         anchor(href := s"$path_posts/${post.targetPath()}", raw(post.title)),
