@@ -15,6 +15,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "highlightjs" % "9.12.0",
   "org.webjars" % "webjars-locator-core" % "0.35",
   "com.github.pathikrit" %% "better-files" % "3.6.0",
+  "org.jsoup" % "jsoup" % "1.11.3",
 )
 
 Compile / compile / scalacOptions ++= Seq(

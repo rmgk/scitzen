@@ -1,8 +1,8 @@
 
-pre {
-  @extend %boxed;
-  overflow-x: auto;
-  white-space: pre-wrap;
+.listingblock {
+  pre {
+    @extend %boxed;
+  }
 }
 
 

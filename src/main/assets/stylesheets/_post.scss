@@ -10,7 +10,7 @@ $content-table-border-color: darken($deputy-color, 3%) !default;
 article.fullpost {
 
   .paragraph {
-    text-align: justify;
+    @extend %textblock;
   }
 
   a {
@@ -55,4 +55,8 @@ table {
 
 .admonitionblock .icon .title::after {
   content: ':';
+}
+
+.import pre {
+  @extend %textblock;
 }

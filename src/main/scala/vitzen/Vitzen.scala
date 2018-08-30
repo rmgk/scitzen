@@ -53,7 +53,10 @@ object Vitzen {
 
         for (post <- posts) {
           println(post.title)
-          (postdir/post.targetPath()).write(Pages("../").makePostHtml(post))
+          val targetPath = postdir/post.targetPath()
+          targetPath.parent.createDirectories()
+          val relpath = targetPath.parent.relativize(targetdir)
+          targetPath.write(Pages(s"$relpath/").makePostHtml(post))
         }
 
         targetdir./("index.html").write(Pages().makeIndexOf(posts))

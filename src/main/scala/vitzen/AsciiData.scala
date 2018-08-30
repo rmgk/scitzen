@@ -68,7 +68,7 @@ class Post(val path: Path, val document: Document) {
   def targetPath(): String = path.toString.replace(".adoc", ".html")
   def summary(): String = Option(document.getBlocks.get(0)).fold("")(b => b.convert())
 
-  def title: String = document.getDoctitle
+  def title: String = Option(document.getDoctitle).getOrElse("(null)")
   lazy val date: LocalDateTime = Option(document.getAttributes.get("revdate")).fold(LocalDateTime.MIN)(v => Helper.parseDate(v.toString))
   def content: String = document.convert()
   lazy val modified: Option[LocalDateTime] = Option(document.getAttributes.get("modified")).map(m => Helper.parseDate(m.toString))

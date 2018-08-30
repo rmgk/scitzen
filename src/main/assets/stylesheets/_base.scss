@@ -8,11 +8,7 @@ body {
     background: $color-background;
   }
 
-  font-family: $font-content;
-  @media (min-resolution: 192dpi) {
-    font-family: $font-content-print;
-  }
-
+  @extend %mainfont;
 }
 
 main {
@@ -55,4 +51,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .time {
   margin-right: 1em;
+}
+
+pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
 }
