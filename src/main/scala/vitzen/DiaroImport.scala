@@ -56,7 +56,7 @@ object DiaroImport {
       val date = e.date.format(DateTimeFormatter.ISO_LOCAL_DATE)
       val time = e.date.format(DateTimeFormatter.ISO_LOCAL_TIME)
       val url = e.title.replaceAll("[^\\p{L}]", "-")
-      val slug = s"${date}T${time}_$url.adoc"
+      val slug = s"${date}T${time.replace(':', '-')}_$url.adoc"
       val target = outdir / e.folder.getOrElse("") / slug
       target.parent.createDirectories()
       target.appendLine(s"= ${e.title}")
