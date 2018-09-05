@@ -13,7 +13,7 @@ object AsciidociiParser {
   val ws                             = P(CharsWhile(_.isWhitespace).opaque("<whitespace>"))
   val notNL                          = P(CharPred(_ != '\n')).opaque("<not nl>")
   val notNLS    : Parser[Unit]       = P(notNL | (notNL ~ notNLS))
-  val line                           = P(CharsWhile(_ != '\n')).opaque("<line>")
+  val line                           = P(CharsWhile(_ != '\n', min = 0)).opaque("<line>")
   val title                          = P("=" ~/ line.! ~ nl)
   val word                           = P(CharsWhile(_.isLetterOrDigit)).opaque("<word>")
   val attribute                      = P(":" ~/ word.! ~ ":" ~/ line.! ~ nl)
