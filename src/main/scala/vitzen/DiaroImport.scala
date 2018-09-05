@@ -52,7 +52,7 @@ object DiaroImport {
     val outdir = File("converted_output")
     outdir.delete(swallowIOExceptions = true)
 
-    entries.foreach{ e =>
+    entries.foreach { e =>
       val date = e.date.format(DateTimeFormatter.ISO_LOCAL_DATE)
       val time = e.date.format(DateTimeFormatter.ISO_LOCAL_TIME)
       val url = e.title.replaceAll("[^\\p{L}]", "-")
@@ -61,7 +61,7 @@ object DiaroImport {
       target.parent.createDirectories()
       target.appendLine(s"= ${e.title}")
       target.appendLine(s":revdate: $date $time")
-      e.folder.foreach{f => target.appendLine(s":folder: $f") }
+      e.folder.foreach { f => target.appendLine(s":folder: $f") }
       if (e.tags.nonEmpty) target.appendLine(s":categories: ${e.tags.mkString(", ")}")
       target.appendLine("")
       target.appendLine("[.import]")

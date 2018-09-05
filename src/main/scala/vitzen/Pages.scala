@@ -17,8 +17,8 @@ object Pages {
 class Pages(val relative: String) {
 
 
-  val path_css: String = s"${relative}vitzen.css"
-  val path_posts: String = s"${relative}posts"
+  val path_css        : String = s"${relative}vitzen.css"
+  val path_posts      : String = s"${relative}posts"
   val path_highligh_js: String = s"${relative}highlight.js"
 
 
@@ -30,7 +30,7 @@ class Pages(val relative: String) {
       script(raw("hljs.initHighlightingOnLoad();")),
       meta(attrname := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
       meta(charset := "UTF-8")
-      )
+    )
   }
 
   private def tBody(content: Frag) = {
@@ -41,7 +41,7 @@ class Pages(val relative: String) {
     frag(timeSpan(post.date),
          frag(post.modified.map(timeSpan).toList: _*),
          categoriesSpan(post),
-         frag(post.folder().map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*),
+         frag(post.folder().map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
     )
   }
 

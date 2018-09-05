@@ -13,15 +13,15 @@ import scala.collection.JavaConverters._
 
 object Helper {
   val timeFormatter: DateTimeFormatter = new DateTimeFormatterBuilder()
-    .parseCaseInsensitive()
-    .append(DateTimeFormatter.ISO_LOCAL_DATE)
-    .optionalStart()
-    .optionalStart().appendLiteral('T').optionalEnd()
-    .optionalStart().appendLiteral(' ').optionalEnd()
-    .append(DateTimeFormatter.ISO_LOCAL_TIME)
-    .optionalEnd()
-    .optionalStart().appendOffsetId().optionalEnd()
-    .toFormatter()
+  .parseCaseInsensitive()
+  .append(DateTimeFormatter.ISO_LOCAL_DATE)
+  .optionalStart()
+  .optionalStart().appendLiteral('T').optionalEnd()
+  .optionalStart().appendLiteral(' ').optionalEnd()
+  .append(DateTimeFormatter.ISO_LOCAL_TIME)
+  .optionalEnd()
+  .optionalStart().appendOffsetId().optionalEnd()
+  .toFormatter()
 
   def parseDate(dateString: String): LocalDateTime = {
     if (dateString == null) return LocalDateTime.MIN
@@ -56,10 +56,11 @@ class AsciiData(asciidoctor: Asciidoctor, basedir: Path) {
 
 
 class Post(val path: Path, val document: Document) {
-  def commaSeparatedAttribute(key: String): List[String] = document.getAttributes.getOrDefault(key, "").toString
-                                                           .split(',')
-                                                           .map[String, List[String]](_.trim)(collection.breakOut)
-                                                           .filter(_.nonEmpty)
+  def commaSeparatedAttribute(key: String): List[String] =
+    document.getAttributes.getOrDefault(key, "").toString
+    .split(',')
+    .map[String, List[String]](_.trim)(collection.breakOut)
+    .filter(_.nonEmpty)
 
   def people(): List[String] = commaSeparatedAttribute("people")
 
@@ -71,7 +72,9 @@ class Post(val path: Path, val document: Document) {
   def summary(): String = Option(document.getBlocks.get(0)).fold("")(b => b.convert())
 
   def title: String = Option(document.getDoctitle).getOrElse("(null)")
-  lazy val date: LocalDateTime = Option(document.getAttributes.get("revdate")).fold(LocalDateTime.MIN)(v => Helper.parseDate(v.toString))
+  lazy val date: LocalDateTime = Option(document.getAttributes.get("revdate"))
+                                 .fold(LocalDateTime.MIN)(v => Helper.parseDate(v.toString))
   def content: String = document.convert()
-  lazy val modified: Option[LocalDateTime] = Option(document.getAttributes.get("modified")).map(m => Helper.parseDate(m.toString))
+  lazy val modified: Option[LocalDateTime] = Option(document.getAttributes.get("modified"))
+                                             .map(m => Helper.parseDate(m.toString))
 }

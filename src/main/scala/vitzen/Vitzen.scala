@@ -34,9 +34,9 @@ object Vitzen {
 
         val resourceLocator = new WebJarAssetLocator()
 
-        (targetdir/"vitzen.css").writeBytes(
+        (targetdir / "vitzen.css").writeBytes(
           Resource.getAsStream(resourceLocator.getFullPath("vitzen.css")).buffered.bytes)
-        (targetdir/"highlight.js").writeBytes(
+        (targetdir / "highlight.js").writeBytes(
           Resource.getAsStream(resourceLocator.getFullPath("highlight.pack.js")).buffered.bytes)
 //        write.over(ammPath(targetdir), read! resource/RelPath(resourceLocator.getFullPath()))
 
@@ -44,7 +44,7 @@ object Vitzen {
         lazy val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
         lazy val asciiData: AsciiData = new AsciiData(asciidoctor, sourcedir.path)
 
-        val postdir = targetdir/"posts"
+        val postdir = targetdir / "posts"
         postdir.createDirectories()
 
         val posts = asciiData.allPosts
@@ -54,7 +54,7 @@ object Vitzen {
 
         for (post <- posts) {
           println(post.title)
-          val targetPath = postdir/post.targetPath()
+          val targetPath = postdir / post.targetPath()
           targetPath.parent.createDirectories()
           val relpath = targetPath.parent.relativize(targetdir)
           targetPath.write(Pages(s"$relpath/").makePostHtml(post))
@@ -72,7 +72,7 @@ object Vitzen {
 
   def run(args: String*) = {
     command.parse(args) match {
-      case Left(help) =>
+      case Left(help)    =>
         println(help)
         sys.exit(0)
       case Right(result) => result
