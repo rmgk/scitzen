@@ -17,12 +17,14 @@ object AsciidociiParser {
   val title                          = P("=" ~/ line.! ~ nl)
   val word                           = P(CharsWhile(_.isLetterOrDigit)).opaque("<word>")
   val attribute                      = P(":" ~/ word.! ~ ":" ~/ line.! ~ nl)
-  val header    : Parser[Header]     = P(title ~/ attribute.rep).map { case (title, attr) => Header(title, attr.toMap) }
+  val header    : Parser[Header]     = P(title ~/ attribute.rep)
+                                       .map { case (title, attr) => Header(title, attr.toMap) }
   val macroAttributes                = P("[" ~ CharsWhile(c => c != '\n' && c != ']').! ~ "]")
   val macroTarget                    = P(CharsWhile(c => c != '\n' && c != '['))
   val blockMacro: Parser[BlockMacro] = P(word.! ~ "::" ~/ macroTarget.! ~ macroAttributes)
                                        .map {(BlockMacro.apply _).tupled}
-  val paragraph : Parser[Paragraph]  = P(line.rep(min = 1, sep = nl ~ Pass).!).map(Paragraph.apply)
+  val paragraph : Parser[Paragraph]  = P(line.rep(min = 1, sep = nl ~ Pass).!)
+                                       .map(Paragraph.apply)
   val block     : Parser[Block]      = P(blockMacro | paragraph)
   val document                       = P(header ~ ws ~ block.rep(sep = nl ~ ws.?) ~ ws ~ End)
                                        .map((Document.apply _).tupled)
