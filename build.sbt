@@ -10,6 +10,8 @@ libraryDependencies ++= Seq(
   "com.monovore" %% "decline" % "0.5.0",
   "com.github.pathikrit" %% "better-files" % "3.6.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
 )
 
 Compile / compile / scalacOptions ++= Seq(

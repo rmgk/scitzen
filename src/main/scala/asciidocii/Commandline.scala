@@ -48,8 +48,8 @@ object Commandline extends CommandApp(
     optSource.map { sourceP =>
       val source = File(sourceP)
       source.children.filter(_.isRegularFile).filter(_.name.endsWith(".adoc")).foreach { f =>
-        val header: Header = AsciidociiParser.header.parse(f.contentAsString).get.value
-        val date = LocalDateTime.from(Tool.timeFormatter.parse(header.attributes("revdate").trim))
+        val header: Header = AsciidociiParser.HeaderParser.header.parse(f.contentAsString).get.value
+        val date = LocalDateTime.from(Tool.timeFormatter.parse(header.attributes.toMap.apply("revdate").trim))
         val title = Tool.sluggify(header.title) + ".adoc"
         val newName = date.format(Tool.outputTime) + "_" + title
 

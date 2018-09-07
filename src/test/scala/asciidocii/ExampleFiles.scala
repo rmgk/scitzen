@@ -1,0 +1,155 @@
+package asciidocii
+
+object ExampleFiles {
+
+  val link = """We're parsing link:http://asciidoc.org[AsciiDoc] markup"""
+
+  val sample ="""Document Title
+==============
+Doc Writer <thedoc@asciidoctor.org>
+:idprefix: id_
+
+Preamble paragraph.
+
+NOTE: This is test, only a test.
+
+== Section A
+
+*Section A* paragraph.
+
+=== Section A Subsection
+
+*Section A* 'subsection' paragraph.
+
+== Section B
+
+*Section B* paragraph.
+
+|===
+|a |b |c
+|1 |2 |3
+|===
+
+.Section B list
+* Item 1
+* Item 2
+* Item 3
+"""
+
+  val lists =
+    """= Document Title
+Doc Writer <thedoc@asciidoctor.org>
+
+Preamble paragraph.
+
+NOTE: This is test, only a test.
+
+== Lists
+
+.Unordered, basic
+* Edgar Allen Poe
+* Sheri S. Tepper
+* Bill Bryson
+
+.Unordered, max nesting
+* level 1
+** level 2
+*** level 3
+**** level 4
+***** level 5
+* level 1
+
+.Checklist
+- [*] checked
+- [x] also checked
+- [ ] not checked
+-     normal list item
+
+.Ordered, basic
+. Step 1
+. Step 2
+. Step 3
+
+.Ordered, nested
+. Step 1
+. Step 2
+.. Step 2a
+.. Step 2b
+. Step 3
+
+.Ordered, max nesting
+. level 1
+.. level 2
+... level 3
+.... level 4
+..... level 5
+. level 1
+
+.Labeled, single-line
+first term:: definition of first term
+section term:: definition of second term
+
+.Labeled, multi-line
+first term::
+definition of first term
+second term::
+definition of second term
+
+.Q&A
+[qanda]
+What is Asciidoctor?::
+  An implementation of the AsciiDoc processor in Ruby.
+What is the answer to the Ultimate Question?:: 42
+
+.Mixed
+Operating Systems::
+  Linux:::
+    . Fedora
+      * Desktop
+    . Ubuntu
+      * Desktop
+      * Server
+  BSD:::
+    . FreeBSD
+    . NetBSD
+
+Cloud Providers::
+  PaaS:::
+    . OpenShift
+    . CloudBees
+  IaaS:::
+    . Amazon EC2
+    . Rackspace
+
+.Unordered, complex
+* level 1
+** level 2
+*** level 3
+This is a new line inside an unordered list using {plus} symbol.
+We can even force content to start on a separate line... +
+Amazing, isn't it?
+**** level 4
++
+The {plus} symbol is on a new line.
+
+***** level 5
+"""
+
+  val nestedExample = """.Sample document
+====
+Here's a sample AsciiDoc document:
+
+[listing]
+....
+= Title of Document
+Doc Writer
+:toc:
+
+This guide provides...
+....
+
+The document header is useful, but not required.
+====
+"""
+
+}
