@@ -41,6 +41,10 @@ NOTE: This is test, only a test.
 * Item 3
 """
 
+  val multipleAuthors = """= The Dangerous and Thrilling Documentation Chronicles
+Kismet Rainbow Chameleon <kismet@asciidoctor.org>; Lazarus het_Draeke <lazarus@asciidoctor.org>
+"""
+
   val lists =
     """= Document Title
 Doc Writer <thedoc@asciidoctor.org>

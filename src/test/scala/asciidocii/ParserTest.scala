@@ -30,7 +30,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "unquoted" - {
     import fastparse.all._
-    val p = AsciidociiParser.unquoted(Seq(AsciidociiParser.sws))
+    val p = AsciidociiParser.unquoted(AsciidociiParser.sws)
     "anychar" in forAll { c: Char =>
       assert(AnyChar.!.parse(c.toString).get.value === c.toString)
     }
@@ -86,6 +86,23 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
     "link" in {
       assert(parse(ExampleFiles.link).get.value ===
              Document(None, Seq(Paragraph("We're parsing link:http://asciidoc.org[AsciiDoc] markup"))))
+    }
+
+    "authors" in assert {
+      parse(ExampleFiles.multipleAuthors).get.value ===
+                      Document(
+        Some(
+          Header(
+            " The Dangerous and Thrilling Documentation Chronicles",
+            Seq(
+              Author("Kismet Rainbow Chameleon ", Some("kismet@asciidoctor.org")),
+              Author(" Lazarus het_Draeke ", Some("lazarus@asciidoctor.org"))
+            ),
+            Seq()
+          )
+        ),
+        Seq()
+      )
     }
 
     "attributed block" in {

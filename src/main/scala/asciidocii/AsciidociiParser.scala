@@ -2,7 +2,7 @@ package asciidocii
 
 import fastparse.all._
 
-case class Header(title: String, attributes: Seq[Attribute])
+case class Header(title: String, authors: Seq[Author], attributes: Seq[Attribute])
 sealed trait Block
 case class BlockWithAttributes(block: Block, attributes: Seq[Attribute]) extends Block
 case class BlockMacro(command: String, target: String, attributes: String) extends Block
@@ -10,6 +10,7 @@ case class Paragraph(text: String) extends Block
 case class Document(header: Option[Header], blocks: Seq[Block])
 case class Attribute(id: String, value: String)
 case class Author(name: String, email: Option[String])
+case class SectionTitle(level: Int, title: String) extends Block
 
 /** Some things from asciidoctor have no special representation in the parsed AST
   * No substitutions are performed by the parser. Including no quotes.
@@ -32,7 +33,7 @@ object AsciidociiParser {
     }
   }
 
-  def unquoted(closing: Seq[Parser[Unit]]): Parser[String] = {
+  def unquoted(closing: Parser[Unit]*): Parser[String] = {
     P(((!closing.reduce(_ | _)) ~ AnyChar).rep(1).!)
   }
 
@@ -50,6 +51,7 @@ object AsciidociiParser {
   object InlineParser {
     // \ to escape newlines, + \ to escape newlines but keep newlines
     val line = AsciidociiParser.this.line
+    val nonEmptyLine = unquoted(eol) ~ eol
   }
 
 
@@ -72,7 +74,7 @@ object AsciidociiParser {
     // https://asciidoctor.org/docs/user-manual/#named-attribute
     // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
     // however, in the hope of better error messages, we will not allow newlines
-    val unquotedValue: Parser[String]    = P(unquoted(Seq(",", close, eol)))
+    val unquotedValue: Parser[String]    = P(unquoted(",", close, eol))
     val value        : Parser[String]    = P(ws ~ quoted("\"") | ws ~ quoted("'") | unquotedValue)
     val listDef      : Parser[Attribute] = P(identifier ~ equals ~ value)
                                            .map { case (id, v) => Attribute(id, v) }
@@ -83,6 +85,10 @@ object AsciidociiParser {
                                          = P(open ~/ ws ~ inList.rep(sep = ws ~ "," ~ ws) ~ ",".? ~ ws ~ close)
     val optionalList : Parser[Option[Seq[Attribute]]]
                                          = P(list.map(Some(_)) | (!open).map(_ => None))
+  }
+
+  object Sections {
+    val title = P("=".rep(2).! ~ InlineParser.nonEmptyLine).map{ case (level, str) => SectionTitle(level.toInt, str) }
   }
 
 
@@ -98,14 +104,17 @@ object AsciidociiParser {
 
 
   object HeaderParser {
-    val title     : Parser[String] = P("=" ~/ !"=" ~/ line.! ~ eol)
-    val authorline: Parser[Author] = P(unquoted(Seq(";", "<", eol)).! ~
-                                       quoted(open = Some("<"), close = ">").!.? ~
-                                       ws ~ eol)
-                                     .map { case (author, mail) => Author(author, mail) }
-
-    val header: Parser[Header] = P(title ~/ authorline.? ~ Attributes.entry.rep(sep = ws ~/ Pass) ~ ws)
-                                 .map { case (title, al, attr) => Header(title, attr) }
+    val title     : Parser[String]      = P("=" ~/ !"=" ~/ line.! ~ eol)
+    val author    : Parser[Author]      = P(unquoted(";", "<", eol).! ~
+                                            quoted(open = Some("<"), close = ">").?)
+                                          .map { case (author, mail) => Author(author, mail) }
+    // asciidoctors revision line is weird https://asciidoctor.org/docs/user-manual/#revision-number-date-and-remark
+    // it is clearly not meant for automatic parsing of timestamps and overall … meh
+    // authorline is a bit better, but not sure if parsing is worth it.
+    val revline   : Parser[String]      = P(unquoted(eol))
+    val authorline: Parser[Seq[Author]] = P(author.rep(sep = ws ~ ";"))
+    val header    : Parser[Header]      = P(title ~/ authorline ~ revline.? ~ Attributes.entry.rep(sep = ws ~/ Pass) ~ ws)
+                                          .map { case (titlestring, al, rl, attr) => Header(titlestring, al, attr) }
   }
 
 }
