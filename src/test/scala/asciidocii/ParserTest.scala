@@ -44,7 +44,16 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "attribute lists" - {
     import asciidocii.AsciidociiParser.Attributes.list.parse
-    def assFor(seq: Seq[String]) = {
+
+    def sanitize(attrs: List[String]): List[String] = {
+      attrs.map(_.replace(",", "")
+                 .replace("]", "")
+                 .filter(c => !c.isWhitespace))
+      .filter(_.exists(c => !c.isWhitespace))
+    }
+
+
+    def assertPositional(seq: Seq[String]) = {
       val str = seq.mkString("[", ",", "]")
       assert(parse(str).get.value === seq.map(v => Attribute("", v)), s"str was: $str")
     }
@@ -54,17 +63,23 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
       "positional" in assert(parse("[cheese]").get.value === Seq(Attribute("", "cheese")))
       "not quite empty" in assert(parse("[ \0] ").get.value === Seq(Attribute("", "\0")))
       "weird whitespace" in assert(parse("[\u001E]").get.value === Seq())
-      "weird quotes" in assFor(Seq("a\"value"))
-      "newline" in assFor(Seq("a\nvalue"))
+      "weird quotes" in assertPositional(Seq("a\"value"))
       "many positional" in forAll(Gen.listOf(Arbitrary.arbString.arbitrary)) { attrs: List[String] =>
-        val sanitized = attrs.map(_.replace(",", "")
-                                   .replace("]", "")
-                                   .filter(c => !c.isWhitespace))
-                        .filter(_.exists(c => !c.isWhitespace))
-        assFor(sanitized)
+        assertPositional(sanitize(attrs))
+      }
+    }
+    "named" - {
+      "one with unquoted" in forAll { str: String =>
+        val sanitized = sanitize(List(str))
+        whenever(sanitized.nonEmpty) {
+          val san = sanitized.head
+          val atttrs = s"[val = $san]"
+          assert(parse(atttrs).get.value === Seq(Attribute("val", s" $san")))
+        }
       }
     }
   }
+
 
   "parse document" - {
     import asciidocii.AsciidociiParser.document.parse

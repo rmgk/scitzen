@@ -9,7 +9,15 @@ case class BlockMacro(command: String, target: String, attributes: String) exten
 case class Paragraph(text: String) extends Block
 case class Document(header: Option[Header], blocks: Seq[Block])
 case class Attribute(id: String, value: String)
+case class Author(name: String, email: Option[String])
 
+/** Some things from asciidoctor have no special representation in the parsed AST
+  * No substitutions are performed by the parser. Including no quotes.
+  * No magic attributes https://asciidoctor.org/docs/user-manual/#role .
+  * Nor setting referernce https://asciidoctor.org/docs/user-manual/#assigning-document-attributes-inline .
+  * Subtitle separator https://asciidoctor.org/docs/user-manual/#document-subtitle
+  *
+  * */
 object AsciidociiParser {
   val eol    = P("\n" | &(End))
   val sws    = P(CharsWhile(_.isWhitespace)).opaque("<whitespace>")
@@ -91,7 +99,10 @@ object AsciidociiParser {
 
   object HeaderParser {
     val title     : Parser[String] = P("=" ~/ !"=" ~/ line.! ~ eol)
-    val authorline: Parser[String] = (letter ~ line).! ~ eol
+    val authorline: Parser[Author] = P(unquoted(Seq(";", "<", eol)).! ~
+                                       quoted(open = Some("<"), close = ">").!.? ~
+                                       ws ~ eol)
+                                     .map { case (author, mail) => Author(author, mail) }
 
     val header: Parser[Header] = P(title ~/ authorline.? ~ Attributes.entry.rep(sep = ws ~/ Pass) ~ ws)
                                  .map { case (title, al, attr) => Header(title, attr) }
