@@ -44,18 +44,25 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "attribute lists" - {
     import asciidocii.AsciidociiParser.Attributes.list.parse
-    "empty" in assert(parse("[]").get.value === Seq())
-    "empty2" in assert(parse("[ ] ").get.value === Seq())
-    "not quite empty" in assert(parse("[ \0] ").get.value === Seq(Attribute("", "\0")))
-    "weird whitespace" in assert(parse("[\u001E]").get.value === Seq())
-    "positional" in assert(parse("[cheese]").get.value === Seq(Attribute("", "cheese")))
-    "many positional" in forAll(Gen.listOf(Arbitrary.arbString.arbitrary)) { attrs: List[String] =>
-      val sanitized = attrs.map(_.replace(",", "")
-                                 .replace("]", "")
-                                 .filter(c => !c.isWhitespace))
-                      .filter(_.exists(c => !c.isWhitespace))
-      val str = sanitized.mkString("[", ",", "]")
-      assert(parse(str).get.value === sanitized.map(v => Attribute("", v)), s"str was: $str with ${sanitized.map{_.map(_.toInt)}} && ${str.map{_.isWhitespace}}")
+    def assFor(seq: Seq[String]) = {
+      val str = seq.mkString("[", ",", "]")
+      assert(parse(str).get.value === seq.map(v => Attribute("", v)), s"str was: $str")
+    }
+    "positional" - {
+      "empty" in assert(parse("[]").get.value === Seq())
+      "empty2" in assert(parse("[ ] ").get.value === Seq())
+      "positional" in assert(parse("[cheese]").get.value === Seq(Attribute("", "cheese")))
+      "not quite empty" in assert(parse("[ \0] ").get.value === Seq(Attribute("", "\0")))
+      "weird whitespace" in assert(parse("[\u001E]").get.value === Seq())
+      "weird quotes" in assFor(Seq("a\"value"))
+      "newline" in assFor(Seq("a\nvalue"))
+      "many positional" in forAll(Gen.listOf(Arbitrary.arbString.arbitrary)) { attrs: List[String] =>
+        val sanitized = attrs.map(_.replace(",", "")
+                                   .replace("]", "")
+                                   .filter(c => !c.isWhitespace))
+                        .filter(_.exists(c => !c.isWhitespace))
+        assFor(sanitized)
+      }
     }
   }
 

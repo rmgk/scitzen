@@ -60,11 +60,15 @@ object AsciidociiParser {
     val entry        : Parser[Attribute] = P(":" ~ ("!".? ~ identifier ~ "!".?).! ~ ":" ~/ InlineParser.line.! ~ eol)
                                            .map { case (id, v) => Attribute(id, v) }
     val reference    : Parser[String]    = P("{" ~/ identifier.! ~ "}")
-    val equals                           = P(ws ~ "=" ~ ws)
-    val unquotedValue: Parser[String]    = P(unquoted(Seq(",", close, sws)))
-    val listDef      : Parser[Attribute] = P(identifier ~ equals ~ (quoted("\"") | quoted("'") | unquotedValue))
+    val equals                           = P(ws ~ "=")
+    // https://asciidoctor.org/docs/user-manual/#named-attribute
+    // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
+    // however, in the hope of better error messages, we will not allow newlines
+    val unquotedValue: Parser[String]    = P(unquoted(Seq(",", close, eol)))
+    val value        : Parser[String]    = P(ws ~ quoted("\"") | ws ~ quoted("'") | unquotedValue)
+    val listDef      : Parser[Attribute] = P(identifier ~ equals ~ value)
                                            .map { case (id, v) => Attribute(id, v) }
-    val listValue    : Parser[Attribute] = P(unquotedValue)
+    val listValue    : Parser[Attribute] = P(value)
                                            .map(v => Attribute("", v))
     val inList                           = P(listDef | listValue)
     val list         : Parser[Seq[Attribute]]
