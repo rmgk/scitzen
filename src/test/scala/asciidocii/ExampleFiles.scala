@@ -4,6 +4,11 @@ object ExampleFiles {
 
   val link = """We're parsing link:http://asciidoc.org[AsciiDoc] markup"""
 
+  val attributedParagraph="""
+[someAttribute, someOtherAttribute="test, nochnTest"]
+A paragraph
+"""
+
   val sample ="""Document Title
 ==============
 Doc Writer <thedoc@asciidoctor.org>

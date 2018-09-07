@@ -4,14 +4,16 @@ import fastparse.all._
 
 case class Header(title: String, attributes: Seq[(String, String)])
 sealed trait Block
+case class BlockWithAttributes(block: Block, attributes: Seq[Attribute]) extends Block
 case class BlockMacro(command: String, target: String, attributes: String) extends Block
 case class Paragraph(text: String) extends Block
 case class Document(header: Option[Header], blocks: Seq[Block])
-case class AttributeName(str: String)
+case class Attribute(id: String, value: Option[String])
 
 object AsciidociiParser {
   val eol    = P("\n" | &(End))
-  val ws     = P(CharsWhile(_.isWhitespace)).opaque("<whitespace>")
+  val sws    = P(CharsWhile(_.isWhitespace)).opaque("<whitespace>")
+  val ws     = P(sws.?)
   val letter = P(CharPred(_.isLetter)).opaque("<letter>")
 
   def quoted(close: String, open: Option[String] = None) = {
@@ -22,24 +24,31 @@ object AsciidociiParser {
     }
   }
 
-  object Identifier {
+  object IdentifierP {
     val charInWordList  = ('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z') ++ "_"
     val startIdentifier = P(CharIn(charInWordList)).opaque("<start identifier>")
     val inIdentifier    = P(CharsWhileIn(charInWordList ++ "-", 0)).opaque("<in identifier>")
-    val identifier      = P((startIdentifier ~ inIdentifier).!).opaque("<identifier>").map(AttributeName(_))
+    val identifier      = P((startIdentifier ~ inIdentifier).!).opaque("<identifier>")
   }
 
-  import Identifier.identifier
+  import IdentifierP.identifier
 
   val line          = P((!eol ~ AnyChar).rep()).log().opaque("<line>")
   // \ to escape newlines, + \ to escape newlines but keep newlines
   val inlineContent = P(line)
 
-  object Attribute {
-
-    val entry     = P(":" ~ ("!".? ~ identifier ~ "!".?).! ~ ":" ~/ inlineContent.! ~ eol)
-    val reference = P("{" ~/ identifier ~ "}")
-    val list      = P("[" ~/ ws ~ (identifier ~ ws ~ "=" ~ ws ~ quoted("\"")) ~ ws ~ "]")
+  object AttributeP {
+    val entry              = P(":" ~ ("!".? ~ identifier ~ "!".?).! ~ ":" ~/ inlineContent.! ~ eol)
+    val reference          = P("{" ~/ identifier ~ "}")
+    val equals             = P(ws ~ "=" ~ ws)
+    val inListWithValue    = P(identifier ~ equals ~ quoted("\""))
+                             .map { case (id, v) => Attribute(id, Some(v)) }
+    val open = "["
+    val inListWithoutValue = P(identifier)
+                             .map(id => Attribute(id, None))
+    val inList             = P(inListWithValue | inListWithoutValue)
+    val list               = P(open ~/ ws ~ inList.rep(sep = ws ~ "," ~ ws) ~ ",".? ~ ws ~ "]")
+    val optionalList       = P(list.map(Some(_)) | (!"[").map(_ => None))
   }
 
   val macroAttributes                = P("[" ~ CharsWhile(c => c != '\n' && c != ']').! ~ "]")
@@ -48,7 +57,11 @@ object AsciidociiParser {
                                        .map {(BlockMacro.apply _).tupled}
   val paragraph : Parser[Paragraph]  = P((AnyChar ~ line).rep(min = 1, sep = eol).! ~ eol).log()
                                        .map(Paragraph.apply)
-  val block     : Parser[Block]      = P(blockMacro | paragraph).log()
+  val block     : Parser[Block]      = P(ws ~ AttributeP.optionalList ~ ws ~ (blockMacro | paragraph)).log()
+                                       .map {
+                                         case (Some(attrs), block) => BlockWithAttributes(block, attrs)
+                                         case (None, block)        => block
+                                       }
   val document                       = P(HeaderParser.header.? ~/ block.rep ~ End).log()
                                        .map((Document.apply _).tupled)
 
@@ -57,7 +70,7 @@ object AsciidociiParser {
     val title      = P("=" ~/ !"=" ~/ line.! ~ eol)
     val authorline = letter ~ line ~ eol
 
-    val header: Parser[Header] = P(title ~/ authorline.? ~ Attribute.entry.rep(sep = ws ~/ Pass) ~ ws.?)
+    val header: Parser[Header] = P(title ~/ authorline.? ~ AttributeP.entry.rep(sep = ws ~/ Pass) ~ ws)
                                  .map { case (title, attr) => Header(title, attr) }
   }
 

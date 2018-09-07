@@ -11,7 +11,8 @@ libraryDependencies ++= Seq(
   "com.github.pathikrit" %% "better-files" % "3.6.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
+  "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
+  "com.lihaoyi" %% "pprint" % "0.5.3"
 )
 
 Compile / compile / scalacOptions ++= Seq(
