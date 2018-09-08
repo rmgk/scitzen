@@ -4,7 +4,7 @@ import fastparse.all._
 
 case class Header(title: String, authors: Seq[Author], attributes: Seq[Attribute])
 sealed trait Block
-case class BlockWithAttributes(block: Block, attributes: Seq[Attribute]) extends Block
+case class BlockWithAttributes(block: Block, attributes: Seq[Seq[Attribute]], title: Option[String]) extends Block
 case class BlockMacro(command: String, target: String, attributes: String) extends Block
 case class Paragraph(text: String) extends Block
 case class Document(header: Option[Header], blocks: Seq[Block])
@@ -22,7 +22,7 @@ case class SectionTitle(level: Int, title: String) extends Block
 object AsciidociiParser {
   val eol    = P("\n" | &(End))
   val sws    = P(CharsWhile(_.isWhitespace)).opaque("<whitespace>")
-  val ws     = P(sws.?)
+  val ws     = P(sws.?).opaque("<whitespace>")
   val letter = P(CharPred(_.isLetter)).opaque("<letter>")
 
   def quoted(close: String, open: Option[String] = None): Parser[String] = {
@@ -83,24 +83,29 @@ object AsciidociiParser {
     val inList                           = P(listDef | listValue)
     val list         : Parser[Seq[Attribute]]
                                          = P(open ~/ ws ~ inList.rep(sep = ws ~ "," ~ ws) ~ ",".? ~ ws ~ close)
-    val optionalList : Parser[Option[Seq[Attribute]]]
-                                         = P(list.map(Some(_)) | (!open).map(_ => None))
   }
 
   object Sections {
-    val title = P("=".rep(2).! ~ InlineParser.nonEmptyLine).map{ case (level, str) => SectionTitle(level.toInt, str) }
+    val title = P("=".rep(2).! ~ InlineParser.nonEmptyLine)
+                .map { case (level, str) => SectionTitle(level.length - 1, str) }
   }
 
+  object Blocks {
+    val paragraph: Parser[Paragraph] = P((AnyChar ~ line).rep(min = 1, sep = eol).! ~ eol).log()
+                                       .map(Paragraph.apply)
 
-  val paragraph: Parser[Paragraph] = P((AnyChar ~ line).rep(min = 1, sep = eol).! ~ eol).log()
-                                     .map(Paragraph.apply)
-  val block    : Parser[Block]     = P(ws ~ Attributes.optionalList ~ ws ~ (Macros.block | paragraph)).log()
-                                     .map {
-                                       case (Some(attrs), block) => BlockWithAttributes(block, attrs)
-                                       case (None, block)        => block
-                                     }
-  val document : Parser[Document]  = P(HeaderParser.header.? ~/ block.rep ~ End).log()
-                                     .map((Document.apply _).tupled)
+    val title = P("." ~ InlineParser.nonEmptyLine)
+
+    val alternatives: Parser[Block] = P(Sections.title | Macros.block | paragraph)
+    val block       : Parser[Block] = P(title.? ~ Attributes.list.rep(sep = ws) ~ ws ~ alternatives).log()
+                                      .map {
+                                        case (None, Nil, content)     => content
+                                        case (stitle, attrs, content) => BlockWithAttributes(content, attrs, stitle)
+                                      }
+  }
+
+  val document         : Parser[Document] = P(HeaderParser.header.? ~ ws ~/ Blocks.block.rep ~ End).log()
+                                            .map((Document.apply _).tupled)
 
 
   object HeaderParser {

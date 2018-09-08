@@ -4,7 +4,8 @@ object ExampleFiles {
 
   val link = """We're parsing link:http://asciidoc.org[AsciiDoc] markup"""
 
-  val attributedParagraph="""
+  val attributedParagraph= """
+. With a title
 [someAttribute, someOtherAttribute="test, nochnTest"]
 A paragraph
 """
@@ -39,6 +40,21 @@ NOTE: This is test, only a test.
 * Item 1
 * Item 2
 * Item 3
+"""
+
+  val manySections = """= Document Title (Level 0)
+
+== Level 1 Section Title
+
+=== Level 2 Section Title
+
+==== Level 3 Section Title
+
+===== Level 4 Section Title
+
+====== Level 5 Section Title
+
+== Another Level 1 Section Title
 """
 
   val multipleAuthors = """= The Dangerous and Thrilling Documentation Chronicles

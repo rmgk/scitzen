@@ -106,10 +106,25 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
     }
 
     "attributed block" in {
-      assert(parse(ExampleFiles.attributedParagraph).get.value ===
-             Document(None, Seq(BlockWithAttributes(Paragraph("A paragraph"),
-                                                    Seq(Attribute("", "someAttribute"),
-                                                        Attribute("someOtherAttribute", "test, nochnTest"))))))
+      assert(parse(ExampleFiles.attributedParagraph).get.value === Document(
+        None,
+        Seq(
+          BlockWithAttributes(
+            Paragraph("A paragraph"),
+            Seq(
+              Seq(
+                Attribute("", "someAttribute"),
+                Attribute("someOtherAttribute", "test, nochnTest")
+              )
+            ),
+            Some(" With a title")
+          )
+        )
+      ))
+    }
+
+    "many sections" in {
+      pprint.pprintln(parse(ExampleFiles.manySections))
     }
 
   }
