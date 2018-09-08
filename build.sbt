@@ -1,4 +1,4 @@
-name := "asciidocii"
+name := "asciimedic"
 scalaVersion := "2.12.6"
 organization := "de.rmgk"
 

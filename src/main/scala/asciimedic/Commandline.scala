@@ -1,4 +1,4 @@
-package asciidocii
+package asciimedic
 
 import java.nio.file.Path
 import java.time.LocalDateTime

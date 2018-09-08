@@ -1,4 +1,4 @@
-package asciidocii
+package asciimedic
 
 import fastparse.core.Parsed
 import org.scalacheck.{Arbitrary, Gen}
@@ -8,13 +8,13 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "identifier" - {
-    import asciidocii.AsciidociiParser.Identifier.identifier.parse
+    import asciimedic.AsciidociiParser.Identifier.identifier.parse
     "simple" in {assert(parse("Good123_-test").get.value === "Good123_-test")}
     "fail" in {assert(parse("-Bad").isInstanceOf[Parsed.Failure[_, _]])}
   }
 
   "quoted" - {
-    import asciidocii.AsciidociiParser.quoted
+    import asciimedic.AsciidociiParser.quoted
     "string" in assert {quoted("'").parse("""'success! :D'""").get.value === "success! :D"}
     "parens" in assert {quoted(")", open = Some("(")).parse("""(success! :D)""").get.value === "success! :D"}
     "escapes" in assert {quoted("'").parse("""'success! \a \\ \' '""").get.value === """success! \a \ ' """}
@@ -43,7 +43,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
   }
 
   "attribute lists" - {
-    import asciidocii.AsciidociiParser.Attributes.list.parse
+    import asciimedic.AsciidociiParser.Attributes.list.parse
 
     def sanitize(attrs: List[String]): List[String] = {
       attrs.map(_.replace(",", "")
@@ -82,7 +82,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
 
   "parse document" - {
-    import asciidocii.AsciidociiParser.document.parse
+    import asciimedic.AsciidociiParser.document.parse
     "link" in {
       assert(parse(ExampleFiles.link).get.value ===
              Document(None, Seq(Paragraph("We're parsing link:http://asciidoc.org[AsciiDoc] markup"))))

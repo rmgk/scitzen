@@ -1,4 +1,4 @@
-package asciidocii
+package asciimedic
 
 object ExampleFiles {
 
