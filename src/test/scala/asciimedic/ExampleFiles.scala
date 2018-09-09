@@ -177,4 +177,30 @@ The document header is useful, but not required.
 ====
 """
 
+  val nestedExampleParsed = Document(
+    None,
+    Seq(
+      BlockWithAttributes(
+        DelimitedBlock(
+          "====",
+          """Here's a sample AsciiDoc document:
+
+[listing]
+....
+= Title of Document
+Doc Writer
+:toc:
+
+This guide provides...
+....
+
+The document header is useful, but not required."""
+        ),
+        Nil,
+        Some("Sample document")
+      ),
+      DelimitedBlock("====", "")
+    )
+  )
+
 }

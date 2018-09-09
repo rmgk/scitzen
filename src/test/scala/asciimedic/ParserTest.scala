@@ -80,6 +80,13 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
     }
   }
 
+  "delimited blocks" - {
+    import asciimedic.AsciidociiParser.document.parse
+    "nested document" in {
+      assert(parse(ExampleFiles.nestedExample).get.value === ExampleFiles.nestedExampleParsed)
+    }
+  }
+
 
   "parse document" - {
     import asciimedic.AsciidociiParser.document.parse
