@@ -12,6 +12,8 @@ case class Attribute(id: String, value: String)
 case class Author(name: String, email: Option[String])
 case class SectionTitle(level: Int, title: String) extends Block
 case class DelimitedBlock(delimiter: String, content: String) extends Block
+case class ListBlock(items: Seq[ListItem]) extends Block
+case class ListItem(marker: String, content: String)
 
 /** Some things from asciidoctor have no special representation in the parsed AST
   * No substitutions are performed by the parser. Including no quotes.
@@ -20,14 +22,14 @@ case class DelimitedBlock(delimiter: String, content: String) extends Block
   * Subtitle separator https://asciidoctor.org/docs/user-manual/#document-subtitle
   *
   * */
-object AsciidociiParser {
+object Asciimedic {
   val newlineCharacter     = "\n"
   val whitespaceCharacters = " \t"
   val eol                  = P(newlineCharacter | &(End))
   val inws                 = P(CharsWhileIn(whitespaceCharacters, min = 0))
-  val wseol  =P(inws ~ eol)
-  val saws                 = P(CharsWhileIn(whitespaceCharacters + newlineCharacter)).opaque("<whitespace>")
-  val aws                  = P(saws.?).opaque("<whitespace>")
+  val wseol                = P(inws ~ eol)
+  val saws                 = P(CharsWhileIn(whitespaceCharacters ++ newlineCharacter))
+  val aws                  = P(saws.?)
   val letter               = P(CharPred(_.isLetter)).opaque("<letter>")
 
   def quoted(close: String, open: Option[String] = None): Parser[String] = {
@@ -53,11 +55,11 @@ object AsciidociiParser {
 
   import Identifier.identifier
 
-  val line = P(until(eol, min = 0)).log().opaque("<line>")
+  val line = P(until(eol, min = 0)).opaque("<line>")
 
   object InlineParser {
     // \ to escape newlines, + \ to escape newlines but keep newlines
-    val line = AsciidociiParser.this.line
+    val line = Asciimedic.this.line
     val nonEmptyLine = until(eol) ~ eol
   }
 
@@ -65,7 +67,7 @@ object AsciidociiParser {
   object Macros {
     val macroAttributes           = P("[" ~ CharsWhile(c => c != '\n' && c != ']').! ~ "]")
     val macroTarget               = P(CharsWhile(c => c != '\n' && c != '['))
-    val block: Parser[BlockMacro] = P(identifier.! ~ "::" ~/ macroTarget.! ~ macroAttributes).log()
+    val block: Parser[BlockMacro] = P(identifier.! ~ "::" ~/ macroTarget.! ~ macroAttributes)
                                     .map {(BlockMacro.apply _).tupled}
 
     val inline = P(identifier.! ~ ":" ~/ macroTarget.! ~ macroAttributes)
@@ -81,7 +83,7 @@ object AsciidociiParser {
     // https://asciidoctor.org/docs/user-manual/#named-attribute
     // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
     // however, in the hope of better error messages, we will not allow newlines
-    val unquotedValue: Parser[String]    = P(until(any(",", close, eol)))
+    val unquotedValue: Parser[String]    = P(until("," | close | eol))
     val value        : Parser[String]    = P(aws ~ quoted("\"") | aws ~ quoted("'") | unquotedValue)
     val listDef      : Parser[Attribute] = P(identifier ~ equals ~ value)
                                            .map { case (id, v) => Attribute(id, v) }
@@ -99,12 +101,16 @@ object AsciidociiParser {
 
 
   object Blocks {
-    val paragraph: Parser[Paragraph] = P(until(eol).rep(min = 1, sep = eol).! ~ eol).log()
+    val paragraph: Parser[Paragraph] = P(until(eol).rep(min = 1, sep = eol).! ~ eol)
                                        .map(Paragraph.apply)
 
     val title = P("." ~ InlineParser.nonEmptyLine)
 
-    val alternatives: Parser[Block] = P(Delimited.full | Sections.title | Macros.block | paragraph)
+    val alternatives: Parser[Block] = P(Lists.list |
+                                        Delimited.full |
+                                        Sections.title |
+                                        Macros.block |
+                                        paragraph)
     val block       : Parser[Block] = P(title.? ~ Attributes.list.rep(sep = aws) ~ aws ~ alternatives).log()
                                       .map {
                                         case (None, Nil, content)     => content
@@ -123,15 +129,24 @@ object AsciidociiParser {
         }
       )
     }
+
+    object Lists {
+      val listItemMarker = P("*".rep(1) ~ " ")
+      val listContent    = P(until(eol ~ (wseol | listItemMarker)))
+      val listItem       = P((listItemMarker.! ~/ listContent.!)
+                             .map((ListItem.apply _).tupled)).log()
+      val list           = P(listItem.rep(1, sep = aws ~ Pass)
+                             .map(ListBlock) ~ aws)
+    }
   }
 
-  val document         : Parser[Document] = P(HeaderParser.header.? ~ aws ~/ Blocks.block.rep ~ End).log()
+  val document         : Parser[Document] = P(HeaderParser.header.? ~ aws ~/ Blocks.block.rep ~ End)
                                             .map((Document.apply _).tupled)
 
 
   object HeaderParser {
     val title     : Parser[String]      = P("=" ~/ !"=" ~/ until(eol).! ~ eol)
-    val author    : Parser[Author]      = P(until(any(";", "<", eol)).! ~
+    val author    : Parser[Author]      = P(until(";" | "<" | eol).! ~
                                             quoted(open = Some("<"), close = ">").?)
                                           .map { case (authorName, mail) => Author(authorName, mail) }
     // asciidoctors revision line is weird https://asciidoctor.org/docs/user-manual/#revision-number-date-and-remark

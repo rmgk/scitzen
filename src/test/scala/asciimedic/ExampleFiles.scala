@@ -1,5 +1,7 @@
 package asciimedic
 
+case class ParsingTest[T](snippet: String, res: T)
+
 object ExampleFiles {
 
   val link = """We're parsing link:http://asciidoc.org[AsciiDoc] markup"""
@@ -42,7 +44,7 @@ NOTE: This is test, only a test.
 * Item 3
 """
 
-  val manySections = """= Document Title (Level 0)
+  val manySections = ParsingTest("""= Document Title (Level 0)
 
 == Level 1 Section Title
 
@@ -55,11 +57,70 @@ NOTE: This is test, only a test.
 ====== Level 5 Section Title
 
 == Another Level 1 Section Title
-"""
+""",
+                                 Document(
+                                   Some(Header(" Document Title (Level 0)", Seq(), Seq())),
+                                   Seq(
+                                     SectionTitle(1, " Level 1 Section Title"),
+                                     SectionTitle(2, " Level 2 Section Title"),
+                                     SectionTitle(3, " Level 3 Section Title"),
+                                     SectionTitle(4, " Level 4 Section Title"),
+                                     SectionTitle(5, " Level 5 Section Title"),
+                                     SectionTitle(1, " Another Level 1 Section Title")
+                                   )
+                                 ))
+
+
 
   val multipleAuthors = """= The Dangerous and Thrilling Documentation Chronicles
 Kismet Rainbow Chameleon <kismet@asciidoctor.org>; Lazarus het_Draeke <lazarus@asciidoctor.org>
 """
+
+  val simpleLists = ParsingTest("""
+.Unordered, basic
+* Edgar Allen Poe
+* Sheri S. Tepper
+* Bill Bryson
+
+.Unordered, max nesting
+* level 1
+** level 2
+*** level 3
+**** level 4
+***** level 5
+* level 1
+
+""",
+                                Document(
+                                  None,
+                                  Seq(
+                                    BlockWithAttributes(
+                                      ListBlock(
+                                        Seq(
+                                          ListItem("* ", "Edgar Allen Poe"),
+                                          ListItem("* ", "Sheri S. Tepper"),
+                                          ListItem("* ", "Bill Bryson")
+                                        )
+                                      ),
+                                      Seq(),
+                                      Some("Unordered, basic")
+                                    ),
+                                    BlockWithAttributes(
+                                      ListBlock(
+                                        Seq(
+                                          ListItem("* ", "level 1"),
+                                          ListItem("** ", "level 2"),
+                                          ListItem("*** ", "level 3"),
+                                          ListItem("**** ", "level 4"),
+                                          ListItem("***** ", "level 5"),
+                                          ListItem("* ", "level 1")
+                                        )
+                                      ),
+                                      Seq(),
+                                      Some("Unordered, max nesting")
+                                    )
+                                  )
+                                ))
 
   val lists =
     """= Document Title

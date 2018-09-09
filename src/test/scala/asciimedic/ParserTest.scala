@@ -8,13 +8,13 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "identifier" - {
-    import asciimedic.AsciidociiParser.Identifier.identifier.parse
+    import asciimedic.Asciimedic.Identifier.identifier.parse
     "simple" in {assert(parse("Good123_-test").get.value === "Good123_-test")}
     "fail" in {assert(parse("-Bad").isInstanceOf[Parsed.Failure[_, _]])}
   }
 
   "quoted" - {
-    import asciimedic.AsciidociiParser.quoted
+    import asciimedic.Asciimedic.quoted
     "string" in assert {quoted("'").parse("""'success! :D'""").get.value === "success! :D"}
     "parens" in assert {quoted(")", open = Some("(")).parse("""(success! :D)""").get.value === "success! :D"}
     "escapes" in assert {quoted("'").parse("""'success! \a \\ \' '""").get.value === """success! \a \ ' """}
@@ -30,7 +30,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "unquoted" - {
     import fastparse.all._
-    val p = AsciidociiParser.until(AsciidociiParser.saws)
+    val p = Asciimedic.until(Asciimedic.saws)
     "anychar" in forAll { c: Char =>
       assert(AnyChar.!.parse(c.toString).get.value === c.toString)
     }
@@ -43,7 +43,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
   }
 
   "attribute lists" - {
-    import asciimedic.AsciidociiParser.Attributes.list.parse
+    import asciimedic.Asciimedic.Attributes.list.parse
 
     def sanitize(attrs: List[String]): List[String] = {
       attrs.map(_.replace(",", "")
@@ -80,16 +80,9 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
     }
   }
 
-  "delimited blocks" - {
-    import asciimedic.AsciidociiParser.document.parse
-    "nested document" in {
-      assert(parse(ExampleFiles.nestedExample).get.value === ExampleFiles.nestedExampleParsed)
-    }
-  }
-
 
   "parse document" - {
-    import asciimedic.AsciidociiParser.document.parse
+    import asciimedic.Asciimedic.document.parse
     "link" in {
       assert(parse(ExampleFiles.link).get.value ===
              Document(None, Seq(Paragraph("We're parsing link:http://asciidoc.org[AsciiDoc] markup"))))
@@ -131,7 +124,19 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
     }
 
     "many sections" in {
-      pprint.pprintln(parse(ExampleFiles.manySections))
+      val ParsingTest(c, r) = ExampleFiles.manySections
+      assert(parse(c).get.value === r)
+    }
+
+    "delimited blocks" - {
+      "nested document" in {
+        assert(parse(ExampleFiles.nestedExample).get.value === ExampleFiles.nestedExampleParsed)
+      }
+    }
+
+    "lists" in {
+      val ParsingTest(c, r) = ExampleFiles.simpleLists
+      assert(parse(c).get.value === r)
     }
 
   }
