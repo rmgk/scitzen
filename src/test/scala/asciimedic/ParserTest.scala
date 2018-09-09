@@ -30,7 +30,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "unquoted" - {
     import fastparse.all._
-    val p = AsciidociiParser.unquoted(AsciidociiParser.sws)
+    val p = AsciidociiParser.anyUntil(AsciidociiParser.sws)
     "anychar" in forAll { c: Char =>
       assert(AnyChar.!.parse(c.toString).get.value === c.toString)
     }
