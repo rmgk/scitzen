@@ -30,7 +30,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "unquoted" - {
     import fastparse.all._
-    val p = AsciidociiParser.anyUntil(AsciidociiParser.sws)
+    val p = AsciidociiParser.until(AsciidociiParser.saws)
     "anychar" in forAll { c: Char =>
       assert(AnyChar.!.parse(c.toString).get.value === c.toString)
     }
@@ -62,7 +62,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
       "empty2" in assert(parse("[ ] ").get.value === Seq())
       "positional" in assert(parse("[cheese]").get.value === Seq(Attribute("", "cheese")))
       "not quite empty" in assert(parse("[ \0] ").get.value === Seq(Attribute("", "\0")))
-      "weird whitespace" in assert(parse("[\u001E]").get.value === Seq())
+      "weird whitespace" in assertPositional(Seq("\u001E"))
       "weird quotes" in assertPositional(Seq("a\"value"))
       "many positional" in forAll(Gen.listOf(Arbitrary.arbString.arbitrary)) { attrs: List[String] =>
         assertPositional(sanitize(attrs))
