@@ -10,6 +10,8 @@ import scalatags.Text.tags.{body, h1, head, header, html, link, meta, script, sp
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 
+import scala.util.Try
+
 object Pages {
   def apply(relative: String = ""): Pages = new Pages(relative)
 }
@@ -51,7 +53,7 @@ class Pages(val relative: String) {
 
   private def timeSpan(date: LocalDateTime) = {
     //need time formatter, because to string removes seconds if all zero
-    span(cls := "time", s" ${date.toLocalDate} ${date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)} ")
+    span(cls := "time", s" ${date.toLocalDate} ${Try{date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)}.getOrElse("")} ")
   }
   private def tSingle(title: String, meta: Frag, content: Frag) = {
     article(cls := "fullpost",
