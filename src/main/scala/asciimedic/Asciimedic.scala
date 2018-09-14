@@ -5,7 +5,7 @@ import fastparse.all._
 case class Header(title: String, authors: Seq[Author], attributes: Seq[Attribute])
 sealed trait Block
 case class BlockWithAttributes(block: Block, attributes: Seq[Seq[Attribute]], title: Option[String]) extends Block
-case class BlockMacro(command: String, target: String, attributes: String) extends Block
+case class BlockMacro(command: String, target: String, attributes: Seq[Attribute]) extends Block
 case class Paragraph(text: String) extends Block
 case class Document(header: Option[Header], blocks: Seq[Block])
 case class Attribute(id: String, value: String)
@@ -14,6 +14,7 @@ case class SectionTitle(level: Int, title: String) extends Block
 case class DelimitedBlock(delimiter: String, content: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
 case class ListItem(marker: String, content: String)
+case class InlineMacro(command: String, target: String, attributes: Seq[Attribute])
 
 /** Some things from asciidoctor have no special representation in the parsed AST
   * No substitutions are performed by the parser. Including no quotes.
@@ -65,12 +66,18 @@ object Asciimedic {
 
 
   object Macros {
-    val macroAttributes           = P("[" ~ CharsWhile(c => c != '\n' && c != ']').! ~ "]")
-    val macroTarget               = P(CharsWhile(c => c != '\n' && c != '['))
-    val block: Parser[BlockMacro] = P(identifier.! ~ "::" ~/ macroTarget.! ~ macroAttributes)
-                                    .map {(BlockMacro.apply _).tupled}
+    val block : Parser[BlockMacro]  = P(identifier.! ~ "::" ~/ Attributes.value ~ Attributes.list)
+                                      .map {(BlockMacro.apply _).tupled}
+    val inline: Parser[InlineMacro] = P(identifier.! ~ ":" ~/ Attributes.value ~ Attributes.list)
+                                      .map {(InlineMacro.apply _).tupled}
 
-    val inline = P(identifier.! ~ ":" ~/ macroTarget.! ~ macroAttributes)
+    object urls {
+      val scheme = P("http" ~ "s".? | "ftp" | "irc" | "mailto")
+
+      val url = P(scheme.! ~ ":" ~/ Attributes.value ~ Attributes.list.?)
+        .map {case (s, t, a) => InlineMacro("link", s"$s:$t", a.getOrElse(Nil))}
+    }
+
   }
 
   object Attributes {
@@ -84,8 +91,8 @@ object Asciimedic {
     // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
     // however, in the hope of better error messages, we will not allow newlines
     val unquotedValue: Parser[String]    = P(until("," | close | eol))
-    val value        : Parser[String]    = P(aws ~ quoted("\"") | aws ~ quoted("'") | unquotedValue)
-    val listDef      : Parser[Attribute] = P(identifier ~ equals ~ value)
+    val value        : Parser[String]    = P(quoted("\"") | aws ~ quoted("'") | unquotedValue)
+    val listDef      : Parser[Attribute] = P(identifier ~ equals ~ aws ~ value)
                                            .map { case (id, v) => Attribute(id, v) }
     val listValue    : Parser[Attribute] = P(value)
                                            .map(v => Attribute("", v))
@@ -106,8 +113,12 @@ object Asciimedic {
 
     val title = P("." ~ InlineParser.nonEmptyLine)
 
+    val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").!).map(BlockMacro.apply("horizontal-rule", _, ""))
+    val pageBreak: Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, ""))
+
     val alternatives: Parser[Block] = P(Lists.list |
                                         Delimited.full |
+                                        horizontalRule |
                                         Sections.title |
                                         Macros.block |
                                         paragraph)
