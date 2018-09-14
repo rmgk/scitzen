@@ -163,6 +163,38 @@ object Asciimedic {
 
 /*
 
+from http://asciidoc.org/userguide.html#_block_elements
+
+The AsciiDoc block structure can be informally summarized as follows [1]:
+
+Document      ::= (Header?,Preamble?,Section*)
+Header        ::= (Title,(AuthorInfo,RevisionInfo?)?)
+AuthorInfo    ::= (FirstName,(MiddleName?,LastName)?,EmailAddress?)
+RevisionInfo  ::= (RevisionNumber?,RevisionDate,RevisionRemark?)
+Preamble      ::= (SectionBody)
+Section       ::= (Title,SectionBody?,(Section)*)
+SectionBody   ::= ((BlockTitle?,Block)|BlockMacro)+
+Block         ::= (Paragraph|DelimitedBlock|List|Table)
+List          ::= (BulletedList|NumberedList|LabeledList|CalloutList)
+BulletedList  ::= (ListItem)+
+NumberedList  ::= (ListItem)+
+CalloutList   ::= (ListItem)+
+LabeledList   ::= (ListEntry)+
+ListEntry     ::= (ListLabel,ListItem)
+ListLabel     ::= (ListTerm+)
+ListItem      ::= (ItemText,(List|ListParagraph|ListContinuation)*)
+
+
+http://asciidoc.org/userguide.html#_document_processing
+
+When a block element is encountered asciidoc(1) determines the type of block
+by checking in the following order (first to last):
+(section) Titles, BlockMacros, Lists, DelimitedBlocks, Tables,
+AttributeEntrys, AttributeLists, BlockTitles, Paragraphs.
+
+
+
+
 from: https://asciidoctor.org/docs/user-manual/#elements
 
 A document can include the following block elements:
