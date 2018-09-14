@@ -74,7 +74,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
         whenever(sanitized.nonEmpty) {
           val san = sanitized.head
           val atttrs = s"[val = $san]"
-          assert(parse(atttrs).get.value === Seq(Attribute("val", s" $san")))
+          assert(parse(atttrs).get.value === Seq(Attribute("val", s"$san")))
         }
       }
     }
@@ -84,8 +84,23 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
   "parse document" - {
     import asciimedic.Asciimedic.document.parse
     "link" in {
-      assert(parse(ExampleFiles.link).get.value ===
-             Document(None, Seq(Paragraph("We're parsing link:http://asciidoc.org[AsciiDoc] markup"))))
+      pprint.pprintln(parse(ExampleFiles.link).get.value)
+      assert(
+        parse(ExampleFiles.link).get.value ===
+        Document(
+          None,
+          Seq(
+            Paragraph(
+              Seq(
+                InlineText("We're "),
+                InlineText("parsing "),
+                InlineMacro("link", "http://asciidoc.org", Seq(Attribute("", "AsciiDoc"))),
+                InlineText(" markup")
+              )
+            )
+          )
+        )
+      )
     }
 
     "authors" in assert {
@@ -110,7 +125,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
         None,
         Seq(
           BlockWithAttributes(
-            Paragraph("A paragraph"),
+            Paragraph(List(InlineText("A paragraph"))),
             Seq(
               Seq(
                 Attribute("", "someAttribute"),

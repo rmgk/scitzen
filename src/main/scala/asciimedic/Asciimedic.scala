@@ -6,7 +6,7 @@ case class Header(title: String, authors: Seq[Author], attributes: Seq[Attribute
 sealed trait Block
 case class BlockWithAttributes(block: Block, attributes: Seq[Seq[Attribute]], title: Option[String]) extends Block
 case class BlockMacro(command: String, target: String, attributes: Seq[Attribute]) extends Block
-case class Paragraph(text: String) extends Block
+case class Paragraph(text: Seq[Inline]) extends Block
 case class Document(header: Option[Header], blocks: Seq[Block])
 case class Attribute(id: String, value: String)
 case class Author(name: String, email: Option[String])
@@ -14,7 +14,11 @@ case class SectionTitle(level: Int, title: String) extends Block
 case class DelimitedBlock(delimiter: String, content: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
 case class ListItem(marker: String, content: String)
-case class InlineMacro(command: String, target: String, attributes: Seq[Attribute])
+
+sealed trait Inline
+case class InlineMacro(command: String, target: String, attributes: Seq[Attribute]) extends Inline
+case class InlineText(str: String) extends Inline
+case class AttrRef(id: String) extends Inline
 
 /** Some things from asciidoctor have no special representation in the parsed AST
   * No substitutions are performed by the parser. Including no quotes.
@@ -66,15 +70,19 @@ object Asciimedic {
 
 
   object Macros {
-    val block : Parser[BlockMacro]  = P(identifier.! ~ "::" ~/ Attributes.value ~ Attributes.list)
+    val target = P(until("[" | saws))
+    val start                       = P(identifier.! ~ ":")
+    val block : Parser[BlockMacro]  = P(start ~ ":" ~/ target ~ Attributes.list)
                                       .map {(BlockMacro.apply _).tupled}
-    val inline: Parser[InlineMacro] = P(identifier.! ~ ":" ~/ Attributes.value ~ Attributes.list)
+    val inline: Parser[InlineMacro] = P(start ~/ target ~ Attributes.list)
                                       .map {(InlineMacro.apply _).tupled}
 
+
+    /** urls are constrained macros, i.e., they may only start after a word boundary (all whitespace?) */
     object urls {
       val scheme = P("http" ~ "s".? | "ftp" | "irc" | "mailto")
 
-      val url = P(scheme.! ~ ":" ~/ Attributes.value ~ Attributes.list.?)
+      val url: Parser[InlineMacro] = P(scheme.! ~ ":" ~/ Attributes.value ~ Attributes.list.?)
         .map {case (s, t, a) => InlineMacro("link", s"$s:$t", a.getOrElse(Nil))}
     }
 
@@ -85,14 +93,15 @@ object Asciimedic {
     val close                            = "]"
     val entry        : Parser[Attribute] = P(":" ~ ("!".? ~ identifier ~ "!".?).! ~ ":" ~/ InlineParser.line.! ~ eol)
                                            .map { case (id, v) => Attribute(id, v) }
-    val reference    : Parser[String]    = P("{" ~/ identifier.! ~ "}")
-    val equals                           = P(aws ~ "=")
+    val reference    : Parser[AttrRef]   = P("{" ~/ identifier.! ~ "}")
+                                           .map(AttrRef.apply)
+    val equals                           = P(aws ~ "=" ~ aws)
     // https://asciidoctor.org/docs/user-manual/#named-attribute
     // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
     // however, in the hope of better error messages, we will not allow newlines
     val unquotedValue: Parser[String]    = P(until("," | close | eol))
-    val value        : Parser[String]    = P(quoted("\"") | aws ~ quoted("'") | unquotedValue)
-    val listDef      : Parser[Attribute] = P(identifier ~ equals ~ aws ~ value)
+    val value        : Parser[String]    = P(quoted("\"") | quoted("'") | unquotedValue)
+    val listDef      : Parser[Attribute] = P(identifier ~ equals ~ value)
                                            .map { case (id, v) => Attribute(id, v) }
     val listValue    : Parser[Attribute] = P(value)
                                            .map(v => Attribute("", v))
@@ -106,22 +115,37 @@ object Asciimedic {
                 .map { case (level, str) => SectionTitle(level.length - 1, str) }
   }
 
+  object Paragraphs {
+    val quoteChars               = "_*`^~"
+    val constrainedQuote         = P(CharIn(quoteChars))
+    val escaped                  = P("\\" ~ (Macros.start | Attributes.reference).!)
+                                   .map(InlineText)
+    val text                     = P((inws ~ until(saws) ~ inws).!)
+                                   .map(InlineText)
+    val singleNewline            = P(!(eol ~ wseol) ~ eol).map(_ => InlineText("\n"))
+    val token: Parser[Inline]    = P(escaped |
+                                     Macros.urls.url |
+                                     Macros.inline |
+                                     Attributes.reference |
+                                     text |
+                                     singleNewline).log()
+    val block: Parser[Paragraph] = P(token.rep(min = 1)).map(Paragraph)
+  }
+
 
   object Blocks {
-    val paragraph: Parser[Paragraph] = P(until(eol).rep(min = 1, sep = eol).! ~ eol)
-                                       .map(Paragraph.apply)
 
     val title = P("." ~ InlineParser.nonEmptyLine)
 
-    val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").!).map(BlockMacro.apply("horizontal-rule", _, ""))
-    val pageBreak: Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, ""))
+    val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").!).map(BlockMacro.apply("horizontal-rule", _, Nil))
+    val pageBreak: Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
     val alternatives: Parser[Block] = P(Lists.list |
                                         Delimited.full |
                                         horizontalRule |
                                         Sections.title |
                                         Macros.block |
-                                        paragraph)
+                                        Paragraphs.block)
     val block       : Parser[Block] = P(title.? ~ Attributes.list.rep(sep = aws) ~ aws ~ alternatives).log()
                                       .map {
                                         case (None, Nil, content)     => content
