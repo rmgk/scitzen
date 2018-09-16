@@ -125,7 +125,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
         None,
         Seq(
           BlockWithAttributes(
-            Paragraph(List(InlineText("A paragraph"))),
+            Paragraph(List(InlineText("A "), InlineText("paragraph"))),
             Seq(
               Seq(
                 Attribute("", "someAttribute"),

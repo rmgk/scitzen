@@ -175,7 +175,7 @@ object Asciimedic {
     }
   }
 
-  val document         : Parser[Document] = P(HeaderParser.header.? ~ aws ~/ Blocks.block.rep ~ End)
+  val document         : Parser[Document] = P(HeaderParser.header.? ~ aws ~/ Blocks.block.rep ~ aws ~ End)
                                             .map((Document.apply _).tupled)
 
 
