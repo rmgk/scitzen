@@ -3,6 +3,7 @@ package asciimedic
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
+import java.util.NoSuchElementException
 
 import better.files.File
 import com.monovore.decline.{CommandApp, Opts}
@@ -50,7 +51,8 @@ object Commandline extends CommandApp(
       source.children.filter(_.isRegularFile).filter(_.name.endsWith(".adoc")).foreach { f =>
         val header: Header = Asciimedic.HeaderParser.header.parse(f.contentAsString).get.value
         val date = LocalDateTime.from(Tool.timeFormatter.parse(
-          header.attributes.map(a => a.id -> a.value).toMap.apply("revdate").trim))
+          header.attributes.map(a => a.id -> a.value).toMap
+          .getOrElse("revdate", throw new NoSuchElementException(s"${header.title} has no revdate")).trim))
         val title = Tool.sluggify(header.title) + ".adoc"
         val newName = date.format(Tool.outputTime) + "_" + title
 
