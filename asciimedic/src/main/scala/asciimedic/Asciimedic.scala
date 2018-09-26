@@ -180,17 +180,18 @@ object Asciimedic {
 
 
   object HeaderParser {
-    val title     : Parser[String]      = P("=" ~/ !"=" ~/ until(eol).! ~ eol)
+    val title     : Parser[String]      = P("= " ~/ until(eol).! ~ eol)
     val author    : Parser[Author]      = P(until(";" | "<" | eol).! ~
                                             quoted(open = Some("<"), close = ">").?)
                                           .map { case (authorName, mail) => Author(authorName, mail) }
     // asciidoctors revision line is weird https://asciidoctor.org/docs/user-manual/#revision-number-date-and-remark
     // it is clearly not meant for automatic parsing of timestamps and overall … meh
     // authorline is a bit better, but not sure if parsing is worth it.
-    val revline   : Parser[String]      = P(until(eol))
-    val authorline: Parser[Seq[Author]] = P(author.rep(sep = aws ~ ";"))
-    val header    : Parser[Header]      = P(title ~/ authorline ~ revline.? ~ Attributes.entry.rep(sep = aws ~/ Pass) ~ aws)
-                                          .map { case (titlestring, al, rl, attr) => Header(titlestring, al, attr) }
+    val revline   : Parser[String]      = P(!":" ~ until(eol) ~ eol)
+    val authorline: Parser[Seq[Author]] = P(!":" ~ author.rep(sep = aws ~ ";", min = 1) ~ eol)
+    val header    : Parser[Header]      = P(title ~ authorline.? ~ revline.? ~ Attributes.entry.rep(sep = aws) ~ aws)
+                                          .map { case (titlestring, al, rl, attr) =>
+                                            Header(titlestring, al.getOrElse(Nil), attr) }
   }
 
 }

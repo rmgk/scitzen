@@ -49,6 +49,7 @@ object Commandline extends CommandApp(
     optSource.map { sourceP =>
       val source = File(sourceP)
       source.children.filter(_.isRegularFile).filter(_.name.endsWith(".adoc")).foreach { f =>
+        println(f.name)
         val header: Header = Asciimedic.HeaderParser.header.parse(f.contentAsString).get.value
         val date = LocalDateTime.from(Tool.timeFormatter.parse(
           header.attributes.map(a => a.id -> a.value).toMap
