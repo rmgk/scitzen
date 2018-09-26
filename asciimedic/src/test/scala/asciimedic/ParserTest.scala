@@ -30,7 +30,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 
   "unquoted" - {
     import fastparse.all._
-    val p = Asciimedic.until(Asciimedic.saws)
+    val p = Asciimedic.untilE(Asciimedic.saws)
     "anychar" in forAll { c: Char =>
       assert(AnyChar.!.parse(c.toString).get.value === c.toString)
     }
@@ -39,6 +39,12 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
       whenever(str.exists(c => !c.isWhitespace)) {
         assert(p.parse(str).get.value === str)
       }
+    }
+  }
+
+  "block with attributes" - {
+    "simple" in {
+      pprint.pprintln(asciimedic.Asciimedic.document.parse(ExampleFiles.blockWithSingleAttribute))
     }
   }
 

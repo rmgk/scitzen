@@ -12,6 +12,12 @@ object ExampleFiles {
 A paragraph
 """
 
+  val blockWithSingleAttribute = """
+some initial paragraph
+
+[role=portrait]
+image::images/2018-09-26_Lächeln-in-der-Bahn.jpg[Lächeln in der Bahn]"""
+
   val sample ="""Document Title
 ==============
 Doc Writer <thedoc@asciidoctor.org>

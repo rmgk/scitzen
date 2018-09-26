@@ -12,6 +12,7 @@ case class Attribute(id: String, value: String)
 case class Author(name: String, email: Option[String])
 case class SectionTitle(level: Int, title: String) extends Block
 case class DelimitedBlock(delimiter: String, content: String) extends Block
+case class WhitspaceBlock(content: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
 case class ListItem(marker: String, content: String)
 
@@ -30,11 +31,13 @@ case class AttrRef(id: String) extends Inline
 object Asciimedic {
   val newlineCharacter     = "\n"
   val whitespaceCharacters = " \t"
-  val eol                  = P(newlineCharacter | &(End))
-  val inws                 = P(CharsWhileIn(whitespaceCharacters, min = 0))
-  val wseol                = P(inws ~ eol)
+  val eol                  = P(newlineCharacter | End)
+  val iws                  = P(CharsWhileIn(whitespaceCharacters, min = 0))
+  val sws                  = P(CharsWhileIn(whitespaceCharacters, min = 1))
+  val wsLine               = P(iws ~ eol)
   val saws                 = P(CharsWhileIn(whitespaceCharacters ++ newlineCharacter))
   val aws                  = P(saws.?)
+  val nextLine             = P((iws ~ newlineCharacter) | (sws ~ End))
   val letter               = P(CharPred(_.isLetter)).opaque("<letter>")
 
   def quoted(close: String, open: Option[String] = None): Parser[String] = {
@@ -47,8 +50,11 @@ object Asciimedic {
 
   def any[T](parser: Parser[T], more: Parser[T]*): Parser[T] = more.fold(parser)(_ | _)
 
-  def until(closing: Parser[Unit], content: Parser[Unit] = AnyChar, min: Int = 1):Parser[String] =
+  def untilE(closing: Parser[Unit], content: Parser[Unit] = AnyChar, min: Int = 1):Parser[String] =
     P(((!closing) ~ content).rep(min).!)
+
+  def untilI(closing: Parser[Unit], content: Parser[Unit] = AnyChar, min: Int = 1): Parser[String] =
+    P(untilE(closing, content, min) ~ closing)
 
 
   object Identifier {
@@ -60,17 +66,17 @@ object Asciimedic {
 
   import Identifier.identifier
 
-  val line = P(until(eol, min = 0)).opaque("<line>")
+  val line = P(untilE(eol, min = 0)).opaque("<line>")
 
   object InlineParser {
     // \ to escape newlines, + \ to escape newlines but keep newlines
     val line = Asciimedic.this.line
-    val nonEmptyLine = until(eol) ~ eol
+    val nonEmptyLine = untilI(eol)
   }
 
 
   object Macros {
-    val target = P(until("[" | saws))
+    val target = P(untilE("[" | saws))
     val start                       = P(identifier.! ~ ":")
     val block : Parser[BlockMacro]  = P(start ~ ":" ~ !saws ~/ target ~ Attributes.list)
                                       .map {(BlockMacro.apply _).tupled}
@@ -99,7 +105,7 @@ object Asciimedic {
     // https://asciidoctor.org/docs/user-manual/#named-attribute
     // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
     // however, in the hope of better error messages, we will not allow newlines
-    val unquotedValue: Parser[String]    = P(until("," | close | eol))
+    val unquotedValue: Parser[String]    = P(untilE("," | close | eol))
     val value        : Parser[String]    = P(quoted("\"") | quoted("'") | unquotedValue)
     val listDef      : Parser[Attribute] = P(identifier ~ equals ~ value)
                                            .map { case (id, v) => Attribute(id, v) }
@@ -120,16 +126,16 @@ object Asciimedic {
     val constrainedQuote         = P(CharIn(quoteChars))
     val escaped                  = P("\\" ~ (Macros.start | Attributes.reference).!)
                                    .map(InlineText)
-    val text                     = P((inws ~ until(saws) ~ inws).!)
+    val text                     = P((iws ~ untilE(saws) ~ iws).!)
                                    .map(InlineText)
-    val singleNewline            = P(!(eol ~ wseol) ~ eol).map(_ => InlineText("\n"))
+    val singleNewline            = P(!(eol ~ wsLine) ~ eol).map(_ => InlineText("\n"))
     val token: Parser[Inline]    = P(escaped |
                                      Macros.urls.url |
                                      Macros.inline |
                                      Attributes.reference |
                                      text |
                                      singleNewline)
-    val block: Parser[Paragraph] = P(token.rep(min = 1)).map(Paragraph)
+    val block: Parser[Paragraph] = P(token.rep(min = 1) ~ nextLine ~ nextLine).map(Paragraph)
   }
 
 
@@ -137,37 +143,43 @@ object Asciimedic {
 
     val title = P("." ~ InlineParser.nonEmptyLine)
 
-    val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").!).map(BlockMacro.apply("horizontal-rule", _, Nil))
-    val pageBreak: Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
+    val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").!)
+                                             .map(BlockMacro.apply("horizontal-rule", _, Nil))
+    val pageBreak     : Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
-    val alternatives: Parser[Block] = P(Lists.list |
+    val whitespaceBlock: Parser[WhitspaceBlock] = P(nextLine.rep(min = 1).!)
+                                                  .map(WhitspaceBlock)
+
+    val alternatives: Parser[Block] = P(whitespaceBlock |
+                                        Lists.list |
                                         Delimited.full |
                                         horizontalRule |
                                         Sections.title |
                                         Macros.block |
-                                        Paragraphs.block)
-    val block       : Parser[Block] = P(title.? ~ Attributes.list.rep(sep = aws) ~ aws ~ alternatives).log()
-                                      .map {
-                                        case (None, Nil, content)     => content
-                                        case (stitle, attrs, content) => BlockWithAttributes(content, attrs, stitle)
-                                      }
+                                        Paragraphs.block).log()
+
+    val block: Parser[Block] = P(title.? ~ (Attributes.list ~ nextLine).rep ~ alternatives).log()
+                               .map {
+                                 case (None, Nil, content)     => content
+                                 case (stitle, attrs, content) => BlockWithAttributes(content, attrs, stitle)
+                               }
 
     object Delimited {
       val normalDelimiters         = "/=-.+_*"
       val normalStart              = P(normalDelimiters.map(c => c.toString.rep(4)).reduce(_ | _))
                                      .opaque("<normal block start>")
-      val anyStart: Parser[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ wseol)
+      val anyStart: Parser[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ wsLine)
 
       val full: Parser[DelimitedBlock] = P(
         anyStart.flatMap { delimiter =>
-          until(eol ~ delimiter, min = 0).map(content => DelimitedBlock(delimiter, content))
+          untilI(eol ~ delimiter, min = 0).map(content => DelimitedBlock(delimiter, content))
         }
       )
     }
 
     object Lists {
       val listItemMarker = P("*".rep(1) ~ " ")
-      val listContent    = P(until(eol ~ (wseol | listItemMarker)))
+      val listContent    = P(untilE(eol ~ (wsLine | listItemMarker)))
       val listItem       = P((listItemMarker.! ~/ listContent.!)
                              .map((ListItem.apply _).tupled)).log()
       val list           = P(listItem.rep(1, sep = aws ~ Pass)
@@ -175,19 +187,19 @@ object Asciimedic {
     }
   }
 
-  val document         : Parser[Document] = P(HeaderParser.header.? ~ aws ~/ Blocks.block.rep ~ aws ~ End)
+  val document         : Parser[Document] = P(HeaderParser.header.? ~ Blocks.block.rep ~ End)
                                             .map((Document.apply _).tupled)
 
 
   object HeaderParser {
-    val title     : Parser[String]      = P("= " ~/ until(eol).! ~ eol)
-    val author    : Parser[Author]      = P(until(";" | "<" | eol).! ~
+    val title     : Parser[String]      = P("= " ~/ untilI(eol))
+    val author    : Parser[Author]      = P(untilE(";" | "<" | eol).! ~
                                             quoted(open = Some("<"), close = ">").?)
                                           .map { case (authorName, mail) => Author(authorName, mail) }
     // asciidoctors revision line is weird https://asciidoctor.org/docs/user-manual/#revision-number-date-and-remark
     // it is clearly not meant for automatic parsing of timestamps and overall … meh
     // authorline is a bit better, but not sure if parsing is worth it.
-    val revline   : Parser[String]      = P(!":" ~ until(eol) ~ eol)
+    val revline   : Parser[String]      = P(!":" ~ untilE(eol) ~ eol)
     val authorline: Parser[Seq[Author]] = P(!":" ~ author.rep(sep = aws ~ ";", min = 1) ~ eol)
     val header    : Parser[Header]      = P(title ~ authorline.? ~ revline.? ~ Attributes.entry.rep(sep = aws) ~ aws)
                                           .map { case (titlestring, al, rl, attr) =>
