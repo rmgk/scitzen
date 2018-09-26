@@ -24,14 +24,15 @@ class MedicPost(val path: Path, val document: Document) extends Post {
 
   def people(): List[String] = commaSeparatedAttribute("people")
 
-  def folder(): Option[String] = Option(attributes.get("folder")).map(_.toString)
+  def folder(): Option[String] = attributes.get("folder")
 
   def categories(): List[String] = commaSeparatedAttribute("categories")
 
-  def title: String = Option(document.header.get.title).getOrElse("(null)")
-  lazy val date: LocalDateTime = Option(attributes.get("revdate"))
-                                 .fold(LocalDateTime.MIN)(v => DateParsingHelper.parseDate(v.toString))
-  def content: String = document.blocks.toString()
-  lazy val modified: Option[LocalDateTime] = Option(attributes.get("modified"))
-                                             .map(m => DateParsingHelper.parseDate(m.toString))
+  def title: String = document.header.fold("(null)")(_.title)
+  lazy val date: LocalDateTime = attributes.get("revdate")
+                                 .fold(LocalDateTime.MIN)(v => DateParsingHelper.parseDate(v.trim))
+  def content: String = HtmlConverter.convert(document)
+  lazy val modified: Option[LocalDateTime] = attributes.get("modified")
+                                             .map(m => DateParsingHelper.parseDate(m.trim))
 }
+

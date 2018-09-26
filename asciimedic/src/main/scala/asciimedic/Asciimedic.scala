@@ -72,9 +72,9 @@ object Asciimedic {
   object Macros {
     val target = P(until("[" | saws))
     val start                       = P(identifier.! ~ ":")
-    val block : Parser[BlockMacro]  = P(start ~ ":" ~/ target ~ Attributes.list)
+    val block : Parser[BlockMacro]  = P(start ~ ":" ~ !saws ~/ target ~ Attributes.list)
                                       .map {(BlockMacro.apply _).tupled}
-    val inline: Parser[InlineMacro] = P(start ~/ target ~ Attributes.list)
+    val inline: Parser[InlineMacro] = P(start ~ !saws ~ target ~ Attributes.list)
                                       .map {(InlineMacro.apply _).tupled}
 
 
