@@ -8,6 +8,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import org.webjars.WebJarAssetLocator
+import vitzen.docparser.{AsciiData, Post}
 
 
 object Vitzen {
@@ -51,8 +52,6 @@ object Vitzen {
         postdir.createDirectories()
 
         def allFiles(): List[File] = sourcedir.glob("**.adoc").toList
-        allFiles().foreach(println)
-
         def allPosts(): List[Post] = allFiles().map { f: File => asciiData.makePost(f.path) }
 
 
