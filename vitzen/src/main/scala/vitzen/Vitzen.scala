@@ -8,7 +8,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import org.webjars.WebJarAssetLocator
-import vitzen.docparser.{AsciiData, Post}
+import vitzen.docparser.{AsciiDoctorImpl, AsciiMedicImpl, Post}
 
 
 object Vitzen {
@@ -18,7 +18,7 @@ object Vitzen {
     try {
       Resource.getAsStream(resourceLocator.getFullPath(path)).buffered.bytes
     } catch {
-      case e : IllegalArgumentException =>
+      case e: IllegalArgumentException =>
         (File.currentWorkingDirectory / "vitzen/target/web/sass/main/stylesheets/" / path).bytes
     }
 
@@ -46,13 +46,17 @@ object Vitzen {
         (targetdir / "highlight.js").writeBytes(resourceBytes("highlight.pack.js"))
 
 
-        lazy val asciiData: AsciiData = new AsciiData(sourcedir.path)
+        val asciiData = new AsciiMedicImpl(sourcedir.path)
 
         val postdir = targetdir / "posts"
         postdir.createDirectories()
 
         def allFiles(): List[File] = sourcedir.glob("**.adoc").toList
-        def allPosts(): List[Post] = allFiles().map { f: File => asciiData.makePost(f.path) }
+
+        def allPosts(): List[Post] = allFiles().map { f: File =>
+          println(f.name)
+          asciiData.makePost(f.path)
+        }
 
 
         val posts = allPosts

@@ -8,7 +8,7 @@ import org.asciidoctor.ast.Document
 import org.asciidoctor.{Asciidoctor, OptionsBuilder, SafeMode}
 import vitzen.DateParsingHelper
 
-class AsciiData(basedir: Path) {
+class AsciiDoctorImpl(basedir: Path) {
   val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
 
   val options: util.Map[String, AnyRef] =
@@ -26,10 +26,6 @@ class AsciiData(basedir: Path) {
 
 }
 
-
-
-
-
 class DocPost(val path: Path, val document: Document) extends Post {
   def commaSeparatedAttribute(key: String): List[String] =
     document.getAttributes.getOrDefault(key, "").toString
@@ -42,8 +38,6 @@ class DocPost(val path: Path, val document: Document) extends Post {
   def folder(): Option[String] = Option(document.getAttributes.get("folder")).map(_.toString)
 
   def categories(): List[String] = commaSeparatedAttribute("categories")
-
-  def summary(): String = Option(document.getBlocks.get(0)).fold("")(b => b.convert())
 
   def title: String = Option(document.getDoctitle).getOrElse("(null)")
   lazy val date: LocalDateTime = Option(document.getAttributes.get("revdate"))

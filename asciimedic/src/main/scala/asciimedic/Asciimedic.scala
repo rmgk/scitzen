@@ -128,7 +128,7 @@ object Asciimedic {
                                      Macros.inline |
                                      Attributes.reference |
                                      text |
-                                     singleNewline).log()
+                                     singleNewline)
     val block: Parser[Paragraph] = P(token.rep(min = 1)).map(Paragraph)
   }
 
