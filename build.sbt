@@ -12,6 +12,7 @@ lazy val vitzen = project.in(file("vitzen"))
                     Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
                     vitzendeps
                   )
+                  .dependsOn(asciimedic)
 //Compile / resources ++= (Assets / SassKeys.sassify).value
 
 lazy val asciimedic = project.in(file("asciimedic"))

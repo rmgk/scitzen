@@ -4,14 +4,22 @@ package vitzen
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
 
-import better.files.{File, InputStreamOps, Resource}
+import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
-import org.asciidoctor.Asciidoctor
 import org.webjars.WebJarAssetLocator
 
 
 object Vitzen {
+
+  val resourceLocator = new WebJarAssetLocator()
+  def resourceBytes(path: String): Iterator[Byte] =
+    try {
+      Resource.getAsStream(resourceLocator.getFullPath(path)).buffered.bytes
+    } catch {
+      case e : IllegalArgumentException =>
+        (File.currentWorkingDirectory / "vitzen/target/web/sass/main/stylesheets/" / path).bytes
+    }
 
 
   val optSource = Opts.option[Path]("source", short = "s", metavar = "directory",
@@ -32,22 +40,23 @@ object Vitzen {
         println(s"processing $sourcedir")
         println(s"to $targetdir")
 
-        val resourceLocator = new WebJarAssetLocator()
 
-        (targetdir / "vitzen.css").writeBytes(
-          Resource.getAsStream(resourceLocator.getFullPath("vitzen.css")).buffered.bytes)
-        (targetdir / "highlight.js").writeBytes(
-          Resource.getAsStream(resourceLocator.getFullPath("highlight.pack.js")).buffered.bytes)
-//        write.over(ammPath(targetdir), read! resource/RelPath(resourceLocator.getFullPath()))
+        (targetdir / "vitzen.css").writeBytes(resourceBytes("vitzen.css"))
+        (targetdir / "highlight.js").writeBytes(resourceBytes("highlight.pack.js"))
 
 
-        lazy val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
-        lazy val asciiData: AsciiData = new AsciiData(asciidoctor, sourcedir.path)
+        lazy val asciiData: AsciiData = new AsciiData(sourcedir.path)
 
         val postdir = targetdir / "posts"
         postdir.createDirectories()
 
-        val posts = asciiData.allPosts
+        def allFiles(): List[File] = sourcedir.glob("**.adoc").toList
+        allFiles().foreach(println)
+
+        def allPosts(): List[Post] = allFiles().map { f: File => asciiData.makePost(f.path) }
+
+
+        val posts = allPosts
         println(s"found ${posts.size} posts")
 
         println(s"posting to $targetdir")

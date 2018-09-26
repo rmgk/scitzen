@@ -31,7 +31,8 @@ object Helper {
 
 }
 
-class AsciiData(asciidoctor: Asciidoctor, basedir: Path) {
+class AsciiData(basedir: Path) {
+  val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()
 
   val options: util.Map[String, AnyRef] = OptionsBuilder.options().headerFooter(false).safe(SafeMode.SERVER).asMap()
 
@@ -49,9 +50,7 @@ class AsciiData(asciidoctor: Asciidoctor, basedir: Path) {
     new Post(basedir.relativize(path), document)
   }
 
-  def allFiles(): List[File] = new AsciiDocDirectoryWalker(basedir.toString).scan().iterator().asScala.toList
 
-  def allPosts(): List[Post] = allFiles().map { f: File => makePost(f.toPath) }
 }
 
 
