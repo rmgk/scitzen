@@ -1,7 +1,6 @@
 package vitzen.docparser
 
 import asciimedic._
-import scalatags.Text.Tag
 import scalatags.Text.implicits._
 import scalatags.Text.tags.{code, div, p, frag, tag, img}
 import scalatags.Text.attrs.{href, src, cls}
@@ -9,16 +8,12 @@ import scalatags.Text.attrs.{href, src, cls}
 
 object HtmlConverter {
   def convert(document: Document): String = frag(
-    document.blocks.filterNot(_.isInstanceOf[asciimedic.WhitespaceBlock]).map(blockToHtml): _*
+    document.blocks.map(blockToHtml): _*
   ).render
 
   def blockToHtml(b: Block): Frag = b match {
-    case asciimedic.Paragraph(text) => p(
-      text.map {
-        case InlineText(str) => stringFrag(str)
-        case im: InlineMacro => code(im.toString)
-        case attr: AttrRef   => code(attr.toString)
-      }: _*
+    case NormalBlock(blockType, text) => p(
+      text
     )
 
     case SectionTitle(level, title) => tag("h" + (level + 1))(title)
@@ -29,6 +24,8 @@ object HtmlConverter {
         attributes.toString(),
         blockToHtml(block)
       )
+
+    case NormalBlock(BlockType.Whitespace, _) => frag()
 
     case BlockMacro("image", target, attributes) =>
       div(cls := "imageblock",

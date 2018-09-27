@@ -1,20 +1,32 @@
 package asciimedic
 
+import fastparse.all
 import fastparse.all._
 
+case class Document(header: Option[Header], blocks: Seq[Block])
 case class Header(title: String, authors: Seq[Author], attributes: Seq[Attribute])
+
+case class Author(name: String, email: Option[String])
+
+sealed trait BlockType
+object BlockType {
+  case object Paragraph extends BlockType
+  case class Delimited(delimiter: String) extends BlockType
+  case object Whitespace extends BlockType
+}
+
+
 sealed trait Block
 case class BlockWithAttributes(block: Block, attributes: Seq[Seq[Attribute]], title: Option[String]) extends Block
+case class NormalBlock(blockType: BlockType, content: String) extends Block
 case class BlockMacro(command: String, target: String, attributes: Seq[Attribute]) extends Block
-case class Paragraph(text: Seq[Inline]) extends Block
-case class Document(header: Option[Header], blocks: Seq[Block])
-case class Attribute(id: String, value: String)
-case class Author(name: String, email: Option[String])
 case class SectionTitle(level: Int, title: String) extends Block
-case class DelimitedBlock(delimiter: String, content: String) extends Block
-case class WhitespaceBlock(content: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
+
 case class ListItem(marker: String, content: String)
+
+case class Attribute(id: String, value: String)
+
 
 sealed trait Inline
 case class InlineMacro(command: String, target: String, attributes: Seq[Attribute]) extends Inline
@@ -114,6 +126,7 @@ object Asciimedic {
     val inList                           = P(listDef | listValue)
     val list         : Parser[Seq[Attribute]]
                                          = P(open ~/ aws ~ inList.rep(sep = aws ~ "," ~ aws) ~ ",".? ~ aws ~ close)
+    val line         : Parser[Seq[Attribute]] = P(list ~ nextLine)
   }
 
   object Sections {
@@ -126,7 +139,7 @@ object Asciimedic {
     val constrainedQuote         = P(CharIn(quoteChars))
     val escaped                  = P("\\" ~ (Macros.start | Attributes.reference).!)
                                    .map(InlineText)
-    val text                     = P((iws ~ untilE(saws) ~ iws).!)
+    val text                                    = P((iws ~ untilE(saws) ~ iws).!)
                                    .map(InlineText)
     val singleNewline            = P(!(eol ~ wsLine) ~ eol).map(_ => InlineText("\n"))
     val token: Parser[Inline]    = P(escaped |
@@ -135,20 +148,23 @@ object Asciimedic {
                                      Attributes.reference |
                                      text |
                                      singleNewline)
-    val block: Parser[Paragraph] = P(token.rep(min = 1) ~ nextLine ~ wsLine).map(Paragraph)
+
+    val inlineSequence: Parser[Seq[Inline]] = P(token.rep(min = 1) ~ nextLine ~ wsLine)
+
+    val block: Parser[NormalBlock] = P(untilI(End | newlineCharacter ~ wsLine)).map(NormalBlock(BlockType.Paragraph, _))
   }
 
 
   object Blocks {
 
-    val title = P("." ~ InlineParser.nonEmptyLine)
+    val title = P("." ~ !(" " | "...") ~ InlineParser.nonEmptyLine)
 
     val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").!)
                                              .map(BlockMacro.apply("horizontal-rule", _, Nil))
     val pageBreak     : Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
-    val whitespaceBlock: Parser[WhitespaceBlock] = P(nextLine.rep(min = 1).!)
-                                                   .map(WhitespaceBlock)
+    val whitespaceBlock: Parser[NormalBlock] = P(nextLine.rep(min = 1).!)
+                                                   .map(NormalBlock(BlockType.Whitespace, _))
 
     val alternatives: Parser[Block] = P(whitespaceBlock |
                                         Lists.list |
@@ -158,21 +174,21 @@ object Asciimedic {
                                         Macros.block |
                                         Paragraphs.block).log()
 
-    val block: Parser[Block] = P(title.? ~ (Attributes.list ~ nextLine).rep ~ alternatives).log()
+    val block: Parser[Block] = P(Attributes.line.rep ~ title.? ~ Attributes.line.rep ~ alternatives).log()
                                .map {
-                                 case (None, Nil, content)     => content
-                                 case (stitle, attrs, content) => BlockWithAttributes(content, attrs, stitle)
+                                 case (Nil, None, Nil, content)         => content
+                                 case (attrs1, stitle, attrs2, content) =>
+                                   BlockWithAttributes(content, attrs1 ++ attrs2, stitle)
                                }
 
     object Delimited {
       val normalDelimiters         = "/=-.+_*"
       val normalStart              = P(normalDelimiters.map(c => c.toString.rep(4)).reduce(_ | _))
-                                     .opaque("<normal block start>")
       val anyStart: Parser[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ wsLine)
 
-      val full: Parser[DelimitedBlock] = P(
-        anyStart.flatMap { delimiter =>
-          untilI(eol ~ delimiter, min = 0).map(content => DelimitedBlock(delimiter, content))
+      val full: Parser[NormalBlock] = P(
+        (anyStart ~/ Pass).flatMap { delimiter =>
+          untilI(eol ~ delimiter, min = 0).map(content => NormalBlock(BlockType.Delimited(delimiter), content))
         }
       )
     }
