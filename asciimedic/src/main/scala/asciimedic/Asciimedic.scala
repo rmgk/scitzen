@@ -12,7 +12,7 @@ case class Attribute(id: String, value: String)
 case class Author(name: String, email: Option[String])
 case class SectionTitle(level: Int, title: String) extends Block
 case class DelimitedBlock(delimiter: String, content: String) extends Block
-case class WhitspaceBlock(content: String) extends Block
+case class WhitespaceBlock(content: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
 case class ListItem(marker: String, content: String)
 
@@ -147,8 +147,8 @@ object Asciimedic {
                                              .map(BlockMacro.apply("horizontal-rule", _, Nil))
     val pageBreak     : Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
-    val whitespaceBlock: Parser[WhitspaceBlock] = P(nextLine.rep(min = 1).!)
-                                                  .map(WhitspaceBlock)
+    val whitespaceBlock: Parser[WhitespaceBlock] = P(nextLine.rep(min = 1).!)
+                                                   .map(WhitespaceBlock)
 
     val alternatives: Parser[Block] = P(whitespaceBlock |
                                         Lists.list |

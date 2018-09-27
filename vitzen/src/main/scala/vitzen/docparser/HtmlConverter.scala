@@ -9,10 +9,10 @@ import scalatags.Text.attrs.{href, src, cls}
 
 object HtmlConverter {
   def convert(document: Document): String = frag(
-    document.blocks.filterNot(_.isInstanceOf[asciimedic.WhitspaceBlock]).map(blockToHtml): _*
+    document.blocks.filterNot(_.isInstanceOf[asciimedic.WhitespaceBlock]).map(blockToHtml): _*
   ).render
 
-  def blockToHtml(b: Block): Tag = b match {
+  def blockToHtml(b: Block): Frag = b match {
     case asciimedic.Paragraph(text) => p(
       text.map {
         case InlineText(str) => stringFrag(str)
@@ -24,7 +24,11 @@ object HtmlConverter {
     case SectionTitle(level, title) => tag("h" + (level + 1))(title)
 
     case BlockWithAttributes(block, attributes, title) =>
-      blockToHtml(block)
+      frag(
+        title.getOrElse("").toString,
+        attributes.toString(),
+        blockToHtml(block)
+      )
 
     case BlockMacro("image", target, attributes) =>
       div(cls := "imageblock",
