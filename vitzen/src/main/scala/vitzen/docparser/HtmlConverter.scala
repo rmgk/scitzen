@@ -1,23 +1,36 @@
 package vitzen.docparser
 
-import asciimedic.{AttrRef, Block, Document, InlineMacro, InlineText}
+import asciimedic._
 import scalatags.Text.Tag
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{code, div, p, frag, tag}
+import scalatags.Text.tags.{code, div, p, frag, tag, img}
+import scalatags.Text.attrs.{href, src, cls}
 
 
 object HtmlConverter {
-  def convert(document: Document): String = frag(document.blocks.map(blockToHtml): _*).render
+  def convert(document: Document): String = frag(
+    document.blocks.filterNot(_.isInstanceOf[asciimedic.WhitspaceBlock]).map(blockToHtml): _*
+  ).render
 
   def blockToHtml(b: Block): Tag = b match {
     case asciimedic.Paragraph(text) => p(
-      text.map{
+      text.map {
         case InlineText(str) => stringFrag(str)
         case im: InlineMacro => code(im.toString)
-        case attr: AttrRef     => code(attr.toString)
+        case attr: AttrRef   => code(attr.toString)
       }: _*
     )
-    case asciimedic.SectionTitle(level, title) => tag("h" + (level + 1))(title)
+
+    case SectionTitle(level, title) => tag("h" + (level + 1))(title)
+
+    case BlockWithAttributes(block, attributes, title) =>
+      blockToHtml(block)
+
+    case BlockMacro("image", target, attributes) =>
+      div(cls := "imageblock",
+          img(src := target)
+      )
+
     case other => div(stringFrag(other.toString))
   }
 }

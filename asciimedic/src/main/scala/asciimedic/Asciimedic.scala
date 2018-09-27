@@ -135,7 +135,7 @@ object Asciimedic {
                                      Attributes.reference |
                                      text |
                                      singleNewline)
-    val block: Parser[Paragraph] = P(token.rep(min = 1) ~ nextLine ~ nextLine).map(Paragraph)
+    val block: Parser[Paragraph] = P(token.rep(min = 1) ~ nextLine ~ wsLine).map(Paragraph)
   }
 
 
