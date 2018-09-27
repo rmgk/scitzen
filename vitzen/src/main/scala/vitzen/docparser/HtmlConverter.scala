@@ -2,7 +2,7 @@ package vitzen.docparser
 
 import asciimedic._
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{code, div, p, frag, tag, img, pre}
+import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite}
 import scalatags.Text.attrs.{href, src, cls}
 
 
@@ -17,11 +17,20 @@ object HtmlConverter {
 
     case SectionTitle(level, title) => tag("h" + (level + 1))(title)
 
-    case bwa@BlockWithAttributes(block, attributes, title) =>
-      frag(
-        title.getOrElse("").toString,
-        blockToHtml(block, bwa.role.map(c => cls := s" $c "))
-      )
+    case bwa : BlockWithAttributes =>
+      val positiontype = bwa.positional.headOption
+      positiontype match {
+        case Some("quote") =>
+          val bq = blockquote(blockToHtml(bwa.block))
+          val title = bwa.positional.lift(2).fold("")(t => s" $t")
+          if (bwa.positional.size > 1) bq(cite(s"– ${bwa.positional(1)}.$title"))
+          else bq
+        case other =>       frag(
+            bwa.title.getOrElse("").toString,
+            blockToHtml(bwa.block, bwa.role.map(c => cls := s" $c "))
+          )
+      }
+
 
     case NormalBlock(BlockType.Whitespace, _) => frag()
 
@@ -32,7 +41,9 @@ object HtmlConverter {
 
     case NormalBlock(blockType, text) => {
       blockType match {
-        case BlockType.Delimited(delimiter) if delimiter.startsWith(".") => p(text, cls:=" literalblock ")(addModifier : _*)
+        case BlockType.Delimited(delimiter) if delimiter.startsWith(".") =>
+          p(text, cls:=" literalblock ")(addModifier : _*)
+
         case other =>       p(text)
 
       }
