@@ -8,7 +8,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import org.webjars.WebJarAssetLocator
-import vitzen.docparser.{AsciiDoctorImpl, AsciiMedicImpl, Post}
+import vitzen.docparser.{AsciiMedicImpl, Post}
 
 
 object Vitzen {
