@@ -74,8 +74,8 @@ object Vitzen {
 
         targetdir./("index.html").write(Pages().makeIndexOf(posts))
 
-
-        sourcedir./("images").copyTo(postdir./("images"), overwrite = true)
+        val imagedir = sourcedir./("images")
+        if (imagedir.isDirectory) imagedir.copyTo(postdir./("images"), overwrite = true)
     }
   }
 
