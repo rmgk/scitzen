@@ -48,7 +48,7 @@ object HtmlConverter {
         case BlockType.Delimited(delimiter) if delimiter.startsWith(".") =>
           p(text, cls:=" literalblock ")(addModifier : _*)
 
-        case other =>       p(text)
+        case other => pre(asciimedic.ParagraphParsers.InnerParser().fullParagraph.parse(text).get.value.toString)
 
       }
     }

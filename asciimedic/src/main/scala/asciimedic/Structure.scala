@@ -38,9 +38,3 @@ case class ListBlock(items: Seq[ListItem]) extends Block
 case class ListItem(marker: String, content: String)
 
 case class Attribute(id: String, value: String)
-
-
-sealed trait Inline
-case class InlineMacro(command: String, target: String, attributes: Seq[Attribute]) extends Inline
-case class InlineText(str: String) extends Inline
-case class AttrRef(id: String) extends Inline

@@ -15,14 +15,14 @@ object Asciimedic {
 
   val header = HeaderParsers.header
 
-  val document         : Parser[Document] = P(HeaderParsers.header.? ~ BlockParsers.block.rep ~ End)
+  val document         : Parser[Document] = P(HeaderParsers.header.? ~ BlockParsers.fullBlock.rep ~ End)
                                             .map((Document.apply _).tupled)
 }
 
 object InlineParser {
   // \ to escape newlines, + \ to escape newlines but keep newlines
-  val line = CommonParsers.line
-  val nonEmptyLine = untilI(eol)
+  val line      = CommonParsers.line
+  val titleLine = untilI(eol)
 }
 
 
@@ -68,30 +68,8 @@ object Attributes {
   val line         : Parser[Seq[Attribute]] = P(list ~ swsLine)
 }
 
-object Sections {
-  val title = P("=".rep(2).! ~ InlineParser.nonEmptyLine)
-              .map { case (level, str) => SectionTitle(level.length - 1, str) }
-}
 
-object Paragraphs {
-  val quoteChars               = "_*`^~"
-  val constrainedQuote         = P(CharIn(quoteChars))
-  val escaped                  = P("\\" ~ (Macros.start | Attributes.reference).!)
-                                 .map(InlineText)
-  val text                                    = P((iws ~ untilE(saws) ~ iws).!)
-                                                .map(InlineText)
-  val singleNewline            = P(!(eol ~ iwsLine) ~ eol).map(_ => InlineText("\n"))
-  val token: Parser[Inline]    = P(escaped |
-                                   Macros.urls.url |
-                                   Macros.inline |
-                                   Attributes.reference |
-                                   text |
-                                   singleNewline)
 
-  val inlineSequence: Parser[Seq[Inline]] = P(token.rep(min = 1) ~ swsLine ~ iwsLine)
-
-  val block: Parser[NormalBlock] = P(untilI(End | newlineCharacter ~ iwsLine)).map(NormalBlock(BlockType.Paragraph, _))
-}
 
 
 
