@@ -65,7 +65,7 @@ object Attributes {
   val inList                           = P(listDef | listValue)
   val list         : Parser[Seq[Attribute]]
                                        = P(open ~/ aws ~ inList.rep(sep = aws ~ "," ~ aws) ~ ",".? ~ aws ~ close)
-  val line         : Parser[Seq[Attribute]] = P(list ~ nextLine)
+  val line         : Parser[Seq[Attribute]] = P(list ~ swsLine)
 }
 
 object Sections {
@@ -80,7 +80,7 @@ object Paragraphs {
                                  .map(InlineText)
   val text                                    = P((iws ~ untilE(saws) ~ iws).!)
                                                 .map(InlineText)
-  val singleNewline            = P(!(eol ~ wsLine) ~ eol).map(_ => InlineText("\n"))
+  val singleNewline            = P(!(eol ~ iwsLine) ~ eol).map(_ => InlineText("\n"))
   val token: Parser[Inline]    = P(escaped |
                                    Macros.urls.url |
                                    Macros.inline |
@@ -88,9 +88,9 @@ object Paragraphs {
                                    text |
                                    singleNewline)
 
-  val inlineSequence: Parser[Seq[Inline]] = P(token.rep(min = 1) ~ nextLine ~ wsLine)
+  val inlineSequence: Parser[Seq[Inline]] = P(token.rep(min = 1) ~ swsLine ~ iwsLine)
 
-  val block: Parser[NormalBlock] = P(untilI(End | newlineCharacter ~ wsLine)).map(NormalBlock(BlockType.Paragraph, _))
+  val block: Parser[NormalBlock] = P(untilI(End | newlineCharacter ~ iwsLine)).map(NormalBlock(BlockType.Paragraph, _))
 }
 
 
@@ -102,7 +102,7 @@ object Blocks {
                                            .map(BlockMacro.apply("horizontal-rule", _, Nil))
   val pageBreak     : Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
-  val whitespaceBlock: Parser[NormalBlock] = P(nextLine.rep(min = 1).!)
+  val whitespaceBlock: Parser[NormalBlock] = P((sws ~ eol | newlineCharacter).rep(min = 1).!)
                                              .map(NormalBlock(BlockType.Whitespace, _))
 
   val alternatives: Parser[Block] = P(whitespaceBlock |
@@ -123,7 +123,7 @@ object Blocks {
   object Delimited {
     val normalDelimiters         = "/=-.+_*"
     val normalStart              = P(normalDelimiters.map(c => c.toString.rep(4)).reduce(_ | _))
-    val anyStart: Parser[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ wsLine)
+    val anyStart: Parser[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ iwsLine)
 
     val full: Parser[NormalBlock] = P(
       (anyStart ~/ Pass).flatMap { delimiter =>
@@ -134,7 +134,7 @@ object Blocks {
 
   object Lists {
     val listItemMarker = P("*".rep(1) ~ " ")
-    val listContent    = P(untilE(eol ~ (wsLine | listItemMarker)))
+    val listContent    = P(untilE(eol ~ (iwsLine | listItemMarker)))
     val listItem       = P((listItemMarker.! ~/ listContent.!)
                            .map((ListItem.apply _).tupled)).log()
     val list           = P(listItem.rep(1, sep = aws ~ Pass)

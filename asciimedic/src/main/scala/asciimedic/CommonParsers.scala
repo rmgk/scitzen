@@ -8,10 +8,10 @@ object CommonParsers {
   val eol                  = P(newlineCharacter | End)
   val iws                  = P(CharsWhileIn(whitespaceCharacters, min = 0))
   val sws                  = P(CharsWhileIn(whitespaceCharacters, min = 1))
-  val wsLine               = P(iws ~ eol)
+  val iwsLine              = P(iws ~ eol)
   val saws                 = P(CharsWhileIn(whitespaceCharacters ++ newlineCharacter))
   val aws                  = P(saws.?)
-  val nextLine             = P((iws ~ newlineCharacter) | (sws ~ End))
+  val swsLine              = P((sws ~ End) | newlineCharacter)
   val letter               = P(CharPred(_.isLetter)).opaque("<letter>")
 
   def quoted(close: String, open: Option[String] = None): Parser[String] = {
