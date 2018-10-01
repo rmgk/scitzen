@@ -2,7 +2,7 @@ package vitzen.docparser
 
 import asciimedic._
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li}
+import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em}
 import scalatags.Text.attrs.{href, src, cls}
 
 
@@ -48,11 +48,24 @@ object HtmlConverter {
         case BlockType.Delimited(delimiter) if delimiter.startsWith(".") =>
           p(text, cls:=" literalblock ")(addModifier : _*)
 
-        case other => pre(asciimedic.ParagraphParsers.InnerParser().fullParagraph.parse(text).get.value.toString)
+        case other => p(paragraphStringToHTML(text): _*)
 
       }
     }
 
     case other => div(stringFrag(other.toString))
+  }
+
+  def paragraphStringToHTML(paragraphString: String) = {
+    inlineValuesToHTML(asciimedic.ParagraphParsers.InnerParser().fullParagraph.parse(paragraphString).get.value)
+  }
+
+  def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
+    case InlineText(str) => str
+    case InlineComment(text) => frag()
+    case InlineQuote(q, inner) => q.head match {
+      case '_' => em(inlineValuesToHTML(inner): _*)
+      case '*' => strong(inlineValuesToHTML(inner): _*)
+    }
   }
 }
