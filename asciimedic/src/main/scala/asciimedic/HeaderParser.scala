@@ -13,7 +13,7 @@ object HeaderParser {
   // authorline is a bit better, but not sure if parsing is worth it.
   val revline   : Parser[String]      = P(!":" ~ untilE(eol) ~ eol)
   val authorline: Parser[Seq[Author]] = P(!":" ~ author.rep(sep = aws ~ ";", min = 1) ~ eol)
-  val header    : Parser[Header]      = P(title ~ authorline.? ~ revline.? ~ Attributes.entry.rep(sep = aws) ~ aws)
-                                        .map { case (titlestring, al, rl, attr) =>
+  val header    : Parser[Header]      = P(title ~ authorline.? ~ revline.? ~ Blocks.whitespaceBlock.? ~ Attributes.entry.rep(sep = aws) ~ aws)
+                                        .map { case (titlestring, al, ws, rl, attr) =>
                                           Header(titlestring, al.getOrElse(Nil), attr) }
 }
