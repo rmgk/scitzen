@@ -30,6 +30,7 @@ object BlockParsers {
 
   val alternatives: Parser[Block] = P(extendedWhitespace |
                                       ListParsers.list |
+                                      ListParsers.descriptionList |
                                       DelimitedBlockParsers.full |
                                       horizontalRule |
                                       sectionTitle |

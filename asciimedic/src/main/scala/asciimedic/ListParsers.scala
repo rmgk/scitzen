@@ -8,17 +8,28 @@ import fastparse.all._
  */
 object ListParsers {
 
-  val normalItemMarker     = P(iws
-                               ~ ("-"
-                                  | "*".rep(1)
-                                  | (digits.? ~ ".".rep(1)))
-                               ~ space)
-  val definitionItemMarker = P((untilE("::" | eol) ~ ":".rep(2)) ~ (space | newline))
-  val itemMarker           = P((normalItemMarker | definitionItemMarker).!)
-  val listContent          = P(untilE(eol ~ (("+".? ~ iwsLine) | itemMarker.map(_ => ()))) ~ eol)
-  val listItem             = P((itemMarker.! ~/ listContent ~ ("+" ~ iwsLine ~ BlockParsers.fullBlock).?)
-                               .map((ListItem.apply _).tupled))
+  val itemMarker  = P(iws
+                      ~ ("-"
+                         | "*".rep(1)
+                         | (digits.? ~ ".".rep(1)))
+                      ~ space).!
+  val listContent = P(untilE(eol ~ (("+".? ~ iwsLine) | itemMarker.map(_ => ()))) ~ eol)
+  val listItem    = P((itemMarker.! ~/ listContent ~ ("+" ~ iwsLine ~ BlockParsers.fullBlock).?)
+                      .map((ListItem.apply _).tupled))
   val list: Parser[ListBlock]
-                           = P(listItem.rep(1, sep = BlockParsers.extendedWhitespace.?)
-                               .map(ListBlock) ~ aws)
+                  = P(listItem.rep(1, sep = BlockParsers.extendedWhitespace.?)
+                      ~ iwsLine)
+                    .map(ListBlock)
+
+  val descriptionItemMarker: Parser[String]               = P(untilE("::" | eol)
+                                                              ~ ":".rep(2)
+                                                              ~ (space | newline)).!
+  val descriptionListItem  : Parser[DescriptionListItem]  = P(descriptionItemMarker
+                                                              ~ BlockParsers.extendedWhitespace.?
+                                                              ~ BlockParsers.fullBlock)
+                                                            .map { case (m, ws, b) => DescriptionListItem(m, b) }.log()
+  val descriptionList      : Parser[DescriptionListBlock] = P(descriptionListItem
+                                                              .rep(min = 1, sep = BlockParsers.extendedWhitespace.?))
+                                                            .map(DescriptionListBlock).log()
+
 }

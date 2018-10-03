@@ -2,7 +2,7 @@ package vitzen.docparser
 
 import asciimedic._
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em, h6, hr}
+import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em, h6, hr, dl, dt, dd}
 import scalatags.Text.tags2.{section}
 import scalatags.Text.attrs.{href, src, cls}
 
@@ -36,9 +36,10 @@ object HtmlConverter {
       }
 
     case ListBlock(items) =>
-      ul(
-        items.map(i => li(i.content)): _*
-      )
+      ul(items.map(i => li(i.content)): _*)
+
+    case DescriptionListBlock(items) =>
+      dl(items.map(i =>  frag(dt(i.marker), dd(blockToHtml(i.content)))): _*)
 
     case NormalBlock(BlockType.Whitespace, _) => frag()
 

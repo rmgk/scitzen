@@ -24,7 +24,7 @@ case class BlockWithAttributes(block        : Block,
   lazy val positional: Seq[String]         = attributes.collect { case Attribute("", value) => value }
   lazy val named     : Map[String, String] =
     attributes.collect { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
-  lazy val role: Seq[String] = {
+  lazy val role      : Seq[String]         = {
     val namedRoles = named.get("role").fold(Seq.empty[String])(_.split(',').toSeq)
     val positionalRoles = positional.filter(_.startsWith(".")).flatMap(_.split('.').toSeq)
     (namedRoles ++ positionalRoles).map(_.trim).filter(_.nonEmpty)
@@ -36,5 +36,8 @@ case class SectionTitle(level: Int, title: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
 
 case class ListItem(marker: String, content: String, continuation: Option[Block])
+
+case class DescriptionListBlock(items: Seq[DescriptionListItem]) extends Block
+case class DescriptionListItem(marker: String, content: Block)
 
 case class Attribute(id: String, value: String)
