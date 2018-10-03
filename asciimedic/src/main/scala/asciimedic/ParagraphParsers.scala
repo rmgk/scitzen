@@ -16,7 +16,7 @@ object ParagraphParsers {
 
   val specialCharacter = P(CharIn(quoteChars ++ "/\\"))
   val constrainedQuote = P(CharIn(quoteChars))
-  val escaped          = P("\\" ~ (Macros.start | Attributes.reference).!)
+  val escaped          = P("\\" ~ (MacroParsers.start | Attributes.reference).!)
                          .map(InlineText)
 
   val text = P(untilE(specialCharacter))
@@ -40,8 +40,8 @@ object ParagraphParsers {
 
     val special: Parser[Inline] = P(escaped |
                                     comment |
-                                    Macros.urls.url |
-                                    Macros.inline |
+                                    MacroParsers.urls.url |
+                                    MacroParsers.inline |
                                     Attributes.reference |
                                     quotes)
 
