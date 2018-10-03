@@ -15,8 +15,8 @@ object Asciimedic {
 
   val header = HeaderParsers.header
 
-  val document         : Parser[Document] = P(HeaderParsers.header.? ~ BlockParsers.fullBlock.rep ~ End)
-                                            .map((Document.apply _).tupled)
+  val document: Parser[Document] = P(HeaderParsers.header.? ~ BlockParsers.fullBlock.rep ~ End)
+                                   .map((Document.apply _).tupled)
 }
 
 object InlineParser {
@@ -27,7 +27,7 @@ object InlineParser {
 
 
 object Macros {
-  val target = P(untilE("[" | saws))
+  val target                      = P(untilE("[" | saws))
   val start                       = P(identifier.! ~ ":")
   val block : Parser[BlockMacro]  = P(start ~ ":" ~ !saws ~/ target ~ Attributes.list)
                                     .map {(BlockMacro.apply _).tupled}
@@ -40,7 +40,7 @@ object Macros {
     val scheme = P("http" ~ "s".? | "ftp" | "irc" | "mailto")
 
     val url: Parser[InlineMacro] = P(scheme.! ~ ":" ~/ Attributes.value ~ Attributes.list.?)
-                                   .map {case (s, t, a) => InlineMacro("link", s"$s:$t", a.getOrElse(Nil))}
+                                   .map { case (s, t, a) => InlineMacro("link", s"$s:$t", a.getOrElse(Nil)) }
   }
 
 }
@@ -62,17 +62,16 @@ object Attributes {
                                          .map { case (id, v) => Attribute(id, v) }
   val listValue    : Parser[Attribute] = P(value)
                                          .map(v => Attribute("", v))
-  val inList                           = P(listDef | listValue)
+  val listElement  : Parser[Attribute] = P(listDef | listValue)
+  val xrefAnchorSpecialCase
+                   : Parser[Seq[Attribute]]
+                                       = P("[" ~ ("[" ~ untilE("]]") ~ "]").! ~ "]")
+                                         .map(content => Seq(Attribute("", content)))
   val list         : Parser[Seq[Attribute]]
-                                       = P(open ~/ aws ~ inList.rep(sep = aws ~ "," ~ aws) ~ ",".? ~ aws ~ close)
-  val line         : Parser[Seq[Attribute]] = P(list ~ swsLine)
+                                       = P(open ~/ aws ~ listElement.rep(sep = aws ~ "," ~ aws) ~ ",".? ~ aws ~ close)
+  val line         : Parser[Seq[Attribute]]
+                                       = P((xrefAnchorSpecialCase | list) ~ iwsLine)
 }
-
-
-
-
-
-
 
 
 /*
