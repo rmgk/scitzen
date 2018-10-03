@@ -13,7 +13,7 @@ object ListParsers {
                          | "*".rep(1)
                          | (digits.? ~ ".".rep(1)))
                       ~ space).!
-  val listContent = P(untilE(eol ~ (("+".? ~ iwsLine) | itemMarker.map(_ => ()))) ~ eol)
+  val listContent = P(untilE(eol ~ (("+".? ~ iwsLine) | (itemMarker | descriptionItemMarker).map(_ => ()))) ~ eol)
   val listItem    = P((itemMarker.! ~/ listContent ~ ("+" ~ iwsLine ~ BlockParsers.fullBlock).?)
                       .map((ListItem.apply _).tupled))
   val list: Parser[ListBlock]

@@ -47,7 +47,7 @@ object ParagraphParsers {
                                     Attributes.reference |
                                     crossreference |
                                     quotes |
-                                    ("\\" | "<").!.map(InlineText))
+                                    AnyChar.!.map(InlineText))
 
     val inlineSequence: Parser[Seq[Inline]] = P((text ~ special.?).rep(min = 1)).log()
                                               .map(ts => ts.flatMap { case (t, s) => Seq(t) ++ s })
