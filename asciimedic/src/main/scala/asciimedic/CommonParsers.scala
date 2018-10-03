@@ -3,16 +3,18 @@ package asciimedic
 import fastparse.all._
 
 object CommonParsers {
-  val newlineCharacter     = "\n"
   val whitespaceCharacters = " \t"
-  val eol                  = P(newlineCharacter | End)
+  val newline              = "\n"
+  val space                = P(CharIn(whitespaceCharacters))
+  val eol                  = P(newline | End)
   val iws                  = P(CharsWhileIn(whitespaceCharacters, min = 0))
   val sws                  = P(CharsWhileIn(whitespaceCharacters, min = 1))
   val iwsLine              = P(iws ~ eol)
-  val saws                 = P(CharsWhileIn(whitespaceCharacters ++ newlineCharacter))
+  val saws                 = P(CharsWhileIn(whitespaceCharacters ++ newline))
   val aws                  = P(saws.?)
-  val swsLine              = P((sws ~ End) | newlineCharacter)
+  val swsLine              = P((sws ~ End) | newline)
   val letter               = P(CharPred(_.isLetter)).opaque("<letter>")
+  val digits               = P(CharsWhile(_.isDigit))
 
   def quoted(close: String, open: Option[String] = None): Parser[String] = {
     P(open.getOrElse(close) ~/ (("\\" ~ ("\\" | close)) | (!close ~ AnyChar)).rep.! ~/ close)
