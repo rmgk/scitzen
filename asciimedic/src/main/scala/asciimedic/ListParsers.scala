@@ -15,9 +15,10 @@ object ListParsers {
                                ~ space)
   val definitionItemMarker = P((untilE("::" | eol) ~ ":".rep(2)) ~ (space | newline))
   val itemMarker           = P((normalItemMarker | definitionItemMarker).!)
-  val listContent          = P(untilE(eol ~ (iwsLine | itemMarker.map(_ => ()))))
-  val listItem             = P((itemMarker.! ~/ listContent.!)
+  val listContent          = P(untilE(eol ~ (("+".? ~ iwsLine) | itemMarker.map(_ => ()))) ~ eol)
+  val listItem             = P((itemMarker.! ~/ listContent ~ ("+" ~ iwsLine ~ BlockParsers.fullBlock).?)
                                .map((ListItem.apply _).tupled))
-  val list                 = P(listItem.rep(1, sep = aws ~ Pass)
+  val list: Parser[ListBlock]
+                           = P(listItem.rep(1, sep = BlockParsers.extendedWhitespace.?)
                                .map(ListBlock) ~ aws)
 }

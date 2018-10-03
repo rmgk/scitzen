@@ -35,6 +35,6 @@ case class BlockMacro(command: String, target: String, attributes: Seq[Attribute
 case class SectionTitle(level: Int, title: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
 
-case class ListItem(marker: String, content: String)
+case class ListItem(marker: String, content: String, continuation: Option[Block])
 
 case class Attribute(id: String, value: String)
