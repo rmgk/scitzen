@@ -57,6 +57,7 @@ object HtmlConverter {
   }
 
   def paragraphStringToHTML(paragraphString: String) = {
+    println(s"converting:\n$paragraphString")
     inlineValuesToHTML(asciimedic.ParagraphParsers.InnerParser().fullParagraph.parse(paragraphString).get.value)
   }
 
