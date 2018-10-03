@@ -73,11 +73,11 @@ object HtmlConverter {
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
     case InlineText(str) => str
-    case InlineComment(text) => frag()
     case InlineQuote(q, inner) => q.head match {
       case '_' => em(inlineValuesToHTML(inner): _*)
       case '*' => strong(inlineValuesToHTML(inner): _*)
     }
+    case InlineMacro("//", target, attributes) => frag()
     case InlineMacro(command, target, attributes) =>
       code(s"$command:$target[${attributes.mkString(",")}]")
   }

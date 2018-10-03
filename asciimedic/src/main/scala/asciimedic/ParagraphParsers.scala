@@ -9,7 +9,6 @@ case class InlineMacro(command: String, target: String, attributes: Seq[Attribut
 case class InlineText(str: String) extends Inline
 case class AttrRef(id: String) extends Inline
 case class InlineQuote(q: String, inner: Seq[Inline]) extends Inline
-case class InlineComment(text: String) extends Inline
 
 object ParagraphParsers {
   val quoteChars: String = "_*`^~#"
@@ -35,7 +34,7 @@ object ParagraphParsers {
     }.map { case (q, inner) => InlineQuote(q, inner) }
 
     val comment = P(("//" ~ untilI(eol)).rep(min = 1).!)
-                  .map(InlineComment)
+                  .map(InlineMacro("//", _, Nil))
 
     val crossreference = P(quoted(open = "<<", close = ">>"))
                          .map(InlineMacro("<<", _, Nil))
