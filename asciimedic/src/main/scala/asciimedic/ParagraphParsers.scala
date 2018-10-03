@@ -10,11 +10,14 @@ case class InlineText(str: String) extends Inline
 case class AttrRef(id: String) extends Inline
 case class InlineQuote(q: String, inner: Seq[Inline]) extends Inline
 case class InlineComment(text: String) extends Inline
+case class InlineSpecial(q: String, text: String) extends Inline
 
 object ParagraphParsers {
   val quoteChars: String = "_*`^~#"
 
-  val specialCharacter = P(CharIn(quoteChars ++ "/\\"))
+  val otherSpecialChars = "</\\"
+
+  val specialCharacter = P(CharIn(quoteChars ++ otherSpecialChars))
   val constrainedQuote = P(CharIn(quoteChars))
   val escaped          = P("\\" ~ (MacroParsers.start | Attributes.reference).!)
                          .map(InlineText)
@@ -32,10 +35,11 @@ object ParagraphParsers {
       }.reduce(_ | _)
     }.map { case (q, inner) => InlineQuote(q, inner) }
 
-    //
-
     val comment = P(("//" ~ untilI(eol)).rep(min = 1).!)
                   .map(InlineComment)
+
+    val crossreference = P(quoted(open = "<<", close = ">>"))
+                         .map(InlineSpecial("<<", _))
 
 
     val special: Parser[Inline] = P(escaped |
@@ -43,7 +47,9 @@ object ParagraphParsers {
                                     MacroParsers.urls.url |
                                     MacroParsers.inline |
                                     Attributes.reference |
-                                    quotes)
+                                    crossreference |
+                                    quotes |
+                                    ("\\" | "<").!.map(InlineText))
 
     val inlineSequence: Parser[Seq[Inline]] = P((text ~ special.?).rep(min = 1)).log()
                                               .map(ts => ts.flatMap { case (t, s) => Seq(t) ++ s })

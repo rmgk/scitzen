@@ -6,7 +6,7 @@ import fastparse.all._
 object HeaderParsers {
   val title     : Parser[String]      = P("= " ~/ untilI(eol))
   val author    : Parser[Author]      = P(untilE(";" | "<" | eol).! ~
-                                          quoted(open = Some("<"), close = ">").?).log()
+                                          quoted(open = "<", close = ">").?).log()
                                         .map { case (authorName, mail) => Author(authorName, mail) }
   // asciidoctors revision line is weird https://asciidoctor.org/docs/user-manual/#revision-number-date-and-remark
   // it is clearly not meant for automatic parsing of timestamps and overall … meh

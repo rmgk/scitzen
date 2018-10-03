@@ -16,8 +16,8 @@ object CommonParsers {
   val letter               = P(CharPred(_.isLetter)).opaque("<letter>")
   val digits               = P(CharsWhile(_.isDigit))
 
-  def quoted(close: String, open: Option[String] = None): Parser[String] = {
-    P(open.getOrElse(close) ~/ (("\\" ~ ("\\" | close)) | (!close ~ AnyChar)).rep.! ~/ close)
+  def quoted(close: String, open: String = null): Parser[String] = {
+    P(Option(open).getOrElse(close) ~/ (("\\" ~ ("\\" | close)) | (!close ~ AnyChar)).rep.! ~/ close)
     .map { str =>
       (if (close == "\\") str else str.replace(s"\\$close", close))
       .replace("\\\\", "\\")

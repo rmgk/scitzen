@@ -48,7 +48,12 @@ object HtmlConverter {
         case BlockType.Delimited(delimiter) if delimiter.startsWith(".") =>
           p(text, cls:=" literalblock ")(addModifier : _*)
 
-        case other => p(paragraphStringToHTML(text): _*)
+        case BlockType.Delimited(delimiter) =>
+          pre(delimiter, "\n", text, "\n", delimiter)
+
+        case other =>
+          println(s"converting $other block:\n$text")
+          p(paragraphStringToHTML(text): _*)
 
       }
     }
@@ -57,7 +62,6 @@ object HtmlConverter {
   }
 
   def paragraphStringToHTML(paragraphString: String) = {
-    println(s"converting:\n$paragraphString")
     inlineValuesToHTML(asciimedic.ParagraphParsers.InnerParser().fullParagraph.parse(paragraphString).get.value)
   }
 
@@ -68,5 +72,6 @@ object HtmlConverter {
       case '_' => em(inlineValuesToHTML(inner): _*)
       case '*' => strong(inlineValuesToHTML(inner): _*)
     }
+    case InlineSpecial(q, text) => code(q, text)
   }
 }
