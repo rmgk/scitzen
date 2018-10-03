@@ -78,6 +78,7 @@ object HtmlConverter {
       case '_' => em(inlineValuesToHTML(inner): _*)
       case '*' => strong(inlineValuesToHTML(inner): _*)
     }
-    case InlineSpecial(q, text) => code(q, text)
+    case InlineMacro(command, target, attributes) =>
+      code(s"$command:$target[${attributes.mkString(",")}]")
   }
 }
