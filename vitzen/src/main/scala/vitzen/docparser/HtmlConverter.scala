@@ -2,7 +2,8 @@ package vitzen.docparser
 
 import asciimedic._
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em}
+import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em, h6}
+import scalatags.Text.tags2.{section}
 import scalatags.Text.attrs.{href, src, cls}
 
 
@@ -17,7 +18,7 @@ object HtmlConverter {
 
     case SectionTitle(level, title) => tag("h" + (level + 1))(title)
 
-    case bwa : BlockWithAttributes =>
+    case bwa: BlockWithAttributes =>
       val positiontype = bwa.positional.headOption
       positiontype match {
         case Some("quote") =>
@@ -25,10 +26,13 @@ object HtmlConverter {
           val title = bwa.positional.lift(2).fold("")(t => s" $t")
           if (bwa.positional.size > 1) bq(cite(s"– ${bwa.positional(1)}.$title"))
           else bq
-        case other =>       frag(
-            bwa.title.getOrElse("").toString,
-            blockToHtml(bwa.block, bwa.role.map(c => cls := s" $c "))
-          )
+        case other         =>
+          val blockContent = blockToHtml(bwa.block, bwa.role.map(c => cls := s" $c "))
+
+          bwa.title match {
+            case None        => blockContent
+            case Some(value) => section(h6(value), blockContent)
+          }
       }
 
     case ListBlock(items) =>
