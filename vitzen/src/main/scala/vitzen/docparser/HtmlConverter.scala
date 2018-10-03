@@ -2,7 +2,7 @@ package vitzen.docparser
 
 import asciimedic._
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em, h6}
+import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em, h6, hr}
 import scalatags.Text.tags2.{section}
 import scalatags.Text.attrs.{href, src, cls}
 
@@ -46,6 +46,8 @@ object HtmlConverter {
       div(cls := "imageblock",
           img(src := target)
       )
+    case BlockMacro("horizontal-rule", target, attributes) =>
+      hr()
 
     case NormalBlock(blockType, text) => {
       blockType match {
