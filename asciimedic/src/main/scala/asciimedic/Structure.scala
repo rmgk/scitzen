@@ -37,7 +37,4 @@ case class ListBlock(items: Seq[ListItem]) extends Block
 
 case class ListItem(marker: String, content: String, continuation: Option[Block])
 
-case class DescriptionListBlock(items: Seq[DescriptionListItem]) extends Block
-case class DescriptionListItem(marker: String, content: Block)
-
 case class Attribute(id: String, value: String)

@@ -14,4 +14,13 @@ object DelimitedBlockParsers {
     }
 
   val full: Parser[NormalBlock] = P(makeDelimited(anyStart))
+
+
+  val whitespaceLiteral: Parser[NormalBlock] = P(
+    (sws.! ~ !newline).flatMap { indentation =>
+      (untilI(eol) ~ swsLine.rep).!.rep(min = 1, sep = indentation)
+      .map(lines => NormalBlock(BlockType.Delimited(indentation), lines.mkString))
+    }
+  ).log()
+
 }

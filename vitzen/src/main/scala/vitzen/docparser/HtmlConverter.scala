@@ -1,16 +1,68 @@
 package vitzen.docparser
 
 import asciimedic._
+import scalatags.Text
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{code, div, p, frag, tag, img, pre, blockquote, cite, ul, li, strong, em, h6, hr, dl, dt, dd}
-import scalatags.Text.tags2.{section}
-import scalatags.Text.attrs.{href, src, cls}
+import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, frag, h6, hr, img, li, ol, p, pre, strong, tag, ul}
+import scalatags.Text.tags2.section
+import scalatags.Text.attrs.{cls, href, src}
 
 
 object HtmlConverter {
   def convert(document: Document): String = frag(
     document.blocks.map(blockToHtml(_)): _*
   ).render
+
+
+  def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
+    case Nil                    => Nil
+    case (marker, item) :: tail =>
+      val (take, drop) = tail.span{ case (c, _) => marker != c }
+      (item -> take.map(_._2)) +: splitted(drop)
+  }
+
+  def listToHtml(items: Seq[ListItem]): Frag = {
+    def norm(m: String) = m.replaceAll("""[^\*\.:-]""", "")
+    val split = splitted(items.map(i => (norm(i.marker), i)))
+
+    split match {
+      case Nil                 => frag()
+      case (firstItem, _) :: _ =>
+        val n = norm(firstItem.marker)
+        if (n.startsWith(":")) {
+          dl(split.flatMap { case (item, contents) =>
+            List(
+              dt(item.marker),
+              dd(item.content)(
+                item.continuation.toList.flatMap{
+                  case NormalBlock(BlockType.Delimited(ws), content) => convertBlockContent(content)
+                  case other => List(blockToHtml(other))
+                }: _*)(
+                listToHtml(contents)
+              ))
+          }: _*)
+        }
+        else if (n.startsWith(".")) {
+          ol(split.flatMap { case (item, contents) =>
+            List(
+              li(item.content)(
+                item.continuation.map(blockToHtml(_)).toList: _*)(
+                listToHtml(contents)
+              ))
+          }: _*)
+        } else {
+          ul(split.flatMap { case (item, contents) =>
+            List(
+              li(item.content)(
+                item.continuation.map(blockToHtml(_)).toList: _*)(
+                listToHtml(contents)
+              ))
+          }: _*)
+        }
+
+    }
+
+  }
 
   def blockToHtml(b: Block, addModifier: Seq[Modifier] = Nil): Frag = b match {
 
@@ -36,10 +88,7 @@ object HtmlConverter {
       }
 
     case ListBlock(items) =>
-      ul(items.map(i => li(i.content)): _*)
-
-    case DescriptionListBlock(items) =>
-      dl(items.map(i =>  frag(dt(i.marker), dd(blockToHtml(i.content)))): _*)
+      listToHtml(items)
 
     case NormalBlock(BlockType.Whitespace, _) => frag()
 
@@ -68,8 +117,12 @@ object HtmlConverter {
     case other => div(stringFrag(other.toString))
   }
 
-  def paragraphStringToHTML(paragraphString: String) = {
+  def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
     inlineValuesToHTML(asciimedic.ParagraphParsers.InnerParser().fullParagraph.parse(paragraphString).get.value)
+  }
+
+  def convertBlockContent(blockContent: String): Seq[Frag] = {
+    asciimedic.Asciimedic.document.parse(blockContent).get.value.blocks.map(blockToHtml(_))
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {

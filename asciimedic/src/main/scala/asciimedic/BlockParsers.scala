@@ -30,12 +30,11 @@ object BlockParsers {
 
   val alternatives: Parser[Block] = P(extendedWhitespace |
                                       ListParsers.list |
-                                      ListParsers.descriptionList |
                                       DelimitedBlockParsers.full |
                                       horizontalRule |
                                       sectionTitle |
                                       MacroParsers.block |
-                                      paragraph)
+                                      paragraph).log()
 
   val fullBlock: Parser[Block] = P(Attributes.line.rep ~ blockTitle.? ~ Attributes.line.rep ~ alternatives)
                                  .map {
