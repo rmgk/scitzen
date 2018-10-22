@@ -21,4 +21,13 @@ object DateParsingHelper {
     LocalDateTime.from(temporal)
   }
 
+  val outputTime: DateTimeFormatter =
+    new DateTimeFormatterBuilder()
+    .append(DateTimeFormatter.ISO_LOCAL_DATE)
+//    .appendLiteral("_")
+//    .appendValue(ChronoField.HOUR_OF_DAY, 2)
+//    .appendLiteral("-")
+//    .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+    .toFormatter()
+
 }

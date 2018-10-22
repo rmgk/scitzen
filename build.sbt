@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "2.12.6"
+ThisBuild / scalaVersion := "2.12.7"
 ThisBuild / organization := "de.rmgk"
 
 
@@ -8,7 +8,6 @@ lazy val vitzen = project.in(file("vitzen"))
                   .enablePlugins(JavaAppPackaging)
                   .settings(
                     name := "vitzen",
-                    Compile / mainClass := Some("vitzen.Vitzen"),
                     Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
                     vitzendeps
                   )
