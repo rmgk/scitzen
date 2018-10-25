@@ -7,13 +7,13 @@ object BlockParsers {
 
   val blockTitle: Parser[String] = P("." ~ !(" " | "...") ~ InlineParser.titleLine)
 
-  val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").!)
+  val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ iwsLine)
                                            .map(BlockMacro.apply("horizontal-rule", _, Nil))
   val pageBreak     : Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
   val whitespaceBlock: Parser[NormalBlock] = P(swsLine.rep(min = 1).!).map(NormalBlock(BlockType.Whitespace, _))
 
-  val paragraph: Parser[NormalBlock] = P(untilI(eol ~ iwsLine))
+  val paragraph: Parser[NormalBlock] = P(untilE(eol ~ (iwsLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
                                        .map(NormalBlock(BlockType.Paragraph, _))
 
   val sectionTitle: Parser[SectionTitle] = P("=".rep(2).! ~ " " ~ InlineParser.titleLine)
