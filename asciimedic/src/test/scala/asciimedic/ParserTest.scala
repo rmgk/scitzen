@@ -171,4 +171,14 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 //
   }
 
+  "delimited blocks" in {
+    val str = """[source]
+----
+block content
+----
+"""
+    val res = fastparse.parse(str, BlockParsers.fullBlock(_)).get.value
+    pprint.pprintln(res)
+  }
+
 }
