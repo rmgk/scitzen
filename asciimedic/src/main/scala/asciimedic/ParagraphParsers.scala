@@ -28,11 +28,10 @@ object ParagraphParsers {
 
 
     def quotes[_:P]: P[InlineQuote] = P {
-      !CharPred(outer.contains) ~
         quoteChars.rep(min = 1, max = 2).!.flatMap { delimiter =>
           (InnerParser(outer :+ delimiter.head).inlineSequence ~ delimiter).map(v => (delimiter, v))
         }
-    }.map { case (q, inner) => InlineQuote(q, inner) }
+    }.map { case (q, inner) => InlineQuote(q, inner) }.log
 
     def comment [_:P]= P(("//" ~ untilI(eol)).rep(1).!)
                   .map(InlineMacro("//", _, Nil))
@@ -50,7 +49,7 @@ object ParagraphParsers {
                                     quotes |
                                     AnyChar.!.map(InlineText))
 
-    def inlineSequence[_:P]: P[Seq[Inline]] = P((text ~ special.?).rep(1)).log
+    def inlineSequence[_:P]: P[Seq[Inline]] = P((text ~ (!CharPred(outer.contains) ~ special).?).rep(1)).log
                                               .map(ts => ts.flatMap { case (t, s) => Seq(t) ++ s })
 
     def fullParagraph [_:P]= P(inlineSequence ~ End)

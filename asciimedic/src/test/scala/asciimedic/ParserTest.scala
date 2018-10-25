@@ -1,5 +1,6 @@
 package asciimedic
 
+import asciimedic.BlockType.Delimited
 import fastparse.P
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.FreeSpec
@@ -178,6 +179,16 @@ block content
 ----
 """
     val res = fastparse.parse(str, BlockParsers.fullBlock(_)).get.value
+    assert (res == BlockWithAttributes(
+      NormalBlock(Delimited("----"), "block content"),
+      Seq(Seq(Attribute("", "source"))),
+      None
+    ))
+  }
+
+  "paragraph quotes" in {
+    val str = "hallo ``schöne`` welt"
+    val res = fastparse.parse(str, ParagraphParsers.InnerParser().fullParagraph(_)).get.value
     pprint.pprintln(res)
   }
 
