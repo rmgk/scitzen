@@ -81,52 +81,52 @@ NOTE: This is test, only a test.
   val multipleAuthors = """= The Dangerous and Thrilling Documentation Chronicles
 Kismet Rainbow Chameleon <kismet@asciidoctor.org>; Lazarus het_Draeke <lazarus@asciidoctor.org>
 """
-
-  val simpleLists = ParsingTest("""
-.Unordered, basic
-* Edgar Allen Poe
-* Sheri S. Tepper
-* Bill Bryson
-
-.Unordered, max nesting
-* level 1
-** level 2
-*** level 3
-**** level 4
-***** level 5
-* level 1
-
-""",
-                                Document(
-                                  None,
-                                  Seq(
-                                    BlockWithAttributes(
-                                      ListBlock(
-                                        Seq(
-                                          ListItem("* ", "Edgar Allen Poe"),
-                                          ListItem("* ", "Sheri S. Tepper"),
-                                          ListItem("* ", "Bill Bryson")
-                                        )
-                                      ),
-                                      Seq(),
-                                      Some("Unordered, basic")
-                                    ),
-                                    BlockWithAttributes(
-                                      ListBlock(
-                                        Seq(
-                                          ListItem("* ", "level 1"),
-                                          ListItem("** ", "level 2"),
-                                          ListItem("*** ", "level 3"),
-                                          ListItem("**** ", "level 4"),
-                                          ListItem("***** ", "level 5"),
-                                          ListItem("* ", "level 1")
-                                        )
-                                      ),
-                                      Seq(),
-                                      Some("Unordered, max nesting")
-                                    )
-                                  )
-                                ))
+//
+//  val simpleLists = ParsingTest("""
+//.Unordered, basic
+//* Edgar Allen Poe
+//* Sheri S. Tepper
+//* Bill Bryson
+//
+//.Unordered, max nesting
+//* level 1
+//** level 2
+//*** level 3
+//**** level 4
+//***** level 5
+//* level 1
+//
+//""",
+//                                Document(
+//                                  None,
+//                                  Seq(
+//                                    BlockWithAttributes(
+//                                      ListBlock(
+//                                        Seq(
+//                                          ListItem("* ", "Edgar Allen Poe"),
+//                                          ListItem("* ", "Sheri S. Tepper"),
+//                                          ListItem("* ", "Bill Bryson")
+//                                        )
+//                                      ),
+//                                      Seq(),
+//                                      Some("Unordered, basic")
+//                                    ),
+//                                    BlockWithAttributes(
+//                                      ListBlock(
+//                                        Seq(
+//                                          ListItem("* ", "level 1"),
+//                                          ListItem("** ", "level 2"),
+//                                          ListItem("*** ", "level 3"),
+//                                          ListItem("**** ", "level 4"),
+//                                          ListItem("***** ", "level 5"),
+//                                          ListItem("* ", "level 1")
+//                                        )
+//                                      ),
+//                                      Seq(),
+//                                      Some("Unordered, max nesting")
+//                                    )
+//                                  )
+//                                ))
 
   val lists =
     """= Document Title
@@ -243,31 +243,31 @@ This guide provides...
 The document header is useful, but not required.
 ====
 """
-
-  val nestedExampleParsed = Document(
-    None,
-    Seq(
-      BlockWithAttributes(
-        DelimitedBlock(
-          "====",
-          """Here's a sample AsciiDoc document:
-
-[listing]
-....
-= Title of Document
-Doc Writer
-:toc:
-
-This guide provides...
-....
-
-The document header is useful, but not required."""
-        ),
-        Nil,
-        Some("Sample document")
-      ),
-      DelimitedBlock("====", "")
-    )
-  )
+//
+//  val nestedExampleParsed = Document(
+//    None,
+//    Seq(
+//      BlockWithAttributes(
+//        DelimitedBlock(
+//          "====",
+//          """Here's a sample AsciiDoc document:
+//
+//[listing]
+//....
+//= Title of Document
+//Doc Writer
+//:toc:
+//
+//This guide provides...
+//....
+//
+//The document header is useful, but not required."""
+//        ),
+//        Nil,
+//        Some("Sample document")
+//      ),
+//      DelimitedBlock("====", "")
+//    )
+//  )
 
 }
