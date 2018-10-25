@@ -28,7 +28,7 @@ lazy val asciimedicdeps = libraryDependencies ++= Seq(
   "com.lihaoyi" %% "scalatags" % "0.6.7",
   "com.monovore" %% "decline" % "0.5.0",
   "com.github.pathikrit" %% "better-files" % "3.6.0",
-  "com.lihaoyi" %% "fastparse" % "1.0.0",
+  "com.lihaoyi" %% "fastparse" % "2.0.4",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
   "com.lihaoyi" %% "pprint" % "0.5.3"

@@ -118,11 +118,11 @@ object HtmlConverter {
   }
 
   def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-    inlineValuesToHTML(asciimedic.ParagraphParsers.InnerParser().fullParagraph.parse(paragraphString).get.value)
+    inlineValuesToHTML(fastparse.parse(paragraphString, asciimedic.ParagraphParsers.InnerParser().fullParagraph(_)).get.value)
   }
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    asciimedic.Asciimedic.document.parse(blockContent).get.value.blocks.map(blockToHtml(_))
+    fastparse.parse(blockContent, asciimedic.Asciimedic.document(_)).get.value.blocks.map(blockToHtml(_))
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {

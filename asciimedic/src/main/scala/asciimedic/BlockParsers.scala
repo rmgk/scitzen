@@ -1,42 +1,42 @@
 package asciimedic
 
 import asciimedic.CommonParsers._
-import fastparse.all._
+import fastparse._; import fastparse.NoWhitespace._
 
 object BlockParsers {
 
-  val blockTitle: Parser[String] = P("." ~ !(" " | "...") ~ InlineParser.titleLine)
+  def blockTitle[_:P]: P[String] = P("." ~ !(" " | "...") ~ InlineParser.titleLine)
 
-  val horizontalRule: Parser[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ iwsLine)
+  def horizontalRule[_:P]: P[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ iwsLine)
                                            .map(BlockMacro.apply("horizontal-rule", _, Nil))
-  val pageBreak     : Parser[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
+  def pageBreak     [_:P]: P[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
-  val whitespaceBlock: Parser[NormalBlock] = P(swsLine.rep(min = 1).!).map(NormalBlock(BlockType.Whitespace, _))
+  def whitespaceBlock[_:P]: P[NormalBlock] = P(swsLine.rep(1).!).map(NormalBlock(BlockType.Whitespace, _))
 
-  val paragraph: Parser[NormalBlock] = P(untilE(eol ~ (iwsLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
+  def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (iwsLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
                                        .map(NormalBlock(BlockType.Paragraph, _))
 
-  val sectionTitle: Parser[SectionTitle] = P("=".rep(2).! ~ " " ~ InlineParser.titleLine)
+  def sectionTitle[_:P]: P[SectionTitle] = P("=".rep(2).! ~ " " ~ InlineParser.titleLine)
                                            .map { case (level, str) => SectionTitle(level.length - 1, str) }
 
-  val commentBlock: Parser[NormalBlock] =
-    P((DelimitedBlockParsers.makeDelimited("/".rep(min = 4).!)
+  def commentBlock[_:P]: P[NormalBlock] =
+    P((DelimitedBlockParsers.makeDelimited("/".rep(4).!)
        | ("//" ~ untilI(eol))
-      ).rep(min = 1).!)
+      ).rep(1).!)
     .map(NormalBlock(BlockType.Paragraph, _))
 
-  val extendedWhitespace: Parser[NormalBlock] = P((whitespaceBlock | commentBlock).rep(min = 1).!)
+  def extendedWhitespace[_:P]: P[NormalBlock] = P((whitespaceBlock | commentBlock).rep(1).!)
                                                 .map(NormalBlock(BlockType.Whitespace, _))
 
-  val alternatives: Parser[Block] = P(extendedWhitespace |
+  def alternatives[_:P]: P[Block] = P(extendedWhitespace |
                                       ListParsers.list |
                                       DelimitedBlockParsers.full |
                                       horizontalRule |
                                       sectionTitle |
                                       MacroParsers.block |
-                                      paragraph).log()
+                                      paragraph)
 
-  val fullBlock: Parser[Block] = P(Attributes.line.rep ~ blockTitle.? ~ Attributes.line.rep ~ alternatives)
+  def fullBlock[_:P]: P[Block] = P(Attributes.line.rep ~ blockTitle.? ~ Attributes.line.rep ~ alternatives)
                                  .map {
                                    case (Nil, None, Nil, content)         => content
                                    case (attrs1, stitle, attrs2, content) =>

@@ -1,6 +1,7 @@
 package asciimedic
 
-import fastparse.all._
+import fastparse._
+import fastparse.NoWhitespace._
 import asciimedic.CommonParsers._
 
 
@@ -13,15 +14,15 @@ import asciimedic.CommonParsers._
   * */
 object Asciimedic {
 
-  val header = HeaderParsers.header
+  def header[_: P] = HeaderParsers.header
 
-  val document: Parser[Document] = P(HeaderParsers.header.? ~ BlockParsers.fullBlock.rep ~ End)
-                                   .map((Document.apply _).tupled)
+  def document[_: P]: P[Document] = P(HeaderParsers.header.? ~ BlockParsers.fullBlock.rep ~ End)
+                                    .map((Document.apply _).tupled)
 }
 
 object InlineParser {
   // \ to escape newlines, + \ to escape newlines but keep newlines
-  val line      = CommonParsers.line
-  val titleLine = untilI(eol)
+  def line[_: P] = CommonParsers.line
+  def titleLine[_: P] = untilI(eol)
 }
 

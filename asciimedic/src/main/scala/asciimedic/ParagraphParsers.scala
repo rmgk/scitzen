@@ -1,7 +1,7 @@
 package asciimedic
 
 import asciimedic.CommonParsers._
-import fastparse.all._
+import fastparse._; import fastparse.NoWhitespace._
 
 
 sealed trait Inline
@@ -11,36 +11,37 @@ case class AttrRef(id: String) extends Inline
 case class InlineQuote(q: String, inner: Seq[Inline]) extends Inline
 
 object ParagraphParsers {
-  val quoteChars: String = "_*`^~#"
+  def quoteChars[_:P]: P[Unit] = CharIn("_*`^~#")
 
-  val otherSpecialChars = "</\\"
+  def otherSpecialChars [_:P]= CharIn("</\\\\")
 
-  val specialCharacter = P(CharIn(quoteChars ++ otherSpecialChars))
-  val constrainedQuote = P(CharIn(quoteChars))
-  val escaped          = P("\\" ~ (MacroParsers.start | Attributes.reference).!)
+  def specialCharacter [_:P]= P(quoteChars | otherSpecialChars)
+  def constrainedQuote [_:P]= P(quoteChars)
+  def escaped          [_:P]= P("\\" ~ (MacroParsers.start | Attributes.reference).!)
                          .map(InlineText)
 
-  val text = P(untilE(specialCharacter))
+  def text [_:P]= P(untilE(specialCharacter))
              .map(InlineText)
 
 
   case class InnerParser[Res](outer: Seq[Char] = Seq.empty) {
 
 
-    val quotes: Parser[InlineQuote] = P {
-      quoteChars.filterNot(outer.contains).flatMap(c => Seq(s"$c", s"$c$c")).map { delimiter =>
-        delimiter.! ~ InnerParser(outer :+ delimiter.head).inlineSequence ~ delimiter
-      }.reduce(_ | _)
+    def quotes[_:P]: P[InlineQuote] = P {
+      !CharPred(outer.contains) ~
+        quoteChars.rep(min = 1, max = 2).!.flatMap { delimiter =>
+          (InnerParser(outer :+ delimiter.head).inlineSequence ~ delimiter).map(v => (delimiter, v))
+        }
     }.map { case (q, inner) => InlineQuote(q, inner) }
 
-    val comment = P(("//" ~ untilI(eol)).rep(min = 1).!)
+    def comment [_:P]= P(("//" ~ untilI(eol)).rep(1).!)
                   .map(InlineMacro("//", _, Nil))
 
-    val crossreference = P(quoted(open = "<<", close = ">>"))
+    def crossreference [_:P]= P(quoted(open = "<<", close = ">>"))
                          .map(InlineMacro("<<", _, Nil))
 
 
-    val special: Parser[Inline] = P(escaped |
+    def special[_:P]: P[Inline] = P(escaped |
                                     comment |
                                     MacroParsers.urls.url |
                                     MacroParsers.inline |
@@ -49,10 +50,10 @@ object ParagraphParsers {
                                     quotes |
                                     AnyChar.!.map(InlineText))
 
-    val inlineSequence: Parser[Seq[Inline]] = P((text ~ special.?).rep(min = 1)).log()
+    def inlineSequence[_:P]: P[Seq[Inline]] = P((text ~ special.?).rep(1)).log
                                               .map(ts => ts.flatMap { case (t, s) => Seq(t) ++ s })
 
-    val fullParagraph = P(inlineSequence ~ End)
+    def fullParagraph [_:P]= P(inlineSequence ~ End)
   }
 
 }

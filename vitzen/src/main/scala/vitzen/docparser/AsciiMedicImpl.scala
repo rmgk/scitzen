@@ -9,7 +9,7 @@ import vitzen.DateParsingHelper
 
 class AsciiMedicImpl(basedir: Path) {
   def makePost(path: Path): Post = {
-    val document = Asciimedic.document.parse(File(path).contentAsString).get.value
+    val document = fastparse.parse(File(path).contentAsString, Asciimedic.document(_)).get.value
     new MedicPost(basedir.relativize(path), document)
   }
 }

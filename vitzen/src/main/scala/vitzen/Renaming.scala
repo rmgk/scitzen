@@ -29,7 +29,7 @@ object Renaming extends CommandApp(
       val source = File(sourceP)
       source.children.filter(_.isRegularFile).filter(_.name.endsWith(".adoc")).foreach { f =>
         println(f.name)
-        val header: Header = Asciimedic.header.parse(f.contentAsString).get.value
+        val header: Header = fastparse.parse(f.contentAsString, Asciimedic.header(_)).get.value
         val date = LocalDateTime.from(DateParsingHelper.timeFormatter.parse(
           header.attributes.map(a => a.id -> a.value).toMap
           .getOrElse("revdate", throw new NoSuchElementException(s"${header.title} has no revdate")).trim))

@@ -1,22 +1,21 @@
 package asciimedic
 
-import fastparse.all._
+import fastparse._; import fastparse.NoWhitespace._
 
 object CommonParsers {
-  val whitespaceCharacters = " \t"
-  val newline              = "\n"
-  val space                = P(CharIn(whitespaceCharacters))
-  val eol                  = P(newline | End)
-  val iws                  = P(CharsWhileIn(whitespaceCharacters, min = 0))
-  val sws                  = P(CharsWhileIn(whitespaceCharacters, min = 1))
-  val iwsLine              = P(iws ~ eol)
-  val saws                 = P(CharsWhileIn(whitespaceCharacters ++ newline))
-  val aws                  = P(saws.?)
-  val swsLine              = P((sws ~ End) | newline)
-  val letter               = P(CharPred(_.isLetter)).opaque("<letter>")
-  val digits               = P(CharsWhile(_.isDigit))
+  def space                [_:P]= P(CharIn(" \t"))
+  def newline[_:P] = P("\n")
+  def eol                  [_:P]= P(newline | End)
+  def iws                  [_:P]= P(CharsWhileIn(" \t", 0))
+  def sws                  [_:P]= P(CharsWhileIn(" \t", 1))
+  def iwsLine              [_:P]= P(iws ~ eol)
+  def saws                 [_:P]= P(CharsWhileIn(" \t\n"))
+  def aws                  [_:P]= P(saws.?)
+  def swsLine              [_:P]= P((sws ~ End) | "\n")
+  def letter               [_:P]= P(CharPred(_.isLetter)).opaque("<letter>")
+  def digits               [_:P]= P(CharsWhile(_.isDigit))
 
-  def quoted(close: String, open: String = null): Parser[String] = {
+  def quoted[_:P](close: String, open: String = null): P[String] = {
     P(Option(open).getOrElse(close) ~/ (("\\" ~ ("\\" | close)) | (!close ~ AnyChar)).rep.! ~/ close)
     .map { str =>
       (if (close == "\\") str else str.replace(s"\\$close", close))
@@ -24,21 +23,21 @@ object CommonParsers {
     }
   }
 
-  def untilE(closing: Parser[Unit], content: Parser[Unit] = AnyChar, min: Int = 1):Parser[String] =
-    P(((!closing) ~ content).rep(min).!)
+  def untilE[_:P](closing: P[Unit], min: Int = 1):P[String] =
+    P(((!closing) ~ AnyChar).rep(min).!)
 
-  def untilI(closing: Parser[Unit], content: Parser[Unit] = AnyChar, min: Int = 1): Parser[String] =
-    P(untilE(closing, content, min) ~ closing)
+  def untilI[_:P](closing: P[Unit], min: Int = 1): P[String] =
+    P(untilE(closing, min) ~ closing)
 
 
   object Identifier {
-    val charInWordList  = ('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z') ++ "_"
-    val startIdentifier = P(CharIn(charInWordList)).opaque("<start identifier>")
-    val inIdentifier    = P(CharsWhileIn(charInWordList ++ "-", 0)).opaque("<in identifier>")
-    val identifier      = P((startIdentifier ~ inIdentifier).!).opaque("<identifier>")
+    def charInWordList  [_:P]= P(CharIn("0-9a-zA-Z_"))
+    def startIdentifier [_:P]= P(charInWordList).opaque("<start identifier>")
+    def inIdentifier    [_:P]= P(CharsWhileIn("0-9a-zA-Z_\\-", 0)).opaque("<in identifier>")
+    def identifier      [_:P]= P((startIdentifier ~ inIdentifier).!).opaque("<identifier>")
   }
 
-  val identifier =  Identifier.identifier
+  def identifier [_:P]=  Identifier.identifier
 
-  val line = P(untilE(eol, min = 0)).opaque("<line>")
+  def line [_:P]= P(untilE(eol, min = 0)).opaque("<line>")
 }
