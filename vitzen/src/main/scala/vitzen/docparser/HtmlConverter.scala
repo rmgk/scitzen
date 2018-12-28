@@ -1,11 +1,10 @@
 package vitzen.docparser
 
 import asciimedic._
-import scalatags.Text
+import scalatags.Text.attrs.{cls, src}
 import scalatags.Text.implicits._
 import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, frag, h6, hr, img, li, ol, p, pre, strong, tag, ul}
 import scalatags.Text.tags2.section
-import scalatags.Text.attrs.{cls, href, src}
 
 
 object HtmlConverter {
@@ -135,5 +134,6 @@ object HtmlConverter {
     case InlineMacro("//", target, attributes) => frag()
     case InlineMacro(command, target, attributes) =>
       code(s"$command:$target[${attributes.mkString(",")}]")
+    case _ => ???
   }
 }
