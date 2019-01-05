@@ -1,6 +1,8 @@
 package vitzen
 
 import java.nio.file.Path
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.util.NoSuchElementException
 
@@ -21,6 +23,7 @@ object Renaming extends CommandApp(
   name = "asciidocii",
   header = "Tools for parsing asciidoc and doing something with the result",
   main = {
+    implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
     val optSource = Opts.option[Path]("source", short = "s", metavar = "directory",
                                       help = "Directory containing Asciidoc source posts")
 
