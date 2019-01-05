@@ -17,7 +17,7 @@ object ParagraphParsers {
 
   def specialCharacter [_:P]= P(quoteChars | otherSpecialChars)
   def constrainedQuote [_:P]= P(quoteChars)
-  def escaped          [_:P]= P("\\" ~ (MacroParsers.start | Attributes.reference).!)
+  def escaped          [_:P]= P("\\" ~ (MacroParsers.start | Attributes.reference | specialCharacter).!)
                          .map(InlineText)
 
   def text [_:P]= P(untilE(specialCharacter))
