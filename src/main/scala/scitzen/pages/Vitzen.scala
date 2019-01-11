@@ -17,7 +17,7 @@ object Vitzen {
       Resource.getAsStream(resourceLocator.getFullPath(path)).buffered.bytes
     } catch {
       case e: IllegalArgumentException =>
-        (File.currentWorkingDirectory / "vitzen/target/web/sass/main/stylesheets/" / path).bytes
+        (File.currentWorkingDirectory / "target/web/sass/main/stylesheets/" / path).bytes
     }
 
 

@@ -98,7 +98,7 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
   }
 
   "parse document" - {
-    def parse(str: String) = fastparse.parse(str, asciimedic.Asciimedic.document(_))
+    def parse(str: String) = fastparse.parse(str, scitzen.parser.DocumentParsers.document(_))
 //    "link" in {
 //      pprint.pprintln(parse(ExampleFiles.link).get.value)
 //      assert(
