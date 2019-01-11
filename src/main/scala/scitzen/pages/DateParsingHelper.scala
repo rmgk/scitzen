@@ -1,7 +1,4 @@
-package vitzen
-
-import java.time.LocalDateTime
-import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
+package scitzen.pages
 
 object DateParsingHelper {
   val timeFormatter: DateTimeFormatter = new DateTimeFormatterBuilder()

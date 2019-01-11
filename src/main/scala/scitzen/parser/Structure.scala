@@ -1,5 +1,4 @@
-package asciimedic
-
+package scitzen.parser
 
 case class Document(header: Option[Header], blocks: Seq[Block])
 case class Header(title: String, authors: Seq[Author], attributes: Seq[Attribute])

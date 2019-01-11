@@ -1,7 +1,7 @@
-package vitzen
+package scitzen.pages
 
-import java.time.{LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZoneOffset}
 
 import scalatags.Text.all.{frag, raw}
 import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, src, title, name => attrname}

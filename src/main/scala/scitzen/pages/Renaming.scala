@@ -1,8 +1,7 @@
-package vitzen
+package scitzen.pages
 
+import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.util.NoSuchElementException
 

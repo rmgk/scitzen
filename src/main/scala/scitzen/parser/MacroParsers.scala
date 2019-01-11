@@ -1,7 +1,7 @@
-package asciimedic
-
-import asciimedic.CommonParsers._
-import fastparse._; import fastparse.NoWhitespace._
+package scitzen.parser
+import fastparse.NoWhitespace._
+import fastparse._
+import scitzen.parser.CommonParsers._
 
 object MacroParsers {
   def target                      [_:P]= P(untilE("[" | saws))

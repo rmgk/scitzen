@@ -1,6 +1,6 @@
-package asciimedic
-
-import fastparse._; import fastparse.NoWhitespace._
+package scitzen.parser
+import fastparse.NoWhitespace._
+import fastparse._
 
 object CommonParsers {
   def space                [_:P]= P(CharIn(" \t"))

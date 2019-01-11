@@ -1,4 +1,4 @@
-package vitzen
+package scitzen.pages
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.time.format.DateTimeFormatter

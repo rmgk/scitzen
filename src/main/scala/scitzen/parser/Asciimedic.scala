@@ -1,8 +1,8 @@
-package asciimedic
+package scitzen.parser
 
-import fastparse._
 import fastparse.NoWhitespace._
-import asciimedic.CommonParsers._
+import fastparse._
+import scitzen.parser.CommonParsers._
 
 
 /** Some things from asciidoctor have no special representation in the parsed AST

@@ -1,7 +1,8 @@
-package asciimedic
+package scitzen.parser
 
-import asciimedic.CommonParsers._
-import fastparse._; import fastparse.NoWhitespace._
+import fastparse.NoWhitespace._
+import fastparse._
+import scitzen.parser.CommonParsers._
 
 /*
  Dose not support attaching to ancestors: https://asciidoctor.org/docs/user-manual/#attaching-to-an-ancestor-list
