@@ -2,7 +2,6 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import scitzen.parser.CommonParsers._
 
 
 /** Some things from asciidoctor have no special representation in the parsed AST
@@ -12,17 +11,11 @@ import scitzen.parser.CommonParsers._
   * Subtitle separator https://asciidoctor.org/docs/user-manual/#document-subtitle
   *
   * */
-object Asciimedic {
+object DocumentParsers {
 
   def header[_: P] = HeaderParsers.header
 
   def document[_: P]: P[Document] = P(HeaderParsers.header.? ~ BlockParsers.fullBlock.rep ~ End)
                                     .map((Document.apply _).tupled)
-}
-
-object InlineParser {
-  // \ to escape newlines, + \ to escape newlines but keep newlines
-  def line[_: P] = CommonParsers.line
-  def titleLine[_: P] = untilI(eol)
 }
 

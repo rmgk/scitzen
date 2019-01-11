@@ -5,11 +5,11 @@ import java.time.LocalDateTime
 
 import better.files._
 import scitzen.pages.DateParsingHelper
-import scitzen.parser.{Asciimedic, Document}
+import scitzen.parser.{DocumentParsers, Document}
 
 class AsciiMedicImpl(basedir: Path) {
   def makePost(path: Path): Post = {
-    val document = fastparse.parse(File(path).contentAsString, Asciimedic.document(_)).get.value
+    val document = fastparse.parse(File(path).contentAsString, DocumentParsers.document(_)).get.value
     new MedicPost(basedir.relativize(path), document)
   }
 }

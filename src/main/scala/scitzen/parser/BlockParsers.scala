@@ -6,7 +6,10 @@ import scitzen.parser.CommonParsers._
 
 object BlockParsers {
 
-  def blockTitle[_:P]: P[String] = P("." ~ !(" " | "...") ~ InlineParser.titleLine)
+  // \ to escape newlines, + \ to escape newlines but keep newlines
+  private def titleLine[_: P] = untilI(eol)
+
+  def blockTitle[_:P]: P[String] = P("." ~ !(" " | "...") ~ titleLine)
 
   def horizontalRule[_:P]: P[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ iwsLine)
                                            .map(BlockMacro.apply("horizontal-rule", _, Nil))
@@ -17,7 +20,7 @@ object BlockParsers {
   def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (iwsLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
                                        .map(NormalBlock(BlockType.Paragraph, _))
 
-  def sectionTitle[_:P]: P[SectionTitle] = P("=".rep(2).! ~ " " ~ InlineParser.titleLine)
+  def sectionTitle[_:P]: P[SectionTitle] = P("=".rep(2).! ~ " " ~ titleLine)
                                            .map { case (level, str) => SectionTitle(level.length - 1, str) }
 
   def commentBlock[_:P]: P[NormalBlock] =

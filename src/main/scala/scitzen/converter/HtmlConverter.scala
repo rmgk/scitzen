@@ -121,7 +121,7 @@ object HtmlConverter {
   }
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    fastparse.parse(blockContent, scitzen.parser.Asciimedic.document(_)).get.value.blocks.map(blockToHtml(_))
+    fastparse.parse(blockContent, scitzen.parser.DocumentParsers.document(_)).get.value.blocks.map(blockToHtml(_))
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
