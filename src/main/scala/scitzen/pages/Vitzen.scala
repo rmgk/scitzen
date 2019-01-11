@@ -51,9 +51,9 @@ object Vitzen {
         val postdir = targetdir / "posts"
         postdir.createDirectories()
 
-        def allFiles(): List[File] = sourcedir.glob("**.adoc").toList
+        def allAdocFiles(): List[File] = sourcedir.glob("**.adoc").toList
 
-        def allPosts(): List[Post] = allFiles().map { f: File =>
+        def allPosts(): List[Post] = allAdocFiles().map { f: File =>
           println(f.name)
           asciiData.makePost(f.path)
         }
@@ -74,8 +74,17 @@ object Vitzen {
 
         targetdir./("index.html").write(Pages().makeIndexOf(posts))
 
-        val imagedir = sourcedir./("images")
-        if (imagedir.isDirectory) imagedir.copyTo(postdir./("images"), overwrite = true)
+        //TODO: may want to copy all linked files, instead of all images
+        def allImages(): List[File]  = sourcedir.glob("**.{jpg,jpeg,webp,gif,png}").toList
+
+        allImages().foreach { sourceImage =>
+          val relimage = sourcedir.relativize(sourceImage)
+          val targetfile = postdir / relimage.toString
+          println(s"copied $sourceImage to $targetfile")
+          targetfile.parent.createDirectories()
+          sourceImage.copyTo(targetfile, overwrite = true)
+        }
+
     }
   }
 
