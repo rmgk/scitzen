@@ -1,6 +1,6 @@
-package asciimedic
+package scitzen.parser
 
-import asciimedic.BlockType.Delimited
+import scitzen.parser.BlockType.Delimited
 import fastparse.P
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.FreeSpec
@@ -89,8 +89,8 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
 //
 
   "parse title" in {
-    import fastparse._
     import fastparse.NoWhitespace._
+    import fastparse._
     def untilE[_:P](closing: => P[Unit]) = P(((!closing) ~ AnyChar).rep(1).!)
     assert(fastparse.parse("Test", p => untilE(End(p))(p)).get.value == "Test")
 

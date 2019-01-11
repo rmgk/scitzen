@@ -1,4 +1,4 @@
-package asciimedic
+package scitzen.parser
 
 case class ParsingTest[T](snippet: String, res: T)
 
