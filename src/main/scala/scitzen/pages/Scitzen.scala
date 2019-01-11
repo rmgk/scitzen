@@ -19,7 +19,7 @@ object Scitzen {
   val optOutput = Opts.option[Path]("output", short = "o", metavar = "directory",
                                     help = "Target output directory")
 
-  val command = Command(name = "vitzen", header = "Convert Asciidoc documents into a webpage format.") {
+  val command = Command(name = "convert", header = "Convert Asciidoc documents into a webpage format.") {
     (optSource, optOutput).mapN {
       (sourcedirRel, targetdirRel) =>
 
@@ -61,7 +61,7 @@ object Scitzen {
 
         Log.info("copy static resources")
 
-        (targetdir / "vitzen.css").writeBytes(new ResourceLoader().resourceBytes("vitzen.css"))
+        (targetdir / "scitzen.css").writeBytes(new ResourceLoader().resourceBytes("scitzen.css"))
 
 
         //TODO: may want to copy all linked files, instead of all images

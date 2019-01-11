@@ -20,14 +20,14 @@ object Pages {
 class Pages(val relative: String) {
 
 
-  val path_css        : String = s"${relative}vitzen.css"
+  val path_css        : String = s"${relative}scitzen.css"
   val path_posts      : String = s"${relative}posts"
   val path_highligh_js: String = s"${relative}highlight.js"
 
 
   private def tHead = {
     head(
-      title := "Vitzen",
+      title := "Scitzen",
       link(href := path_css, rel := "stylesheet", `type` := "text/css"),
       script(src := path_highligh_js),
       script(raw("hljs.initHighlightingOnLoad();")),
