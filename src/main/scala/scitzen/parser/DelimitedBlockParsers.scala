@@ -8,14 +8,14 @@ object DelimitedBlockParsers {
   // the weird \\ is to escape the - which is interpreted by the CharIn macro as a range character
   def normalDelimiter[_ : P]: P[Unit] = CharIn("=\\-.+_*").rep(4)
   def normalStart[_: P] = P(normalDelimiter)
-  def anyStart[_: P]: P[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ spaceLine).log
+  def anyStart[_: P]: P[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ spaceLine)
 
   def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
     (start ~/ Pass).flatMap { delimiter =>
       untilI(eol ~ delimiter ~ spaceLine, min = 0).map(content => NormalBlock(BlockType.Delimited(delimiter), content))
     }
 
-  def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart)).log
+  def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart))
 
 
   def whitespaceLiteral[_: P]: P[NormalBlock] = P(
@@ -23,6 +23,6 @@ object DelimitedBlockParsers {
       (untilI(eol) ~ significantSpaceLine.rep).!.rep(min = 1, sep = indentation)
                                               .map(lines => NormalBlock(BlockType.Delimited(indentation), lines.mkString))
     }
-  ).log
+  )
 
 }

@@ -107,7 +107,7 @@ object HtmlConverter {
           pre(delimiter, "\n", text, "\n", delimiter)
 
         case other =>
-          println(s"converting $other block:\n$text")
+//          println(s"converting $other block:\n$text")
           p(paragraphStringToHTML(text): _*)
 
       }

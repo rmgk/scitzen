@@ -7,7 +7,7 @@ import java.nio.file.Path
 import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
-import scitzen.converter.{AsciiMedicImpl, Post}
+import scitzen.converter.{AsciidocParser, Post}
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -38,7 +38,7 @@ class ResourceLoader() {
 
 }
 
-object Vitzen {
+object Scitzen {
 
 
   val optSource = Opts.option[Path]("source", short = "s", metavar = "directory",
@@ -62,7 +62,7 @@ object Vitzen {
 
         (targetdir / "vitzen.css").writeBytes(new ResourceLoader().resourceBytes("vitzen.css"))
 
-        val asciiData = new AsciiMedicImpl(sourcedir.path)
+        val asciiData = new AsciidocParser(sourcedir.path)
 
         val postdir = targetdir / "posts"
         postdir.createDirectories()
@@ -70,7 +70,7 @@ object Vitzen {
         def allAdocFiles(): List[File] = sourcedir.glob("**.adoc").toList
 
         def allPosts(): List[Post] = allAdocFiles().map { f: File =>
-          println(f.name)
+//          println(f.name)
           asciiData.makePost(f.path)
         }
 
@@ -81,7 +81,7 @@ object Vitzen {
         println(s"posting to $targetdir")
 
         for (post <- posts) {
-          println(post.title)
+//          println(post.title)
           val targetPath = postdir / post.targetPath()
           targetPath.parent.createDirectories()
           val relpath = targetPath.parent.relativize(targetdir)
@@ -96,7 +96,7 @@ object Vitzen {
         allImages().foreach { sourceImage =>
           val relimage = sourcedir.relativize(sourceImage)
           val targetfile = postdir / relimage.toString
-          println(s"copied $sourceImage to $targetfile")
+//          println(s"copied $sourceImage to $targetfile")
           targetfile.parent.createDirectories()
           sourceImage.copyTo(targetfile, overwrite = true)
         }
@@ -105,9 +105,7 @@ object Vitzen {
   }
 
 
-  def main(args: Array[String]): Unit = {
-    run(args: _*)
-  }
+  def main(args: Array[String]): Unit = run(args: _*)
 
   def run(args: String*) = {
     command.parse(args) match {
