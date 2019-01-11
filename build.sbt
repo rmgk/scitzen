@@ -18,5 +18,6 @@ lazy val scitzen = project.in(file("."))
                      scalatest,
                      scalacheck,
                      pprint,
-                     normalizecss
+                     normalizecss,
+                     rmgkLogging
                    )
