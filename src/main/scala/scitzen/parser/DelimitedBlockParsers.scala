@@ -5,7 +5,7 @@ import fastparse._
 import scitzen.parser.CommonParsers._
 
 object DelimitedBlockParsers {
-  val normalDelimitersChar: Seq[Char] = "=-.+_*".toSeq
+  // the weird \\ is to escape the - which is interpreted by the CharIn macro as a range character
   def normalDelimiter[_ : P]: P[Unit] = CharIn("=\\-.+_*").rep(4)
   def normalStart[_: P] = P(normalDelimiter)
   def anyStart[_: P]: P[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ spaceLine).log
