@@ -17,7 +17,9 @@ object Vitzen {
       Resource.getAsStream(resourceLocator.getFullPath(path)).buffered.bytes
     } catch {
       case e: IllegalArgumentException =>
-        (File.currentWorkingDirectory / "target/web/sass/main/stylesheets/" / path).bytes
+        val nonResourcelocation = File.currentWorkingDirectory / "target/web/sass/main/stylesheets/" / path
+        if (nonResourcelocation.exists) nonResourcelocation.bytes
+        else throw e
     }
 
 
