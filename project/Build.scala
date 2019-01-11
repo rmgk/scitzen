@@ -43,7 +43,7 @@ object Dependencies {
   val akkaStream = libraryDependencies += ("com.typesafe.akka" %% "akka-stream" % "2.5.19")
   val betterFiles = libraryDependencies += ("com.github.pathikrit" %% "better-files" % "3.7.0")
   val circe = libraryDependencies ++= Seq("core", "generic", "generic-extras", "parser").map(n => "io.circe" %%% s"circe-$n" % "0.11.0")
-  val decline = libraryDependencies += ("com.monovore" %% "decline" % "0.5.1")
+  val decline = libraryDependencies += ("com.monovore" %% "decline" % "0.6.0")
   val fastparse = libraryDependencies += "com.lihaoyi" %%% "fastparse" % "2.1.0"
   val fontawesome = libraryDependencies += ("org.webjars" % "font-awesome" % "5.3.1")
   val jsoup = libraryDependencies += ("org.jsoup" % "jsoup" % "1.11.3")
