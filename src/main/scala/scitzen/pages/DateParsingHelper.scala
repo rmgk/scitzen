@@ -1,5 +1,8 @@
 package scitzen.pages
 
+import java.time.LocalDateTime
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
+
 object DateParsingHelper {
   val timeFormatter: DateTimeFormatter = new DateTimeFormatterBuilder()
   .parseCaseInsensitive()

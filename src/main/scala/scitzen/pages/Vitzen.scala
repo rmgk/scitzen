@@ -3,10 +3,11 @@ package scitzen.pages
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
 
-import better.files.{File, Resource}
+import better.files._
 import com.monovore.decline.{Command, Opts}
 import org.webjars.WebJarAssetLocator
-import vitzen.docparser.{AsciiMedicImpl, Post}
+import cats.implicits._
+import scitzen.converter.{AsciiMedicImpl, Post}
 
 object Vitzen {
 

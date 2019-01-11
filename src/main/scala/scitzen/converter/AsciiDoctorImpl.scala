@@ -1,4 +1,4 @@
-package vitzen.docparser
+package scitzen.converter
 
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -6,7 +6,7 @@ import java.util
 
 import org.asciidoctor.ast.Document
 import org.asciidoctor.{Asciidoctor, OptionsBuilder, SafeMode}
-import vitzen.DateParsingHelper
+import scitzen.pages.DateParsingHelper
 
 class AsciiDoctorImpl(basedir: Path) {
   val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()

@@ -9,7 +9,7 @@ import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, h1, head, header, html, link, meta, script, span, a => anchor}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
-import vitzen.docparser.Post
+import scitzen.converter.Post
 
 import scala.util.Try
 

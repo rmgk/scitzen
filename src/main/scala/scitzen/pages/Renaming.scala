@@ -5,7 +5,7 @@ import java.nio.file.Path
 import java.time.LocalDateTime
 import java.util.NoSuchElementException
 
-import asciimedic.{Asciimedic, Header}
+import scitzen.parser.{Asciimedic, Header}
 import better.files.File
 import com.monovore.decline.{CommandApp, Opts}
 

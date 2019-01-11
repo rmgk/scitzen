@@ -1,4 +1,4 @@
-package vitzen.docparser
+package scitzen.converter
 
 import java.nio.file.Path
 import java.time.LocalDateTime

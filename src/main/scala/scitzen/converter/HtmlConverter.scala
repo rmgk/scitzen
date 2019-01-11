@@ -1,6 +1,6 @@
-package vitzen.docparser
+package scitzen.converter
 
-import asciimedic._
+import scitzen.parser._
 import scalatags.Text.attrs.{cls, src}
 import scalatags.Text.implicits._
 import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, frag, h6, hr, img, li, ol, p, pre, strong, tag, ul}
@@ -117,11 +117,11 @@ object HtmlConverter {
   }
 
   def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-    inlineValuesToHTML(fastparse.parse(paragraphString, asciimedic.ParagraphParsers.InnerParser().fullParagraph(_)).get.value)
+    inlineValuesToHTML(fastparse.parse(paragraphString, scitzen.parser.ParagraphParsers.InnerParser().fullParagraph(_)).get.value)
   }
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    fastparse.parse(blockContent, asciimedic.Asciimedic.document(_)).get.value.blocks.map(blockToHtml(_))
+    fastparse.parse(blockContent, scitzen.parser.Asciimedic.document(_)).get.value.blocks.map(blockToHtml(_))
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {

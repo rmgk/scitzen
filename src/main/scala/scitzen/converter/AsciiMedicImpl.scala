@@ -1,11 +1,11 @@
-package vitzen.docparser
+package scitzen.converter
 
 import java.nio.file.Path
 import java.time.LocalDateTime
 
-import asciimedic.{Asciimedic, Document}
 import better.files._
-import vitzen.DateParsingHelper
+import scitzen.pages.DateParsingHelper
+import scitzen.parser.{Asciimedic, Document}
 
 class AsciiMedicImpl(basedir: Path) {
   def makePost(path: Path): Post = {
