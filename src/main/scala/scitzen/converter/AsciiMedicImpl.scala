@@ -4,7 +4,6 @@ import java.nio.file.Path
 import java.time.LocalDateTime
 
 import better.files._
-import scitzen.pages.DateParsingHelper
 import scitzen.parser.{DocumentParsers, Document}
 
 class AsciiMedicImpl(basedir: Path) {

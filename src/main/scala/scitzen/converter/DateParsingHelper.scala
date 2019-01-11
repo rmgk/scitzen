@@ -1,4 +1,4 @@
-package scitzen.pages
+package scitzen.converter
 
 import java.time.LocalDateTime
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}

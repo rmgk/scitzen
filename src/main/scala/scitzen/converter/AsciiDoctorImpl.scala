@@ -6,7 +6,6 @@ import java.util
 
 import org.asciidoctor.ast.Document
 import org.asciidoctor.{Asciidoctor, OptionsBuilder, SafeMode}
-import scitzen.pages.DateParsingHelper
 
 class AsciiDoctorImpl(basedir: Path) {
   val asciidoctor: Asciidoctor = Asciidoctor.Factory.create()

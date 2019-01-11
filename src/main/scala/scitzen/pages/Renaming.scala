@@ -8,6 +8,7 @@ import java.util.NoSuchElementException
 import scitzen.parser.{DocumentParsers, Header}
 import better.files.File
 import com.monovore.decline.{CommandApp, Opts}
+import scitzen.converter.DateParsingHelper
 
 object Tool {
   def sluggify(str: String): String = str
