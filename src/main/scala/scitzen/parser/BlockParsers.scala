@@ -11,13 +11,13 @@ object BlockParsers {
 
   def blockTitle[_:P]: P[String] = P("." ~ !(" " | "...") ~ titleLine)
 
-  def horizontalRule[_:P]: P[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ iwsLine)
+  def horizontalRule[_:P]: P[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ spaceLine)
                                            .map(BlockMacro.apply("horizontal-rule", _, Nil))
   def pageBreak     [_:P]: P[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
 
-  def whitespaceBlock[_:P]: P[NormalBlock] = P(swsLine.rep(1).!).map(NormalBlock(BlockType.Whitespace, _))
+  def whitespaceBlock[_:P]: P[NormalBlock] = P(significantSpaceLine.rep(1).!).map(NormalBlock(BlockType.Whitespace, _))
 
-  def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (iwsLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
+  def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (spaceLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
                                        .map(NormalBlock(BlockType.Paragraph, _))
 
   def sectionTitle[_:P]: P[SectionTitle] = P("=".rep(2).! ~ " " ~ titleLine)

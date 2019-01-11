@@ -10,7 +10,7 @@ object Attributes {
 
   def reference    [_:P]: P[AttrRef]   = P("{" ~/ identifier.! ~ "}")
                                          .map(AttrRef.apply)
-  def equals                           [_:P]= P(aws ~ "=" ~ aws)
+  def equals                           [_:P]= P(anySpaces ~ "=" ~ anySpaces)
   // https://asciidoctor.org/docs/user-manual/#named-attribute
   // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
   // however, in the hope of better error messages, we will not allow newlines
@@ -26,9 +26,9 @@ object Attributes {
                                        = P("[" ~ ("[" ~ untilE("]]") ~ "]").! ~ "]")
                                          .map(content => Seq(Attribute("", content)))
   def list         [_:P]: P[Seq[Attribute]]
-                                       = P(open ~/ aws ~ listElement.rep(sep = aws ~ "," ~ aws) ~ ",".? ~ aws ~ close)
+                                       = P(open ~/ anySpaces ~ listElement.rep(sep = anySpaces ~ "," ~ anySpaces) ~ ",".? ~ anySpaces ~ close)
   def line         [_:P]: P[Seq[Attribute]]
-                                       = P((xrefAnchorSpecialCase | list) ~ iwsLine)
+                                       = P((xrefAnchorSpecialCase | list) ~ spaceLine)
 }
 
 object AttributeEntry {

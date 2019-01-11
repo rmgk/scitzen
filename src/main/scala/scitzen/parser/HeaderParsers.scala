@@ -13,7 +13,7 @@ object HeaderParsers {
   // it is clearly not meant for automatic parsing of timestamps and overall … meh
   // authorline is a bit better, but not sure if parsing is worth it.
   def revline   [_:P]: P[String]      = P(!":" ~ untilE(eol) ~ eol)
-  def authorline[_:P]: P[Seq[Author]] = P(!":" ~ author.rep(sep = aws ~ ";", min = 1) ~ eol)
+  def authorline[_:P]: P[Seq[Author]] = P(!":" ~ author.rep(sep = anySpaces ~ ";", min = 1) ~ eol)
   def header    [_:P]: P[Header]      =
     P(title
       ~ BlockParsers.commentBlock.?

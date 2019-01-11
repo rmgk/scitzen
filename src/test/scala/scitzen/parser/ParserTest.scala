@@ -188,7 +188,7 @@ block content
 
   "paragraph quotes" in {
     val str = "hallo ``schöne`` welt"
-    val res = fastparse.parse(str, ParagraphParsers.InnerParser().fullParagraph(_)).get.value
+    val res = fastparse.parse(str, ParagraphParsers.fullParagraph(_)).get.value
     pprint.pprintln(res)
   }
 

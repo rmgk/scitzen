@@ -117,7 +117,7 @@ object HtmlConverter {
   }
 
   def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-    inlineValuesToHTML(fastparse.parse(paragraphString, scitzen.parser.ParagraphParsers.InnerParser().fullParagraph(_)).get.value)
+    inlineValuesToHTML(fastparse.parse(paragraphString, scitzen.parser.ParagraphParsers.fullParagraph(_)).get.value)
   }
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
