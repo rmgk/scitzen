@@ -5,10 +5,10 @@ import java.nio.file.Path
 import java.time.LocalDateTime
 import java.util.NoSuchElementException
 
-import scitzen.parser.{DocumentParsers, Header}
 import better.files.File
-import com.monovore.decline.{CommandApp, Opts}
+import com.monovore.decline.{Command, Opts}
 import scitzen.converter.DateParsingHelper
+import scitzen.parser.{DocumentParsers, Header}
 
 object Tool {
   def sluggify(str: String): String = str
@@ -19,10 +19,10 @@ object Tool {
                                       .replaceAll("^-|-$", "")
 }
 
-object Renaming extends CommandApp(
-  name = "asciidocii",
-  header = "Tools for parsing asciidoc and doing something with the result",
-  main = {
+object Renaming {
+  val command = Command(
+    name = "rename",
+    header = "Auto generate file names for posts based on their titles and dates.") {
     implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
     val optSource = Opts.option[Path]("source", short = "s", metavar = "directory",
                                       help = "Directory containing Asciidoc source posts")
@@ -48,4 +48,4 @@ object Renaming extends CommandApp(
       }
     }
   }
-)
+}
