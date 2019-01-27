@@ -1,10 +1,9 @@
 package scitzen.converter
 
-import scitzen.parser._
 import scalatags.Text.attrs.{cls, src}
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, frag, h6, hr, img, li, ol, p, pre, strong, tag, ul}
-import scalatags.Text.tags2.section
+import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, figcaption, figure, frag, hr, img, li, ol, p, pre, strong, tag, ul}
+import scitzen.parser._
 
 
 object HtmlConverter {
@@ -82,7 +81,7 @@ object HtmlConverter {
 
           bwa.title match {
             case None        => blockContent
-            case Some(value) => section(h6(value), blockContent)
+            case Some(value) => figure(figcaption(value), blockContent)
           }
       }
 

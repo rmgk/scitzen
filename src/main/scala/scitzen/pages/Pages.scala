@@ -61,7 +61,6 @@ class Pages(val relative: String) {
   }
 
   private def timeShort(date: LocalDateTime) = {
-    //need time formatter, because to string removes seconds if all zero
     span(cls := "time",
          stringFrag({
            date.format(DateParsingHelper.monthDayTime)}))

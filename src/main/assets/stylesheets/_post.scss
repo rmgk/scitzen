@@ -38,6 +38,10 @@ article.fullpost {
   }
 }
 
+figure {
+  @extend %boxed;
+}
+
 blockquote {
   @extend %boxed;
   margin: 0;
