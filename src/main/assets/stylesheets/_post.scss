@@ -9,6 +9,13 @@ $content-table-border-color: darken($deputy-color, 3%) !default;
 
 article.fullpost {
 
+  header .metadata {
+    display: flex;
+    > * {
+      margin-right: 0.5em;
+    }
+  }
+
   p {
     @extend %textblock;
   }

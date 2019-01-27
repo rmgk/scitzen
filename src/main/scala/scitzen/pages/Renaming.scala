@@ -33,11 +33,11 @@ object Renaming {
       source.children.filter(_.isRegularFile).filter(_.name.endsWith(".adoc")).foreach { f =>
         println(f.name)
         val header: Header = fastparse.parse(f.contentAsString, DocumentParsers.header(_)).get.value
-        val date = LocalDateTime.from(DateParsingHelper.timeFormatter.parse(
+        val date = LocalDateTime.from(DateParsingHelper.relaxedISODateTimeParser.parse(
           header.attributes.map(a => a.id -> a.value).toMap
           .getOrElse("revdate", throw new NoSuchElementException(s"${header.title} has no revdate")).trim))
         val title = Tool.sluggify(header.title) + ".adoc"
-        val newName = date.format(DateParsingHelper.outputTime) + "_" + title
+        val newName = date.format(DateParsingHelper.dateOnlyOutput) + "_" + title
 
         if (newName != f.name) {
           println(f.name)

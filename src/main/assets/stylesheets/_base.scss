@@ -1,3 +1,4 @@
+@import "variables";
 
 body {
   line-height: $global-lineheight;
@@ -14,7 +15,6 @@ body {
 main {
   padding: 1em;
   margin: 0 auto;
-  box-sizing: border-box;
   max-width: $global-body-width;
 }
 
@@ -41,20 +41,19 @@ h1, h2, h3, h4, h5, h6 {
   font-family: $font-headers;
 }
 
+pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
 .time, .category {
   @media screen {
     color: $color-metadata;
   }
-  display: inline-block;
-  // do not break meta categories into weird linebreaks
-  white-space: nowrap;
 }
 
 .time {
-  margin-right: 1em;
-}
-
-pre {
-  overflow-x: auto;
-  white-space: pre-wrap;
+  white-space: nowrap;
+  font-family: $font-monospace;
+  letter-spacing: -1px;
 }

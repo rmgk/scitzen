@@ -6,10 +6,10 @@ import java.time.{LocalDateTime, ZoneOffset}
 import scalatags.Text.all.{frag, raw}
 import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, src, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{body, h1, head, header, html, link, meta, script, span, a => anchor}
+import scalatags.Text.tags.{a, body, h1, head, header, html, link, meta, p, script, span}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
-import scitzen.converter.Post
+import scitzen.converter.{DateParsingHelper, Post}
 
 import scala.util.Try
 
@@ -41,10 +41,11 @@ class Pages(val relative: String) {
   }
 
   private def tMeta(post: Post) = {
-    frag(timeSpan(post.date),
-         frag(post.modified.map(timeSpan).toList: _*),
-         categoriesSpan(post),
-         frag(post.folder().map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
+    p(cls := "metadata",
+      timeFull(post.date),
+      frag(post.modified.map(timeFull).toList: _*),
+      categoriesSpan(post),
+      frag(post.folder().map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
     )
   }
 
@@ -52,10 +53,20 @@ class Pages(val relative: String) {
     span(cls := "category")((post.categories() ++ post.people()).map(c => stringFrag(s" $c ")): _*)
   }
 
-  private def timeSpan(date: LocalDateTime) = {
+  private def timeFull(date: LocalDateTime) = {
     //need time formatter, because to string removes seconds if all zero
-    span(cls := "time", s" ${date.toLocalDate} ${Try{date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)}.getOrElse("")} ")
+    span(cls := "time",
+         s" ${date.toLocalDate} ${Try {
+           date.toLocalTime.format(DateTimeFormatter.ISO_LOCAL_TIME)}.getOrElse("")} ")
   }
+
+  private def timeShort(date: LocalDateTime) = {
+    //need time formatter, because to string removes seconds if all zero
+    span(cls := "time",
+         stringFrag({
+           date.format(DateParsingHelper.monthDayTime)}))
+  }
+
   private def tSingle(title: String, meta: Frag, content: Frag) = {
     article(cls := "fullpost",
             header(h1(raw(title)),
@@ -72,8 +83,8 @@ class Pages(val relative: String) {
       section(cls := "year",
               h1(dhs.head.date.format(DateTimeFormatter.ofPattern("yyyy"))),
               frag(dhs.map { post =>
-                article(timeSpan(post.date),
-                        anchor(href := s"$path_posts/${post.targetPath()}", raw(post.title)),
+                article(timeShort(post.date),
+                        a(href := s"$path_posts/${post.targetPath()}", raw(post.title)),
                         categoriesSpan(post)
                 )
               }: _*)

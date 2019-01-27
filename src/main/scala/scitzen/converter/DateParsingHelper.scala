@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 
 object DateParsingHelper {
-  val timeFormatter: DateTimeFormatter = new DateTimeFormatterBuilder()
+  val relaxedISODateTimeParser: DateTimeFormatter = new DateTimeFormatterBuilder()
   .parseCaseInsensitive()
   .append(DateTimeFormatter.ISO_LOCAL_DATE)
   .optionalStart()
@@ -17,17 +17,11 @@ object DateParsingHelper {
 
   def parseDate(dateString: String): LocalDateTime = {
     if (dateString == null) return LocalDateTime.MIN
-    val temporal = DateParsingHelper.timeFormatter.parse(dateString)
+    val temporal = DateParsingHelper.relaxedISODateTimeParser.parse(dateString)
     LocalDateTime.from(temporal)
   }
 
-  val outputTime: DateTimeFormatter =
-    new DateTimeFormatterBuilder()
-    .append(DateTimeFormatter.ISO_LOCAL_DATE)
-//    .appendLiteral("_")
-//    .appendValue(ChronoField.HOUR_OF_DAY, 2)
-//    .appendLiteral("-")
-//    .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
-    .toFormatter()
+  val dateOnlyOutput: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+  val monthDayTime: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-dd HH:mm")
 
 }
