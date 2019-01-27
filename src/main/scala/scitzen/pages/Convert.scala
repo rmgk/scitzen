@@ -49,13 +49,29 @@ object Convert {
         Log.info(s"found ${posts.size} posts")
         Log.info(s"converting to $targetdir")
 
+        var categoriesAndMore: Map[String, Set[String]] = Map()
+
         for (post <- posts) {
           Log.trace(s"converting s${post.title}")
           val targetPath = postdir / post.targetPath()
           targetPath.parent.createDirectories()
           val relpath = targetPath.parent.relativize(targetdir)
           targetPath.write(Pages(s"$relpath/").makePostHtml(post))
+
+          // collect attributes
+          for (attribute <- post.attributes) {
+            val category = attribute._1
+            val categoryContents = categoriesAndMore.getOrElse(category, Set.empty)
+            categoriesAndMore = categoriesAndMore + (category -> (categoryContents + attribute._2))
+          }
         }
+
+//        categoriesAndMore.foreach{ c =>
+//          println(c._1)
+//          c._2.toSeq.sorted.foreach{d => println(s"  ${d.trim}")}
+//
+//        }
+
 
         targetdir./("index.html").write(Pages().makeIndexOf(posts))
 
