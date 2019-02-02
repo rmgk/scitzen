@@ -3,12 +3,11 @@ package scitzen.pages
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
 import java.time.LocalDateTime
-import java.util.NoSuchElementException
 
 import better.files.File
 import com.monovore.decline.{Command, Opts}
 import scitzen.converter.DateParsingHelper
-import scitzen.parser.{DocumentParsers, Header}
+import scitzen.parser.{Adoc, Header}
 
 object Tool {
   def sluggify(str: String): String =
@@ -38,7 +37,7 @@ object Rename {
   }
 
   def renameFileFromHeader(f: File): Unit = {
-    val header: Header = fastparse.parse(f.contentAsString, DocumentParsers.header(_)).get.value
+    val header: Header = Adoc.header(f.contentAsString).get
     val newName: String = nameFromHeader(header)
 
     if (newName != f.name) {
@@ -47,12 +46,9 @@ object Rename {
     }
   }
 
+
   def nameFromHeader(header: Header): String = {
-    val headerDateString =
-      header.attributes.map(a => a.id -> a.value).toMap
-      .getOrElse("revdate",
-                 throw new NoSuchElementException(s"${header.title} has no revdate")).trim
-    val date = parseDate(headerDateString)
+    val date = parseDate(header.attribute("revdate").trim)
     val title = Tool.sluggify(header.title) + ".adoc"
     date.format(DateParsingHelper.dateOnlyOutput) + "_" + title
   }

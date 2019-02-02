@@ -1,7 +1,9 @@
 package scitzen.parser
 
 case class Document(header: Option[Header], blocks: Seq[Block])
-case class Header(title: String, authors: Seq[Author], attributes: Seq[Attribute])
+case class Header(title: String, authorline: String, revline: String, attributes: Seq[Attribute]) {
+  lazy val attribute = attributes.filter(_.id.nonEmpty).map(a => a.id -> a.value).toMap
+}
 
 case class Author(name: String, email: Option[String])
 
