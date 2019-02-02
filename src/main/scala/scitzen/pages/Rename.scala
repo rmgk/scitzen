@@ -19,8 +19,8 @@ object Tool {
                                       .replaceAll("^-|-$", "")
 }
 
-object Renaming {
-  val command = Command(
+object Rename {
+  val command: Command[Unit] = Command(
     name = "rename",
     header = "Auto generate file names for posts based on their titles and dates.") {
     implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
@@ -31,7 +31,6 @@ object Renaming {
     optSource.map { sourceP =>
       val source = File(sourceP)
       source.children.filter(_.isRegularFile).filter(_.name.endsWith(".adoc")).foreach { f =>
-        println(f.name)
         val header: Header = fastparse.parse(f.contentAsString, DocumentParsers.header(_)).get.value
         val date = LocalDateTime.from(DateParsingHelper.relaxedISODateTimeParser.parse(
           header.attributes.map(a => a.id -> a.value).toMap

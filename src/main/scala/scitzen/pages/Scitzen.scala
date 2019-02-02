@@ -6,6 +6,6 @@ object Scitzen extends CommandApp(
   name = "scitzen",
   header = "Static page generator",
   main = {
-    Opts.subcommand(Convert.command).orElse(Opts.subcommand(Renaming.command))
+    Opts.subcommand(Convert.command).orElse(Opts.subcommand(Rename.command))
   }
 )
