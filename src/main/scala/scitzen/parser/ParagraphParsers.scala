@@ -33,7 +33,6 @@ object ParagraphParsers {
 
   def special[_: P]: P[Inline] = P(escaped |
                                    comment |
-                                   MacroParsers.urls.url |
                                    MacroParsers.inline |
                                    Attributes.reference |
                                    crossreference)

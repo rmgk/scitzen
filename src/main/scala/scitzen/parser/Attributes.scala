@@ -25,8 +25,8 @@ object Attributes {
                    : P[Seq[Attribute]]
                                        = P("[" ~ ("[" ~ untilE("]]") ~ "]").! ~ "]")
                                          .map(content => Seq(Attribute("", content)))
-  def list         [_:P]: P[Seq[Attribute]]
-                                       = P(open ~/ anySpaces ~ listElement.rep(sep = anySpaces ~ "," ~ anySpaces) ~ ",".? ~ anySpaces ~ close)
+  def list         [_:P]: P[Seq[Attribute]] =
+    P(open ~ anySpaces ~ listElement.rep(sep = anySpaces ~ "," ~ anySpaces) ~ ",".? ~ anySpaces ~ close)
   def line         [_:P]: P[Seq[Attribute]]
                                        = P((xrefAnchorSpecialCase | list) ~ spaceLine)
 }

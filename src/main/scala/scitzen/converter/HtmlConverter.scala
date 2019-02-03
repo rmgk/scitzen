@@ -1,8 +1,8 @@
 package scitzen.converter
 
-import scalatags.Text.attrs.{cls, src}
+import scalatags.Text.attrs.{cls, src, href}
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, figcaption, figure, frag, hr, img, li, ol, p, pre, span, strong, tag, ul}
+import scalatags.Text.tags.{a, blockquote, cite, code, dd, div, dl, dt, em, figcaption, figure, frag, hr, img, li, ol, p, pre, span, strong, tag, ul}
 import scitzen.parser._
 
 
@@ -133,10 +133,18 @@ object HtmlConverter {
       case '#' => span
     })(inlineValuesToHTML(inner): _*)
     case InlineMacro("//", target, attributes) => frag()
+    case InlineMacro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), target, attributes) =>
+      val linktarget = s"$protocol:$target"
+      linkTo(attributes, linktarget)
+    case InlineMacro("link", target, attributes) =>
+      linkTo(attributes, target)
     case InlineMacro(command, target, attributes) =>
       code(s"$command:$target[${attributes.mkString(",")}]")
     case AttrRef(id) => code(s"{$id}")
     case other =>
       throw new NotImplementedError(s"does not support $other inline values")
+  }
+  def linkTo(attributes: Seq[Attribute], linktarget: String) = {
+    a(href := linktarget)(attributes.find(_.id == "").fold(linktarget)(_.value))
   }
 }
