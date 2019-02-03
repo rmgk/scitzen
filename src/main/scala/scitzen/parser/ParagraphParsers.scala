@@ -67,13 +67,8 @@ object ParagraphParsers {
   def unconstrainedQuote[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiterPart =>
       val delimiter = delimiterPart + delimiterPart
-      delimiterPart ~ (inlineSequence() ~ unconstrainedClosing(delimiter)).map(v => (delimiter, v))
+      delimiterPart ~ (inlineSequence(delimiter) ~ delimiter).map(v => (delimiter, v))
     }
   }.map { case (q, inner) => InlineQuote(q, inner) }
-
-  def unconstrainedClosing[_: P](wantsToClose: String): P[Unit] = P {
-    wantsToClose
-  }
-
 
 }
