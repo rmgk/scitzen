@@ -2,8 +2,9 @@ package scitzen.converter
 
 import scalatags.Text.attrs.{cls, src}
 import scalatags.Text.implicits._
-import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, figcaption, figure, frag, hr, img, li, ol, p, pre, strong, tag, ul}
+import scalatags.Text.tags.{blockquote, cite, code, dd, div, dl, dt, em, figcaption, figure, frag, hr, img, li, ol, p, pre, span, strong, tag, ul}
 import scitzen.parser._
+
 
 
 object HtmlConverter {
@@ -116,11 +117,11 @@ object HtmlConverter {
   }
 
   def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-    inlineValuesToHTML(fastparse.parse(paragraphString, scitzen.parser.ParagraphParsers.fullParagraph(_)).get.value)
+    Adoc.paragraph(paragraphString).map(inlineValuesToHTML).get
   }
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    fastparse.parse(blockContent, scitzen.parser.DocumentParsers.document(_)).get.value.blocks.map(blockToHtml(_))
+    Adoc.document(blockContent).get.blocks.map(blockToHtml(_))
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
@@ -129,10 +130,13 @@ object HtmlConverter {
       case '_' => em
       case '*' => strong
       case '`' => code
+      case '#' => span
     })(inlineValuesToHTML(inner): _*)
     case InlineMacro("//", target, attributes) => frag()
     case InlineMacro(command, target, attributes) =>
       code(s"$command:$target[${attributes.mkString(",")}]")
-    case _ => ???
+    case AttrRef(id) => code(s"{$id}")
+    case other =>
+      throw new NotImplementedError(s"does not support $other inline values")
   }
 }

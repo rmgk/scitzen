@@ -23,8 +23,9 @@ object ParagraphParsers {
 
   def specialCharacter[_: P]: P[Unit] = P(quoteChars | otherSpecialChars)
 
-  def escaped[_: P]: P[InlineText] = P("\\" ~ (MacroParsers.start | Attributes.reference | specialCharacter).!)
-                                     .map(InlineText)
+  def escaped[_: P]: P[InlineText] =
+    P("\\" ~ (MacroParsers.start | Attributes.reference | specialCharacter).!)
+    .map(InlineText)
 
   /** Simple text stops at special characters or spaces.
     * Spaces are included, and then we reorient */
@@ -43,35 +44,44 @@ object ParagraphParsers {
   def crossreference[_: P]: P[InlineMacro] = P(quoted(open = "<<", close = ">>"))
                                              .map(InlineMacro("<<", _, Nil))
 
-  def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence ~ anySpaces ~ End)
+  def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence() ~ anySpaces ~ End)
 
-  def inlineSequence[_: P]: P[Seq[Inline]] = P {
-    ((significantAnySpaces.!.map(InlineText) ~ constrainedQuote)
-     | anySpaces.!.map(InlineText) ~ (special | unconstrainedQuote | simpleText | specialCharacter.!.map(InlineText))
-    ).rep(0).map(_.flatMap{case (spaces, inline) => Seq(spaces, inline) })
+  def disable[_:P](s: String) = P(if (s.isEmpty) Pass else !s)
+
+  def inlineSequence[_: P](currentQuote: String = "") : P[Seq[Inline]] = P {
+    ((significantAnySpaces.!.map(InlineText) ~ disable(currentQuote) ~ constrainedQuote)
+     | anySpaces.!.map(InlineText) ~ disable(currentQuote) ~
+       (special | unconstrainedQuote | simpleText | specialCharacter.!.map(InlineText))
+    ).rep(0).map(_.flatMap { case (spaces, inline) => Seq(spaces, inline) })
+  }.log
+
+  def surrounding[_: P]: String = {
+    val ctx = implicitly[P[_]]
+    ctx.input.slice(ctx.index - 10, ctx.index + 10)
   }
 
   def constrainedQuote[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiter =>
-      (inlineSequence ~ constrainedClosing(delimiter)).map(v => (delimiter, v))
+      println(s"delimiter is $delimiter, ctx = $surrounding")
+      (inlineSequence(delimiter).log ~ constrainedClosing(delimiter)).map(v => (delimiter, v))
     }
   }.map { case (q, inner) => InlineQuote(q, inner) }
 
   def constrainedClosing[_: P](wantsToClose: String): P[Unit] = P {
-    anySpaces ~ wantsToClose ~ !CharPred(c => c.isLetterOrDigit || c == '_')
-  }
+    println(s"trying to close $wantsToClose, ctx = $surrounding")
+    wantsToClose ~ !CharPred(c => c.isLetterOrDigit || c == '_')
+  }.log
 
   def unconstrainedQuote[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiterPart =>
       val delimiter = delimiterPart + delimiterPart
-      delimiterPart ~ (inlineSequence ~ unconstrainedClosing(delimiter)).map(v => (delimiter, v))
+      delimiterPart ~ (inlineSequence() ~ unconstrainedClosing(delimiter)).map(v => (delimiter, v))
     }
   }.map { case (q, inner) => InlineQuote(q, inner) }
 
   def unconstrainedClosing[_: P](wantsToClose: String): P[Unit] = P {
     wantsToClose
   }
-
 
 
 }
