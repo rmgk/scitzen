@@ -9,7 +9,7 @@ object BlockParsers {
   // \ to escape newlines, + \ to escape newlines but keep newlines
   private def titleLine[_: P] = untilI(eol)
 
-  def blockTitle[_:P]: P[String] = P("." ~ !(" " | "...") ~ titleLine)
+  def blockTitle[_:P]: P[String] = P("." ~ !("." | verticalSpace) ~ titleLine)
 
   def horizontalRule[_:P]: P[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ spaceLine)
                                            .map(BlockMacro.apply("horizontal-rule", _, Nil))
