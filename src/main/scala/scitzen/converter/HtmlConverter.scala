@@ -32,7 +32,7 @@ object HtmlConverter {
           dl(split.flatMap { case (item, contents) =>
             List(
               dt(item.marker),
-              dd(item.content)(
+              dd(paragraphStringToHTML(item.content): _*)(
                 item.continuation.toList.flatMap{
                   case NormalBlock(BlockType.Delimited(ws), content) => convertBlockContent(content)
                   case other => List(blockToHtml(other))
@@ -44,7 +44,7 @@ object HtmlConverter {
         else if (n.startsWith(".")) {
           ol(split.flatMap { case (item, contents) =>
             List(
-              li(item.content)(
+              li(paragraphStringToHTML(item.content): _*)(
                 item.continuation.map(blockToHtml(_)).toList: _*)(
                 listToHtml(contents)
               ))
@@ -52,7 +52,7 @@ object HtmlConverter {
         } else {
           ul(split.flatMap { case (item, contents) =>
             List(
-              li(item.content)(
+              li(paragraphStringToHTML(item.content): _*)(
                 item.continuation.map(blockToHtml(_)).toList: _*)(
                 listToHtml(contents)
               ))
