@@ -52,24 +52,17 @@ object ParagraphParsers {
      | anySpaces.!.map(InlineText) ~ disable(currentQuote) ~
        (special | unconstrainedQuote | simpleText | specialCharacter.!.map(InlineText))
     ).rep(0).map(_.flatMap { case (spaces, inline) => Seq(spaces, inline) })
-  }.log
-
-  def surrounding[_: P]: String = {
-    val ctx = implicitly[P[_]]
-    ctx.input.slice(ctx.index - 10, ctx.index + 10)
   }
 
   def constrainedQuote[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiter =>
-      println(s"delimiter is $delimiter, ctx = $surrounding")
-      (inlineSequence(delimiter).log ~ constrainedClosing(delimiter)).map(v => (delimiter, v))
+      (inlineSequence(delimiter) ~ constrainedClosing(delimiter)).map(v => (delimiter, v))
     }
   }.map { case (q, inner) => InlineQuote(q, inner) }
 
   def constrainedClosing[_: P](wantsToClose: String): P[Unit] = P {
-    println(s"trying to close $wantsToClose, ctx = $surrounding")
     wantsToClose ~ !CharPred(c => c.isLetterOrDigit || c == '_')
-  }.log
+  }
 
   def unconstrainedQuote[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiterPart =>
