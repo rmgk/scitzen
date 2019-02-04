@@ -16,9 +16,9 @@ $color-background: #fffff8 !default;
 $color-font: #123 !default;
 
 // a4 paper has 21cm, subtract 1.5 inch for print margins
-$global-body-width: 171.9mm !default;
+$common-text-width: 171.9mm !default;
 
-$global-lineheight: 1.5 !default;
+$common-lineheight: 1.5 !default;
 
 // font families in use
 $font-content: sans-serif !default;
@@ -35,37 +35,23 @@ $font-monospace: monospace,monospace;
   }
 }
 
-%mainfont {
+@mixin mainfont {
   font-family: $font-content;
   @media (min-resolution: 192dpi) {
     font-family: $font-content-print;
   }
 }
 
-%boxed {
+@mixin boxed {
   @include rounded-borders;
   padding: 1em;
   @media screen {
     background: $deputy-color;
     border-left: 3px solid $theme-color;
-    color: #456;
   }
 }
 
-%oversized {
-  // this super weird hack allows blocks to be bigger than the actual content, but restricts them still to the viewport
-  // this sets the actual width of the element, which can cause distortion in images, so they have to be in some nested
-  // element.
-  @media screen {
-    max-width: 161.8034%;
-    margin-left: 50%;
-    // subtracting some from the width to get same padding as main content
-    width: calc(100vw - 3em);
-    transform: translateX(-50%);
-  }
-}
-
-%textblock {
-  @extend %mainfont;
-  text-align: justify;
+@mixin LRautomargin {
+  margin-left: auto;
+  margin-right: auto;
 }

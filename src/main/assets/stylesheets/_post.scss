@@ -1,13 +1,9 @@
-// Border bottom of the link when hover it.
-$content-link-border: 1px solid $theme-color !default;
-
-// Background color of the blockquote.
-$content-blockquote-backgroud: rgba($theme-color, 0.05) !default;
-
-// Border color of the table.
-$content-table-border-color: darken($deputy-color, 3%) !default;
-
 article.fullpost {
+
+  & > * {
+    max-width: $common-text-width;
+    @include LRautomargin;
+  }
 
   header .metadata {
     display: flex;
@@ -17,7 +13,7 @@ article.fullpost {
   }
 
   p {
-    @extend %textblock;
+    text-align: justify;
   }
 
   .literalblock {
@@ -28,22 +24,29 @@ article.fullpost {
     word-break: break-all;
 
     &:hover {
-      border-bottom: $content-link-border;
+      border-bottom: 1px solid $theme-color;
     }
   }
 
   .imageblock {
     text-align: center;
-    @extend %oversized;
+    max-width: $common-text-width * 1.64;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    max-height: 40em;
+    @include rounded-borders;
   }
 }
 
 figure {
-  @extend %boxed;
+  @include boxed;
 }
 
 blockquote {
-  @extend %boxed;
+  @include boxed;
   margin: 0;
   .paragraph {
     text-align: initial;
@@ -54,7 +57,7 @@ blockquote {
 }
 
 table {
-  @extend %boxed;
+  @include boxed;
   padding: 0;
   max-width: 100%;
 
@@ -65,9 +68,5 @@ table {
   th, td {
     padding: 5px 15px;
   }
-}
-
-.admonitionblock .icon .title::after {
-  content: ':';
 }
 

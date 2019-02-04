@@ -1,32 +1,24 @@
 @import "variables";
 
 body {
-  line-height: $global-lineheight;
+  // makes jumping to links animate instead of instant
   scroll-behavior: smooth;
-  @media screen {
-    border-top: 3px solid $theme-color;
-    color: $color-font;
-    background: $color-background;
-  }
-
-  @extend %mainfont;
+  border-top: 3px solid $theme-color;
 }
 
 main {
-  padding: 1em;
-  margin: 0 auto;
-  max-width: $global-body-width;
+  margin: 1em;
+  @include mainfont;
+  line-height: $common-lineheight;
+
+  @media screen {
+    color: $color-font;
+    background: $color-background;
+  }
 }
 
 ::selection {
   background: transparentize($theme-color, 0.8);
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  max-height: 40em;
-  @include rounded-borders;
 }
 
 a {

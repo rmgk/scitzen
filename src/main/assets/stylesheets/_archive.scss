@@ -1,6 +1,3 @@
-// Padding of the archive post.
-$archive-post-padding: 3px 20px !default;
-
 // Border left of the archive post, use $archive-post-hover-border-left when hover it.
 $archive-post-border-left: 1px solid #cacaca !default;
 $archive-post-hover-border-left: 3px solid $theme-color !default;
@@ -11,14 +8,19 @@ $archive-post-hover-transition: 0.2s ease-out !default;
 // Transform of the archive post when hover it.
 $archive-post-hover-transform: translateX(4px) !default;
 
+section.year {
+  max-width: $common-text-width;
+  @include LRautomargin;
+}
+
 section.year article {
 
-  padding: $archive-post-padding;
+  padding: 3px 20px;
   border-left: $archive-post-border-left;
   display: flex;
   justify-content: space-between;
 
-  @media screen and (max-width: $global-body-width) {
+  @media screen and (max-width: $common-text-width) {
     flex-direction: column;
     margin-top: 1em;
     margin-bottom: 1em;

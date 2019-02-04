@@ -4,7 +4,7 @@
 $post-toc-width: 5cm !default;
 
 // Margin left of the post toc.
-$post-toc-margin-left: $global-body-width !default;
+$post-toc-margin-left: $common-text-width !default;
 
 // List style of the post toc list.
 $post-toc-list-style: square !default;
@@ -13,7 +13,7 @@ $post-toc-list-style: square !default;
 $toc-max-swreen-width: 2.5 * $post-toc-width + $post-toc-margin-left !default;
 
 .toc {
-  @extend %boxed;
+  @include boxed;
 
   padding: 1em;
   box-sizing: border-box;
