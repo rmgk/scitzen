@@ -54,6 +54,8 @@ $font-monospace: monospace,monospace;
 
 %oversized {
   // this super weird hack allows blocks to be bigger than the actual content, but restricts them still to the viewport
+  // this sets the actual width of the element, which can cause distortion in images, so they have to be in some nested
+  // element.
   @media screen {
     max-width: 161.8034%;
     margin-left: 50%;
