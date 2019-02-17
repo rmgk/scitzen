@@ -2,10 +2,191 @@
 
 /* style based on the hugo theme even: https://github.com/olOwOlo/hugo-theme-even */
 
-@import "_variables";
+$theme-color: #c05b4d;
+// a4 paper has 21cm, subtract 1.5 inch for print margins
+$main-content-width: 171.9mm;
 
-@import "_base";
-@import "_post";
-@import '_code';
-@import '_toc';
-@import "_archive";
+$monospace: "Liberation Mono", monospace;
+
+@mixin card-like {
+  box-shadow: 0 0 2px rgba(0,0,0,.12),0 0 4px rgba(0,0,0,.24);
+  background: #fffc;
+}
+
+@mixin boxed-content {
+  @include card-like;
+  border-radius: 5px;
+}
+
+@mixin main-content-element {
+  max-width: $main-content-width;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+body {
+  // makes jumping to links animate instead of instant
+  scroll-behavior: smooth;
+  @media screen {
+    background: #fafafa;
+  }
+
+  font-family:  "Liberation Sans", "Helvetica", "Arial", sans-serif;
+  @media (min-resolution: 192dpi) {
+    font-family: "Liberation Serif", serif;
+
+  }
+  line-height: 1.5;
+}
+
+main {
+  margin: 1em;
+}
+
+::selection {
+  background: transparentize($theme-color, 0.8);
+}
+
+a {
+  text-decoration: none;
+  outline: 0;
+  color: $theme-color;
+}
+
+h1, h2, h3, h4, h5, h6, figcaption {
+  font-family: "Liberation Serif", serif;
+  font-weight: normal;
+}
+
+pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.time, .category {
+  @media screen {
+    color: #aaa;
+  }
+}
+
+.time {
+  white-space: nowrap;
+  font-family: $monospace;
+  letter-spacing: -0.0625em;
+}
+
+
+
+@mixin highlight-box {
+  @include boxed-content;
+  padding: 0.25em 0.5em 0.5em 0.5em;
+  @media screen {
+    border-left: 3px solid $theme-color;
+  }
+  & > :first-child {
+    margin-top: 0;
+  }
+  & > :last-child {
+    margin-bottom: 0;
+  }
+}
+
+article.fullpost {
+
+  & > * {
+    @include main-content-element;
+  }
+
+  header .metadata {
+    display: flex;
+    > * {
+      margin-right: 0.5em;
+    }
+  }
+
+  p {
+    text-align: justify;
+  }
+
+  .literalblock {
+    white-space: pre-wrap;
+  }
+
+  a {
+    word-break: break-all;
+
+    &:hover {
+      border-bottom: 1px solid $theme-color;
+    }
+  }
+
+  // image blocks are contained in an oversized container
+  .imageblock {
+    text-align: center;
+    max-width: $main-content-width * 1.64;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    max-height: 40em;
+    @include boxed-content;
+  }
+
+  figure, blockquote {
+    @include highlight-box;
+  }
+
+  code {
+    font-family: $monospace;
+    @include boxed-content;
+  }
+
+}
+
+
+
+
+
+
+section.year {
+  @include main-content-element;
+
+  article {
+    margin: .25em 0;
+
+    display: flex;
+
+    @media screen and (max-width: $main-content-width) {
+      flex-direction: column;
+    }
+
+    @media screen and (min-width: $main-content-width) {
+      &>.category {
+        text-align: right;
+      }
+    }
+
+    // space between the items of the article
+    & > * {
+      margin-right: 0.5em;
+    }
+
+    // make the title get most of the space, to cause it to be right aligned
+    & > .title {
+      flex: 1;
+    }
+
+    @media screen {
+      &:hover {
+        transition: 0.2s ease-out;
+        transform: translateX(4px);
+
+        filter: brightness(75%);
+      }
+    }
+
+  }
+}
+

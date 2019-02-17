@@ -4,9 +4,9 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneOffset}
 
 import scalatags.Text.all.{frag, raw}
-import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, src, title, name => attrname}
+import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{a, body, h1, head, header, html, link, meta, p, script, span}
+import scalatags.Text.tags.{a, body, h1, head, header, html, link, meta, p, span}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.converter.{DateParsingHelper, Post}
@@ -22,15 +22,12 @@ class Pages(val relative: String) {
 
   val path_css        : String = s"${relative}scitzen.css"
   val path_posts      : String = s"${relative}posts"
-  val path_highligh_js: String = s"${relative}highlight.js"
 
 
   private def tHead = {
     head(
       title := "Scitzen",
       link(href := path_css, rel := "stylesheet", `type` := "text/css"),
-      script(src := path_highligh_js),
-      script(raw("hljs.initHighlightingOnLoad();")),
       meta(attrname := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
       meta(charset := "UTF-8")
     )
@@ -82,10 +79,11 @@ class Pages(val relative: String) {
       section(cls := "year",
               h1(dhs.head.date.format(DateTimeFormatter.ofPattern("yyyy"))),
               frag(dhs.map { post =>
-                article(timeShort(post.date),
-                        a(href := s"$path_posts/${post.targetPath()}", raw(post.title)),
-                        categoriesSpan(post)
-                )
+                a(href := s"$path_posts/${post.targetPath()}",
+                  article(timeShort(post.date),
+                          span(cls:="title", raw(post.title)),
+                          categoriesSpan(post)
+                  ))
               }: _*)
       )
     }: _*)
