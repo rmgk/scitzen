@@ -2,12 +2,10 @@ package pages
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
-import java.time.LocalDateTime
 
 import better.files.File
 import com.monovore.decline.{Command, Opts}
-import scitzen.converter.DateParsingHelper
-import scitzen.parser.{Adoc, Header}
+import scitzen.parser.{Adoc, DateParsingHelper, Header}
 
 object Tool {
   def sluggify(str: String): String =
@@ -48,11 +46,8 @@ object Rename {
 
 
   def nameFromHeader(header: Header): String = {
-    val date = parseDate(header.attribute("revdate").trim)
+    val date = DateParsingHelper.parseDate(header.attribute("revdate").trim)
     val title = Tool.sluggify(header.title) + ".adoc"
-    date.format(DateParsingHelper.dateOnlyOutput) + "_" + title
-  }
-  private def parseDate(headerDateString: String): LocalDateTime = {
-    LocalDateTime.from(DateParsingHelper.relaxedISODateTimeParser.parse(headerDateString))
+    date.date.full + "_" + title
   }
 }

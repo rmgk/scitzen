@@ -1,10 +1,9 @@
 package scitzen.converter
 
 import java.nio.file.Path
-import java.time.LocalDateTime
 
 import better.files._
-import scitzen.parser.{DocumentParsers, Document}
+import scitzen.parser.{DateParsingHelper, Document, DocumentParsers, ScitzenDateTime}
 
 class AsciidocParser(basedir: Path) {
   def makePost(path: Path): Post = {
@@ -28,10 +27,9 @@ class Post(val path: Path, val document: Document) {
   def categories(): List[String] = commaSeparatedAttribute("categories")
 
   def title: String = document.header.fold("(null)")(_.title)
-  lazy val date: LocalDateTime = attributes.get("revdate")
-                                 .fold(LocalDateTime.MIN)(v => DateParsingHelper.parseDate(v.trim))
+  lazy val date: Option[ScitzenDateTime] = attributes.get("revdate").map(v => DateParsingHelper.parseDate(v.trim))
   def content: String = HtmlConverter.convert(document)
-  lazy val modified: Option[LocalDateTime] = attributes.get("modified")
+  lazy val modified: Option[ScitzenDateTime] = attributes.get("modified")
                                              .map(m => DateParsingHelper.parseDate(m.trim))
 
   def targetPath(): String = path.toString.replace(".adoc", ".html")
