@@ -1,4 +1,4 @@
-package scitzen.pages
+package pages
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneOffset}

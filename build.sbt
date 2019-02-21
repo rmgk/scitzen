@@ -1,8 +1,10 @@
 import Settings._
 import Dependencies._
 import org.irundaia.sass.Maxified
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
+import sbtcrossproject.CrossType
 
-lazy val scitzen = project.in(file("."))
+lazy val scitzen = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Full).in(file("."))
                    .enablePlugins(SbtSassify)
                    .enablePlugins(JavaAppPackaging)
                    .settings(
@@ -23,3 +25,6 @@ lazy val scitzen = project.in(file("."))
                      normalizecss,
                      rmgkLogging
                    )
+
+lazy val scitzenJS = scitzen.js
+lazy val scitzenJVM = scitzen.jvm

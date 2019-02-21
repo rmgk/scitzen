@@ -1,4 +1,4 @@
-package scitzen.pages
+package pages
 
 import java.net.{JarURLConnection, URL}
 
