@@ -18,17 +18,16 @@ lazy val scitzen = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Ful
                      scalatest,
                      scalacheck,
                      pprint,
-                     normalizecss,
                      rmgkLogging
                    ).jvmConfigure(
   p => p
        .enablePlugins(SbtSassify)
        .enablePlugins(JavaAppPackaging)
        .settings(
-         Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys
-                                                                       .sassify)).value,
+         Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
          SassKeys.cssStyle := Maxified,
-         )
+         normalizecss
+       )
 )
                    .jsSettings(
                      scalaJSUseMainModuleInitializer := true,
