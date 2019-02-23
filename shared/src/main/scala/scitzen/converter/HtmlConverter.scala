@@ -1,16 +1,16 @@
 package scitzen.converter
 
-import scalatags.Text.attrs.{cls, src, href}
-import scalatags.Text.implicits._
-import scalatags.Text.tags.{a, blockquote, cite, code, dd, div, dl, dt, em, figcaption, figure, frag, hr, img, li, ol, p, pre, span, strong, tag, ul}
-import scitzen.parser._
+import scalatags.generic
+import scalatags.generic.Bundle
+import scitzen.parser.{Adoc, AttrRef, Attribute, Block, BlockMacro, BlockType, BlockWithAttributes, Document, Inline, InlineMacro, InlineQuote, InlineText, ListBlock, ListItem, NormalBlock, SectionTitle}
 
+class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT]) {
+  import bundle._
+  import bundle.all._
 
-
-object HtmlConverter {
-  def convert(document: Document): String = frag(
+  def convert(document: Document): generic.Frag[Builder, FragT] = frag(
     document.blocks.map(blockToHtml(_)): _*
-  ).render
+  )
 
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {

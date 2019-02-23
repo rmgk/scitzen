@@ -6,7 +6,7 @@ import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{a, body, h1, head, header, html, link, meta, p, span}
 import scalatags.Text.tags2.{article, main, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
-import scitzen.converter.Post
+import scitzen.converter.{HtmlConverter, Post}
 import scitzen.parser.ScitzenDateTime
 
 object Pages {
@@ -73,7 +73,7 @@ class Pages(val relative: String) {
       section(cls := "year",
               h1(dhs.head.date.get.date.year),
               frag(dhs.map { post =>
-                a(href := s"$path_posts/${post.targetPath()}",
+                a(href := s"$path_posts/${post.targetPath}",
                   article(timeShort(post.date.get),
                           span(cls:="title", raw(post.title)),
                           categoriesSpan(post)
@@ -91,7 +91,8 @@ class Pages(val relative: String) {
 
 
   def makePostHtml(post: Post): String = {
-    htmlDocument(makeHtml(tBody(tSingle(post.title, tMeta(post), raw(post.content)))))
+    htmlDocument(makeHtml(tBody(tSingle(post.title, tMeta(post),
+                                        raw(new HtmlConverter(scalatags.Text).convert(post.document).render)))))
   }
 
   def makeIndexOf(posts: List[Post]): String = {

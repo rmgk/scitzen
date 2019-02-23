@@ -7,7 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import de.rmgk.logging.{Level, Logger}
-import scitzen.converter.{AsciidocParser, Post}
+import scitzen.converter.AsciidocParser
 
 
 object Convert {
@@ -39,21 +39,20 @@ object Convert {
 
         def allAdocFiles(): List[File] = sourcedir.glob("**.adoc").toList
 
-        def allPosts(): List[Post] = allAdocFiles().map { f: File =>
+        val posts = allAdocFiles().map { f: File =>
           Log.trace(s"parsing ${f.name}")
-          asciiData.makePost(f.path)
+          f.path -> asciiData.makePost(f.path)
         }
 
 
-        val posts = allPosts
         Log.info(s"found ${posts.size} posts")
         Log.info(s"converting to $targetdir")
 
         var categoriesAndMore: Map[String, Set[String]] = Map()
 
-        for (post <- posts) {
+        for ((path, post) <- posts) {
           Log.trace(s"converting s${post.title}")
-          val targetPath = postdir / post.targetPath()
+          val targetPath = postdir / asciiData.targetPath(path)
           targetPath.parent.createDirectories()
           val relpath = targetPath.parent.relativize(targetdir)
           targetPath.write(Pages(s"$relpath/").makePostHtml(post))
@@ -73,7 +72,7 @@ object Convert {
 //        }
 
 
-        targetdir./("index.html").write(Pages().makeIndexOf(posts))
+        targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
 
         Log.info("copy static resources")
 
