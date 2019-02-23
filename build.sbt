@@ -5,14 +5,10 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import sbtcrossproject.CrossType
 
 lazy val scitzen = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Full).in(file("."))
-                   .enablePlugins(SbtSassify)
-                   .enablePlugins(JavaAppPackaging)
                    .settings(
                      name := "scitzen",
                      scalaVersion := version_212,
                      organization := "de.rmgk",
-                     Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
-                     SassKeys.cssStyle := Maxified,
                      scalatags,
                      decline,
                      betterFiles,
@@ -24,6 +20,19 @@ lazy val scitzen = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Ful
                      pprint,
                      normalizecss,
                      rmgkLogging
+                   ).jvmConfigure(
+  p => p
+       .enablePlugins(SbtSassify)
+       .enablePlugins(JavaAppPackaging)
+       .settings(
+         Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys
+                                                                       .sassify)).value,
+         SassKeys.cssStyle := Maxified,
+         )
+)
+                   .jsSettings(
+                     scalaJSUseMainModuleInitializer := true,
+                     scalajsdom
                    )
 
 lazy val scitzenJS = scitzen.js
