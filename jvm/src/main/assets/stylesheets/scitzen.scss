@@ -92,6 +92,14 @@ pre {
   }
 }
 
+textarea {
+  display: block;
+  @include main-content-element;
+  width: $main-content-width;
+  padding: 0.5em;
+  line-height: inherit;
+}
+
 article.fullpost {
 
   & > * {
