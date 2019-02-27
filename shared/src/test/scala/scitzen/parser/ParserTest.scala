@@ -125,10 +125,8 @@ class ParserTest extends FreeSpec with GeneratorDrivenPropertyChecks {
         Some(
           Header(
             "The Dangerous and Thrilling Documentation Chronicles",
-            Seq(
-              Author("Kismet Rainbow Chameleon ", Some("kismet@asciidoctor.org")),
-              Author(" Lazarus het_Draeke ", Some("lazarus@asciidoctor.org"))
-            ),
+            "Kismet Rainbow Chameleon <kismet@asciidoctor.org>; Lazarus het_Draeke <lazarus@asciidoctor.org>",
+            "",
             Seq()
           )
         ),

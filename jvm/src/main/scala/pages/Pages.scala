@@ -1,10 +1,10 @@
 package pages
 
-import scalatags.Text.all.{frag, raw}
-import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, title, name => attrname}
+import scalatags.Text.all.{frag, raw, SeqFrag}
+import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, title, name => attrname, id, `for`}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{a, body, h1, head, header, html, link, meta, p, span}
-import scalatags.Text.tags2.{article, main, section}
+import scalatags.Text.tags.{a, body, h1, head, header, html, link, meta, p, span, input, label}
+import scalatags.Text.tags2.{article, main, section, nav}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.converter.{HtmlConverter, Post}
 import scitzen.parser.ScitzenDateTime
@@ -27,10 +27,6 @@ class Pages(val relative: String) {
       meta(attrname := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
       meta(charset := "UTF-8")
     )
-  }
-
-  private def tBody(content: Frag) = {
-    body(main(content))
   }
 
   private def tMeta(post: Post) = {
@@ -66,21 +62,16 @@ class Pages(val relative: String) {
     )
   }
 
-  private def tSection(posts: List[Post]): Frag = {
-    val byYear: Map[Int, List[Post]] = posts.groupBy(_.date.get.date.year.toInt)
-    frag(byYear.keys.toList.sorted(Ordering[Int].reverse).map { year =>
-      val dhs: Seq[Post] = byYear.apply(year).sortBy(_.date.get)(Ordering[ScitzenDateTime].reverse)
-      section(cls := "year",
-              h1(dhs.head.date.get.date.year),
-              frag(dhs.map { post =>
-                a(href := s"$path_posts/${post.targetPath}",
-                  article(timeShort(post.date.get),
-                          span(cls:="title", raw(post.title)),
-                          categoriesSpan(post)
-                  ))
-              }: _*)
-      )
-    }: _*)
+  def tSection(title: String, content: Frag): Tag = {
+    section(h1(id := title, s"$title"), content)
+  }
+
+  def postRef(post: Post): Tag = {
+    a(href := s"$path_posts/${post.targetPath}",
+      article(timeShort(post.date.get),
+              span(cls := "title", raw(post.title)),
+              categoriesSpan(post)
+      ))
   }
 
   def makeHtml(stuff: Modifier*): TypedTag[String] =
@@ -91,12 +82,37 @@ class Pages(val relative: String) {
 
 
   def makePostHtml(post: Post): String = {
-    htmlDocument(makeHtml(tBody(tSingle(post.title, tMeta(post),
-                                        raw(new HtmlConverter(scalatags.Text).convert(post.document).render)))))
+    htmlDocument(makeHtml(body(main(tSingle(
+      post.title,
+      tMeta(post),
+      new HtmlConverter(scalatags.Text).convert(post.document))))))
   }
 
   def makeIndexOf(posts: List[Post]): String = {
-    htmlDocument(makeHtml(tBody(tSection(posts))))
+
+    val byYear: Map[Int, List[Post]] = posts.groupBy(_.date.get.date.year.toInt)
+    val years = byYear.keys.toList.sorted(Ordering[Int].reverse)
+
+    val sections = years.map { year =>
+      val posts = byYear(year).sortBy(_.date.get)(Ordering[ScitzenDateTime].reverse)
+      val postList = SeqFrag(posts.map(postRef))
+      tSection(year.toString, postList)
+    }
+
+    htmlDocument(makeHtml(body(
+      cls := "index",
+      input(`type` := "checkbox", id := "nav-switch"),
+      nav(label(`for` := "nav-switch", raw("""
+      <svg viewBox="0 0 48 48">
+        <g stroke="black" stroke-width="4" stroke-linecap="round">
+        <path d="M 6 12 H 42" />
+        <path d="M 6 24 H 42" />
+        <path d="M 6 36 H 42" />
+        </g>
+      </svg>
+      """)))(
+        years.map(y => a(href := s"#$y", y.toString))),
+      main(SeqFrag(sections)))))
   }
 
 

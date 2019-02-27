@@ -65,7 +65,7 @@ NOTE: This is test, only a test.
 == Another Level 1 Section Title
 """,
                                  Document(
-                                   Some(Header("Document Title (Level 0)", Seq(), Seq())),
+                                   Some(Header("Document Title (Level 0)", "", "", Seq())),
                                    Seq(
                                      SectionTitle(1, " Level 1 Section Title"),
                                      SectionTitle(2, " Level 2 Section Title"),

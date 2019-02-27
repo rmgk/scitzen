@@ -9,7 +9,7 @@ $main-content-width: 171.9mm;
 $monospace: "Liberation Mono", monospace;
 
 @mixin card-like {
-  box-shadow: 0 0 2px rgba(0,0,0,.12),0 0 4px rgba(0,0,0,.24);
+  box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
   background: #fffc;
 }
 
@@ -24,24 +24,34 @@ $monospace: "Liberation Mono", monospace;
   margin-right: auto;
 }
 
-
-body {
-  // makes jumping to links animate instead of instant
-  scroll-behavior: smooth;
+@mixin hover-down {
   @media screen {
-    background: #fafafa;
-  }
+    &:hover {
+      transition: 0.2s ease-out;
+      transform: translateX(4px);
 
-  font-family:  "Liberation Sans", "Helvetica", "Arial", sans-serif;
-  @media (min-resolution: 192dpi) {
-    font-family: "Liberation Serif", serif;
-
+      filter: brightness(75%);
+    }
   }
-  line-height: 1.5;
 }
 
-main {
-  margin: 1em;
+
+html {
+  line-height: 1.5;
+
+  @media screen {
+    background: snow;
+  }
+
+  font-family: "Liberation Sans", "Helvetica", "Arial", sans-serif;
+  @media (min-resolution: 192dpi) {
+    font-family: "Liberation Serif", serif;
+  }
+}
+
+
+body {
+  height: 100vh;
 }
 
 ::selection {
@@ -52,6 +62,7 @@ a {
   text-decoration: none;
   outline: 0;
   color: $theme-color;
+  @include hover-down;
 }
 
 h1, h2, h3, h4, h5, h6, figcaption {
@@ -75,7 +86,6 @@ pre {
   font-family: $monospace;
   letter-spacing: -0.0625em;
 }
-
 
 
 @mixin highlight-box {
@@ -108,6 +118,7 @@ article.fullpost {
 
   header .metadata {
     display: flex;
+
     > * {
       margin-right: 0.5em;
     }
@@ -123,10 +134,6 @@ article.fullpost {
 
   a {
     word-break: break-all;
-
-    &:hover {
-      border-bottom: 1px solid $theme-color;
-    }
   }
 
   // image blocks are contained in an oversized container
@@ -153,13 +160,63 @@ article.fullpost {
 
 }
 
+body {
+  display: flex;
 
 
+  & > input {
+    display: none;
+  }
+
+  #nav-switch:checked ~ nav {
+    position: fixed;
+    border-bottom: 1px solid $theme-color;
+
+    & > :not(:first-child) {
+      display: none;
+    }
+  }
+
+  & > nav {
+    border-right: 1px solid $theme-color;
+    background-color: white;
+
+    padding: 0.5em;
+
+    & > label {
+      margin: auto;
+      cursor: pointer;
+      width: 1.5em;
+      height: 1.5em;
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    & > * {
+      display: block;
+    }
+  }
+
+  & > main {
+    flex-grow: 1;
+    box-sizing: border-box;
+    padding: 1em;
+    height: 100%;
+    overflow-y: scroll;
+    // makes jumping to links animate instead of instant
+    scroll-behavior: smooth;
+  }
+}
 
 
-
-section.year {
+.index section {
   @include main-content-element;
+
+  a {
+    display: block;
+  }
 
   article {
     margin: .25em 0;
@@ -171,7 +228,7 @@ section.year {
     }
 
     @media screen and (min-width: $main-content-width) {
-      &>.category {
+      & > .category {
         text-align: right;
       }
     }
@@ -181,20 +238,11 @@ section.year {
       margin-right: 0.5em;
     }
 
-    // make the title get most of the space, to cause it to be right aligned
+    // make the title get most of the space,
+    // to cause the tags to be right aligned
     & > .title {
       flex: 1;
     }
-
-    @media screen {
-      &:hover {
-        transition: 0.2s ease-out;
-        transform: translateX(4px);
-
-        filter: brightness(75%);
-      }
-    }
-
   }
 }
 
