@@ -4,7 +4,7 @@ import fastparse._
 import scitzen.parser.CommonParsers._
 
 object MacroParsers {
-  def target                      [_:P]= P(untilE("[" | significantAnySpaces))
+  def target                      [_:P]= P(untilE("[" | significantAnySpaces, 0))
   def start                       [_:P]= P(identifier.! ~ ":")
   def block [_:P]: P[BlockMacro]  = P(start ~ ":" ~ !significantAnySpaces ~/ target ~ Attributes.list)
                                     .map {(BlockMacro.apply _).tupled}
