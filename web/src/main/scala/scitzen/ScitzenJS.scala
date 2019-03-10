@@ -15,7 +15,7 @@ object ScitzenJS {
     val target = ev.currentTarget.asInstanceOf[TextArea]
     val value = target.value
     println(s"current vlue is $value")
-    val doc = Adoc.document(value).get
+    val doc = Adoc.document(value).right.get
 
     if (doc.blocks.isEmpty) return false
 

@@ -43,7 +43,8 @@ object ParagraphParsers {
   def crossreference[_: P]: P[InlineMacro] = P(quoted(open = "<<", close = ">>"))
                                              .map(InlineMacro("<<", _, Nil))
 
-  def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence() ~ anySpaces ~ End)
+  def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence().? ~ anySpaces ~ End)
+                                            .map(_.getOrElse(Nil))
 
   def disable[_:P](s: String) = P(if (s.isEmpty) Pass else !s)
 

@@ -73,11 +73,6 @@ a {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  &::before {
-    content: "= ";
-    color: $color-subdued;
-    margin-left: -0.5em;
-  }
   font-family: "Liberation Serif", serif;
   text-align: center;
 }
@@ -129,7 +124,7 @@ article.fullpost {
 
   header .metadata {
     display: flex;
-
+    justify-content: center;
     > * {
       margin-right: 0.5em;
     }
@@ -153,6 +148,7 @@ article.fullpost {
 
   pre > code {
     white-space: pre;
+    display: block;
   }
 
   a {
@@ -161,16 +157,22 @@ article.fullpost {
 
   // image blocks are contained in an oversized container
   & > .imageblock {
-    text-align: center;
     max-width: $main-content-width * 1.64;
-    @include boxed-content;
+    img {
+      @include boxed-content;
+      margin: auto;
+    }
   }
 
   img {
     max-width: 100%;
     height: auto;
     max-height: 40em;
+    // without block display, the outer div becomes a bit larger (line height?)
+    display: block;
   }
+
+
 
   figure, blockquote {
     @include highlight-box;

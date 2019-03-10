@@ -3,6 +3,7 @@ package scitzen.converter
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.parser._
+import cats.implicits._
 
 class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT]) {
   import bundle.all._
@@ -28,39 +29,44 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       case Nil                 => frag()
       case (firstItem, _) :: _ =>
         val n = norm(firstItem.marker)
-        if (n.startsWith(":")) {
-          dl(split.flatMap { case (item, contents) =>
-            List(
-              dt(item.marker),
-              dd(paragraphStringToHTML(item.content): _*)(
-                item.continuation.toList.flatMap{
-                  case NormalBlock(BlockType.Delimited(ws), content) => convertBlockContent(content)
-                  case other => List(blockToHtml(other))
-                }: _*)(
-                listToHtml(contents)
-              ))
-          }: _*)
-        }
-        else if (n.startsWith(".")) {
-          ol(split.flatMap { case (item, contents) =>
-            List(
-              li(paragraphStringToHTML(item.content): _*)(
-                item.continuation.map(blockToHtml).toList: _*)(
-                listToHtml(contents)
-              ))
-          }: _*)
-        } else {
-          ul(split.flatMap { case (item, contents) =>
-            List(
-              li(paragraphStringToHTML(item.content): _*)(
-                item.continuation.map(blockToHtml).toList: _*)(
-                listToHtml(contents)
-              ))
-          }: _*)
-        }
-
+        if (n.startsWith(":")) definitionList(split)
+        else otherList(split, n.startsWith("."))
     }
+  }
 
+  private def otherList(split: Seq[(ListItem, Seq[ListItem])], ordered: Boolean): Tag = {
+    val listItems = split.flatMap { case (item, contents) =>
+      List(
+        li(paragraphStringToHTML(item.content))(
+          item.continuation.map(blockToHtml).toList)(
+          listToHtml(contents)
+        ))
+    }
+    (if (ordered) ol else ul)(listItems)
+  }
+  private def definitionList(split: Seq[(ListItem, Seq[ListItem])]): Tag = {
+    dl(split.flatMap { case (item, contents) =>
+      try definitionListItem(item, contents)
+      catch {
+        case e: ParsingAnnotation =>
+          println(s"while parsing list ${item.marker}: ${item.content}")
+          throw e
+      }
+    })
+  }
+  private def definitionListItem(item: ListItem, contents: Seq[ListItem]) = {
+    List(
+      dt(item.marker),
+      dd(paragraphStringToHTML(item.content))(
+        continuationToHtml(item))(
+        listToHtml(contents)
+      ))
+  }
+  private def continuationToHtml(item: ListItem): SeqNode[Frag] = {
+    item.continuation.toList.flatMap {
+      case NormalBlock(BlockType.Delimited(ws), content) => convertBlockContent(content)
+      case other                                         => List(blockToHtml(other))
+    }
   }
 
   def blockToHtml(b: Block): Frag = b match {
@@ -89,7 +95,14 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       }
 
     case ListBlock(items) =>
-      listToHtml(items)
+      try {
+        listToHtml(items)
+      }
+      catch {
+        case e: ParsingAnnotation =>
+          println(s"while parsing $items")
+          throw e
+      }
 
     case NormalBlock(BlockType.Whitespace, _) => frag()
 
@@ -126,11 +139,13 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
   }
 
   def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-    Adoc.paragraph(paragraphString).map(inlineValuesToHTML).get
+    Adoc.paragraph(paragraphString).map(inlineValuesToHTML).valueOr(throw _)
   }
 
+
+
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    Adoc.document(blockContent).get.blocks.map(blockToHtml)
+    Adoc.document(blockContent).valueOr(throw _).blocks.map(blockToHtml)
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {

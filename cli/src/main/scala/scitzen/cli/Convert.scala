@@ -7,8 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import de.rmgk.logging.{Level, Logger}
-
-import scala.util.control.NonFatal
+import scitzen.parser.ParsingAnnotation
 
 
 object Convert {
@@ -60,8 +59,12 @@ object Convert {
           targetPath.write(Pages(s"$relpath/").makePostHtml(post))
           }
           catch {
-            case NonFatal(e) =>
+            case e @ ParsingAnnotation(content, failure) =>
               println(s"error while parsing $path")
+              val trace = failure.trace()
+              println(trace.msg)
+              println(trace.longMsg)
+              println(s"========\n$content\n========")
               throw e
           }
 

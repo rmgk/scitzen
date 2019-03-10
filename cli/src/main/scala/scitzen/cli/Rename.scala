@@ -4,6 +4,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
 
 import better.files.File
+import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.parser.{Adoc, DateParsingHelper, Header}
 
@@ -35,7 +36,7 @@ object Rename {
   }
 
   def renameFileFromHeader(f: File): Unit = {
-    val header: Header = Adoc.header(f.contentAsString).get
+    val header: Header = Adoc.header(f.contentAsString).valueOr(throw _)
     val newName: String = nameFromHeader(header)
 
     if (newName != f.name) {
