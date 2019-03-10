@@ -47,11 +47,17 @@ object ParagraphParsers {
 
   def disable[_:P](s: String) = P(if (s.isEmpty) Pass else !s)
 
-  def inlineSequence[_: P](currentQuote: String = "") : P[Seq[Inline]] = P {
-    ((significantAnySpaces.!.map(InlineText) ~ disable(currentQuote) ~ constrainedQuote)
-     | anySpaces.!.map(InlineText) ~ disable(currentQuote) ~
-       (special | unconstrainedQuote | simpleText | specialCharacter.!.map(InlineText))
-    ).rep(0).map(_.flatMap { case (spaces, inline) => Seq(spaces, inline) })
+  def inlineSequence[_: P](currentQuote: String = ""): P[Seq[Inline]] = P {
+    ((significantAnySpaces.!.map(InlineText)
+      ~ disable(currentQuote)
+      ~ constrainedQuote)
+     | anySpaces.!.map(InlineText)
+       ~ disable(currentQuote)
+       ~ (special
+          | unconstrainedQuote
+          | simpleText
+          | specialCharacter.!.map(InlineText))
+    ).rep(1).map(_.flatMap { case (spaces, inline) => Seq(spaces, inline) })
   }
 
   def constrainedQuote[_: P]: P[InlineQuote] = P {
@@ -61,7 +67,7 @@ object ParagraphParsers {
   }.map { case (q, inner) => InlineQuote(q, inner) }
 
   def constrainedClosing[_: P](wantsToClose: String): P[Unit] = P {
-    wantsToClose ~ !CharPred(c => c.isLetterOrDigit || c == '_')
+    wantsToClose ~ !CharPred(c => c.isUnicodeIdentifierPart)
   }
 
   def unconstrainedQuote[_: P]: P[InlineQuote] = P {
