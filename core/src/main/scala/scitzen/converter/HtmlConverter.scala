@@ -2,14 +2,14 @@ package scitzen.converter
 
 import scalatags.generic
 import scalatags.generic.Bundle
-import scitzen.parser.{Adoc, AttrRef, Attribute, Block, BlockMacro, BlockType, BlockWithAttributes, Document, Inline, InlineMacro, InlineQuote, InlineText, ListBlock, ListItem, NormalBlock, SectionTitle}
+import scitzen.parser._
 
 class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT]) {
-  import bundle._
   import bundle.all._
+  import bundle.tags2.aside
 
   def convert(document: Document): generic.Frag[Builder, FragT] = frag(
-    document.blocks.map(blockToHtml(_)): _*
+    document.blocks.map(blockToHtml): _*
   )
 
 
@@ -45,7 +45,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           ol(split.flatMap { case (item, contents) =>
             List(
               li(paragraphStringToHTML(item.content): _*)(
-                item.continuation.map(blockToHtml(_)).toList: _*)(
+                item.continuation.map(blockToHtml).toList: _*)(
                 listToHtml(contents)
               ))
           }: _*)
@@ -53,7 +53,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           ul(split.flatMap { case (item, contents) =>
             List(
               li(paragraphStringToHTML(item.content): _*)(
-                item.continuation.map(blockToHtml(_)).toList: _*)(
+                item.continuation.map(blockToHtml).toList: _*)(
                 listToHtml(contents)
               ))
           }: _*)
@@ -63,9 +63,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
   }
 
-  def blockToHtml(b: Block, addModifier: Seq[Modifier] = Nil): Frag = b match {
-
-
+  def blockToHtml(b: Block): Frag = b match {
 
     case SectionTitle(level, title) => tag("h" + (level + 1))(title)
 
@@ -78,7 +76,11 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           if (bwa.positional.size > 1) bq(cite(s"– ${bwa.positional(1)}.$title"))
           else bq
         case other         =>
-          val blockContent = blockToHtml(bwa.block, bwa.role.map(c => cls := s" $c "))
+          val blockContent = blockToHtml(bwa.block) match {
+            case any if bwa.role.isEmpty => any
+            case tag: Tag => tag(cls := bwa.role.mkString(" "))
+            case other => div(other)(cls := bwa.role.mkString(" "))
+          }
 
           bwa.title match {
             case None        => blockContent
@@ -100,14 +102,21 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
     case NormalBlock(blockType, text) => {
       blockType match {
-        case BlockType.Delimited(delimiter) if delimiter.startsWith(".") =>
-          p(text, cls:=" literalblock ")(addModifier : _*)
-
         case BlockType.Delimited(delimiter) =>
-          pre(delimiter, "\n", text, "\n", delimiter)
+          if (delimiter.length < 4) div(delimiter, br, text, br, delimiter)
+          else delimiter.charAt(0) match {
+            // code listing
+            case '-' => pre(code(text))
+            // literal block
+            case '.' => pre(text)
+            case '*' => aside(convertBlockContent(text))
+            case '_' => blockquote(convertBlockContent(text))
+              // there is also '=' example, and '+' passthrough.
+              // examples seems rather specific, and passthrough is not implemented.
+            case _   => div(delimiter, br, text, br, delimiter)
+          }
 
         case other =>
-//          println(s"converting $other block:\n$text")
           p(paragraphStringToHTML(text): _*)
 
       }
@@ -121,7 +130,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
   }
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    Adoc.document(blockContent).get.blocks.map(blockToHtml(_))
+    Adoc.document(blockContent).get.blocks.map(blockToHtml)
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {

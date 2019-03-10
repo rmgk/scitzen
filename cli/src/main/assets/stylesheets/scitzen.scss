@@ -9,6 +9,7 @@ $main-content-width: 171.9mm;
 
 $monospace: "Liberation Mono", monospace;
 
+
 @mixin card-like {
   box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
   background: #fffc;
@@ -36,6 +37,14 @@ $monospace: "Liberation Mono", monospace;
   }
 }
 
+@mixin text-font {
+  font-family: "Liberation Sans", "Helvetica", "Arial", sans-serif;
+  @media (min-resolution: 192dpi) {
+    font-family: "Liberation Serif", serif;
+  }
+}
+
+
 
 html {
   line-height: 1.5;
@@ -44,10 +53,7 @@ html {
     background: snow;
   }
 
-  font-family: "Liberation Sans", "Helvetica", "Arial", sans-serif;
-  @media (min-resolution: 192dpi) {
-    font-family: "Liberation Serif", serif;
-  }
+  @include text-font;
 }
 
 
@@ -66,23 +72,19 @@ a {
   @include hover-down;
 }
 
-h1, h2, h3, h4, h5, h6, figcaption {
+h1, h2, h3, h4, h5, h6 {
   &::before {
     content: "= ";
     color: $color-subdued;
     margin-left: -0.5em;
   }
-
   font-family: "Liberation Serif", serif;
+  text-align: center;
 }
 h1, h2 {
   font-weight: normal;
 }
 
-pre {
-  overflow-x: auto;
-  white-space: pre-wrap;
-}
 
 .time, .category {
   @media screen {
@@ -137,8 +139,20 @@ article.fullpost {
     text-align: justify;
   }
 
-  .literalblock {
-    white-space: pre-wrap;
+  ul {
+    box-sizing: border-box;
+  }
+
+  pre {
+    overflow-x: auto;
+    white-space: pre-line;
+    text-align: justify;
+    @include highlight-box;
+    @include text-font;
+  }
+
+  pre > code {
+    white-space: pre;
   }
 
   a {
@@ -146,23 +160,24 @@ article.fullpost {
   }
 
   // image blocks are contained in an oversized container
-  .imageblock {
+  & > .imageblock {
     text-align: center;
     max-width: $main-content-width * 1.64;
+    @include boxed-content;
   }
 
   img {
     max-width: 100%;
     height: auto;
     max-height: 40em;
-    @include boxed-content;
   }
 
   figure, blockquote {
     @include highlight-box;
   }
 
-  code {
+  p > code {
+    padding: 0.4ex;
     font-family: $monospace;
     @include boxed-content;
   }
