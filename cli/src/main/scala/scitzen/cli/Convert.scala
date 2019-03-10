@@ -8,6 +8,8 @@ import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import de.rmgk.logging.{Level, Logger}
 
+import scala.util.control.NonFatal
+
 
 object Convert {
 
@@ -50,11 +52,18 @@ object Convert {
         var categoriesAndMore: Map[String, Set[String]] = Map()
 
         for ((path, post) <- posts) {
+          try {
           Log.trace(s"converting s${post.title}")
           val targetPath = postdir / asciiData.targetPath(path)
           targetPath.parent.createDirectories()
           val relpath = targetPath.parent.relativize(targetdir)
           targetPath.write(Pages(s"$relpath/").makePostHtml(post))
+          }
+          catch {
+            case NonFatal(e) =>
+              println(s"error while parsing $path")
+              throw e
+          }
 
           // collect attributes
           for (attribute <- post.attributes) {
