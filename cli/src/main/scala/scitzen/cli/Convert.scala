@@ -1,4 +1,4 @@
-package pages
+package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
@@ -7,7 +7,6 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import de.rmgk.logging.{Level, Logger}
-import scitzen.converter.AsciidocParser
 
 
 object Convert {
@@ -32,7 +31,7 @@ object Convert {
         println(s"processing $sourcedir")
         println(s"to $targetdir")
 
-        val asciiData = new AsciidocParser(sourcedir.path)
+        val asciiData = new PostFolder(sourcedir.path)
 
         val postdir = targetdir / "posts"
         postdir.createDirectories()

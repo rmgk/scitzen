@@ -1,4 +1,4 @@
-package pages
+package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path

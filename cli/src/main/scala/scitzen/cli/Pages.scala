@@ -1,4 +1,4 @@
-package pages
+package scitzen.cli
 
 import scalatags.Text.all.{frag, raw, SeqFrag}
 import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, title, name => attrname, id, `for`}

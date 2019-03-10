@@ -1,4 +1,4 @@
-package pages
+package scitzen.cli
 
 import com.monovore.decline.{CommandApp, Opts}
 
