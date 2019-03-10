@@ -6,7 +6,7 @@ import sbtcrossproject.CrossType
 
 ThisBuild / scalaVersion := version_212
 ThisBuild / organization := "de.rmgk"
-name := "scitzen-root"
+name := "scitzen"
 
 
 lazy val scitzenCore = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
@@ -27,25 +27,25 @@ lazy val scitzenCoreJVM = scitzenCore.jvm
 lazy val scitzenCoreJS = scitzenCore.js
 
 
-lazy val scitzen = project.in(file("scitzen"))
-                   .enablePlugins(SbtSassify)
-                   .enablePlugins(JavaAppPackaging)
-                   .dependsOn(scitzenCoreJVM)
-                   .settings(
-                     name := "scitzen",
-                     Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
-                     SassKeys.cssStyle := Maxified,
-                     normalizecss,
-                     compileWithStrictScalacOptions,
-                     betterFiles
-                   )
+lazy val scitzenCli = project.in(file("cli"))
+                      .enablePlugins(SbtSassify)
+                      .enablePlugins(JavaAppPackaging)
+                      .dependsOn(scitzenCoreJVM)
+                      .settings(
+                        name := "scitzen-cli",
+                        Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
+                        SassKeys.cssStyle := Maxified,
+                        normalizecss,
+                        compileWithStrictScalacOptions,
+                        betterFiles
+                      )
 
-lazy val scitzenJS = project.in(file("scitzenJS"))
-                     .enablePlugins(ScalaJSPlugin)
-                     .dependsOn(scitzenCoreJS)
-                     .settings(
-                       name := "scitzenJS",
-                       scalaJSUseMainModuleInitializer := true,
-                       scalajsdom,
-                       compileWithStrictScalacOptions
-                     )
+lazy val scitzenWeb = project.in(file("web"))
+                      .enablePlugins(ScalaJSPlugin)
+                      .dependsOn(scitzenCoreJS)
+                      .settings(
+                        name := "scitzen-web",
+                        scalaJSUseMainModuleInitializer := true,
+                        scalajsdom,
+                        compileWithStrictScalacOptions
+                      )
