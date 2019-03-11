@@ -4,48 +4,49 @@ import org.irundaia.sass.Maxified
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import sbtcrossproject.CrossType
 
-ThisBuild / scalaVersion := version_212
+
 ThisBuild / organization := "de.rmgk"
 name := "scitzen"
+scalaVersion_212
+
+lazy val core = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
+                .in(file("core"))
+                .settings(
+                  name := "scitzen-core",
+                  scalatags,
+                  strictCompile,
+                  fastparse,
+                  scalatest,
+                  scalacheck,
+                  pprint,
+                  rmgkLogging,
+                  cats
+                )
+
+lazy val coreJVM = core.jvm
+lazy val coreJS = core.js
 
 
-lazy val scitzenCore = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
-                       .in(file("core"))
-                       .settings(
-                         name := "scitzen-core",
-                         scalatags,
-                         decline,
-                         compileWithStrictScalacOptions,
-                         fastparse,
-                         scalatest,
-                         scalacheck,
-                         pprint,
-                         rmgkLogging
-                       )
+lazy val cli = project.in(file("cli"))
+               .enablePlugins(SbtSassify)
+               .enablePlugins(JavaAppPackaging)
+               .dependsOn(coreJVM)
+               .settings(
+                 name := "scitzen-cli",
+                 Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
+                 SassKeys.cssStyle := Maxified,
+                 normalizecss,
+                 strictCompile,
+                 decline,
+                 betterFiles
+               )
 
-lazy val scitzenCoreJVM = scitzenCore.jvm
-lazy val scitzenCoreJS = scitzenCore.js
-
-
-lazy val scitzenCli = project.in(file("cli"))
-                      .enablePlugins(SbtSassify)
-                      .enablePlugins(JavaAppPackaging)
-                      .dependsOn(scitzenCoreJVM)
-                      .settings(
-                        name := "scitzen-cli",
-                        Compile / compile := ((Compile / compile) dependsOn (Assets / SassKeys.sassify)).value,
-                        SassKeys.cssStyle := Maxified,
-                        normalizecss,
-                        compileWithStrictScalacOptions,
-                        betterFiles
-                      )
-
-lazy val scitzenWeb = project.in(file("web"))
-                      .enablePlugins(ScalaJSPlugin)
-                      .dependsOn(scitzenCoreJS)
-                      .settings(
-                        name := "scitzen-web",
-                        scalaJSUseMainModuleInitializer := true,
-                        scalajsdom,
-                        compileWithStrictScalacOptions
-                      )
+lazy val web = project.in(file("web"))
+               .enablePlugins(ScalaJSPlugin)
+               .dependsOn(coreJS)
+               .settings(
+                 name := "scitzen-web",
+                 scalaJSUseMainModuleInitializer := true,
+                 scalajsdom,
+                 strictCompile,
+                 )

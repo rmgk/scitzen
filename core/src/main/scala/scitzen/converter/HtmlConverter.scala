@@ -64,7 +64,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
   }
   private def continuationToHtml(item: ListItem): SeqNode[Frag] = {
     item.continuation.toList.flatMap {
-      case NormalBlock(BlockType.Delimited(ws), content) => convertBlockContent(content)
+      case NormalBlock(BlockType.Delimited(_), content) => convertBlockContent(content)
       case other                                         => List(blockToHtml(other))
     }
   }
@@ -81,7 +81,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           val title = bwa.positional.lift(2).fold("")(t => s" $t")
           if (bwa.positional.size > 1) bq(cite(s"– ${bwa.positional(1)}.$title"))
           else bq
-        case other         =>
+        case _         =>
           val blockContent = blockToHtml(bwa.block) match {
             case any if bwa.role.isEmpty => any
             case tag: Tag => tag(cls := bwa.role.mkString(" "))
