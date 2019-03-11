@@ -2,6 +2,7 @@ package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
+import java.util.NoSuchElementException
 
 import better.files._
 import cats.implicits._
@@ -87,7 +88,13 @@ object Convert {
 
         Log.info("copy static resources")
 
-        (targetdir / "scitzen.css").writeBytes(new ResourceLoader().resourceBytes("scitzen.css"))
+        try {
+          (targetdir / "scitzen.css").writeBytes(new ResourceLoader().resourceBytes("scitzen.css"))
+        }
+        catch {
+          case _:NoSuchElementException =>
+            println(s"stylesheet not available")
+        }
 
 
         //TODO: may want to copy all linked files, instead of all images

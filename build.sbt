@@ -30,6 +30,7 @@ lazy val coreJS = core.js
 lazy val cli = project.in(file("cli"))
                .enablePlugins(SbtSassify)
                .enablePlugins(JavaAppPackaging)
+               .enablePlugins(GraalVMNativeImagePlugin)
                .dependsOn(coreJVM)
                .settings(
                  name := "scitzen-cli",
@@ -38,7 +39,8 @@ lazy val cli = project.in(file("cli"))
                  normalizecss,
                  strictCompile,
                  decline,
-                 betterFiles
+                 betterFiles,
+                 libraryDependencies += "org.scalameta" %% "mdoc" % "1.2.10"
                )
 
 lazy val web = project.in(file("web"))
