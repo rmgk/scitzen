@@ -85,7 +85,7 @@ object Dependencies {
   val pprint      = ld += "com.lihaoyi" %%% "pprint" % "0.5.3"
   val scalactic   = ld += "org.scalactic" %% "scalactic" % "3.0.6"
   val rmgkLogging = Def.settings(Resolvers.rmgk, ld += "de.rmgk" %%% "logging" % "0.2.1")
-  val sourcecode  = ld += "com.lihaoyi" %%% "sourcecode" % "0.1.4"
+  val sourcecode  = ld += "com.lihaoyi" %%% "sourcecode" % "0.1.5"
 
   val akkaHttp = ld ++= (Seq("akka-http-core",
                              "akka-http")
@@ -103,7 +103,7 @@ object Dependencies {
   val normalizecss = ld += "org.webjars.npm" % "normalize.css" % "8.0.1"
   val scalatags    = ld += "com.lihaoyi" %%% "scalatags" % "0.6.7"
   val scalajsdom   = ld += "org.scala-js" %%% "scalajs-dom" % "0.9.6"
-  val fontawesome  = ld += "org.webjars" % "font-awesome" % "5.3.1"
+  val fontawesome  = ld += "org.webjars" % "font-awesome" % "5.7.2"
 
   // tests
   val scalacheck = ld += "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
@@ -111,7 +111,7 @@ object Dependencies {
 
   // legacy
   val scalaXml   = ld += "org.scala-lang.modules" %% "scala-xml" % "1.1.1"
-  val scalaswing = ld += "org.scala-lang.modules" %% "scala-swing" % "2.0.3"
+  val scalaswing = ld += "org.scala-lang.modules" %% "scala-swing" % "2.1.0"
 
 
   object loci {
