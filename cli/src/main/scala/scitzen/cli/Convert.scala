@@ -20,6 +20,10 @@ object Convert {
   val optOutput = Opts.option[Path]("output", short = "o", metavar = "directory",
                                     help = "Target output directory")
 
+  val stylesheet = new ResourceLoader().resourceBytes("scitzen.css").toArray
+
+
+
   val command = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput).mapN {
       (sourcedirRel, targetdirRel) =>
@@ -89,7 +93,7 @@ object Convert {
         Log.info("copy static resources")
 
         try {
-          (targetdir / "scitzen.css").writeBytes(new ResourceLoader().resourceBytes("scitzen.css"))
+          (targetdir / "scitzen.css").writeByteArray(stylesheet)
         }
         catch {
           case _:NoSuchElementException =>

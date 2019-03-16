@@ -14,7 +14,7 @@ class ResourceLoader() {
 
   val assets: Seq[String] = urls.flatMap { url =>
     val jarUrlConnection = url.openConnection.asInstanceOf[JarURLConnection]
-    jarUrlConnection.getJarFile.entries.asScala.filterNot(_.isDirectory).map(_.getRealName)
+    jarUrlConnection.getJarFile.entries.asScala.filterNot(_.isDirectory).map(_.getName)
   }
 
   def findAsset(path: String): Option[String] = {
