@@ -5,7 +5,7 @@ import scitzen.parser.{DateParsingHelper, Document, ScitzenDateTime}
 
 
 class Post(val document: Document, val targetPath: String) {
-  val attributes: Map[String, String] = document.header.get.attributes.map(a => a.id -> a.value).toMap
+  lazy val attributes: Map[String, String] = document.header.get.attributes.map(a => a.id -> a.value).toMap
   def commaSeparatedAttribute(key: String): List[String] =
     attributes.getOrElse(key, "").toString
     .split(',')

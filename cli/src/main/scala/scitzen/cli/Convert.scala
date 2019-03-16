@@ -2,14 +2,14 @@ package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
-import java.util.NoSuchElementException
 
 import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import de.rmgk.logging.{Level, Logger}
-import scitzen.parser.ParsingAnnotation
-
+import scitzen.converter.Post
+import scitzen.parser.BlockType.Delimited
+import scitzen.parser.{Block, BlockWithAttributes, Document, NormalBlock, ParsingAnnotation}
 
 object Convert {
 
@@ -20,9 +20,34 @@ object Convert {
   val optOutput = Opts.option[Path]("output", short = "o", metavar = "directory",
                                     help = "Target output directory")
 
-  val stylesheet = new ResourceLoader().resourceBytes("scitzen.css").toArray
+  // loading ressource statically allows Graal AOT to inline on build
+  val stylesheet: Array[Byte] = {
+    Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
+  }
 
 
+  def compileBlocks(blocks: Iterable[Block]): List[Block] = {
+
+    val code = blocks.iterator.zipWithIndex
+               .collect {
+                 case (BlockWithAttributes(NormalBlock(Delimited("----"), content), attr, _), i)
+                   if {
+                     val attrs = attr.flatten.map(_.value)
+                     (attrs.contains("tut:silent") || attrs.contains("tut:book"))
+                   } =>
+                   println(s"collectiong $i $attr $content")
+                   (i, content)
+               }
+               .toList
+    val compiled = CompileTest.compile(code.map(_._2))
+                   .zip(code)
+                   .map { case (compiled, (i, _)) => i -> NormalBlock(Delimited("----"), compiled) }
+                   .toMap
+    blocks.iterator.zipWithIndex.map { case (b, i) =>
+      val res = compiled.getOrElse(i, b)
+      res
+    }.toList
+  }
 
   val command = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput).mapN {
@@ -57,11 +82,16 @@ object Convert {
 
         for ((path, post) <- posts) {
           try {
-          Log.trace(s"converting s${post.title}")
-          val targetPath = postdir / asciiData.targetPath(path)
-          targetPath.parent.createDirectories()
-          val relpath = targetPath.parent.relativize(targetdir)
-          targetPath.write(Pages(s"$relpath/").makePostHtml(post))
+            Log.trace(s"converting s${post.title}")
+            val targetPath = postdir / asciiData.targetPath(path)
+            targetPath.parent.createDirectories()
+            val relpath = targetPath.parent.relativize(targetdir)
+
+            Log.info(s"compiling inline code … ")
+            new Post(Document(post.document.header,
+                              compileBlocks(post.document.blocks)), post.targetPath)
+            Log.info(s"compiling inline code …  done")
+            targetPath.write(Pages(s"$relpath/").makePostHtml(post))
           }
           catch {
             case e @ ParsingAnnotation(content, failure) =>
@@ -91,14 +121,7 @@ object Convert {
         targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
 
         Log.info("copy static resources")
-
-        try {
-          (targetdir / "scitzen.css").writeByteArray(stylesheet)
-        }
-        catch {
-          case _:NoSuchElementException =>
-            println(s"stylesheet not available")
-        }
+        (targetdir / "scitzen.css").writeByteArray(stylesheet)
 
 
         //TODO: may want to copy all linked files, instead of all images
@@ -114,7 +137,6 @@ object Convert {
 
     }
   }
-
 
 
 }
