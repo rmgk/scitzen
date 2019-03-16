@@ -33,7 +33,7 @@ object Convert {
                  case (BlockWithAttributes(NormalBlock(Delimited("----"), content), attr, _), i)
                    if {
                      val attrs = attr.flatten.map(_.value)
-                     (attrs.contains("tut:silent") || attrs.contains("tut:book"))
+                     attrs.contains("tut:silent") || attrs.contains("tut:book")
                    } =>
                    println(s"collectiong $i $attr $content")
                    (i, content)
@@ -45,6 +45,7 @@ object Convert {
                    .toMap
     blocks.iterator.zipWithIndex.map { case (b, i) =>
       val res = compiled.getOrElse(i, b)
+      println(s"replace $b with $res")
       res
     }.toList
   }
@@ -88,10 +89,10 @@ object Convert {
             val relpath = targetPath.parent.relativize(targetdir)
 
             Log.info(s"compiling inline code … ")
-            new Post(Document(post.document.header,
+            val compiledPost = new Post(Document(post.document.header,
                               compileBlocks(post.document.blocks)), post.targetPath)
             Log.info(s"compiling inline code …  done")
-            targetPath.write(Pages(s"$relpath/").makePostHtml(post))
+            targetPath.write(Pages(s"$relpath/").makePostHtml(compiledPost))
           }
           catch {
             case e @ ParsingAnnotation(content, failure) =>
