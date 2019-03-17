@@ -39,6 +39,9 @@ object Convert {
                    (i, content)
                }
                .toList
+
+    if (code.isEmpty) return blocks.toList
+
     val compiled = CompileTest.compile(code.map(_._2))
                    .zip(code)
                    .map { case (compiled, (i, _)) => i -> NormalBlock(Delimited("----"), compiled) }
@@ -88,10 +91,9 @@ object Convert {
             targetPath.parent.createDirectories()
             val relpath = targetPath.parent.relativize(targetdir)
 
-            Log.info(s"compiling inline code … ")
             val compiledPost = new Post(Document(post.document.header,
                               compileBlocks(post.document.blocks)), post.targetPath)
-            Log.info(s"compiling inline code …  done")
+
             targetPath.write(Pages(s"$relpath/").makePostHtml(compiledPost))
           }
           catch {
