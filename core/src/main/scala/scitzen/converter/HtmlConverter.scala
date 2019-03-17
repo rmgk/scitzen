@@ -118,11 +118,20 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
         case BlockType.Delimited(delimiter) =>
           if (delimiter.length < 4) div(delimiter, br, text, br, delimiter)
           else delimiter.charAt(0) match {
-            // code listing
+            // Code listing
+            // Use this for monospace, space preserving, line preserving text
+            // It may wrap to fit the screen content
             case '-' => pre(code(text))
-            // literal block
+            // Literal block
+            // This seems to be supposed to work similar to code? But whats the point then?
+            // We interpret this as text with predetermined line wrappings
+            // and no special syntax, but otherwise normally formatted.
+            // This is great to represent copy&pasted posts or chat messages.
             case '.' => pre(text)
+            // Sidebar
+            // Parsed as a normal document content, but may float off to some side.
             case '*' => aside(convertBlockContent(text))
+            //
             case '_' => blockquote(convertBlockContent(text))
               // there is also '=' example, and '+' passthrough.
               // examples seems rather specific, and passthrough is not implemented.
