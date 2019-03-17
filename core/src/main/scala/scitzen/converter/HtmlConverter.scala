@@ -77,9 +77,17 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       val positiontype = bwa.positional.headOption
       positiontype match {
         case Some("quote") =>
-          val bq = blockquote(blockToHtml(bwa.block))
-          val title = bwa.positional.lift(2).fold("")(t => s" $t")
-          if (bwa.positional.size > 1) bq(cite(s"– ${bwa.positional(1)}.$title"))
+          val innerHtml = bwa.block match {
+            case NormalBlock(BlockType.Delimited(_), content) =>
+              SeqFrag(convertBlockContent(content))
+            case other => blockToHtml(other)
+          }
+          // for blockquote layout, see example 12 (the twitter quote)
+          // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
+          val bq = blockquote(innerHtml)
+          // first argument is "quote" we concat the rest and treat them as a single entity
+          val title = bwa.positional.drop(1).mkString(", ")
+          if (title.nonEmpty) bq(cite(title))
           else bq
         case _         =>
           val blockContent = blockToHtml(bwa.block) match {

@@ -184,6 +184,10 @@ article.fullpost {
     @include boxed-content;
   }
 
+  cite::before {
+    content: "– ";
+  }
+
 }
 
 body {
