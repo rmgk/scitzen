@@ -174,6 +174,8 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       case '#' => span
     })(inlineValuesToHTML(inner): _*)
     case InlineMacro("//", target, attributes) => frag()
+    case InlineMacro(tagname@("ins" | "del"), target, attributes) =>
+      tag(tagname)(attributes.iterator.filter(_.id.isEmpty).map(_.value).mkString(", "))
     case InlineMacro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), target, attributes) =>
       val linktarget = s"$protocol:$target"
       linkTo(attributes, linktarget)

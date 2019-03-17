@@ -27,13 +27,10 @@ $monospace: "Liberation Mono", monospace;
 }
 
 @mixin hover-down {
-  @media screen {
-    &:hover {
-      transition: 0.2s ease-out;
-      transform: translateX(4px);
-
-      filter: brightness(75%);
-    }
+  &:hover {
+    transition: 0.2s ease-out;
+    transform: translateX(4px);
+    filter: brightness(75%);
   }
 }
 
@@ -67,7 +64,6 @@ body {
 
 a {
   text-decoration: none;
-  outline: 0;
   color: $theme-color;
   @include hover-down;
 }
@@ -153,6 +149,12 @@ article.fullpost {
 
   a {
     word-break: break-all;
+    &:before{
+      content: "[";
+    }
+    &:after {
+      content: "]";
+    }
   }
 
   // image blocks are contained in an oversized container
@@ -186,6 +188,14 @@ article.fullpost {
 
   cite::before {
     content: "– ";
+  }
+
+  ins {
+    text-decoration: none;
+    color:darkgreen;
+  }
+  del {
+    color: darkred;
   }
 
 }
@@ -237,6 +247,11 @@ body {
     overflow-y: scroll;
     // makes jumping to links animate instead of instant
     scroll-behavior: smooth;
+
+    & > :last-child {
+      margin-bottom: calc(100vh - 1.5em);
+    }
+
   }
 }
 
