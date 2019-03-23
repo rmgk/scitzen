@@ -39,11 +39,12 @@ lazy val cli = project.in(file("cli"))
                .enablePlugins(GraalVMNativeImagePlugin)
                .dependsOn(coreJVM)
                .settings(
-                 name := "scitzen-cli",
+                 name := "scitzen",
                  Compile / resources ++= (webResources / Assets / SassKeys.sassify).value,
                  strictCompile,
                  decline,
                  betterFiles,
+                 publishLocal := publishLocal.dependsOn(coreJVM / publishLocal).value,
                  libraryDependencies += "org.scalameta" %% "mdoc" % "1.2.10",
                  Resolvers.stg,
                  libraryDependencies += "de.tuda.stg" %% "rescala" % "0.24.0"
