@@ -7,7 +7,7 @@ import sbtcrossproject.CrossType
 
 ThisBuild / organization := "de.rmgk"
 name := "scitzen"
-scalaVersion_212
+inThisBuild(scalaVersion_212)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
                 .in(file("core"))
