@@ -12,16 +12,16 @@ object BlockParsers {
   def blockTitle[_:P]: P[String] = P("." ~ !("." | verticalSpace) ~ titleLine)
 
   def horizontalRule[_:P]: P[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ spaceLine)
-                                           .map(BlockMacro.apply("horizontal-rule", _, Nil))
-  def pageBreak     [_:P]: P[BlockMacro] = P("<<<".!).map(BlockMacro.apply("page-break", _, Nil))
+                                           .map(BlockMacro(MacroType.HorizontalRule, _))
+  def pageBreak     [_:P]: P[BlockMacro] = P("<<<".!).map(BlockMacro(MacroType.PageBreak, _))
 
   def whitespaceBlock[_:P]: P[NormalBlock] = P(significantSpaceLine.rep(1).!).map(NormalBlock(BlockType.Whitespace, _))
 
   def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (spaceLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
                                        .map(NormalBlock(BlockType.Paragraph, _))
 
-  def sectionTitle[_:P]: P[SectionTitle] = P("=".rep(2).! ~ " " ~ titleLine)
-                                           .map { case (level, str) => SectionTitle(level.length - 1, str) }
+  def sectionTitle[_:P]: P[BlockMacro] = P("=".rep(2).! ~ " " ~ titleLine)
+                                           .map { case (level, str) => BlockMacro(MacroType.SectionTitle(level.length - 1), str) }
 
   def commentBlock[_:P]: P[NormalBlock] =
     P((DelimitedBlockParsers.makeDelimited("/".rep(4).!)

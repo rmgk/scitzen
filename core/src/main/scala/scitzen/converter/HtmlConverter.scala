@@ -71,7 +71,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
   def blockToHtml(b: Block): Frag = b match {
 
-    case SectionTitle(level, title) => tag("h" + (level + 1))(title)
+    case BlockMacro(MacroType.SectionTitle(level), title, _) => tag("h" + (level + 1))(title)
 
     case bwa: BlockWithAttributes =>
       val positiontype = bwa.positional.headOption
@@ -114,11 +114,11 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
     case NormalBlock(BlockType.Whitespace, _) => frag()
 
-    case BlockMacro("image", target, attributes) =>
+    case BlockMacro(MacroType.Adhoc("image"), target, attributes) =>
       div(cls := "imageblock",
           img(src := target)
       )
-    case BlockMacro("horizontal-rule", target, attributes) =>
+    case BlockMacro(MacroType.HorizontalRule, target, attributes) =>
       hr()
 
     case NormalBlock(blockType, text) => {

@@ -1,6 +1,14 @@
 package scitzen.parser
 
-case class Document(header: Option[Header], blocks: Seq[Block])
+import scitzen.parser.MacroType.SectionTitle
+
+case class Document(header: Option[Header], blocks: Seq[Block]) {
+  lazy val tableOfContents: Seq[Unit] = {
+    blocks.collect{
+      case BlockMacro(SectionTitle(level), title, attributes) =>
+    }
+  }
+}
 case class Header(title: String, authorline: String, revline: String, attributes: Seq[Attribute]) {
   lazy val attribute = attributes.filter(_.id.nonEmpty).map(a => a.id -> a.value).toMap
 }
@@ -32,10 +40,24 @@ case class BlockWithAttributes(block        : Block,
   }
 }
 case class NormalBlock(blockType: BlockType, content: String) extends Block
-case class BlockMacro(command: String, target: String, attributes: Seq[Attribute]) extends Block
-case class SectionTitle(level: Int, title: String) extends Block
 case class ListBlock(items: Seq[ListItem]) extends Block
 
 case class ListItem(marker: String, content: String, continuation: Option[Block])
 
 case class Attribute(id: String, value: String)
+
+
+case class BlockMacro(command: MacroType, target: String, attributes: Seq[Attribute] = Nil) extends Block
+object BlockMacro {
+  def fromTuple(data: (String, String, Seq[Attribute])) =
+    BlockMacro(MacroType.Adhoc(data._1), data._2, data._3)
+}
+
+sealed trait MacroType
+object MacroType {
+  case class SectionTitle(level: Int) extends MacroType
+  case object Image extends MacroType
+  object HorizontalRule extends MacroType
+  object PageBreak extends MacroType
+  case class Adhoc(name: String) extends MacroType
+}
