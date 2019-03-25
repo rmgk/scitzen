@@ -1,13 +1,13 @@
 package scitzen.cli
 
-import scalatags.Text.all.{frag, raw, SeqFrag}
-import scalatags.Text.attrs.{`type`, charset, cls, content, href, rel, title, name => attrname, id, `for`}
+import scalatags.Text.all.{SeqFrag, frag, raw}
+import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, rel, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{a, body, h1, head, header, html, link, meta, p, span, input, label}
-import scalatags.Text.tags2.{article, main, section, nav}
+import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, link, meta, p, span, ol, li}
+import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.converter.{HtmlConverter, Post}
-import scitzen.parser.ScitzenDateTime
+import scitzen.parser.{BlockMacro, MacroType, ScitzenDateTime}
 
 object Pages {
   def apply(relative: String = ""): Pages = new Pages(relative)
@@ -53,7 +53,7 @@ class Pages(val relative: String) {
            date.monthDayTime))
   }
 
-  private def tSingle(title: String, meta: Frag, content: Frag) = {
+  private def tSingle(title: String, meta: Frag, content: Frag*) = {
     article(cls := "fullpost",
             header(h1(raw(title)),
                    meta
@@ -85,7 +85,17 @@ class Pages(val relative: String) {
     htmlDocument(makeHtml(body(main(tSingle(
       post.title,
       tMeta(post),
+      maybeToc(post),
       new HtmlConverter(scalatags.Text).convert(post.document))))))
+  }
+
+  private def maybeToc(post: Post): Frag = {
+    if (post.attributes.contains("toc")) {
+      nav(ol(post.document.blocks.collect{
+        case BlockMacro(MacroType.SectionTitle(level), target, attributes) =>
+          li(a(href := s"#$target", target))
+      } : _*))
+    } else frag()
   }
 
   def makeIndexOf(posts: List[Post]): String = {

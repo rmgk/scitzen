@@ -1,14 +1,6 @@
 package scitzen.parser
 
-import scitzen.parser.MacroType.SectionTitle
-
-case class Document(header: Option[Header], blocks: Seq[Block]) {
-  lazy val tableOfContents: Seq[Unit] = {
-    blocks.collect{
-      case BlockMacro(SectionTitle(level), title, attributes) =>
-    }
-  }
-}
+case class Document(header: Option[Header], blocks: Seq[Block])
 case class Header(title: String, authorline: String, revline: String, attributes: Seq[Attribute]) {
   lazy val attribute = attributes.filter(_.id.nonEmpty).map(a => a.id -> a.value).toMap
 }

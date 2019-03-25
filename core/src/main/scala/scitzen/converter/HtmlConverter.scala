@@ -71,7 +71,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
   def blockToHtml(b: Block): Frag = b match {
 
-    case BlockMacro(MacroType.SectionTitle(level), title, _) => tag("h" + (level + 1))(title)
+    case BlockMacro(MacroType.SectionTitle(level), title, _) => tag("h" + (level + 1))(id := title,title)
 
     case bwa: BlockWithAttributes =>
       val positiontype = bwa.positional.headOption
