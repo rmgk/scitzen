@@ -7,9 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import de.rmgk.logging.{Level, Logger}
-import scitzen.converter.Post
-import scitzen.parser.BlockType.Delimited
-import scitzen.parser.{Block, BlockWithAttributes, Document, NormalBlock, ParsingAnnotation}
+import scitzen.parser.ParsingAnnotation
 
 object Convert {
 
@@ -25,33 +23,6 @@ object Convert {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
   }
 
-
-  def compileBlocks(blocks: Iterable[Block]): List[Block] = {
-
-    val code = blocks.iterator.zipWithIndex
-               .collect {
-                 case (BlockWithAttributes(NormalBlock(Delimited("----"), content), attr, _), i)
-                   if {
-                     val attrs = attr.flatten.map(_.value)
-                     attrs.contains("tut:silent") || attrs.contains("tut:book")
-                   } =>
-                   println(s"collectiong $i $attr $content")
-                   (i, content)
-               }
-               .toList
-
-    if (code.isEmpty) return blocks.toList
-
-    val compiled = CompileTest.compile(code.map(_._2))
-                   .zip(code)
-                   .map { case (compiled, (i, _)) => i -> NormalBlock(Delimited("----"), compiled) }
-                   .toMap
-    blocks.iterator.zipWithIndex.map { case (b, i) =>
-      val res = compiled.getOrElse(i, b)
-      println(s"replace $b with $res")
-      res
-    }.toList
-  }
 
   val command = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput).mapN {
@@ -91,10 +62,7 @@ object Convert {
             targetPath.parent.createDirectories()
             val relpath = targetPath.parent.relativize(targetdir)
 
-            val compiledPost = new Post(Document(post.document.header,
-                              compileBlocks(post.document.blocks)), post.targetPath)
-
-            targetPath.write(Pages(s"$relpath/").makePostHtml(compiledPost))
+            targetPath.write(Pages(s"$relpath/").makePostHtml(post))
           }
           catch {
             case e @ ParsingAnnotation(content, failure) =>

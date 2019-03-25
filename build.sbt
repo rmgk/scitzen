@@ -44,10 +44,7 @@ lazy val cli = project.in(file("cli"))
                  strictCompile,
                  decline,
                  betterFiles,
-                 publishLocal := publishLocal.dependsOn(coreJVM / publishLocal).value,
-                 libraryDependencies += "org.scalameta" %% "mdoc" % "1.2.10",
-                 Resolvers.stg,
-                 libraryDependencies += "de.tuda.stg" %% "rescala" % "0.24.0"
+                 publishLocal := publishLocal.dependsOn(coreJVM / publishLocal).value
                )
 
 lazy val web = project.in(file("web"))
