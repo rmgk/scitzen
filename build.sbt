@@ -20,7 +20,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
                   scalacheck,
                   pprint,
                   rmgkLogging,
-                  cats
+                  cats,
+                  scribe
                 )
 
 lazy val coreJVM = core.jvm

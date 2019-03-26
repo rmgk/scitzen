@@ -1,5 +1,7 @@
 package scitzen.parser
 
+import scitzen.converter.Post
+
 case class Document(header: Option[Header], blocks: Seq[Block])
 case class Header(title: String, authorline: String, revline: String, attributes: Seq[Attribute]) {
   lazy val attribute = attributes.filter(_.id.nonEmpty).map(a => a.id -> a.value).toMap
@@ -48,8 +50,9 @@ object BlockMacro {
 sealed trait MacroType
 object MacroType {
   case class SectionTitle(level: Int) extends MacroType
-  case object Image extends MacroType
   object HorizontalRule extends MacroType
   object PageBreak extends MacroType
   case class Adhoc(name: String) extends MacroType
 }
+
+case class Prov(start: Int = -1, end: Int = -1, post: Option[Post] = None)

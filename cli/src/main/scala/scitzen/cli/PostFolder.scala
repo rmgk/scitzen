@@ -8,8 +8,9 @@ import scitzen.parser.DocumentParsers
 
 class PostFolder(basedir: Path) {
   def makePost(path: Path): Post = {
-    val document = fastparse.parse(File(path).contentAsString, DocumentParsers.document(_)).get.value
-    new Post(document, targetPath(path))
+    val content = File(path).contentAsString
+    val document = fastparse.parse(content, DocumentParsers.document(_)).get.value
+    new Post(document, targetPath(path), path.toString, content)
   }
 
 

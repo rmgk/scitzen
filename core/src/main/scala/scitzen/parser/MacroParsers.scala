@@ -9,7 +9,10 @@ object MacroParsers {
   def start[_: P]: P[String] = P(identifier.! ~ ":")
   def block[_: P]: P[BlockMacro] = P(start ~ ":" ~ !significantAnySpaces ~/ target ~ Attributes.list)
                                    .map {BlockMacro.fromTuple}
-  def inline[_: P]: P[InlineMacro] = P(start ~ !significantAnySpaces ~ target ~ Attributes.list)
-                                     .map {(InlineMacro.apply _).tupled}
+  def inline[_: P]: P[InlineMacro] = P(Index ~ start ~ !significantAnySpaces ~ target ~ Attributes.list ~ Index)
+                                     .map {case (start, name, target, attributes, end) =>
+                                       implicitly[P[_]].input
+                                       InlineMacro(name, target, attributes)(Prov(start, end))
+                                     }
 
 }

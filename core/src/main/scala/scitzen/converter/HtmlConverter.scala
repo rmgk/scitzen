@@ -3,14 +3,17 @@ package scitzen.converter
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.parser._
-import cats.implicits._
+import scribe._
 
-class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT]) {
+class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
+                                                     post: Post
+                                                    ) {
+
   import bundle.all._
   import bundle.tags2.aside
 
-  def convert(document: Document): generic.Frag[Builder, FragT] = frag(
-    document.blocks.map(blockToHtml): _*
+  def convert(): generic.Frag[Builder, FragT] = frag(
+    post.document.blocks.map(blockToHtml): _*
   )
 
 
@@ -121,7 +124,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
     case BlockMacro(MacroType.HorizontalRule, target, attributes) =>
       hr()
 
-    case NormalBlock(blockType, text) => {
+    case NormalBlock(blockType, text) =>
       blockType match {
         case BlockType.Delimited(delimiter) =>
           if (delimiter.length < 4) div(delimiter, br, text, br, delimiter)
@@ -150,20 +153,22 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           p(paragraphStringToHTML(text): _*)
 
       }
-    }
 
-    case other => div(stringFrag(other.toString))
+    case other @ (BlockMacro(MacroType.Adhoc(_), _, _) | BlockMacro(MacroType.PageBreak, _, _)) =>
+      scribe.warn(s"not implemented: $other")
+      div(stringFrag(other.toString))
   }
-
-  def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-    Adoc.paragraph(paragraphString).map(inlineValuesToHTML).valueOr(throw _)
-  }
-
 
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    Adoc.document(blockContent).valueOr(throw _).blocks.map(blockToHtml)
+    Adoc.document(blockContent).right.get.blocks.map(blockToHtml)
   }
+
+
+  def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
+    Adoc.paragraph(paragraphString).map(inlineValuesToHTML).right.get
+  }
+
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
     case InlineText(str) => str
@@ -181,11 +186,12 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       linkTo(attributes, linktarget)
     case InlineMacro("link", target, attributes) =>
       linkTo(attributes, target)
-    case InlineMacro(command, target, attributes) =>
+    case im @ InlineMacro(command, target, attributes) =>
+      scribe.warn(im.withPost(post))
       code(s"$command:$target[${attributes.mkString(",")}]")
-    case AttrRef(id) => code(s"{$id}")
-    case other =>
-      throw new NotImplementedError(s"does not support $other inline values")
+    case attr @ AttrRef(id) =>
+      attr.logger.warn(s"attribute references are not implemented $attr")
+      code(s"{$id}")
   }
   def linkTo(attributes: Seq[Attribute], linktarget: String) = {
     a(href := linktarget)(attributes.find(_.id == "").fold(linktarget)(_.value))

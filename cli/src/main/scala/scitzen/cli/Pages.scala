@@ -86,7 +86,7 @@ class Pages(val relative: String) {
       post.title,
       tMeta(post),
       maybeToc(post),
-      new HtmlConverter(scalatags.Text).convert(post.document))))))
+      new HtmlConverter(scalatags.Text, post).convert())))))
   }
 
   private def maybeToc(post: Post): Frag = {
