@@ -1,7 +1,7 @@
 package scitzen.cli
 
 import scalatags.Text.all.{SeqFrag, frag, raw}
-import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, rel, title, name => attrname}
+import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, rel, title, name => attrname, lang}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, link, meta, p, span, ol, li}
 import scalatags.Text.tags2.{article, main, nav, section}
@@ -53,8 +53,9 @@ class Pages(val relative: String) {
            date.monthDayTime))
   }
 
-  private def tSingle(title: String, meta: Frag, content: Frag*) = {
+  private def tSingle(title: String, language: String, meta: Frag, content: Frag*) = {
     article(cls := "fullpost",
+            if (language.nonEmpty) lang := language else frag(),
             header(h1(raw(title)),
                    meta
             ),
@@ -84,6 +85,7 @@ class Pages(val relative: String) {
   def makePostHtml(post: Post): String = {
     htmlDocument(makeHtml(body(main(tSingle(
       post.title,
+      post.attributes.getOrElse("language", "").trim,
       tMeta(post),
       maybeToc(post),
       new HtmlConverter(scalatags.Text, post).convert())))))
