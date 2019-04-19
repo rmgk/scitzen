@@ -21,7 +21,7 @@ object Convert {
   }
 
 
-  val command = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
+  val command: Command[Unit] = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput).mapN {
       (sourcedirRel, targetdirRel) =>
         implicit val charset: Charset = StandardCharsets.UTF_8
@@ -31,54 +31,63 @@ object Convert {
         val sourcedir = File(sourcedirRel)
         val targetdir = File(targetdirRel)
         targetdir.createDirectories()
+        scribe.info(s"processing $sourcedir")
+        scribe.info(s"to $targetdir")
 
-        println(s"processing $sourcedir")
-        println(s"to $targetdir")
-
-        val asciiData = new PostFolder(sourcedir.path)
-
-        val postdir = targetdir / "posts"
-        postdir.createDirectories()
-
-        def allAdocFiles(): List[File] = sourcedir.glob("**.adoc").toList
-
-        val posts = allAdocFiles().map { f: File =>
-          scribe.debug(s"parsing ${f.name}")
-          f.path -> asciiData.makePost(f.path)
+        if (sourcedir.isRegularFile) {
+          val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
+          val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
+          targetPath.write(Pages().makePostHtml(post))
+          copyImages(sourcedir.parent, targetdir)
         }
+        else if (sourcedir.isDirectory) {
 
 
-        scribe.info(s"found ${posts.size} posts")
-        scribe.info(s"converting to $targetdir")
 
-        var categoriesAndMore: Map[String, Set[String]] = Map()
+          val asciiData = new PostFolder(sourcedir.path)
 
-        for ((path, post) <- posts) {
-          try {
-            scribe.trace(s"converting s${post.title}")
-            val targetPath = postdir / asciiData.targetPath(path)
-            targetPath.parent.createDirectories()
-            val relpath = targetPath.parent.relativize(targetdir)
+          val postdir = targetdir / "posts"
+          postdir.createDirectories()
 
-            targetPath.write(Pages(s"$relpath/").makePostHtml(post))
-          }
-          catch {
-            case e @ ParsingAnnotation(content, failure) =>
-              println(s"error while parsing $path")
-              val trace = failure.trace()
-              println(trace.msg)
-              println(trace.longMsg)
-              println(s"========\n$content\n========")
-              throw e
+          def allAdocFiles(): List[File] = sourcedir.glob("**.adoc").toList
+
+          val posts = allAdocFiles().map { f: File =>
+            scribe.debug(s"parsing ${f.name}")
+            f.path -> asciiData.makePost(f.path)
           }
 
-          // collect attributes
-          for (attribute <- post.attributes) {
-            val category = attribute._1
-            val categoryContents = categoriesAndMore.getOrElse(category, Set.empty)
-            categoriesAndMore = categoriesAndMore + (category -> (categoryContents + attribute._2))
+
+          scribe.info(s"found ${posts.size} posts")
+          scribe.info(s"converting to $targetdir")
+
+          var categoriesAndMore: Map[String, Set[String]] = Map()
+
+          for ((path, post) <- posts) {
+            try {
+              scribe.trace(s"converting s${post.title}")
+              val targetPath = postdir / asciiData.targetPath(path)
+              targetPath.parent.createDirectories()
+              val relpath = targetPath.parent.relativize(targetdir)
+
+              targetPath.write(Pages(s"$relpath/").makePostHtml(post))
+            }
+            catch {
+              case e @ ParsingAnnotation(content, failure) =>
+                println(s"error while parsing $path")
+                val trace = failure.trace()
+                println(trace.msg)
+                println(trace.longMsg)
+                println(s"========\n$content\n========")
+                throw e
+            }
+
+            // collect attributes
+            for (attribute <- post.attributes) {
+              val category = attribute._1
+              val categoryContents = categoriesAndMore.getOrElse(category, Set.empty)
+              categoriesAndMore = categoriesAndMore + (category -> (categoryContents + attribute._2))
+            }
           }
-        }
 
 //        categoriesAndMore.foreach{ c =>
 //          println(c._1)
@@ -87,25 +96,28 @@ object Convert {
 //        }
 
 
-        targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
+          targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
 
+
+          copyImages(postdir, targetdir)
+
+        }
         scribe.info("copy static resources")
         (targetdir / "scitzen.css").writeByteArray(stylesheet)
-
-
-        //TODO: may want to copy all linked files, instead of all images
-        def allImages(): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png}").toList
-
-        allImages().foreach { sourceImage =>
-          val relimage = sourcedir.relativize(sourceImage)
-          val targetfile = postdir / relimage.toString
-          scribe.trace(s"copy $sourceImage to $targetfile")
-          targetfile.parent.createDirectories()
-          sourceImage.copyTo(targetfile, overwrite = true)
-        }
-
     }
   }
 
 
+  def copyImages(sourcedir: File, targetdir: File): Unit = {
+    //TODO: may want to copy all linked files, instead of all images
+    def allImages(): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png}").toList
+
+    allImages().foreach { sourceImage =>
+      val relimage = sourcedir.relativize(sourceImage)
+      val targetfile = targetdir / relimage.toString
+      scribe.trace(s"copy $sourceImage to $targetfile")
+      targetfile.parent.createDirectories()
+      sourceImage.copyTo(targetfile, overwrite = true)
+    }
+  }
 }
