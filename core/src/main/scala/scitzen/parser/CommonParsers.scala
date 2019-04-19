@@ -33,9 +33,8 @@ object CommonParsers {
 
 
   object Identifier {
-    def charInWordList[_: P]: P[Unit]  = P(CharIn("0-9a-zA-Z_"))
-    def startIdentifier[_: P]: P[Unit] = P(charInWordList).opaque("<start identifier>")
-    def inIdentifier[_: P]: P[Unit]    = P(CharsWhileIn("0-9a-zA-Z_\\-", 0)).opaque("<in identifier>")
+    def startIdentifier[_: P]: P[Unit] = P(CharPred(Character.isJavaIdentifierStart)).opaque("<start identifier>")
+    def inIdentifier[_: P]: P[Unit]    = P(CharsWhile(Character.isJavaIdentifierPart, 0)).opaque("<in identifier>")
     def identifier[_: P]: P[String]    = P((startIdentifier ~ inIdentifier).!).opaque("<identifier>")
   }
 
