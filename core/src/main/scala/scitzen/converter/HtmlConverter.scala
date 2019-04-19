@@ -95,8 +95,8 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
         case _         =>
           val blockContent = blockToHtml(bwa.block) match {
             case any if bwa.role.isEmpty => any
-            case tag: Tag => tag(cls := bwa.role.mkString(" "))
-            case other => div(other)(cls := bwa.role.mkString(" "))
+            case tag: Tag => tag(cls := bwa.role.mkString(" ", " ", " "))
+            case other => div(other)(cls := bwa.role.mkString(" ", " ", " "))
           }
 
           bwa.title match {
@@ -166,18 +166,21 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
 
   def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-    Adoc.paragraph(paragraphString).map(inlineValuesToHTML).right.get
+      Adoc.paragraph(paragraphString).map(inlineValuesToHTML).toTry.get
   }
 
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
     case InlineText(str) => str
-    case InlineQuote(q, inner) => (q.head match {
+    case InlineQuote(q, inner) =>
+      scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
+      (q.head match {
       case '_' => em
       case '*' => strong
       case '`' => code
       case '#' => span
-    })(inlineValuesToHTML(inner): _*)
+      case '^' => sup
+    })(inner)
     case InlineMacro("//", target, attributes) => frag()
     case InlineMacro(tagname@("ins" | "del"), target, attributes) =>
       tag(tagname)(attributes.iterator.filter(_.id.isEmpty).map(_.value).mkString(", "))
