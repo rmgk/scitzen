@@ -39,7 +39,7 @@ object InlineParser {
   // also do not support super ^ subscript ~ or span #
 
 
-  def quoteChars[_: P]: P[Unit] = CharIn("_*`")
+  def quoteChars[_: P]: P[Unit] = CharIn("_*`$")
 
   // `<` cross reference; `/` comment; `\` escape; ` `
   def otherSpecialChars[_: P]: P[Unit] = CharIn("/")
@@ -53,14 +53,14 @@ object InlineParser {
   // include the unconstrained position
   // the until fails if empty, in that was we are just now at a potential syntax start,
   // so eat that and return
-  private def notSyntax[_: P]: P[Unit] = P((untilE(End | allowSyntaxAfter ~ &(syntaxStart))
-                                            ~/ (allowSyntaxAfter | End)).map(_ => ())
+  private def notSyntax[_: P]: P[Unit] = P((untilE(End | "//" | allowSyntaxAfter ~ &(syntaxStart))
+                                            ~/ (allowSyntaxAfter | &("//") | End)).map(_ => ())
                                            | allowSyntaxAfter)
   def simpleText[_: P]: P[InlineText] = {
     P(notSyntax.!).map(InlineText)
   }
 
-  def comment[_: P]: P[InlineMacro] = P(("//" ~ untilI(eol)).rep(1).!)
+  def comment[_: P]: P[InlineMacro] = P("//" ~ untilI(eol, 0))
                                       .map(InlineMacro("//", _, Nil)())
 
   def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence.? ~ End)
