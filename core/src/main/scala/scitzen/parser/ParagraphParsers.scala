@@ -15,7 +15,6 @@ case class InlineMacro(command: String,
   def withPost(post: Post) = copy()(provenance = provenance.copy(post = Some(post)))
 }
 case class InlineText(str: String) extends Inline
-case class AttrRef(id: String) extends Inline
 case class InlineQuote(q: String, inner: String) extends Inline
 
 object Inline {
@@ -61,7 +60,6 @@ object ParagraphParsers {
   def inlineSequence[_: P]: P[Seq[Inline]] = P {
     (comment
      | MacroParsers.inline
-     | Attributes.reference
      | quoted
      | simpleText
     ).rep(1)

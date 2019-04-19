@@ -8,8 +8,6 @@ object Attributes {
   val  open = "["
   val  close= "]"
 
-  def reference    [_:P]: P[AttrRef]   = P("{" ~/ identifier.! ~ "}")
-                                         .map(AttrRef.apply)
   def equals                           [_:P]= P(anySpaces ~ "=" ~ anySpaces)
   // https://asciidoctor.org/docs/user-manual/#named-attribute
   // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice

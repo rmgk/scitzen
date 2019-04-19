@@ -3,7 +3,6 @@ package scitzen.converter
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.parser._
-import scribe._
 
 class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
                                                      post: Post
@@ -187,9 +186,6 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
     case im @ InlineMacro(command, target, attributes) =>
       scribe.warn(im.withPost(post))
       code(s"$command:$target[${attributes.mkString(",")}]")
-    case attr @ AttrRef(id) =>
-      attr.logger.warn(s"attribute references are not implemented $attr")
-      code(s"{$id}")
   }
   def linkTo(attributes: Seq[Attribute], linktarget: String) = {
     a(href := linktarget)(attributes.find(_.id == "").fold(linktarget)(_.value))
