@@ -31,7 +31,7 @@ object Inline {
   }
 }
 
-object ParagraphParsers {
+object InlineParser {
   //TODO: unsupported `+` for passthrough macros
   // plan: only keep macro form, less magic syntax
   // https://asciidoctor.org/docs/user-manual/#pass-macros
@@ -46,10 +46,19 @@ object ParagraphParsers {
 
   def specialCharacter[_: P]: P[Unit] = P(quoteChars | otherSpecialChars)
 
-  /** Simple text stops at special characters or spaces.
-    * Spaces are included, and then we reorient */
-  def simpleText[_: P]: P[InlineText] = P(anySpaces ~ untilE(End | anySpace ~ !anySpace) ~ anySpace.?).!.map(
-    InlineText)
+  def allowSyntaxAfter[_: P]: P[Unit] = P(anySpace | "(")
+  def syntaxStart[_: P]: P[Unit] = P(specialCharacter | Identifier.startIdentifier)
+
+  // grab everything until a unconstrained position followed by a syntax starter
+  // include the unconstrained position
+  // the until fails if empty, in that was we are just now at a potential syntax start,
+  // so eat that and return
+  private def notSyntax[_: P]: P[Unit] = P((untilE(End | allowSyntaxAfter ~ &(syntaxStart))
+                                            ~/ (allowSyntaxAfter | End)).map(_ => ())
+                                           | allowSyntaxAfter)
+  def simpleText[_: P]: P[InlineText] = {
+    P(notSyntax.!).map(InlineText)
+  }
 
   def comment[_: P]: P[InlineMacro] = P(("//" ~ untilI(eol)).rep(1).!)
                                       .map(InlineMacro("//", _, Nil)())
@@ -67,8 +76,8 @@ object ParagraphParsers {
 
   def quoted[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiter =>
-      (!(delimiter | anySpace) ~ AnyChar ~ untilE(delimiter)).!
-      .map(v => InlineQuote(delimiter, v)) ~ delimiter
+      (!(delimiter | anySpace) ~ AnyChar ~ untilE(delimiter))
+      .!.map(v => InlineQuote(delimiter, v)) ~ delimiter
     }
   }
 
