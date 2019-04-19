@@ -123,12 +123,12 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
     case NormalBlock(blockType, text) =>
       blockType match {
         case BlockType.Delimited(delimiter) =>
-          if (delimiter.length < 4) div(delimiter, br, text, br, delimiter)
+          if (delimiter == "--") div(delimiter, br, text, br, delimiter)
           else delimiter.charAt(0) match {
             // Code listing
             // Use this for monospace, space preserving, line preserving text
             // It may wrap to fit the screen content
-            case '-' => pre(code(text))
+            case '-'| '`'  => pre(code(text))
             // Literal block
             // This seems to be supposed to work similar to code? But whats the point then?
             // We interpret this as text with predetermined line wrappings
@@ -173,7 +173,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       (q.head match {
       case '_' => em
       case '*' => strong
-      case '`' => code
+      case '`'|'$' => code
     })(inner)
     case InlineMacro("//", target, attributes) => frag()
     case InlineMacro(tagname@("ins" | "del"), target, attributes) =>
