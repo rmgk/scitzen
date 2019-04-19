@@ -14,7 +14,9 @@ object Adoc {
     val parsed = fastparse.parse(content, parser)
     parsed match {
       case Success(value, index) => value.asRight
-      case f: Failure            => ParsingAnnotation(content, f).asLeft
+      case f: Failure            =>
+        scribe.error(s"failed to parse ${f.trace().longMsg}")
+        ParsingAnnotation(content, f).asLeft
     }
   }
 
@@ -25,5 +27,5 @@ object Adoc {
     parseResult(blockContent, scitzen.parser.DocumentParsers.document(_))
 
   def paragraph(paragraphString: String): Result[Seq[Inline]] =
-    parseResult(paragraphString, scitzen.parser.ParagraphParsers.fullParagraph(_))
+    parseResult(paragraphString, scitzen.parser.InlineParser.fullParagraph(_))
 }
