@@ -76,7 +76,7 @@ object InlineParser {
 
   def quoted[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiter =>
-      (!(delimiter | anySpace) ~ AnyChar ~ untilE(delimiter))
+      (!(delimiter | anySpace) ~ untilE(delimiter))
       .!.map(v => InlineQuote(delimiter, v)) ~ delimiter
     }
   }
