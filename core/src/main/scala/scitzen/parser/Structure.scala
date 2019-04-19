@@ -20,8 +20,7 @@ object BlockType {
 sealed trait Block
 
 case class BlockWithAttributes(block        : Block,
-                               rawAttributes: Seq[Seq[Attribute]],
-                               title        : Option[String]
+                               rawAttributes: Seq[Seq[Attribute]]
                               ) extends Block {
   lazy val attributes: Seq[Attribute]      = rawAttributes.flatten
   lazy val positional: Seq[String]         = attributes.collect { case Attribute("", value) => value }

@@ -98,11 +98,8 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
             case tag: Tag => tag(cls := bwa.role.mkString(" ", " ", " "))
             case other => div(other)(cls := bwa.role.mkString(" ", " ", " "))
           }
-
-          bwa.title match {
-            case None        => blockContent
-            case Some(value) => figure(figcaption(value), blockContent)
-          }
+              //figure(figcaption(value), blockContent)
+          blockContent
       }
 
     case ListBlock(items) =>
@@ -173,7 +170,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
     case InlineText(str) => str
     case InlineQuote(q, inner) =>
-      scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
+      //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
       (q.head match {
       case '_' => em
       case '*' => strong

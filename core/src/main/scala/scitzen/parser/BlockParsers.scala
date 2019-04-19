@@ -40,10 +40,10 @@ object BlockParsers {
                                       MacroParsers.block |
                                       paragraph)
 
-  def fullBlock[_:P]: P[Block] = P(Attributes.line.rep ~ blockTitle.? ~ Attributes.line.rep ~ alternatives)
+  def fullBlock[_:P]: P[Block] = P(Attributes.line.rep ~ alternatives)
                                  .map {
-                                   case (Nil, None, Nil, content)         => content
-                                   case (attrs1, stitle, attrs2, content) =>
-                                     BlockWithAttributes(content, attrs1 ++ attrs2, stitle)
+                                   case (Nil, content)         => content
+                                   case (attrs, content) =>
+                                     BlockWithAttributes(content, attrs)
                                  }
 }
