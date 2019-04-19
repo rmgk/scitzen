@@ -110,7 +110,7 @@ object Convert {
 
   def copyImages(sourcedir: File, targetdir: File): Unit = {
     //TODO: may want to copy all linked files, instead of all images
-    def allImages(): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png}").toList
+    def allImages(): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png,svg}").toList
 
     allImages().foreach { sourceImage =>
       val relimage = sourcedir.relativize(sourceImage)
