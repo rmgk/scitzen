@@ -6,12 +6,9 @@ import java.nio.file.Path
 import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
-import de.rmgk.logging.{Level, Logger}
 import scitzen.parser.ParsingAnnotation
 
 object Convert {
-
-  val Log = Logger(level = Level.Info)
 
   val optSource = Opts.option[Path]("source", short = "s", metavar = "directory",
                                     help = "Directory containing Asciidoc source posts")
@@ -27,8 +24,9 @@ object Convert {
   val command = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput).mapN {
       (sourcedirRel, targetdirRel) =>
-
         implicit val charset: Charset = StandardCharsets.UTF_8
+
+        //scribe.Logger.root.clearHandlers().clearModifiers().withHandler(minimumLevel = Some(scribe.Level.Debug)).replace()
 
         val sourcedir = File(sourcedirRel)
         val targetdir = File(targetdirRel)
@@ -45,19 +43,19 @@ object Convert {
         def allAdocFiles(): List[File] = sourcedir.glob("**.adoc").toList
 
         val posts = allAdocFiles().map { f: File =>
-          Log.trace(s"parsing ${f.name}")
+          scribe.debug(s"parsing ${f.name}")
           f.path -> asciiData.makePost(f.path)
         }
 
 
-        Log.info(s"found ${posts.size} posts")
-        Log.info(s"converting to $targetdir")
+        scribe.info(s"found ${posts.size} posts")
+        scribe.info(s"converting to $targetdir")
 
         var categoriesAndMore: Map[String, Set[String]] = Map()
 
         for ((path, post) <- posts) {
           try {
-            Log.trace(s"converting s${post.title}")
+            scribe.trace(s"converting s${post.title}")
             val targetPath = postdir / asciiData.targetPath(path)
             targetPath.parent.createDirectories()
             val relpath = targetPath.parent.relativize(targetdir)
@@ -91,7 +89,7 @@ object Convert {
 
         targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
 
-        Log.info("copy static resources")
+        scribe.info("copy static resources")
         (targetdir / "scitzen.css").writeByteArray(stylesheet)
 
 
@@ -101,7 +99,7 @@ object Convert {
         allImages().foreach { sourceImage =>
           val relimage = sourcedir.relativize(sourceImage)
           val targetfile = postdir / relimage.toString
-          Log.trace(s"copy $sourceImage to $targetfile")
+          scribe.trace(s"copy $sourceImage to $targetfile")
           targetfile.parent.createDirectories()
           sourceImage.copyTo(targetfile, overwrite = true)
         }

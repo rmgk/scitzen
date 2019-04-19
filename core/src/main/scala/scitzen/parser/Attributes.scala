@@ -8,7 +8,7 @@ object Attributes {
   val  open = "["
   val  close= "]"
 
-  def equals                           [_:P]= P(anySpaces ~ "=" ~ anySpaces)
+  def equals       [_:P]: P[Unit]      = P(anySpaces ~ "=" ~ anySpaces)
   // https://asciidoctor.org/docs/user-manual/#named-attribute
   // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
   // however, in the hope of better error messages, we will not allow newlines
@@ -19,14 +19,9 @@ object Attributes {
   def listValue    [_:P]: P[Attribute] = P(value)
                                          .map(v => Attribute("", v))
   def listElement  [_:P]: P[Attribute] = P(listDef | listValue)
-  def xrefAnchorSpecialCase[_:P]
-                   : P[Seq[Attribute]]
-                                       = P("[" ~ ("[" ~ untilE("]]") ~ "]").! ~ "]")
-                                         .map(content => Seq(Attribute("", content)))
   def list         [_:P]: P[Seq[Attribute]] =
     P(open ~ anySpaces ~ listElement.rep(sep = anySpaces ~ "," ~ anySpaces) ~ ",".? ~ anySpaces ~ close)
-  def line         [_:P]: P[Seq[Attribute]]
-                                       = P((xrefAnchorSpecialCase | list) ~ spaceLine)
+  def line         [_:P]: P[Seq[Attribute]] = P(list ~ spaceLine)
 }
 
 object AttributeEntry {
