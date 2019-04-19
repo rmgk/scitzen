@@ -178,8 +178,6 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       case '_' => em
       case '*' => strong
       case '`' => code
-      case '#' => span
-      case '^' => sup
     })(inner)
     case InlineMacro("//", target, attributes) => frag()
     case InlineMacro(tagname@("ins" | "del"), target, attributes) =>
