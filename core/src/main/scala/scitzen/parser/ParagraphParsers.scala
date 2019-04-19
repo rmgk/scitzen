@@ -62,14 +62,15 @@ object ParagraphParsers {
     (comment
      | MacroParsers.inline
      | Attributes.reference
-     | unconstrainedQuote
+     | quoted
      | simpleText
     ).rep(1)
   }
 
-  def unconstrainedQuote[_: P]: P[InlineQuote] = P {
+  def quoted[_: P]: P[InlineQuote] = P {
     quoteChars.!.flatMap { delimiter =>
-      untilI(delimiter).map(v => InlineQuote(delimiter, v))
+      (!(delimiter | anySpace) ~ AnyChar ~ untilE(delimiter)).!
+      .map(v => InlineQuote(delimiter, v)) ~ delimiter
     }
   }
 
