@@ -42,6 +42,12 @@ lazy val cli = project.in(file("cli"))
                .settings(
                  name := "scitzen",
                  Compile / resources ++= (webResources / Assets / SassKeys.sassify).value,
+                 resolvers += Resolver.sonatypeRepo("public"),
+                 libraryDependencies ++= Seq(
+                   "de.undercouch" % "citeproc-java" % "1.0.1",
+                   "org.citationstyles"% "styles" % "1.0.1-SNAPSHOT",
+                   "org.citationstyles"% "locales" % "1.0.1-SNAPSHOT"
+                   ),
                  strictCompile,
                  decline,
                  betterFiles,

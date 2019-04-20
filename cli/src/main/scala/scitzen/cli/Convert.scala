@@ -14,7 +14,8 @@ object Convert {
                                     help = "Directory containing Asciidoc source posts")
   val optOutput = Opts.option[Path]("output", short = "o", metavar = "directory",
                                     help = "Target output directory")
-
+  val optBib = Opts.option[Path]("bibliography", short = "b", metavar = "file",
+                                    help = "Bibliography").orNone
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
@@ -22,8 +23,8 @@ object Convert {
 
 
   val command: Command[Unit] = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
-    (optSource, optOutput).mapN {
-      (sourcedirRel, targetdirRel) =>
+    (optSource, optOutput, optBib).mapN {
+      (sourcedirRel, targetdirRel, bibRel) =>
         implicit val charset: Charset = StandardCharsets.UTF_8
 
         //scribe.Logger.root.clearHandlers().clearModifiers().withHandler(minimumLevel = Some(scribe.Level.Debug)).replace()
@@ -36,6 +37,8 @@ object Convert {
 
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
+          val bib = bibRel.flatMap(Bibliography.parse).toList
+          Bibliography.citations(post)
           val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
           targetPath.write(Pages().makePostHtml(post))
           copyImages(sourcedir.parent, targetdir)
