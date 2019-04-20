@@ -5,7 +5,7 @@ import fastparse._
 import scitzen.parser.CommonParsers._
 
 
-object InlineParser {
+object InlineParsers {
   //TODO: unsupported `+` for passthrough macros
   // plan: only keep macro form, less magic syntax
   // https://asciidoctor.org/docs/user-manual/#pass-macros
