@@ -11,19 +11,19 @@ object ListParsers {
 
   def descriptionItemStart[_:P]: P[String] = P(untilE("::" | eol) ~ ":".rep(2))
 
-  def simpleMarker [_:P]= P(verticalSpaces
+  def simpleMarker [_:P]: P[String] = P(verticalSpaces
                        ~ ("-"
                           | "*".rep(1)
                           | (digits.? ~ ".".rep(1))
                           | descriptionItemStart)
                        ~ verticalSpace).!
 
-  def listContent [_:P]= P(untilE(eol ~ (("+".? ~ spaceLine) | (simpleMarker | indentedDescriptionMarker).map(_ => ()))) ~ eol)
+  def listContent [_:P]: P[String] = P(untilE(eol ~ (("+".? ~ spaceLine) | (simpleMarker | indentedDescriptionMarker).map(_ => ()))) ~ eol)
 
-  def simpleListItem [_:P]= P((simpleMarker.! ~/ listContent ~ ("+" ~ spaceLine ~ BlockParsers.fullBlock).?)
+  def simpleListItem [_:P]: P[ListItem] = P((simpleMarker.! ~/ listContent ~ ("+" ~ spaceLine ~ BlockParsers.fullBlock).?)
                          .map((ListItem.apply _).tupled))
 
-  def indentedDescriptionMarker [_:P]= P((descriptionItemStart ~ newline).!)
+  def indentedDescriptionMarker [_:P]: P[String] = P((descriptionItemStart ~ newline).!)
 
   def descriptionListItem[_:P]: P[ListItem] = P(indentedDescriptionMarker ~
                                                 ((spaceLine.rep(0) ~
