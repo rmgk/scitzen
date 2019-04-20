@@ -21,13 +21,13 @@ object InlineParsers {
   def specialCharacter[_: P]: P[Unit] = P(quoteChars | otherSpecialChars)
 
   def allowSyntaxAfter[_: P]: P[Unit] = P(anySpace | "(")
-  def syntaxStart[_: P]: P[Unit] = P(specialCharacter | Identifier.startIdentifier)
+  def syntaxStart[_: P]: P[Unit] = P(specialCharacter | MacroParsers.start.map(_ => ()))
 
   // grab everything until a unconstrained position followed by a syntax starter
   // include the unconstrained position
   // the until fails if empty, in that was we are just now at a potential syntax start,
   // so eat that and return
-  private def notSyntax[_: P]: P[Unit] = P((untilE(End | "//" | allowSyntaxAfter ~ &(syntaxStart))
+  private def notSyntax[_: P]: P[Unit] = P((untilE(End | "//" | (allowSyntaxAfter ~ &(syntaxStart)))
                                             ~/ (allowSyntaxAfter | &("//") | End)).map(_ => ())
                                            | allowSyntaxAfter)
   def simpleText[_: P]: P[InlineText] = {

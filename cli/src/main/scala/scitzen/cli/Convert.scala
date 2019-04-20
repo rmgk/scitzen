@@ -7,6 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.parser.ParsingAnnotation
+import scitzen.semantics.SastConverter
 import scribe.Logger
 import scribe.format.Formatter
 
@@ -41,6 +42,8 @@ object Convert {
 
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
+          val res = SastConverter.convert(post.document.blocks)
+          scribe.info(s"$res")
           //val bib = bibRel.flatMap(Bibliography.parse).toList
           val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
           targetPath.write(Pages().makePostHtml(post))
