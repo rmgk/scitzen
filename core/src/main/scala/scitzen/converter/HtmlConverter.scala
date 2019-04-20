@@ -109,8 +109,10 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           // Sidebar
           // Parsed as a normal document content, but may float off to some side.
           case '*' => aside(convertBlockContent(text))
-          //
           case '_' => blockquote(convertBlockContent(text))
+          // space indented blocks are currently only used for description lists
+          // they are parsed and inserted as if the indentation was not present
+          case ' ' => SeqFrag(convertBlockContent(text))
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
           case _   => div(delimiter, br, text, br, delimiter)
