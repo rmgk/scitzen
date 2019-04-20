@@ -97,7 +97,7 @@ class Pages(val relative: String) {
   private def maybeToc(post: Post): Frag = {
     if (post.attributes.contains("toc")) {
       nav(ol(post.document.blocks.map(_.content).collect{
-        case SectionTitle(level, target) =>
+        case SectionTitle(level, target) if level > 1 =>
           li(a(href := s"#$target", target))
       } : _*))
     } else frag()
