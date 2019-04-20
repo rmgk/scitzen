@@ -89,6 +89,8 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
         div(cls := "imageblock",
             img(src := target)
             )
+      case Macro("label", target, attributes) =>
+        a(id := attributes.head.value)
 
       case NormalBlock(delimiter, text) =>
         if (delimiter == "--") div(delimiter, br, text, br, delimiter)
