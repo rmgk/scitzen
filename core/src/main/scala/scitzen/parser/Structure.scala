@@ -15,8 +15,6 @@ object AttributesToMap {
     attributes.map { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
 }
 
-case class Author(name: String, email: Option[String])
-
 case class Block(rawAttributes: Seq[Seq[Attribute]], prov: Prov, content: BlockContent) {
   lazy val attributes: Seq[Attribute]      = rawAttributes.flatten
   lazy val positional: Seq[String]         = attributes.collect { case Attribute("", value) => value }
