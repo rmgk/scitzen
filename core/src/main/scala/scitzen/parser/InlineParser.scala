@@ -5,15 +5,6 @@ import fastparse._
 import scitzen.parser.CommonParsers._
 
 
-sealed trait Inline
-case class InlineMacro(command: String,
-                       target: String,
-                       attributes: Seq[Attribute])
-                      (val provenance: Prov = Prov()) extends Inline {
-}
-case class InlineText(str: String) extends Inline
-case class InlineQuote(q: String, inner: String) extends Inline
-
 object InlineParser {
   //TODO: unsupported `+` for passthrough macros
   // plan: only keep macro form, less magic syntax
@@ -43,8 +34,8 @@ object InlineParser {
     P(notSyntax.!).map(InlineText)
   }
 
-  def comment[_: P]: P[InlineMacro] = P("//" ~ untilI(eol, 0))
-                                      .map(InlineMacro("//", _, Nil)())
+  def comment[_: P]: P[Macro] = P("//" ~ untilI(eol, 0))
+                                      .map(Macro("//", _, Nil))
 
   def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence.? ~ End)
                                             .map(_.getOrElse(Nil))

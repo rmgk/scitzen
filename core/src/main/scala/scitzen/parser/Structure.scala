@@ -32,6 +32,16 @@ case class SectionTitle(level: Int, title: String) extends BlockContent
 case class ListItem(marker: String, content: String, continuation: Option[Block])
 
 case class Attribute(id: String, value: String)
-case class BlockMacro(command: String, target: String, attributes: Seq[Attribute] = Nil) extends BlockContent
 
 case class Prov(start: Int = -1, end: Int = -1)
+
+
+
+
+sealed trait Inline
+case class Macro(command: String,
+                       target: String,
+                       attributes: Seq[Attribute]) extends Inline with BlockContent {
+}
+case class InlineText(str: String) extends Inline
+case class InlineQuote(q: String, inner: String) extends Inline

@@ -85,7 +85,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
       case WhitespaceBlock(_) | AttributeBlock(_)  => frag()
 
-      case BlockMacro("image", target, attributes) =>
+      case Macro("image", target, attributes) =>
         div(cls := "imageblock",
             img(src := target)
             )
@@ -116,7 +116,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           case _   => div(delimiter, br, text, br, delimiter)
         }
 
-      case other @ BlockMacro(_, _, _) =>
+      case other @ Macro(_, _, _) =>
         scribe.warn(s"not implemented: $other")
         div(stringFrag(other.toString))
     }
@@ -164,15 +164,15 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       case '*' => strong
       case '`'|'$' => code
     })(inner)
-    case InlineMacro("//", target, attributes) => frag()
-    case InlineMacro(tagname@("ins" | "del"), target, attributes) =>
+    case Macro("//", target, attributes) => frag()
+    case Macro(tagname@("ins" | "del"), target, attributes) =>
       tag(tagname)(attributes.iterator.filter(_.id.isEmpty).map(_.value).mkString(", "))
-    case InlineMacro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), target, attributes) =>
+    case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), target, attributes) =>
       val linktarget = s"$protocol:$target"
       linkTo(attributes, linktarget)
-    case InlineMacro("link", target, attributes) =>
+    case Macro("link", target, attributes) =>
       linkTo(attributes, target)
-    case im @ InlineMacro(command, target, attributes) =>
+    case im @ Macro(command, target, attributes) =>
       scribe.warn(s"inline macro “$command:$target[$attributes]” for ${post.sourcePath}")
       code(s"$command:$target[${attributes.mkString(",")}]")
   }
