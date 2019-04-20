@@ -146,12 +146,12 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
 
   def convertBlockContent(blockContent: String): Seq[Frag] = {
-    Adoc.document(blockContent).right.get.blocks.map(blockToHtml)
+    Parse.document(blockContent).right.get.blocks.map(blockToHtml)
   }
 
 
   def paragraphStringToHTML(paragraphString: String): Seq[Frag] = {
-      Adoc.paragraph(paragraphString).map(inlineValuesToHTML).toTry.get
+    Parse.paragraph(paragraphString).map(inlineValuesToHTML).toTry.get
   }
 
 

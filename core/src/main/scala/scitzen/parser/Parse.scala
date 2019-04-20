@@ -6,7 +6,7 @@ import fastparse.Parsed.{Failure, Success}
 
 case class ParsingAnnotation(content: String, failure: Failure) extends Exception
 
-object Adoc {
+object Parse {
 
   type Result[T] = Either[ParsingAnnotation, T]
 
