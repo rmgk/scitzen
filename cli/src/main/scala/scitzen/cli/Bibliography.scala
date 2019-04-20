@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import better.files.File
 import de.undercouch.citeproc.bibtex.BibTeXConverter
+import scalatags.Text.all._
 
 import scala.collection.JavaConverters._
 
@@ -23,7 +24,7 @@ object Bibliography {
       val res = authors.map(_.full).mkString(", ")
       if (res.nonEmpty) Some(res) else None
     }
-    def format: String = Seq(formatAuthors, year, title, container).flatten.mkString(". ")
+    def format: Frag = frag(formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
   }
 
   def parse(source: Path): List[BibEntry] = {

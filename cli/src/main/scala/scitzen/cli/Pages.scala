@@ -6,6 +6,7 @@ import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, li, link, meta, ol, p, span}
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
+import scitzen.cli.Bibliography.BibEntry
 import scitzen.converter.{HtmlConverter, Post}
 import scitzen.parser.{ScitzenDateTime, SectionTitle}
 
@@ -82,13 +83,15 @@ class Pages(val relative: String) {
   def htmlDocument(tag: Tag): String = "<!DOCTYPE html>" + tag.render
 
 
-  def makePostHtml(post: Post): String = {
+  def makePostHtml(post: Post, bibEntries: Seq[BibEntry] = Nil): String = {
     htmlDocument(makeHtml(body(main(tSingle(
       post.title,
       post.attributes.getOrElse("language", "").trim,
       tMeta(post),
       maybeToc(post),
-      new HtmlConverter(scalatags.Text, post).convert())))))
+      new HtmlConverter(scalatags.Text, post).convert())(
+      ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)})
+    )))))
   }
 
   private def maybeToc(post: Post): Frag = {

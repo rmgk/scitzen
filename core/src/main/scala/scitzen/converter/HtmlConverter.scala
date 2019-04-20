@@ -165,6 +165,9 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       case '`'|'$' => code
     })(inner)
     case Macro("//", target, attributes) => frag()
+    case Macro("cite", target, attributes) =>
+      val bibid = attributes.head.value
+      frag("\u00A0", a(href := s"#$bibid", post.biblio(bibid)))
     case Macro(tagname@("ins" | "del"), target, attributes) =>
       tag(tagname)(attributes.iterator.filter(_.id.isEmpty).map(_.value).mkString(", "))
     case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), target, attributes) =>

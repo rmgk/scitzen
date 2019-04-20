@@ -7,9 +7,8 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.parser.ParsingAnnotation
-import scitzen.semantics.SastConverter
+import scitzen.semantics.{SastAnalyzes, SastConverter}
 import scribe.Logger
-import scribe.format.Formatter
 
 object Convert {
 
@@ -43,10 +42,13 @@ object Convert {
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
           val res = SastConverter.convert(post.document.blocks)
-          scribe.info(s"$res")
-          //val bib = bibRel.flatMap(Bibliography.parse).toList
+          val bib = bibRel.toList.flatMap(Bibliography.parse)
+          val cited = SastAnalyzes.macros(res).filter(_.command == "cite").map(_.attributes.head.value).toSet
+          val biblio = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
           val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
-          targetPath.write(Pages().makePostHtml(post))
+          targetPath.write(Pages().makePostHtml(
+            post.copy(biblio = biblio.zipWithIndex.map{case (be, i) => be.id -> (i+1).toString }.toMap),
+            biblio))
           copyImages(sourcedir.parent, targetdir)
         }
         else if (sourcedir.isDirectory) {

@@ -20,6 +20,25 @@ case class Stitle(level: Int, content: Sast) extends Sast
 case class SattributeDef(attribute: Attribute) extends Sast
 case class Smacro(imacro: Macro) extends Sast
 case class Sblock(delimiter: String, content: Sast) extends Sast
+
+object SastAnalyzes {
+  def macros(input: Sast): Seq[Macro] = input match {
+    case Sseqf(sasts)                => sasts.flatMap(macros)
+    case Slist(children)             => children.flatMap(sli => macros(sli.content) ++ macros(sli.inner))
+    case SblockQuote(title, content) => Nil
+    case Sinline(inline)             => inline match {
+      case m: Macro              => List(m)
+      case InlineText(str)       => Nil
+      case InlineQuote(q, inner) => Nil
+    }
+    case Stitle(level, content)      => macros(content)
+    case SattributeDef(attribute)    => Nil
+    case Smacro(imacro)              => List(imacro)
+    case Sblock(delimiter, content)  => macros(content)
+  }
+}
+
+
 object SastConverter {
 
   def convert(blocks: Seq[Block]): Sast = Sseq(blocks.map(convertBlock))
