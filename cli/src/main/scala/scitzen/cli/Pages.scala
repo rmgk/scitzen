@@ -1,13 +1,13 @@
 package scitzen.cli
 
 import scalatags.Text.all.{SeqFrag, frag, raw}
-import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, rel, title, name => attrname, lang}
+import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, rel, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, link, meta, p, span, ol, li}
+import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, li, link, meta, ol, p, span}
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.converter.{HtmlConverter, Post}
-import scitzen.parser.{BlockMacro, MacroType, ScitzenDateTime}
+import scitzen.parser.{ScitzenDateTime, SectionTitle}
 
 object Pages {
   def apply(relative: String = ""): Pages = new Pages(relative)
@@ -93,14 +93,19 @@ class Pages(val relative: String) {
 
   private def maybeToc(post: Post): Frag = {
     if (post.attributes.contains("toc")) {
-      nav(ol(post.document.blocks.collect{
-        case BlockMacro(MacroType.SectionTitle(level), target, attributes) =>
+      nav(ol(post.document.blocks.map(_.content).collect{
+        case SectionTitle(level, target) =>
           li(a(href := s"#$target", target))
       } : _*))
     } else frag()
   }
 
   def makeIndexOf(posts: List[Post]): String = {
+
+    posts.foreach { p =>
+      if (p.date.isEmpty)
+        scribe.warn(s"${p.sourcePath} has no date (${p.document.blocks})")
+    }
 
     val byYear: Map[Int, List[Post]] = posts.groupBy(_.date.get.date.year.toInt)
     val years = byYear.keys.toList.sorted(Ordering[Int].reverse)

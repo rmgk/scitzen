@@ -1,14 +1,14 @@
 package scitzen.converter
 
 
-import scitzen.parser.{DateParsingHelper, Document, ScitzenDateTime}
+import scitzen.parser.{DateParsingHelper, Document, ScitzenDateTime, SectionTitle}
 
 
 class Post(val document: Document,
            val targetPath: String,
            val sourcePath: String,
            val content: String) {
-  lazy val attributes: Map[String, String] = document.header.get.attributes.map(a => a.id -> a.value).toMap
+  lazy val attributes: Map[String, String] = document.named
   def commaSeparatedAttribute(key: String): List[String] =
     attributes.getOrElse(key, "").toString
     .split(',')
@@ -21,8 +21,10 @@ class Post(val document: Document,
 
   def categories(): List[String] = commaSeparatedAttribute("categories")
 
-  def title: String = document.header.fold("(null)")(_.title)
-  lazy val date: Option[ScitzenDateTime] = attributes.get("revdate").map(v => DateParsingHelper.parseDate(v.trim))
+  def title: String = document.blocks.iterator.map(_.content)
+                      .collectFirst { case SectionTitle(level, title) => title }.getOrElse("")
+  lazy val date    : Option[ScitzenDateTime] = attributes.get("revdate").map(v => DateParsingHelper.parseDate(
+    v.trim))
   lazy val modified: Option[ScitzenDateTime] = attributes.get("modified")
                                                .map(m => DateParsingHelper.parseDate(m.trim))
 

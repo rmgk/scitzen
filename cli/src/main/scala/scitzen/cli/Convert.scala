@@ -7,6 +7,8 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.parser.ParsingAnnotation
+import scribe.Logger
+import scribe.format.Formatter
 
 object Convert {
 
@@ -27,7 +29,9 @@ object Convert {
       (sourcedirRel, targetdirRel, bibRel) =>
         implicit val charset: Charset = StandardCharsets.UTF_8
 
-        //scribe.Logger.root.clearHandlers().clearModifiers().withHandler(minimumLevel = Some(scribe.Level.Debug)).replace()
+        import scribe.format._
+        val myFormatter: Formatter = formatter"$message ($positionAbbreviated)"
+        Logger.root.clearHandlers().withHandler(formatter = myFormatter, minimumLevel = Some(scribe.Level.Info)).replace()
 
         val sourcedir = File(sourcedirRel)
         val targetdir = File(targetdirRel)
@@ -37,8 +41,7 @@ object Convert {
 
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
-          val bib = bibRel.flatMap(Bibliography.parse).toList
-          Bibliography.citations(post)
+          //val bib = bibRel.flatMap(Bibliography.parse).toList
           val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
           targetPath.write(Pages().makePostHtml(post))
           copyImages(sourcedir.parent, targetdir)

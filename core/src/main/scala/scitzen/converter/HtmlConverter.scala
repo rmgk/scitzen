@@ -65,94 +65,83 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       ))
   }
   private def continuationToHtml(item: ListItem): SeqNode[Frag] = {
-    item.continuation.toList.flatMap {
-      case NormalBlock(BlockType.Delimited(_), content) => convertBlockContent(content)
-      case other                                         => List(blockToHtml(other))
+    item.continuation.toList.map(blockToHtml)
+  }
+
+  def blockContentToHtml(b: BlockContent): Frag = {
+    b match {
+
+      case SectionTitle(level, title) => if (level <= 1) frag() else tag("h" + level)(id := title, title)
+
+      case ListBlock(items) =>
+        try {
+          listToHtml(items)
+        }
+        catch {
+          case e: ParsingAnnotation =>
+            println(s"while parsing $items")
+            throw e
+        }
+
+      case WhitespaceBlock(_) | AttributeBlock(_)  => frag()
+
+      case BlockMacro(MacroType.Adhoc("image"), target, attributes) =>
+        div(cls := "imageblock",
+            img(src := target)
+            )
+      case BlockMacro(MacroType.HorizontalRule, target, attributes) =>
+        hr()
+
+      case NormalBlock(delimiter, text) =>
+        if (delimiter == "--") div(delimiter, br, text, br, delimiter)
+        else if (delimiter == "") p(paragraphStringToHTML(text): _*)
+        else delimiter.charAt(0) match {
+          // Code listing
+          // Use this for monospace, space preserving, line preserving text
+          // It may wrap to fit the screen content
+          case '-'| '`'  => pre(code(text))
+          // Literal block
+          // This seems to be supposed to work similar to code? But whats the point then?
+          // We interpret this as text with predetermined line wrappings
+          // and no special syntax, but otherwise normally formatted.
+          // This is great to represent copy&pasted posts or chat messages.
+          case '.' => pre(text)
+          // Sidebar
+          // Parsed as a normal document content, but may float off to some side.
+          case '*' => aside(convertBlockContent(text))
+          //
+          case '_' => blockquote(convertBlockContent(text))
+          // there is also '=' example, and '+' passthrough.
+          // examples seems rather specific, and passthrough is not implemented.
+          case _   => div(delimiter, br, text, br, delimiter)
+        }
+
+      case other @ (BlockMacro(MacroType.Adhoc(_), _, _) | BlockMacro(MacroType.PageBreak, _, _)) =>
+        scribe.warn(s"not implemented: $other")
+        div(stringFrag(other.toString))
     }
   }
 
-  def blockToHtml(b: Block): Frag = b match {
+  def blockToHtml(bwa: Block): Frag = {
 
-    case BlockMacro(MacroType.SectionTitle(level), title, _) => tag("h" + (level + 1))(id := title,title)
+    val positiontype = bwa.positional.headOption
+    positiontype match {
+      case Some("quote") =>
+        val innerHtml = bwa.content match {
+          case NormalBlock(delimiter, content) => SeqFrag(convertBlockContent(content))
+          case other                                           => blockContentToHtml(other)
+        }
+        // for blockquote layout, see example 12 (the twitter quote)
+        // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
+        val bq = blockquote(innerHtml)
+        // first argument is "quote" we concat the rest and treat them as a single entity
+        val title = bwa.positional.drop(1).mkString(", ")
+        if (title.nonEmpty) bq(cite(title))
+        else bq
+      case _         => blockContentToHtml(bwa.content)
+    }
 
-    case bwa: BlockWithAttributes =>
-      val positiontype = bwa.positional.headOption
-      positiontype match {
-        case Some("quote") =>
-          val innerHtml = bwa.block match {
-            case NormalBlock(BlockType.Delimited(_), content) =>
-              SeqFrag(convertBlockContent(content))
-            case other => blockToHtml(other)
-          }
-          // for blockquote layout, see example 12 (the twitter quote)
-          // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
-          val bq = blockquote(innerHtml)
-          // first argument is "quote" we concat the rest and treat them as a single entity
-          val title = bwa.positional.drop(1).mkString(", ")
-          if (title.nonEmpty) bq(cite(title))
-          else bq
-        case _         =>
-          val blockContent = blockToHtml(bwa.block) match {
-            case any if bwa.role.isEmpty => any
-            case tag: Tag => tag(cls := bwa.role.mkString(" ", " ", " "))
-            case other => div(other)(cls := bwa.role.mkString(" ", " ", " "))
-          }
-              //figure(figcaption(value), blockContent)
-          blockContent
-      }
 
-    case ListBlock(items) =>
-      try {
-        listToHtml(items)
-      }
-      catch {
-        case e: ParsingAnnotation =>
-          println(s"while parsing $items")
-          throw e
-      }
-
-    case NormalBlock(BlockType.Whitespace, _) => frag()
-
-    case BlockMacro(MacroType.Adhoc("image"), target, attributes) =>
-      div(cls := "imageblock",
-          img(src := target)
-      )
-    case BlockMacro(MacroType.HorizontalRule, target, attributes) =>
-      hr()
-
-    case NormalBlock(blockType, text) =>
-      blockType match {
-        case BlockType.Delimited(delimiter) =>
-          if (delimiter == "--") div(delimiter, br, text, br, delimiter)
-          else delimiter.charAt(0) match {
-            // Code listing
-            // Use this for monospace, space preserving, line preserving text
-            // It may wrap to fit the screen content
-            case '-'| '`'  => pre(code(text))
-            // Literal block
-            // This seems to be supposed to work similar to code? But whats the point then?
-            // We interpret this as text with predetermined line wrappings
-            // and no special syntax, but otherwise normally formatted.
-            // This is great to represent copy&pasted posts or chat messages.
-            case '.' => pre(text)
-            // Sidebar
-            // Parsed as a normal document content, but may float off to some side.
-            case '*' => aside(convertBlockContent(text))
-            //
-            case '_' => blockquote(convertBlockContent(text))
-              // there is also '=' example, and '+' passthrough.
-              // examples seems rather specific, and passthrough is not implemented.
-            case _   => div(delimiter, br, text, br, delimiter)
-          }
-
-        case other =>
-          p(paragraphStringToHTML(text): _*)
-
-      }
-
-    case other @ (BlockMacro(MacroType.Adhoc(_), _, _) | BlockMacro(MacroType.PageBreak, _, _)) =>
-      scribe.warn(s"not implemented: $other")
-      div(stringFrag(other.toString))
   }
 
 
@@ -184,7 +173,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
     case InlineMacro("link", target, attributes) =>
       linkTo(attributes, target)
     case im @ InlineMacro(command, target, attributes) =>
-      scribe.warn(im.withPost(post))
+      scribe.warn(s"inline macro “$command:$target[$attributes]” for ${post.sourcePath}")
       code(s"$command:$target[${attributes.mkString(",")}]")
   }
   def linkTo(attributes: Seq[Attribute], linktarget: String) = {

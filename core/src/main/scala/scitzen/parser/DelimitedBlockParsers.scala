@@ -12,7 +12,7 @@ object DelimitedBlockParsers {
 
   def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
     (start ~/ Pass).flatMap { delimiter =>
-      untilI(eol ~ delimiter ~ spaceLine, min = 0).map(content => NormalBlock(BlockType.Delimited(delimiter), content))
+      untilI(eol ~ delimiter ~ spaceLine, min = 0).map(content => NormalBlock(delimiter, content))
     }
 
   def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart))
@@ -21,7 +21,7 @@ object DelimitedBlockParsers {
   def whitespaceLiteral[_: P]: P[NormalBlock] = P(
     (significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
       (untilI(eol) ~ significantSpaceLine.rep).!.rep(min = 1, sep = indentation)
-                                              .map(lines => NormalBlock(BlockType.Delimited(indentation), lines.mkString))
+                                              .map(lines => NormalBlock(indentation, lines.mkString))
     }
   )
 

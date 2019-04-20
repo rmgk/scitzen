@@ -47,8 +47,8 @@ object Rename {
 
 
   def nameFromHeader(header: Header): String = {
-    val date = DateParsingHelper.parseDate(header.attribute("revdate").trim)
-    val title = Tool.sluggify(header.title) + ".adoc"
+    val date = DateParsingHelper.parseDate(header.named("revdate").trim)
+    val title = Tool.sluggify(header.title.title) + ".adoc"
     date.date.full + "_" + title
   }
 }

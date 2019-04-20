@@ -24,10 +24,10 @@ object Attributes {
   def line         [_:P]: P[Seq[Attribute]] = P(list ~ spaceLine)
 }
 
-object AttributeEntry {
+object AttributeBlockParser {
   def itemMarker[_:P]: P[String]         = P(":" ~ ("!".? ~ identifier ~ "!".?).! ~ ":")
   def content   [_:P]: P[String]         = P(eol.map(_ => "") | (" " ~ untilI(eol, min = 0).!))
-  def entry     [_:P]: P[Attribute]      = P(itemMarker ~/ content)
-                                           .map { case (id, v) => Attribute(id, v) }
-  def list      [_:P]: P[Seq[Attribute]] = P(entry.rep(sep = BlockParsers.extendedWhitespace.?))
+  def entry     [_:P]: P[AttributeBlock]      = P(itemMarker ~/ content)
+                                           .map { case (id, v) => AttributeBlock(Attribute(id, v)) }
+  def list      [_:P]: P[Seq[AttributeBlock]] = P(entry.rep(sep = BlockParsers.extendedWhitespace.?))
 }

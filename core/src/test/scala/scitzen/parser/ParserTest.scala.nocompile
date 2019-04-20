@@ -178,10 +178,10 @@ block content
 """
     val res = fastparse.parse(str, BlockParsers.fullBlock(_)).get.value
     assert (res == BlockWithAttributes(
-      NormalBlock(Delimited("----"), "block content"),
+      DelimitedBlock(Delimited("----"), "block content"),
       Seq(Seq(Attribute("", "source"))),
       None
-    ))
+      ))
   }
 
   "paragraph quotes" in {

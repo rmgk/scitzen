@@ -54,12 +54,12 @@ lazy val cli = project.in(file("cli"))
                  publishLocal := publishLocal.dependsOn(coreJVM / publishLocal).value
                )
 
-lazy val web = project.in(file("web"))
-               .enablePlugins(ScalaJSPlugin)
-               .dependsOn(coreJS)
-               .settings(
-                 name := "scitzen-web",
-                 scalaJSUseMainModuleInitializer := true,
-                 scalajsdom,
-                 strictCompile,
-                 )
+//lazy val web = project.in(file("web"))
+//               .enablePlugins(ScalaJSPlugin)
+//               .dependsOn(coreJS)
+//               .settings(
+//                 name := "scitzen-web",
+//                 scalaJSUseMainModuleInitializer := true,
+//                 scalajsdom,
+//                 strictCompile,
+//                 )

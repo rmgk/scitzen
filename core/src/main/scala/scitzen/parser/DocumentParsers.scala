@@ -12,10 +12,7 @@ import fastparse._
   *
   * */
 object DocumentParsers {
-
-  def header[_: P] = HeaderParsers.header
-
-  def document[_: P]: P[Document] = P(HeaderParsers.header.? ~ BlockParsers.fullBlock.rep ~ End)
-                                    .map((Document.apply _).tupled)
+  def header[_: P]: P[Header] = HeaderParsers.header
+  def document[_: P]: P[Document] = P(BlockParsers.fullBlock.rep ~ End).map(Document.apply)
 }
 

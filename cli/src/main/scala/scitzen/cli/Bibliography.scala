@@ -4,16 +4,10 @@ import java.nio.file.Path
 
 import better.files.File
 import de.undercouch.citeproc.bibtex.BibTeXConverter
-import scitzen.converter.Post
 
 import scala.collection.JavaConverters._
 
 object Bibliography {
-  def citations(post: Post) = {
-      post.document.blocks.map {
-        case =>
-      }
-  }
 
 
   case class Author(given: String, family: String) {

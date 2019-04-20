@@ -30,7 +30,7 @@ object ListParsers {
                                                   DelimitedBlockParsers.whitespaceLiteral).map(Right(_)) |
                                                  listContent.map(Left(_))))
                                               .map {
-                                                case (m, Right(b)) => ListItem(m, "", Some(b))
+                                                case (m, Right(b)) => ListItem(m, "", Some(Block(Nil, Prov(), b)))
                                                 case (m, Left(c)) => ListItem(m, c, None)
                                               }
 

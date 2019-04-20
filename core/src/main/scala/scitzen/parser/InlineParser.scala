@@ -2,9 +2,7 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import scitzen.converter.Post
 import scitzen.parser.CommonParsers._
-import scribe.Loggable
 
 
 sealed trait Inline
@@ -12,24 +10,9 @@ case class InlineMacro(command: String,
                        target: String,
                        attributes: Seq[Attribute])
                       (val provenance: Prov = Prov()) extends Inline {
-  def withPost(post: Post) = copy()(provenance = provenance.copy(post = Some(post)))
 }
 case class InlineText(str: String) extends Inline
 case class InlineQuote(q: String, inner: String) extends Inline
-
-object Inline {
-  implicit val loggable: Loggable[Inline] = {
-    case im: InlineMacro =>
-      im.provenance.post.fold(s"$im") { post =>
-        s"$im[${post.sourcePath}:${im.provenance.start} »${
-          post.content.substring(im.provenance.start,
-                                 im.provenance.end)
-        }«]"
-      }
-
-    case other => other.toString
-  }
-}
 
 object InlineParser {
   //TODO: unsupported `+` for passthrough macros
