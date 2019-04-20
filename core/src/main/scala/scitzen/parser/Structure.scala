@@ -3,11 +3,8 @@ package scitzen.parser
 case class Document(blocks: Seq[Block]) {
   lazy val attributes: Seq[Attribute] = blocks.collect{case Block(_, _, AttributeBlock(attr)) => attr}
   lazy val named : Map[String, String] = AttributesToMap(attributes)
+  lazy val title: String = blocks.iterator.map(_.content).collectFirst{case SectionTitle(1, title) => title}.get
 
-}
-
-case class Header(title: SectionTitle, attributes: Seq[Attribute]) {
-  lazy val named : Map[String, String] = AttributesToMap(attributes)
 }
 
 object AttributesToMap {

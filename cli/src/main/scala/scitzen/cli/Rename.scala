@@ -6,7 +6,7 @@ import java.nio.file.Path
 import better.files.File
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
-import scitzen.parser.{Adoc, DateParsingHelper, Header}
+import scitzen.parser.{Adoc, DateParsingHelper, Document}
 
 object Tool {
   def sluggify(str: String): String =
@@ -36,7 +36,7 @@ object Rename {
   }
 
   def renameFileFromHeader(f: File): Unit = {
-    val header: Header = Adoc.header(f.contentAsString).valueOr(throw _)
+    val header: Document = Adoc.document(f.contentAsString).valueOr(throw _)
     val newName: String = nameFromHeader(header)
 
     if (newName != f.name) {
@@ -46,9 +46,9 @@ object Rename {
   }
 
 
-  def nameFromHeader(header: Header): String = {
+  def nameFromHeader(header: Document): String = {
     val date = DateParsingHelper.parseDate(header.named("revdate").trim)
-    val title = Tool.sluggify(header.title.title) + ".adoc"
+    val title = Tool.sluggify(header.title) + ".adoc"
     date.date.full + "_" + title
   }
 }

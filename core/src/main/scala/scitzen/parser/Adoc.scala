@@ -20,9 +20,6 @@ object Adoc {
     }
   }
 
-  def header(content: String): Result[Header] =
-    parseResult(content, DocumentParsers.header(_))
-
   def document(blockContent: String): Result[Document] =
     parseResult(blockContent, scitzen.parser.DocumentParsers.document(_))
 
