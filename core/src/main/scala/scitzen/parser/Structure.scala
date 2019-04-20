@@ -32,19 +32,6 @@ case class SectionTitle(level: Int, title: String) extends BlockContent
 case class ListItem(marker: String, content: String, continuation: Option[Block])
 
 case class Attribute(id: String, value: String)
-
-
-case class BlockMacro(command: MacroType, target: String, attributes: Seq[Attribute] = Nil) extends BlockContent
-object BlockMacro {
-  def fromTuple(data: (String, String, Seq[Attribute])) =
-    BlockMacro(MacroType.Adhoc(data._1), data._2, data._3)
-}
-
-sealed trait MacroType
-object MacroType {
-  object HorizontalRule extends MacroType
-  object PageBreak extends MacroType
-  case class Adhoc(name: String) extends MacroType
-}
+case class BlockMacro(command: String, target: String, attributes: Seq[Attribute] = Nil) extends BlockContent
 
 case class Prov(start: Int = -1, end: Int = -1)

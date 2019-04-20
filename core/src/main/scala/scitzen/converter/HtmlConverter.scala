@@ -85,12 +85,10 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
       case WhitespaceBlock(_) | AttributeBlock(_)  => frag()
 
-      case BlockMacro(MacroType.Adhoc("image"), target, attributes) =>
+      case BlockMacro("image", target, attributes) =>
         div(cls := "imageblock",
             img(src := target)
             )
-      case BlockMacro(MacroType.HorizontalRule, target, attributes) =>
-        hr()
 
       case NormalBlock(delimiter, text) =>
         if (delimiter == "--") div(delimiter, br, text, br, delimiter)
@@ -118,7 +116,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           case _   => div(delimiter, br, text, br, delimiter)
         }
 
-      case other @ (BlockMacro(MacroType.Adhoc(_), _, _) | BlockMacro(MacroType.PageBreak, _, _)) =>
+      case other @ BlockMacro(_, _, _) =>
         scribe.warn(s"not implemented: $other")
         div(stringFrag(other.toString))
     }

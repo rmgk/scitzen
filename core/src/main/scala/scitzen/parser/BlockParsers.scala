@@ -9,10 +9,6 @@ object BlockParsers {
   // \ to escape newlines, + \ to escape newlines but keep newlines
   private def titleLine[_: P] = untilI(eol)
 
-  def horizontalRule[_:P]: P[BlockMacro] = P(("'''" | "---" | "- - -" | "***" | "* * *").! ~ spaceLine)
-                                           .map(BlockMacro(MacroType.HorizontalRule, _))
-  def pageBreak     [_:P]: P[BlockMacro] = P("<<<".!).map(BlockMacro(MacroType.PageBreak, _))
-
   def whitespaceBlock[_:P]: P[WhitespaceBlock] = P(significantSpaceLine.rep(1).!).map(WhitespaceBlock.apply)
 
   def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (spaceLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
@@ -34,7 +30,6 @@ object BlockParsers {
                                               AttributeBlockParser.entry |
                                               ListParsers.list |
                                               DelimitedBlockParsers.full |
-                                              horizontalRule |
                                               sectionTitle |
                                               MacroParsers.block |
                                               paragraph)

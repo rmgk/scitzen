@@ -8,7 +8,7 @@ object MacroParsers {
   def target[_: P]: P[String] = P(untilE("[" | significantAnySpaces, 0))
   def start[_: P]: P[String] = P(identifier.! ~ ":")
   def block[_: P]: P[BlockMacro] = P(start ~ ":" ~ !significantAnySpaces ~/ target ~ Attributes.list)
-                                   .map {BlockMacro.fromTuple}
+                                   .map {(BlockMacro.apply _).tupled}
   def inline[_: P]: P[InlineMacro] = P(Index ~ start ~ !significantAnySpaces ~ target ~ Attributes.list ~ Index)
                                      .map {case (start, name, target, attributes, end) =>
                                        implicitly[P[_]].input
