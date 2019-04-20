@@ -2,9 +2,9 @@ package scitzen.parser
 
 import cats.implicits._
 import fastparse.P
-import fastparse.Parsed.{Failure, Success}
+import fastparse.Parsed.{Failure, Success, TracedFailure}
 
-case class ParsingAnnotation(content: String, failure: Failure) extends Exception
+case class ParsingAnnotation(content: String, failure: TracedFailure) extends Exception
 
 object Parse {
 
@@ -15,8 +15,9 @@ object Parse {
     parsed match {
       case Success(value, index) => value.asRight
       case f: Failure            =>
-        scribe.error(s"failed to parse ${f.trace().longMsg}")
-        ParsingAnnotation(content, f).asLeft
+        val traced = f.trace()
+        scribe.error(s"failed to parse ${traced.longMsg}")
+        ParsingAnnotation(content, traced).asLeft
     }
   }
 

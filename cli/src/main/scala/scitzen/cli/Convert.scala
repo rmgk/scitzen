@@ -80,7 +80,7 @@ object Convert {
             catch {
               case e @ ParsingAnnotation(content, failure) =>
                 println(s"error while parsing $path")
-                val trace = failure.trace()
+                val trace = failure
                 println(trace.msg)
                 println(trace.longMsg)
                 println(s"========\n$content\n========")
