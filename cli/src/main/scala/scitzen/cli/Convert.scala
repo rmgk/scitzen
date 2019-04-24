@@ -110,7 +110,7 @@ object Convert {
           targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
 
 
-          copyImages(postdir, targetdir)
+          copyImages(sourcedir, postdir)
 
         }
         scribe.info("copy static resources")
