@@ -35,10 +35,10 @@ object CommonParsers {
   object Identifier {
     def startIdentifier[_: P]: P[Unit] = P(CharPred(Character.isLetter)).opaque("<start identifier>")
     def inIdentifier[_: P]: P[Unit]    = P(CharsWhile(Character.isJavaIdentifierPart, 0)).opaque("<in identifier>")
-    def identifier[_: P]: P[String]    = P((startIdentifier ~ inIdentifier).!).opaque("<identifier>")
+    def identifier[_: P]: P[Unit]    = P(startIdentifier ~ inIdentifier).opaque("<identifier>")
   }
 
-  def identifier[_: P]: P[String] = Identifier.identifier
+  def identifier[_: P]: P[Unit] = Identifier.identifier
 
   def line[_: P]: P[String] = P(untilE(eol, min = 0)).opaque("<line>")
 }

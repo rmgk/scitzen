@@ -20,21 +20,20 @@ object InlineParsers {
 
   def specialCharacter[_: P]: P[Unit] = P(quoteChars | otherSpecialChars)
 
-  def allowSyntaxAfter[_: P]: P[Unit] = P(anySpace | "(")
-  def syntaxStart[_: P]: P[Unit] = P(specialCharacter | MacroParsers.start.map(_ => ()))
+  def commentStart[_: P]: P[Unit] = P("//")
+  def syntaxStart[_: P]: P[Unit] = P(CharIn(":") ~ ( quoteChars | MacroParsers.detectStart) | commentStart)
 
   // grab everything until a unconstrained position followed by a syntax starter
   // include the unconstrained position
   // the until fails if empty, in that was we are just now at a potential syntax start,
   // so eat that and return
-  private def notSyntax[_: P]: P[Unit] = P((untilE(End | "//" | (allowSyntaxAfter ~ &(syntaxStart)))
-                                            ~/ (allowSyntaxAfter | &("//") | End)).map(_ => ())
-                                           | allowSyntaxAfter)
+  private def notSyntax[_: P]: P[String] = P(untilE(End | syntaxStart))
+
   def simpleText[_: P]: P[InlineText] = {
     P(notSyntax.!).map(InlineText)
   }
 
-  def comment[_: P]: P[Macro] = P("//" ~ untilI(eol, 0))
+  def comment[_: P]: P[Macro] = P(commentStart ~ untilI(eol, 0))
                                       .map(Macro("//", _, Nil))
 
   def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence.? ~ End)
@@ -45,11 +44,11 @@ object InlineParsers {
      | MacroParsers.inline
      | quoted
      | simpleText
-    ).rep(1)
+    ).rep(1).log
   }
 
   def quoted[_: P]: P[InlineQuote] = P {
-    quoteChars.!.flatMap { delimiter =>
+    CharIn(":") ~ quoteChars.!.flatMap { delimiter =>
       (!(delimiter | anySpace) ~ untilE(delimiter))
       .!.map(v => InlineQuote(delimiter, v)) ~ delimiter
     }

@@ -14,7 +14,7 @@ object Attributes {
   // however, in the hope of better error messages, we will not allow newlines
   def unquotedValue[_:P]: P[String]    = P(untilE("," | close | eol))
   def value        [_:P]: P[String]    = P(quoted("\"") | quoted("'") | unquotedValue)
-  def listDef      [_:P]: P[Attribute] = P(identifier ~ equals ~ value)
+  def listDef      [_:P]: P[Attribute] = P(identifier.! ~ equals ~ value)
                                          .map { case (id, v) => Attribute(id, v) }
   def listValue    [_:P]: P[Attribute] = P(value)
                                          .map(v => Attribute("", v))
@@ -25,7 +25,7 @@ object Attributes {
 }
 
 object AttributeBlockParser {
-  def itemMarker[_:P]: P[String]         = P(":" ~ ("!".? ~ identifier ~ "!".?).! ~ ":")
+  def itemMarker[_:P]: P[String]         = P(":" ~ ("!".? ~ identifier.! ~ "!".?).! ~ ":")
   def content   [_:P]: P[String]         = P(eol.map(_ => "") | (" " ~ untilI(eol, min = 0).!))
   def entry     [_:P]: P[AttributeBlock]      = P(itemMarker ~/ content)
                                            .map { case (id, v) => AttributeBlock(Attribute(id, v)) }
