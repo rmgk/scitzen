@@ -19,7 +19,7 @@ object BlockParsers {
 
   def commentBlock[_:P]: P[NormalBlock] =
     P((DelimitedBlockParsers.makeDelimited("/".rep(4).!)
-       | ("//" ~ untilI(eol))
+       | (":%" ~ untilI(eol))
       ).rep(1).!)
     .map(NormalBlock("", _))
 
@@ -31,7 +31,7 @@ object BlockParsers {
                                               ListParsers.list |
                                               DelimitedBlockParsers.full |
                                               sectionTitle |
-                                              MacroParsers.block |
+                                              MacroParsers.full |
                                               paragraph)
 
   def fullBlock[_: P]: P[Block] = P(Index ~ Attributes.line.rep ~ alternatives ~ Index).map {

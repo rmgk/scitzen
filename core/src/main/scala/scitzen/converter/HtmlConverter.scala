@@ -85,11 +85,12 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
 
       case WhitespaceBlock(_) | AttributeBlock(_)  => frag()
 
-      case Macro("image", target, attributes) =>
+      case Macro("image", attributes) =>
+        val target = attributes.last.value
         div(cls := "imageblock",
             img(src := target)
             )
-      case Macro("label", target, attributes) =>
+      case Macro("label", attributes) =>
         a(id := attributes.head.value)
 
       case NormalBlock(delimiter, text) =>
@@ -118,7 +119,7 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
           case _   => div(delimiter, br, text, br, delimiter)
         }
 
-      case other @ Macro(_, _, _) =>
+      case other : Macro =>
         scribe.warn(s"not implemented: $other")
         div(stringFrag(other.toString))
     }
@@ -166,20 +167,22 @@ class HtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder,
       case '*' => strong
       case '`'|'$' => code
     })(inner)
-    case Macro("//", target, attributes) => frag()
-    case Macro("cite", target, attributes) =>
+    case Macro("//", attributes) => frag()
+    case Macro("cite", attributes) =>
       val bibid = attributes.head.value
       frag("\u00A0", a(href := s"#$bibid", post.biblio(bibid)))
-    case Macro(tagname@("ins" | "del"), target, attributes) =>
+    case Macro(tagname@("ins" | "del"), attributes) =>
       tag(tagname)(attributes.iterator.filter(_.id.isEmpty).map(_.value).mkString(", "))
-    case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), target, attributes) =>
+    case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), attributes) =>
+      val target = attributes.last.value
       val linktarget = s"$protocol:$target"
       linkTo(attributes, linktarget)
-    case Macro("link", target, attributes) =>
+    case Macro("link", attributes) =>
+      val target = attributes.last.value
       linkTo(attributes, target)
-    case im @ Macro(command, target, attributes) =>
-      scribe.warn(s"inline macro “$command:$target[$attributes]” for ${post.sourcePath}")
-      code(s"$command:$target[${attributes.mkString(",")}]")
+    case im @ Macro(command, attributes) =>
+      scribe.warn(s"inline macro “$command[$attributes]” for ${post.sourcePath}")
+      code(s"$command[${attributes.mkString(",")}]")
   }
   def linkTo(attributes: Seq[Attribute], linktarget: String) = {
     a(href := linktarget)(attributes.find(_.id == "").fold(linktarget)(_.value))

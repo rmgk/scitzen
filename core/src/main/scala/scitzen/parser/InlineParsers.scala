@@ -14,14 +14,12 @@ object InlineParsers {
 
 
   def quoteChars[_: P]: P[Unit] = CharIn("_*`$")
+  def commentStart[_: P]: P[Unit] = P(":%")
 
-  // `<` cross reference; `/` comment; `\` escape; ` `
-  def otherSpecialChars[_: P]: P[Unit] = CharIn("/")
+  def specialChars[_: P]: P[Unit] = CharIn("_*`$%")
 
-  def specialCharacter[_: P]: P[Unit] = P(quoteChars | otherSpecialChars)
 
-  def commentStart[_: P]: P[Unit] = P("//")
-  def syntaxStart[_: P]: P[Unit] = P(CharIn(":") ~ ( quoteChars | MacroParsers.detectStart) | commentStart)
+  def syntaxStart[_: P]: P[Unit] = P(CharIn(":") ~ ( specialChars | MacroParsers.detectStart) )
 
   // grab everything until a unconstrained position followed by a syntax starter
   // include the unconstrained position
@@ -34,17 +32,17 @@ object InlineParsers {
   }
 
   def comment[_: P]: P[Macro] = P(commentStart ~ untilI(eol, 0))
-                                      .map(Macro("//", _, Nil))
+                                .map(text => Macro("//", List(Attribute("", text))))
 
   def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence.? ~ End)
                                             .map(_.getOrElse(Nil))
 
   def inlineSequence[_: P]: P[Seq[Inline]] = P {
     (comment
-     | MacroParsers.inline
+     | MacroParsers.full
      | quoted
      | simpleText
-    ).rep(1).log
+    ).rep(1)
   }
 
   def quoted[_: P]: P[InlineQuote] = P {
