@@ -6,6 +6,12 @@ import java.nio.file.Path
 import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
+import scalatags.Text.attrs.id
+import scalatags.Text.tags.frag
+import scalatags.Text.implicits.stringAttr
+import scalatags.Text.tags.SeqFrag
+import scalatags.Text.tags.{li, ol}
+import scitzen.converter.{HtmlConverter, SastToHtmlConverter}
 import scitzen.parser.ParsingAnnotation
 import scitzen.semantics.{SastAnalyzes, SastConverter}
 import scribe.Logger
@@ -41,12 +47,17 @@ object Convert {
 
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
-          val res = SastConverter.blockSequence(post.document.blocks)
+          val sast = SastConverter.blockSequence(post.document.blocks)
           val bib = bibRel.toList.flatMap(Bibliography.parse)
-          val cited = SastAnalyzes.macros(res).filter(_.command == "cite").map(_.attributes.head.value).toSet
-          val biblio = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+          val analyzed = SastAnalyzes.analyze(sast)
+          val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
+          val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
           val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
-          targetPath.write(Pages().makeSastHtml(res, biblio))
+          val biblio = bibEntries.zipWithIndex.map{case (be, i) => be.id -> (i+1).toString }.toMap
+          val content = frag(new SastToHtmlConverter(scalatags.Text, biblio).sastToHtml(sast),
+            ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)}))
+
+          targetPath.write(Pages().makeSastHtml(content))
           copyImages(sourcedir.parent, targetdir)
         }
         else if (sourcedir.isDirectory) {
@@ -78,7 +89,8 @@ object Convert {
               targetPath.parent.createDirectories()
               val relpath = targetPath.parent.relativize(targetdir)
 
-              targetPath.write(Pages(s"$relpath/").makePostHtml(post))
+              val content = new HtmlConverter(scalatags.Text, post).convert()
+              targetPath.write(Pages(s"$relpath/").makePostHtml(post, content))
             }
             catch {
               case e @ ParsingAnnotation(content, failure) =>

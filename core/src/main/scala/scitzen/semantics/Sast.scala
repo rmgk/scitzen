@@ -8,7 +8,15 @@ sealed trait Sast
 object Sast {
   case class Slist(children: Seq[SlistItem]) extends Sast
   case class SlistItem(marker: String, content: Sast, inner: Slist)
-  case class Text(inline: Seq[Inline]) extends Sast
+  case class Text(inline: Seq[Inline]) extends Sast {
+    lazy val str = {
+      inline.map{
+        case Macro(command, attributes) => ""
+        case InlineQuote(q, inner) => inner
+        case InlineText(string) => string
+      }.mkString("")
+    }
+  }
   case class Section(title: Text, content: Sast) extends Sast
   case class MacroBlock(call: Macro) extends Sast
   case class RawBlock(delimiter: String, content: String) extends Sast
@@ -27,20 +35,41 @@ object Sast {
 }
 
 object SastAnalyzes {
-  def macros(input: Sast): Seq[Macro] = input match {
-    case Sseqf(sasts)                    => sasts.flatMap(macros)
-    case Slist(children)                 => children.flatMap(sli => macros(sli.content) ++ macros(sli.inner))
-    case Text(inlines)                    => inlines flatMap {
-      case m: Macro              => List(m)
-      case InlineText(str)       => Nil
-      case InlineQuote(q, inner) => Nil
+  case class Target(id: String, resolution: Sast)
+  case class AnalyzeResult(attributes: List[Attribute], macros: List[Macro], targets: List[Target]) {
+    def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
+    def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
+    def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
+  }
+
+  def analyze(input: Sast) = {
+    val AnalyzeResult(a, m, t) = analyzeR(input, None, AnalyzeResult(Nil, Nil, Nil))
+    AnalyzeResult(a.reverse, m.reverse, t.reverse)
+  }
+
+  def analyzeR(input: Sast, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
+    case Sseqf(sasts)                    => sasts.foldLeft(acc)((cacc, sast) => analyzeR(sast, scope, cacc))
+    case Slist(children)                 => children.foldLeft(acc){(cacc, sli) =>
+      val contentAcc = analyzeR(sli.content, scope, cacc)
+      analyzeR(sli.inner, scope, contentAcc)
     }
-    case Section(level, content)         => macros(content)
-    case AttributeDef(attribute)        => Nil
-    case MacroBlock(imacro)              => List(imacro)
-    case ParsedBlock(delimiter, content) => macros(content)
-    case RawBlock(_, _) => Nil
-    case AttributedBlock(attr, content) => macros(content)
+    case Text(inlines)                    => inlines.foldLeft(acc){ (cacc, inline) => inline match {
+      case m: Macro             => cacc + m
+      case InlineText(str)       => cacc
+      case InlineQuote(q, inner) => cacc
+    } }
+    case sec @ Section(title, content)         =>
+      val target = Target(title.str, sec)
+      analyzeR(content, Some(target), acc + target)
+    case AttributeDef(attribute)        => acc + attribute
+    case MacroBlock(imacro)              => {
+      val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.head.value, scope.get.resolution)
+                 else acc
+      iacc + imacro
+    }
+    case ParsedBlock(delimiter, content) => analyzeR(content, scope, acc)
+    case RawBlock(_, _) => acc
+    case AttributedBlock(attr, content) => analyzeR(content, scope, acc)
   }
 }
 
@@ -89,14 +118,6 @@ object ListConverter {
                    item.continuation.toList.map(block)),
               listToHtml(contents)
               )
-  }
-}
-
-case class ConvertResult(sast: Sast, attributes: Seq[Attribute], macros: Seq[Macro]) {
-  def ++ (other: ConvertResult): ConvertResult = {
-    ConvertResult(Sseq(List(sast, other.sast)),
-                  attributes ++ other.attributes,
-                  macros ++ other.macros)
   }
 }
 

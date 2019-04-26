@@ -6,10 +6,8 @@ import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, li, link, meta, ol, p, span}
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
-import scitzen.cli.Bibliography.BibEntry
-import scitzen.converter.{HtmlConverter, Post, SastToHtmlConverter}
+import scitzen.converter.Post
 import scitzen.parser.{ScitzenDateTime, SectionTitle}
-import scitzen.semantics.Sast
 
 object Pages {
   def apply(relative: String = ""): Pages = new Pages(relative)
@@ -84,25 +82,22 @@ class Pages(val relative: String) {
   def htmlDocument(tag: Tag): String = "<!DOCTYPE html>" + tag.render
 
 
-  def makePostHtml(post: Post, bibEntries: Seq[BibEntry] = Nil): String = {
+  def makePostHtml(post: Post, content: Frag): String = {
     htmlDocument(makeHtml(body(main(tSingle(
       post.title,
       post.attributes.getOrElse("language", "").trim,
       tMeta(post),
       maybeToc(post),
-      new HtmlConverter(scalatags.Text, post).convert())(
-      ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)})
-    )))))
+      content)
+    ))))
   }
 
-  def makeSastHtml(sast: Sast, bibEntries: Seq[BibEntry]): String = {
-    val biblio = bibEntries.zipWithIndex.map{case (be, i) => be.id -> (i+1).toString }.toMap
+  def makeSastHtml(content: Frag): String = {
     htmlDocument(makeHtml(body(main(tSingle(
       "title",
       "",
       frag(),
-      new SastToHtmlConverter(scalatags.Text, biblio).sastToHtml(sast))(
-      ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)})
+      content
       )))))
   }
 
