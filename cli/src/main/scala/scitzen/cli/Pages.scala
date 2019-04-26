@@ -7,8 +7,9 @@ import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, li, l
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.cli.Bibliography.BibEntry
-import scitzen.converter.{HtmlConverter, Post}
+import scitzen.converter.{HtmlConverter, Post, SastToHtmlConverter}
 import scitzen.parser.{ScitzenDateTime, SectionTitle}
+import scitzen.semantics.Sast
 
 object Pages {
   def apply(relative: String = ""): Pages = new Pages(relative)
@@ -92,6 +93,17 @@ class Pages(val relative: String) {
       new HtmlConverter(scalatags.Text, post).convert())(
       ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)})
     )))))
+  }
+
+  def makeSastHtml(sast: Sast, bibEntries: Seq[BibEntry]): String = {
+    val biblio = bibEntries.zipWithIndex.map{case (be, i) => be.id -> (i+1).toString }.toMap
+    htmlDocument(makeHtml(body(main(tSingle(
+      "title",
+      "",
+      frag(),
+      new SastToHtmlConverter(scalatags.Text, biblio).sastToHtml(sast))(
+      ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)})
+      )))))
   }
 
   private def maybeToc(post: Post): Frag = {

@@ -42,14 +42,11 @@ object Convert {
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
           val res = SastConverter.blockSequence(post.document.blocks)
-          println(res)
           val bib = bibRel.toList.flatMap(Bibliography.parse)
           val cited = SastAnalyzes.macros(res).filter(_.command == "cite").map(_.attributes.head.value).toSet
           val biblio = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
           val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
-          targetPath.write(Pages().makePostHtml(
-            post.copy(biblio = biblio.zipWithIndex.map{case (be, i) => be.id -> (i+1).toString }.toMap),
-            biblio))
+          targetPath.write(Pages().makeSastHtml(res, biblio))
           copyImages(sourcedir.parent, targetdir)
         }
         else if (sourcedir.isDirectory) {
