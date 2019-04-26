@@ -1,48 +1,51 @@
 package scitzen.semantics
 
 import scitzen.parser._
+import scitzen.semantics.Sast._
 
 sealed trait Sast
-case class Sseqf(sasts: Seq[Sast]) extends Sast
-object Sseq {
-  def apply(sasts: Seq[Sast]): Sseqf = {
-    Sseqf(sasts.flatMap {
-      case Sseqf(inner) => inner
-      case other        => Seq(other)
-    })
+
+object Sast {
+  case class Slist(children: Seq[SlistItem]) extends Sast
+  case class SlistItem(marker: String, content: Sast, inner: Slist)
+  case class Text(inline: Seq[Inline]) extends Sast
+  case class Section(title: Text, content: Sast) extends Sast
+  case class MacroBlock(call: Macro) extends Sast
+  case class RawBlock(delimiter: String, content: String) extends Sast
+  case class ParsedBlock(delimiter: String, content: Sast) extends Sast
+  case class AttributedBlock(attr: Block, content: Sast) extends Sast
+  case class AttributeDef(attribute: Attribute) extends Sast
+  case class Sseqf(sasts: Seq[Sast]) extends Sast
+  object Sseq {
+    def apply(sasts: Seq[Sast]): Sseqf = {
+      Sseqf(sasts.flatMap {
+        case Sseqf(inner) => inner
+        case other        => Seq(other)
+      })
+    }
   }
 }
-case class Slist(children: Seq[SlistItem]) extends Sast
-case class SlistItem(marker: String, content: Sast, inner: Slist)
-case class SblockQuote(title: String, content: Sast) extends Sast
-case class Sinline(inline: Inline) extends Sast
-case class Stitle(level: Int, content: Sast) extends Sast
-case class SattributeDef(attribute: Attribute) extends Sast
-case class Smacro(imacro: Macro) extends Sast
-case class Sblock(delimiter: String, content: Sast) extends Sast
 
 object SastAnalyzes {
   def macros(input: Sast): Seq[Macro] = input match {
-    case Sseqf(sasts)                => sasts.flatMap(macros)
-    case Slist(children)             => children.flatMap(sli => macros(sli.content) ++ macros(sli.inner))
-    case SblockQuote(title, content) => Nil
-    case Sinline(inline)             => inline match {
+    case Sseqf(sasts)                    => sasts.flatMap(macros)
+    case Slist(children)                 => children.flatMap(sli => macros(sli.content) ++ macros(sli.inner))
+    case Text(inlines)                    => inlines flatMap {
       case m: Macro              => List(m)
       case InlineText(str)       => Nil
       case InlineQuote(q, inner) => Nil
     }
-    case Stitle(level, content)      => macros(content)
-    case SattributeDef(attribute)    => Nil
-    case Smacro(imacro)              => List(imacro)
-    case Sblock(delimiter, content)  => macros(content)
+    case Section(level, content)         => macros(content)
+    case AttributeDef(attribute)        => Nil
+    case MacroBlock(imacro)              => List(imacro)
+    case ParsedBlock(delimiter, content) => macros(content)
+    case RawBlock(_, _) => Nil
+    case AttributedBlock(attr, content) => macros(content)
   }
 }
 
-
-object SastConverter {
-
-  def convert(blocks: Seq[Block]): Sast = Sseq(blocks.map(convertBlock))
-
+object ListConverter {
+  import scitzen.semantics.SastConverter.{block, inlineString}
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
     case Nil                    => Nil
@@ -69,8 +72,8 @@ object SastConverter {
     val listItems = split.flatMap { case (item, contents) =>
       List(
         SlistItem(item.marker,
-                  Sseq(convertInline(item.content) +:
-                       item.continuation.map(convertBlock).toList),
+                  Sseq(inlineString(item.content) +:
+                       item.continuation.map(block).toList),
                   listToHtml(contents)
                   ))
     }
@@ -82,30 +85,66 @@ object SastConverter {
 
   private def definitionListItem(item: ListItem, contents: Seq[ListItem]): SlistItem = {
     SlistItem(item.marker,
-              Sseq(convertInline(item.content) +:
-                   item.continuation.toList.map(convertBlock)),
+              Sseq(inlineString(item.content) +:
+                   item.continuation.toList.map(block)),
               listToHtml(contents)
               )
   }
+}
 
-  def blockContentToHtml(b: BlockContent): Sast = {
+case class ConvertResult(sast: Sast, attributes: Seq[Attribute], macros: Seq[Macro]) {
+  def ++ (other: ConvertResult): ConvertResult = {
+    ConvertResult(Sseq(List(sast, other.sast)),
+                  attributes ++ other.attributes,
+                  macros ++ other.macros)
+  }
+}
+
+object SastConverter {
+
+  @scala.annotation.tailrec
+  def sectionize(blocks: Seq[Block], accumulator: List[Section]): Seq[Section] = {
+    blocks.toList match {
+      case Nil => accumulator.reverse
+      case section :: rest =>
+        val currentSection = section.content.asInstanceOf[SectionTitle]
+        val title = inlineString(currentSection.title)
+        val (inner, next) = rest.span{ block =>
+          block.content match {
+            case innerTitle: SectionTitle => innerTitle.level < currentSection.level
+            case _                    => true
+          }
+        }
+        sectionize(next, Section(title, blockSequence(inner)) :: accumulator)
+    }
+  }
+
+  def blockSequence(blocks: Seq[Block]): Sast = {
+    val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
+    Sseq(abstkt.map(block) ++ sectionize(sections, Nil))
+
+  }
+
+
+  def blockContent(b: BlockContent): Sast = {
     b match {
 
-      case SectionTitle(level, title) => Stitle(level, convertInline(title))
+      case SectionTitle(level, title) =>
+        throw new IllegalStateException("sections should be out already …")
 
-      case ListBlock(items) => listToHtml(items)
+      case ListBlock(items) => ListConverter.listToHtml(items)
 
-      case AttributeBlock(attribute) => SattributeDef(attribute)
+      case AttributeBlock(attribute) => AttributeDef(attribute)
 
-      case m: Macro => Smacro(m)
+      case m: Macro => MacroBlock(m)
 
       case WhitespaceBlock(_) => Sseq(Nil)
 
       case NormalBlock(delimiter, text) =>
-        if (delimiter == "") Sblock("", convertInline(text))
+        if (delimiter == "") ParsedBlock("", inlineString(text))
         else delimiter.charAt(0) match {
-          case '`' | '.' => Sblock(delimiter, Sinline(InlineText(text)))
-          case '_' | ' ' => Sblock(delimiter, convertDocument(text))
+          case '`' | '.' => RawBlock(delimiter, text)
+          case '_' | ' ' => ParsedBlock(delimiter, documentString(text))
           case other     =>
             scribe.warn(s"mismatched block $delimiter: $text")
             Sseq(Nil)
@@ -114,28 +153,18 @@ object SastConverter {
     }
   }
 
-  def convertBlock(bwa: Block): Sast = {
-
-    val positiontype = bwa.positional.headOption
-    val inner = blockContentToHtml(bwa.content)
-    positiontype match {
-      case Some("quote") =>
-        // first argument is "quote" we concat the rest and treat them as a single entity
-        val title = bwa.positional.drop(1).mkString(", ")
-        SblockQuote(title, inner)
-      case _             => inner
-    }
-
-
+  def block(bwa: Block): Sast = {
+    val inner = blockContent(bwa.content)
+    AttributedBlock(bwa, inner)
   }
 
 
-  def convertDocument(blockContent: String): Sast = {
-    Sseq(Parse.document(blockContent).right.get.blocks.map(convertBlock))
+  def documentString(blockContent: String): Sast = {
+    blockSequence(Parse.document(blockContent).right.get.blocks)
   }
 
 
-  def convertInline(paragraphString: String): Sast = {
-    Sseq(Parse.paragraph(paragraphString).map(_.map(Sinline.apply)).toTry.get)
+  def inlineString(paragraphString: String): Text = {
+    Text(Parse.paragraph(paragraphString).toTry.get)
   }
 }

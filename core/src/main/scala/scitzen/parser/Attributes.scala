@@ -10,7 +10,7 @@ object Attributes {
 
   def equals       [_:P]: P[Unit]      = P(anySpaces ~ "=" ~ anySpaces)
   // https://asciidoctor.org/docs/user-manual/#named-attribute
-  // tells us that unquoted attribute values may not contain spaces, however this seems to be untrue in practice
+  // tells us that unquoted attribute values may not contain spaces, but this seems to be untrue in practice
   // however, in the hope of better error messages, we will not allow newlines
   def unquotedValue[_:P]: P[String]    = P(untilE(";" | close | eol))
   def value        [_:P]: P[String]    = P(quoted("\"") | quoted("'") | unquotedValue)

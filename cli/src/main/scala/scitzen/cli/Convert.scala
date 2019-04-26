@@ -41,7 +41,8 @@ object Convert {
 
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
-          val res = SastConverter.convert(post.document.blocks)
+          val res = SastConverter.blockSequence(post.document.blocks)
+          println(res)
           val bib = bibRel.toList.flatMap(Bibliography.parse)
           val cited = SastAnalyzes.macros(res).filter(_.command == "cite").map(_.attributes.head.value).toSet
           val biblio = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
