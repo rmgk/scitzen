@@ -11,7 +11,7 @@ import scalatags.Text.tags.frag
 import scalatags.Text.implicits.stringAttr
 import scalatags.Text.tags.SeqFrag
 import scalatags.Text.tags.{li, ol}
-import scitzen.converter.{HtmlConverter, SastToHtmlConverter}
+import scitzen.converter.{SastToHtmlConverter}
 import scitzen.parser.ParsingAnnotation
 import scitzen.semantics.{SastAnalyzes, SastConverter}
 import scribe.Logger
@@ -89,7 +89,9 @@ object Convert {
               targetPath.parent.createDirectories()
               val relpath = targetPath.parent.relativize(targetdir)
 
-              val content = new HtmlConverter(scalatags.Text, post).convert()
+              val sast = SastConverter.blockSequence(post.document.blocks)
+              val content = new SastToHtmlConverter(scalatags.Text, Map(), SastAnalyzes.analyze(sast)).sastToHtml(sast)
+
               targetPath.write(Pages(s"$relpath/").makePostHtml(post, content))
             }
             catch {
