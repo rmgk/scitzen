@@ -132,6 +132,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     case Macro("link", attributes) =>
       val target = attributes.last.value
       linkTo(attributes, target)
+    case Macro("footnote", attributes) =>
+      val target = attributes.last.value
+      a(title := target, "※")
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
       code(s"$command[${attributes.mkString(",")}]")
