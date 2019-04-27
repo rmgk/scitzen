@@ -66,7 +66,7 @@ class Pages(val relative: String) {
   def postRef(post: Post): Tag = {
     a(href := s"$path_posts/${post.targetPath}",
       article(timeShort(post.date.get),
-              span(cls := "title", raw(post.title)),
+              span(cls := "title", post.title),
               categoriesSpan(post)
       ))
   }
