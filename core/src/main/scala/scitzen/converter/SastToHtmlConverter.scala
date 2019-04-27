@@ -55,8 +55,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
              sastToHtml(content)(nestingLevel.inc))
 
       case Slist(children) =>
-        val listTag = if (children.head.marker.contains(".")) ol else ul
-        listTag(children.map(listItemToHtml))
+        if (children.isEmpty) frag()
+        else {
+          val listTag = if (children.head.marker.contains(".")) ol else ul
+          listTag(children.map(listItemToHtml))
+        }
 
       case MacroBlock(Macro("image", attributes)) =>
         val target = attributes.last.value
