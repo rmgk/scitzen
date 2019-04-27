@@ -9,6 +9,13 @@ import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
 
+class NestingLevel(val i: Int) extends AnyVal {
+  def inc: NestingLevel = {
+    new NestingLevel(i + 1)
+  }
+}
+
+
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
                                                            bibliography: Map[String, String],
                                                            analyzeResult: AnalyzeResult) {
@@ -17,14 +24,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   import bundle.tags2.aside
 
 
-  def listItemToHtml(child: SlistItem) = {
+  def listItemToHtml(child: SlistItem)(implicit nestingLevel: NestingLevel) = {
     li(
       sastToHtml(child.content),
       sastToHtml(child.inner)
       )
   }
 
-  def sastToHtml(b: Sast): Frag = {
+
+  def sastToHtml(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Frag = {
     b match {
 
       case Sseqf(inner) => SeqFrag(inner.map(sastToHtml))
@@ -34,8 +42,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case Text(inner) => inlineValuesToHTML(inner)
 
       case Section(title, content) =>
-        SeqFrag(List(tag("h1")(id := title.str, inlineValuesToHTML(title.inline)),
-                     sastToHtml(content)))
+        SeqFrag(List(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
+                     sastToHtml(content)(nestingLevel.inc)))
 
       case Slist(children) =>
         val listTag = if (children.head.marker.contains(".")) ol else ul
