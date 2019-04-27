@@ -21,7 +21,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                                                            analyzeResult: AnalyzeResult) {
 
   import bundle.all._
-  import bundle.tags2.{aside, nav}
+  import bundle.tags2.nav
 
 
   def listItemToHtml(child: SlistItem)(implicit nestingLevel: NestingLevel) = {
@@ -72,10 +72,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case ParsedBlock(delimiter, content) =>
         if (delimiter == "") p(sastToHtml(content))
         else delimiter.charAt(0) match {
-          // Sidebar
-          // Parsed as a normal document content, but may float off to some side.
-          case '*' => aside(sastToHtml(content))
-          case '_' => blockquote(sastToHtml(content))
+
+          case '=' => blockquote(sastToHtml(content))
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' => sastToHtml(content)
@@ -89,7 +87,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           // Code listing
           // Use this for monospace, space preserving, line preserving text
           // It may wrap to fit the screen content
-          case '-' | '`' => pre(code(text))
+          case '`' => pre(code(text))
           // Literal block
           // This seems to be supposed to work similar to code? But whats the point then?
           // We interpret this as text with predetermined line wrappings

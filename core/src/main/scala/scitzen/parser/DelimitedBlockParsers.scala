@@ -5,10 +5,11 @@ import fastparse._
 import scitzen.parser.CommonParsers._
 
 object DelimitedBlockParsers {
-  // the weird \\ is to escape the - which is interpreted by the CharIn macro as a range character
-  def normalDelimiter[_ : P]: P[Unit] = CharIn("=\\-.+_*").rep(4)
+  // we currently use ` for code, . for literal text,
+  // = for nested asciidoc content
+  def normalDelimiter[_ : P]: P[Unit] = CharIn(".=`").rep(3)
   def normalStart[_: P] = P(normalDelimiter)
-  def anyStart[_: P]: P[String] = P((normalStart | "--" | "```" | ("|" ~ "=".rep(3))).! ~ spaceLine)
+  def anyStart[_: P]: P[String] = P(normalStart.! ~ spaceLine)
 
   def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
     (start ~/ Pass).flatMap { delimiter =>

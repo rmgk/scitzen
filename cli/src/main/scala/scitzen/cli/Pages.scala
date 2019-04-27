@@ -3,11 +3,11 @@ package scitzen.cli
 import scalatags.Text.all.{SeqFrag, frag, raw}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, rel, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{a, body, h1, head, header, html, input, label, li, link, meta, ol, p, span}
+import scalatags.Text.tags.{a, body, h1, head, html, input, label, link, meta, p, span}
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.converter.Post
-import scitzen.parser.{ScitzenDateTime, SectionTitle}
+import scitzen.parser.ScitzenDateTime
 
 object Pages {
   def apply(relative: String = ""): Pages = new Pages(relative)
@@ -29,7 +29,7 @@ class Pages(val relative: String) {
     )
   }
 
-  private def tMeta(post: Post) = {
+  def tMeta(post: Post) = {
     p(cls := "metadata",
       post.date.map(timeFull).getOrElse(""),
       frag(post.modified.map(timeFull).toList: _*),
@@ -53,12 +53,8 @@ class Pages(val relative: String) {
            date.monthDayTime))
   }
 
-  private def tSingle(title: String, language: String, meta: Frag, content: Frag*) = {
+  private def tSingle(content: Frag*) = {
     article(cls := "fullpost",
-            if (language.nonEmpty) lang := language else frag(),
-            header(h1(raw(title)),
-                   meta
-            ),
             content
     )
   }
@@ -82,33 +78,13 @@ class Pages(val relative: String) {
   def htmlDocument(tag: Tag): String = "<!DOCTYPE html>" + tag.render
 
 
-  def makePostHtml(post: Post, content: Frag): String = {
+  def wrapContentHtml(language: String, content: Frag): String = {
     htmlDocument(makeHtml(body(main(tSingle(
-      post.title,
-      post.attributes.getOrElse("language", "").trim,
-      tMeta(post),
-      maybeToc(post),
-      content)
+      content
+      )(if (language.nonEmpty) lang := language else frag())
     ))))
   }
 
-  def makeSastHtml(content: Frag): String = {
-    htmlDocument(makeHtml(body(main(tSingle(
-      "title",
-      "",
-      frag(),
-      content
-      )))))
-  }
-
-  private def maybeToc(post: Post): Frag = {
-    if (post.attributes.contains("toc")) {
-      nav(ol(post.document.blocks.map(_.content).collect{
-        case SectionTitle(level, target) if level > 1 =>
-          li(a(href := s"#$target", target))
-      } : _*))
-    } else frag()
-  }
 
   def makeIndexOf(posts: List[Post]): String = {
 

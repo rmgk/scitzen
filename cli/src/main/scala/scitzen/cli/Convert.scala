@@ -59,7 +59,7 @@ object Convert {
           val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed).sastToHtml(sast),
             ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)}))
 
-          targetPath.write(Pages().makeSastHtml(content))
+          targetPath.write(Pages().wrapContentHtml(analyzed.language, content))
           copyImages(sourcedir.parent, targetdir)
         }
         else if (sourcedir.isDirectory) {
@@ -92,9 +92,10 @@ object Convert {
               val relpath = targetPath.parent.relativize(targetdir)
 
               val sast = SastConverter.blockSequence(post.document.blocks)
-              val content = new SastToHtmlConverter(scalatags.Text, Map(), SastAnalyzes.analyze(sast)).sastToHtml(sast)
+              val analyzed = SastAnalyzes.analyze(sast)
+              val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed).sastToHtml(sast)
 
-              targetPath.write(Pages(s"$relpath/").makePostHtml(post, content))
+              targetPath.write(Pages(s"$relpath/").wrapContentHtml(analyzed.language, content))
             }
             catch {
               case e @ ParsingAnnotation(content, failure) =>

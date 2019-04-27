@@ -40,6 +40,8 @@ object SastAnalyzes {
     def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
     def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
+
+    lazy val language : String = attributes.find(_.id=="lang").fold("")(_.value)
   }
 
   def analyze(input: Sast) = {
@@ -165,7 +167,7 @@ object SastConverter {
         if (delimiter == "") ParsedBlock("", inlineString(text))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)
-          case '_' | ' ' => ParsedBlock(delimiter, documentString(text))
+          case '=' | ' ' => ParsedBlock(delimiter, documentString(text))
           case other     =>
             scribe.warn(s"mismatched block $delimiter: $text")
             Sseq(Nil)
