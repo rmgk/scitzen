@@ -71,7 +71,7 @@ object Convert {
           val postdir = targetdir / "posts"
           postdir.createDirectories()
 
-          def allAdocFiles(): List[File] = sourcedir.glob("**.adoc").toList
+          def allAdocFiles(): List[File] = sourcedir.glob("**.{scim,adoc}").toList
 
           val posts = allAdocFiles().map { f: File =>
             scribe.debug(s"parsing ${f.name}")

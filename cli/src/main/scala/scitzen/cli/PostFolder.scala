@@ -21,6 +21,6 @@ class PostFolder(basedir: Path) {
   }
 
 
-  def targetPath(path: Path): String = basedir.relativize(path).toString.replace(".adoc", ".html")
+  def targetPath(path: Path): String = basedir.relativize(path).toString.replace(".adoc", ".html").replace(".scim", ".html")
 
 }
