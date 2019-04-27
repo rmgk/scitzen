@@ -63,8 +63,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case Section(title, secContent) =>
         frag(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
-             tMeta(),
-             if (nestingLevel.i == 1) tableOfContents(secContent) else frag(),
+             if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(secContent)) else frag(),
              sastToHtml(secContent)(nestingLevel.inc))
 
       case Slist(children) =>
