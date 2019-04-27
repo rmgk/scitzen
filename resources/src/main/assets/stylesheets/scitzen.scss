@@ -169,6 +169,8 @@ article.fullpost {
   }
 
   img {
+    // why is this not the default?
+    image-orientation: from-image;
     max-width: 100%;
     height: auto;
     max-height: 40em;
