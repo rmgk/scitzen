@@ -1,5 +1,8 @@
 package scitzen.converter
 
+import java.io.ByteArrayInputStream
+import java.nio.charset.StandardCharsets
+
 import scalatags.generic.Bundle
 import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro}
 import scitzen.semantics.Sast
@@ -31,7 +34,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case Text(inner) => inlineValuesToHTML(inner)
 
       case Section(title, content) =>
-        SeqFrag(List(tag("h1")(id := title.toString, inlineValuesToHTML(title.inline)),
+        SeqFrag(List(tag("h1")(id := title.str, inlineValuesToHTML(title.inline)),
                      sastToHtml(content)))
 
       case Slist(children) =>
@@ -44,7 +47,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             img(src := target)
             )
       case MacroBlock(Macro("label", attributes)) =>
-        a(id := attributes.head.value)
+        frag()
 
       case ParsedBlock(delimiter, content) =>
         if (delimiter == "") p(sastToHtml(content))
@@ -101,12 +104,22 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     case InlineText(str) => str
     case InlineQuote(q, inner) =>
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
-      (q.head match {
-      case '_' => em
-      case '*' => strong
-      case '`'|'$' => code
-    })(inner)
+      q.head match {
+      case '_' => em(inner)
+      case '*' => strong(inner)
+      case '`' => code(inner)
+      case '$' => span(raw((scala.sys.process.Process(s"npx katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!))
+    }
     case Macro("//", attributes) => frag()
+    case Macro("ref", attributes) =>
+      analyzeResult.targets.find(_.id == attributes.head.value).map {target =>
+        target.resolution match {
+          case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
+          case other =>
+            scribe.error(s"can not refer to $other")
+            frag()
+        }
+      }
     case Macro("cite", attributes) =>
       val bibid = attributes.head.value
       frag("\u00A0", a(href := s"#$bibid", bibliography(bibid)))

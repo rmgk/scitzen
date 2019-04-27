@@ -14,7 +14,7 @@ object Sast {
         case Macro(command, attributes) => ""
         case InlineQuote(q, inner) => inner
         case InlineText(string) => string
-      }.mkString("")
+      }.mkString("").trim
     }
   }
   case class Section(title: Text, content: Sast) extends Sast
