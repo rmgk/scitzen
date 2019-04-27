@@ -132,7 +132,7 @@ object SastConverter {
         val title = inlineString(currentSection.title)
         val (inner, next) = rest.span{ block =>
           block.content match {
-            case innerTitle: SectionTitle => innerTitle.level < currentSection.level
+            case innerTitle: SectionTitle => innerTitle.level > currentSection.level
             case _                    => true
           }
         }
