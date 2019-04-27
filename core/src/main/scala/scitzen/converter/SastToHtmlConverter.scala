@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
 import scalatags.generic.Bundle
-import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro}
+import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
@@ -31,6 +31,26 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       )
   }
 
+  def tMeta() = {
+
+    def timeFull(date: ScitzenDateTime): Tag = {
+      //need time formatter, because to string removes seconds if all zero
+      span(cls := "time", date.full)
+    }
+
+    def categoriesSpan() = {
+      val categories = List("categories", "people").flatMap(analyzeResult.named.get)
+                       .flatMap(_.split(","))
+      span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
+    }
+
+    p(cls := "metadata",
+      analyzeResult.date.map(timeFull).getOrElse(""),
+      frag(analyzeResult.modified.map(timeFull).toList: _*),
+      categoriesSpan(),
+      frag(analyzeResult.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
+      )
+  }
 
   def sastToHtml(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Frag = {
     b match {
@@ -41,18 +61,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case Text(inner) => inlineValuesToHTML(inner)
 
-      case Section(title, content) =>
-        val toc = if (nestingLevel.i == 1 && analyzeResult.attributes.exists(_.id == "toc")) {
-          content match {
-            case Sseqf(seq) => nav(ol(seq.collect {
-              case Section(title, _) => li(a(href := s"#${title.str}", title.str))
-            }))
-            case other => frag()
-          }
-        } else frag()
+      case Section(title, secContent) =>
         frag(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
-             toc,
-             sastToHtml(content)(nestingLevel.inc))
+             tMeta(),
+             if (nestingLevel.i == 1) tableOfContents(secContent) else frag(),
+             sastToHtml(secContent)(nestingLevel.inc))
 
       case Slist(children) =>
         if (children.isEmpty) frag()
@@ -118,6 +131,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   }
 
 
+  private def tableOfContents(sectionContent: Sast): Frag = {
+    if (analyzeResult.attributes.exists(_.id == "toc")) {
+      sectionContent match {
+        case Sseqf(seq) => nav(ol(seq.collect {
+          case Section(title, _) => li(a(href := s"#${title.str}", title.str))
+        }))
+        case other      => frag()
+      }
+    } else frag()
+  }
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
     case InlineText(str) => str
     case InlineQuote(q, inner) =>

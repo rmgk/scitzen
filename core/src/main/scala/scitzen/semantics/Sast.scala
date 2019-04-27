@@ -41,7 +41,15 @@ object SastAnalyzes {
     def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
 
-    lazy val language : String = attributes.find(_.id=="lang").fold("")(_.value)
+    lazy val named: Map[String, String] = AttributesToMap(attributes)
+
+    lazy val language: String = named.getOrElse("lang", "")
+
+    lazy val date    : Option[ScitzenDateTime] = named.get("revdate")
+                                                 .map(v => DateParsingHelper.parseDate(v.trim))
+    lazy val modified: Option[ScitzenDateTime] = named.get("modified")
+                                                 .map(m => DateParsingHelper.parseDate(m.trim))
+
   }
 
   def analyze(input: Sast) = {

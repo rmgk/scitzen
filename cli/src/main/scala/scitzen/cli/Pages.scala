@@ -3,7 +3,7 @@ package scitzen.cli
 import scalatags.Text.all.{SeqFrag, frag, raw}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, rel, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{a, body, h1, head, html, input, label, link, meta, p, span}
+import scalatags.Text.tags.{a, body, h1, head, html, input, label, link, meta, span}
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.converter.Post
@@ -29,22 +29,8 @@ class Pages(val relative: String) {
     )
   }
 
-  def tMeta(post: Post) = {
-    p(cls := "metadata",
-      post.date.map(timeFull).getOrElse(""),
-      frag(post.modified.map(timeFull).toList: _*),
-      categoriesSpan(post),
-      frag(post.folder().map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
-    )
-  }
-
   private def categoriesSpan(post: Post) = {
     span(cls := "category")((post.categories() ++ post.people()).map(c => stringFrag(s" $c ")): _*)
-  }
-
-  private def timeFull(date: ScitzenDateTime) = {
-    //need time formatter, because to string removes seconds if all zero
-    span(cls := "time", date.full)
   }
 
   private def timeShort(date: ScitzenDateTime) = {
