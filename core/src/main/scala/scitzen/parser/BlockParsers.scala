@@ -31,7 +31,7 @@ object BlockParsers {
                                               ListParsers.list |
                                               DelimitedBlockParsers.full |
                                               sectionTitle |
-                                              MacroParsers.full |
+                                              MacroParsers.full ~ spaceLine |
                                               paragraph)
 
   def fullBlock[_: P]: P[Block] = P(Index ~ Attributes.line.rep ~ alternatives ~ Index).map {
