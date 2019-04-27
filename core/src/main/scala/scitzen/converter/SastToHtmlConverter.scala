@@ -4,9 +4,11 @@ import scalatags.generic.Bundle
 import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
+import scitzen.semantics.SastAnalyzes.AnalyzeResult
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
-                                                           bibliography: Map[String, String]) {
+                                                           bibliography: Map[String, String],
+                                                           analyzeResult: AnalyzeResult) {
 
   import bundle.all._
   import bundle.tags2.aside

@@ -54,7 +54,7 @@ object Convert {
           val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
           val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
           val biblio = bibEntries.zipWithIndex.map{case (be, i) => be.id -> (i+1).toString }.toMap
-          val content = frag(new SastToHtmlConverter(scalatags.Text, biblio).sastToHtml(sast),
+          val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed).sastToHtml(sast),
             ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)}))
 
           targetPath.write(Pages().makeSastHtml(content))
