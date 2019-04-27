@@ -11,10 +11,12 @@ import scalatags.Text.tags.frag
 import scalatags.Text.implicits.stringAttr
 import scalatags.Text.tags.SeqFrag
 import scalatags.Text.tags.{li, ol}
-import scitzen.converter.{SastToHtmlConverter}
+import scitzen.converter.SastToHtmlConverter
 import scitzen.parser.ParsingAnnotation
 import scitzen.semantics.{SastAnalyzes, SastConverter}
 import scribe.Logger
+
+import scala.util.control.NonFatal
 
 object Convert {
 
@@ -102,6 +104,9 @@ object Convert {
                 println(trace.longMsg)
                 println(s"========\n$content\n========")
                 throw e
+              case NonFatal(other) =>
+                scribe.error(s"error while parsing $path")
+                throw other
             }
 
             // collect attributes
