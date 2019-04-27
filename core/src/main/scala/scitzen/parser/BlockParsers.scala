@@ -17,6 +17,11 @@ object BlockParsers {
   def sectionTitle[_:P]: P[SectionTitle] = P("=".rep(1).! ~ " " ~ titleLine)
                                            .map { case (level, str) => SectionTitle(level.length, str) }
 
+  def horizontalRuleChars[_: P] = P(AnyChar("'\\-*"))
+  def horizontalRule[_: P]: P[Macro] = P(verticalSpaces ~ horizontalRuleChars.!.flatMap { chr =>
+    (verticalSpace ~ chr).rep(2) ~ spaceLine
+  }).!.map(text => Macro("horizontal-rule", List(Attribute("", text))))
+
   def commentBlock[_:P]: P[NormalBlock] =
     P((DelimitedBlockParsers.makeDelimited("/".rep(4).!)
        | (":%" ~ untilI(eol))
@@ -28,6 +33,7 @@ object BlockParsers {
 
   def alternatives[_: P]: P[BlockContent] = P(extendedWhitespace |
                                               AttributeBlockParser.entry |
+                                              horizontalRule |
                                               ListParsers.list |
                                               DelimitedBlockParsers.full |
                                               sectionTitle |

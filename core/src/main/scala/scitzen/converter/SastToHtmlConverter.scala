@@ -73,13 +73,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           listTag(children.map(listItemToHtml))
         }
 
-      case MacroBlock(Macro("image", attributes)) =>
-        val target = attributes.last.value
-        div(cls := "imageblock",
-            img(src := target)
-            )
-      case MacroBlock(Macro("label", attributes)) =>
-        frag()
+      case MacroBlock(mcro) => mcro match {
+        case Macro("image", attributes) =>
+          val target = attributes.last.value
+          div(cls := "imageblock",
+              img(src := target))
+        case Macro("label", attributes) => frag()
+        case Macro("horizontal-rule", attributes) => hr
+        case other =>
+          scribe.warn(s"not implemented: $other")
+          div(stringFrag(other.toString))
+      }
 
       case ParsedBlock(delimiter, content) =>
         if (delimiter == "") p(sastToHtml(content))
@@ -108,9 +112,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           case '.' => pre(text)
         }
 
-      case other : MacroBlock =>
-        scribe.warn(s"not implemented: $other")
-        div(stringFrag(other.toString))
+
 
       case bwa: AttributedBlock =>
         val positiontype = bwa.attr.positional.headOption

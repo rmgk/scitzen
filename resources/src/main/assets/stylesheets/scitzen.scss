@@ -149,6 +149,14 @@ article.fullpost {
     display: block;
   }
 
+  hr {
+    border: 0.2em dashed $color-subdued;
+    max-width: 7em;
+    border-radius:  0.2em;
+    margin-bottom: 2em;
+    margin-top: 2em;
+  }
+
   a {
     word-break: break-all;
     &:before{
