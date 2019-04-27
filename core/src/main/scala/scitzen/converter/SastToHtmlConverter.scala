@@ -21,7 +21,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                                                            analyzeResult: AnalyzeResult) {
 
   import bundle.all._
-  import bundle.tags2.aside
+  import bundle.tags2.{aside, nav}
 
 
   def listItemToHtml(child: SlistItem)(implicit nestingLevel: NestingLevel) = {
@@ -42,8 +42,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case Text(inner) => inlineValuesToHTML(inner)
 
       case Section(title, content) =>
-        SeqFrag(List(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
-                     sastToHtml(content)(nestingLevel.inc)))
+        val toc = if (nestingLevel.i == 1 && analyzeResult.attributes.exists(_.id == "toc")) {
+          content match {
+            case Sseqf(seq) => nav(ol(seq.collect {
+              case Section(title, _) => li(a(href := s"#${title.str}", title.str))
+            }))
+            case other => frag()
+          }
+        } else frag()
+        frag(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
+             toc,
+             sastToHtml(content)(nestingLevel.inc))
 
       case Slist(children) =>
         val listTag = if (children.head.marker.contains(".")) ol else ul
