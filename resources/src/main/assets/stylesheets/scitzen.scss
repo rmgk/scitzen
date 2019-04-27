@@ -91,11 +91,15 @@ h1, h2 {
 
 
 @mixin highlight-box {
-  @include boxed-content;
-  padding: 0.25em 0.5em 0.5em 0.5em;
-  @media screen {
-    border-left: 3px solid $theme-color;
-  }
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  padding: 1em 0;
+  border-radius: 3px;
+  //@media screen {
+  //  border-left: 3px solid $theme-color;
+  //}
   & > :first-child {
     margin-top: 0;
   }
@@ -172,7 +176,6 @@ article.fullpost {
     max-width: $main-content-width * 1.64;
     img {
       @include boxed-content;
-      margin: auto;
     }
   }
 
@@ -181,6 +184,7 @@ article.fullpost {
     image-orientation: from-image;
     max-width: 100%;
     height: auto;
+    margin: auto;
     max-height: 40em;
     // without block display, the outer div becomes a bit larger (line height?)
     display: block;
