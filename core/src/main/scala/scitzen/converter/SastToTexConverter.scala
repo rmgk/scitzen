@@ -17,6 +17,18 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
                          imagemap: Map[String, String] = Map()) {
   val reldir2 = if(reldir.isBlank) "" else reldir +"/"
 
+  def latexencode(input: String): String = {
+    val nobs = input.replaceAllLiterally("\\", "»ℓ§«")
+    val nosimple = "&%$#_{}".toList.map(_.toString).foldLeft(nobs) { (acc, char) =>
+      acc.replaceAllLiterally(char,  s"\\$char")
+    }
+    val nomuch = List("~" -> "\\textasciitilde{}",
+    "^" -> "\\textasciicircum{}").foldLeft(nosimple){case (acc, (char, rep)) =>
+      acc.replaceAllLiterally(char, rep)
+    }
+    nomuch.replaceAllLiterally("»ℓ§«", "\\textbackslash{}")
+  }
+
   def sastToTex(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
     b match {
 
@@ -56,9 +68,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
 
           println()
           List(
-            "",
-            s"\\includegraphics[width=\\columnwidth]{$imagepath}",
-            "",
+            s"\\newline{}\\includegraphics[width=\\columnwidth]{$imagepath}\\newline{}",
             )
 
         case Macro("label", attributes) => List(s"\\label{${attributes.last.value}}")
@@ -82,8 +92,8 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
       case RawBlock(delimiter, text) =>
         delimiter.charAt(0) match {
           case '`'  =>
-            List(s"\\begin{lstlisting}", text, "\\end{lstlisting}")
-          case '.' => List(text.replaceAllLiterally("\n", "\\\\\n").replaceAllLiterally("_", "\\_"))
+            List(s"\\begin{verbatim}", text, "\\end{verbatim}")
+          case '.' => List(latexencode(text).replaceAllLiterally("\n", "\\newline{}\n"))
         }
 
 
@@ -97,30 +107,31 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
   }
 
   def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
-    case InlineText(str) => str
-    case InlineQuote(q, inner) =>
+    case InlineText(str) => latexencode(str)
+    case InlineQuote(q, inner2) =>
+      val inner = latexencode(inner2)
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
       q.head match {
         case '_' => s"\\emph{$inner}"
         case '*' => s"\\textbf{$inner}"
-        case '`' => s"\\code{$inner}"
+        case '`' => s"\\texttt{$inner}"
         case '$' => s"$$$inner$$"
       }
     case Macro("//", attributes) => ""
-    case Macro("ref", attributes) => s"\\ref{${attributes.last.value}}"
+    case Macro("ref", attributes) => s"\\ref{${latexencode(attributes.last.value)}}"
     case Macro("cite", attributes) =>
-      s"\\cite{${attributes.last.value}}"
+      s"\\cite{${latexencode(attributes.last.value)}}"
     case Macro("link", attributes) =>
-      val target = attributes.last.value
+      val target = latexencode(attributes.last.value)
       linkTo(attributes, target)
     case Macro("footnote", attributes) =>
-      val target = attributes.last.value
+      val target = latexencode(attributes.last.value)
       s"\\footnote{$target}"
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.mkString(",")}]"
   }.mkString("")
   def linkTo(attributes: Seq[Attribute], linktarget: String): String = {
-    s"\\url{$linktarget}"
+    s"\\url{${latexencode(linktarget)}}"
   }
 }

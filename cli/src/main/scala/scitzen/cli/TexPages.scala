@@ -6,18 +6,28 @@ import scitzen.semantics.SastAnalyzes.AnalyzeResult
 object TexPages {
 
 
-  def acmHeader(): String = {
+  def acmHeader: String = {
 """% !TEX jobname = report
 % !TEX output_directory = output
 \documentclass[sigconf,screen=true,authorversion=false]{acmart}
 \settopmatter{printfolios=true}
-""" + // funny story, but just \ u is always some compile error
-"""
 \setcopyright{rightsretained}
 """
   }
 
-  def wrap(content: Seq[String], analyzed: AnalyzeResult, texType: String, bibliography: Option[String]) = {
+  def memoirHeader: String = {
+"""% !TEX jobname = report
+% !TEX output_directory = output
+\documentclass[a4paper, oneside]{memoir}
+\clubpenalty=10000
+\widowpenalty=10000
+"""
+  }
+  def memoirPackages: List[String] = {
+    List("[utf8x]{inputenc}", "{graphicx}", "{url}", "{verbatim}")
+  }
+
+  def wrap(content: Seq[String], analyzed: AnalyzeResult, texType: String, bibliography: Option[String]): String = {
     val authors = analyzed.named.get("authors").toList.flatMap {aut =>
       Parse.paragraph(aut).right.get.collect{
         case Macro("author", attributes) => (attributes.head.value, attributes.last.value)
@@ -27,18 +37,22 @@ object TexPages {
       s"""\\author{$name}
 \\affiliation{\\institution{$inst}}"""
     }
-    texType match {
+    (texType match {
       case "acmconf" =>
-        (List(
-          acmHeader(),
+        List(
+          acmHeader,
           s"\\begin{document}"
           ) ++ authorstrings ++ content ++
          List(
            s"\\bibliographystyle{ACM-Reference-Format}",
            bibliography.fold("")(bib => s"\\bibliography{$bib}"),
            s"\\end{document}"
-           )).mkString("\n")
-    }
+           )
+      case "memoir" =>
+        (memoirHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
+        content :+ s"\\end{document}"
+
+    }).mkString("\n")
 
   }
 

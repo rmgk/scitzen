@@ -95,6 +95,7 @@ object Convert {
 
           if (makeTex.isDefined) {
 
+
             val name = sourcedir.nameWithoutExtension
             val targetFile = targetdir / (name + ".tex")
             val imagedir = targetdir / "images"
@@ -104,6 +105,9 @@ object Convert {
               analyzed = SastAnalyzes.analyze(sast)
               reldir = sourcedir.relativize(path.getParent).toString
               content <- new SastToTexConverter(analyzed, reldir, imagemap).sastToTex(sast)(new NestingLevel(2))
+              //encodedContent = EmojiParser.parseFromUnicode(content, {emojidata =>
+              //  s"{\ ${emojidata.getEmoji.getUnicode}"
+              //})
             } yield content
             targetFile.write(TexPages.wrap(s"\\graphicspath{{$imagedir/}}" +: content,
                                            SastAnalyzes.AnalyzeResult(Nil, Nil, Nil),
@@ -178,8 +182,7 @@ object Convert {
     scala.sys.process.Process(List("latexmk",
                                    "-cd",
                                    "-f",
-                                   "-xelatex",
-                                   "-pdf",
+                                   "-lualatex",
                                    "-interaction=nonstopmode",
                                    "-synctex=1",
                                    "--output-directory=" + outputdir./("output"),

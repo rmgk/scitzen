@@ -33,7 +33,6 @@ lazy val webResources = project.in(file("resources"))
   normalizecss
 )
 
-
 lazy val cli = project.in(file("cli"))
                .enablePlugins(JavaAppPackaging)
                .enablePlugins(GraalVMNativeImagePlugin)
@@ -44,6 +43,7 @@ lazy val cli = project.in(file("cli"))
                  resolvers += Resolver.sonatypeRepo("public"),
                  libraryDependencies ++= Seq(
                    "de.undercouch" % "citeproc-java" % "1.0.1",
+                   "com.vdurmont" % "emoji-java" % "4.0.0"
                    //"org.citationstyles"% "styles" % "1.0.1-SNAPSHOT",
                    //"org.citationstyles"% "locales" % "1.0.1-SNAPSHOT"
                    ),
