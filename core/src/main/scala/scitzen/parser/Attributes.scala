@@ -26,7 +26,9 @@ object Attributes {
 
 object AttributeBlockParser {
   def itemMarker[_:P]: P[String]         = P(":" ~ ("!".? ~ identifier.! ~ "!".?).! ~ ":")
-  def content   [_:P]: P[String]         = P(eol.map(_ => "") | (anySpaces ~ untilI(eol, min = 0).!))
+  def content   [_:P]: P[String]         = P((eol ~ DelimitedBlockParsers.whitespaceLiteral).map(_.content) |
+                                             eol.map(_ => "") |
+                                             (anySpaces ~ untilI(eol, min = 0).!))
   def entry     [_:P]: P[AttributeBlock]      = P(itemMarker ~/ content)
                                            .map { case (id, v) => AttributeBlock(Attribute(id, v)) }
   def list      [_:P]: P[Seq[AttributeBlock]] = P(entry.rep(sep = BlockParsers.extendedWhitespace.?))
