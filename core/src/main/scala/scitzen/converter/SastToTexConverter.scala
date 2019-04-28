@@ -38,7 +38,10 @@ class SastToTexConverter(analyzeResult: AnalyzeResult) {
         if (children.isEmpty) Nil
         else {
           "\\begin{itemize}" +:
-          children.map(child => s"\\item ${sastToTex(child.content)}") :+
+          children.flatMap { child =>
+            s"\\item ${sastToTex(child.content).mkString("")}" +:
+            sastToTex(child.inner)
+          } :+
           "\\end{itemize}"
         }
 
