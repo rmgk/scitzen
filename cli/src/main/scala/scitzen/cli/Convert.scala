@@ -7,10 +7,8 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scalatags.Text.attrs.id
-import scalatags.Text.tags.frag
 import scalatags.Text.implicits.stringAttr
-import scalatags.Text.tags.SeqFrag
-import scalatags.Text.tags.{li, ol}
+import scalatags.Text.tags.{SeqFrag, frag, li, ol}
 import scitzen.converter.SastToHtmlConverter
 import scitzen.parser.ParsingAnnotation
 import scitzen.semantics.{SastAnalyzes, SastConverter}
@@ -26,6 +24,7 @@ object Convert {
                                     help = "Target output directory")
   val optBib = Opts.option[Path]("bibliography", short = "b", metavar = "file",
                                     help = "Bibliography").orNone
+  val optTex = Opts.flag("tex", help = "Generate tex output").orFalse
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
@@ -33,8 +32,8 @@ object Convert {
 
 
   val command: Command[Unit] = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
-    (optSource, optOutput, optBib).mapN {
-      (sourcedirRel, targetdirRel, bibRel) =>
+    (optSource, optOutput, optBib, optTex).mapN {
+      (sourcedirRel, targetdirRel, bibRel, makeTex) =>
         implicit val charset: Charset = StandardCharsets.UTF_8
 
         import scribe.format._
@@ -53,14 +52,30 @@ object Convert {
           val bib = bibRel.toList.flatMap(Bibliography.parse)
           val analyzed = SastAnalyzes.analyze(sast)
           val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
-          val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
-          val targetPath = targetdir/(sourcedir.nameWithoutExtension + ".html")
-          val biblio = bibEntries.zipWithIndex.map{case (be, i) => be.id -> (i+1).toString }.toMap
-          val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed).sastToHtml(sast),
-            ol(bibEntries.zipWithIndex.map{ case (be, i) => li(id:=be.id, be.format)}))
+          if (makeTex) {
+            val name = sourcedir.nameWithoutExtension
+            val targetPath = sourcedir.parent / (name + ".tex")
+            targetPath.write(TexPages.wrap(analyzed, sast))
+            scala.sys.process.Process(List("latexmk",
+                                           "-cd",
+                                           "-f",
+                                           "-pdf",
+                                           "-interaction=nonstopmode",
+                                           "-synctex=1",
+                                           "--output-directory=" + targetdir,
+                                           "--jobname=" + name,
+                                           targetPath.pathAsString)).!
+          }
+          else {
+            val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+            val targetPath = targetdir / (sourcedir.nameWithoutExtension + ".html")
+            val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
+            val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed).sastToHtml(sast),
+                               ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format)}))
 
-          targetPath.write(Pages().wrapContentHtml(analyzed.language, content))
-          copyImages(sourcedir.parent, targetdir)
+            targetPath.write(Pages().wrapContentHtml(analyzed.language, content))
+            copyImages(sourcedir.parent, targetdir)
+          }
         }
         else if (sourcedir.isDirectory) {
 

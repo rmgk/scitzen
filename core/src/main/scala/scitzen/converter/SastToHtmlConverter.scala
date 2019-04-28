@@ -9,12 +9,6 @@ import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
 
-class NestingLevel(val i: Int) extends AnyVal {
-  def inc: NestingLevel = {
-    new NestingLevel(i + 1)
-  }
-}
-
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
                                                            bibliography: Map[String, String],
