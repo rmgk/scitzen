@@ -4,11 +4,11 @@ package scitzen.converter
 import scitzen.parser.{DateParsingHelper, Document, ScitzenDateTime, SectionTitle}
 
 
-case class Post(val document: Document,
-           val targetPath: String,
-           val sourcePath: String,
-           val content: String,
-           val biblio: Map[String, String] = Map()) {
+case class Post(document: Document,
+                targetPath: String,
+                sourcePath: String,
+                content: String,
+                biblio: Map[String, String] = Map()) {
   lazy val attributes: Map[String, String] = document.named
   def commaSeparatedAttribute(key: String): List[String] =
     attributes.getOrElse(key, "").toString
