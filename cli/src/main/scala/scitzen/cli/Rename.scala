@@ -30,7 +30,7 @@ object Rename {
 
     optSource.map { sourcefiles =>
       sourcefiles.map(File(_))
-      .filter(f => f.isRegularFile && f.name.endsWith(".adoc"))
+      .filter(f => f.isRegularFile && f.name.endsWith(".scim"))
       .foreach(renameFileFromHeader)
     }
   }
@@ -48,7 +48,7 @@ object Rename {
 
   def nameFromHeader(header: Document): String = {
     val date = DateParsingHelper.parseDate(header.named("revdate").trim)
-    val title = Tool.sluggify(header.title) + ".adoc"
+    val title = Tool.sluggify(header.title) + ".scim"
     date.date.full + "_" + title
   }
 }
