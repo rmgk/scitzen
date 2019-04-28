@@ -24,7 +24,7 @@ object Convert {
                                     help = "Target output directory")
   val optBib = Opts.option[Path]("bibliography", short = "b", metavar = "file",
                                     help = "Bibliography").orNone
-  val optTex = Opts.flag("tex", help = "Generate tex output").orFalse
+  val optTex = Opts.option[String]("tex", help = "Generate tex output").orNone
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
@@ -52,19 +52,28 @@ object Convert {
           val bib = bibRel.toList.flatMap(Bibliography.parse)
           val analyzed = SastAnalyzes.analyze(sast)
           val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
-          if (makeTex) {
+          if (makeTex.isDefined) {
             val name = sourcedir.nameWithoutExtension
-            val targetPath = sourcedir.parent / (name + ".tex")
-            targetPath.write(TexPages.wrap(analyzed, sast))
+            val targetFile = targetdir / (name + ".tex")
+            val bibName = bibRel.map{p =>
+              val source = File(p)
+              val targetname = source.nameWithoutExtension.replaceAll("\\s", "_")
+              source.copyTo(targetdir / (targetname + ".bib"), overwrite = true)
+              targetname
+            }
+            targetFile.write(TexPages.wrap(analyzed,
+                                           sast,
+                                           makeTex.get,
+                                           bibName))
             scala.sys.process.Process(List("latexmk",
                                            "-cd",
                                            "-f",
                                            "-pdf",
                                            "-interaction=nonstopmode",
                                            "-synctex=1",
-                                           "--output-directory=" + targetdir,
+                                           "--output-directory=" + targetdir./("output"),
                                            "--jobname=" + name,
-                                           targetPath.pathAsString)).!
+                                           targetFile.pathAsString)).!
           }
           else {
             val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
