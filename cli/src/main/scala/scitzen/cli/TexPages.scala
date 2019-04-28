@@ -1,8 +1,6 @@
 package scitzen.cli
 
-import scitzen.converter.SastToTexConverter
 import scitzen.parser.{Macro, Parse}
-import scitzen.semantics.Sast
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
 
 object TexPages {
@@ -14,13 +12,12 @@ object TexPages {
 \documentclass[sigconf,screen=true,authorversion=false]{acmart}
 \settopmatter{printfolios=true}
 """ + // funny story, but just \ u is always some compile error
-"\\usepackage[utf8x]{inputenc}" + """
+"""
 \setcopyright{rightsretained}
 """
   }
 
-  def wrap(analyzed: AnalyzeResult, sast: Sast, texType: String, bibliography: Option[String]) = {
-    val content = new SastToTexConverter(analyzed).sastToTex(sast)
+  def wrap(content: Seq[String], analyzed: AnalyzeResult, texType: String, bibliography: Option[String]) = {
     val authors = analyzed.named.get("authors").toList.flatMap {aut =>
       Parse.paragraph(aut).right.get.collect{
         case Macro("author", attributes) => (attributes.head.value, attributes.last.value)

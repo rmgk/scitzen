@@ -36,7 +36,9 @@ object Sast {
 
 object SastAnalyzes {
   case class Target(id: String, resolution: Sast)
-  case class AnalyzeResult(attributes: List[Attribute], macros: List[Macro], targets: List[Target]) {
+  case class AnalyzeResult(attributes: List[Attribute],
+                           macros: List[Macro],
+                           targets: List[Target]) {
     def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
     def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)

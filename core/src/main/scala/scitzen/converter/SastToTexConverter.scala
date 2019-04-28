@@ -12,7 +12,10 @@ class NestingLevel(val i: Int) extends AnyVal {
 }
 
 
-class SastToTexConverter(analyzeResult: AnalyzeResult) {
+class SastToTexConverter(analyzeResult: AnalyzeResult,
+                         reldir: String = "",
+                         imagemap: Map[String, String] = Map()) {
+  val reldir2 = if(reldir.isBlank) "" else reldir +"/"
 
   def sastToTex(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
     b match {
@@ -48,7 +51,15 @@ class SastToTexConverter(analyzeResult: AnalyzeResult) {
       case MacroBlock(mcro) => mcro match {
         case Macro("image", attributes) =>
           val target = attributes.last.value
-          List(s"\\includegraphics{$target}")
+          val imagepath = imagemap.getOrElse(s"$reldir2$target", target)
+          scribe.info(s"resolving $target in $reldir, resulted in $imagepath")
+
+          println()
+          List(
+            "",
+            s"\\includegraphics[width=\\columnwidth]{$imagepath}",
+            "",
+            )
 
         case Macro("label", attributes) => List(s"\\label{${attributes.last.value}}")
         case other =>
@@ -70,8 +81,9 @@ class SastToTexConverter(analyzeResult: AnalyzeResult) {
 
       case RawBlock(delimiter, text) =>
         delimiter.charAt(0) match {
-          case '`' | '.' =>
+          case '`'  =>
             List(s"\\begin{lstlisting}", text, "\\end{lstlisting}")
+          case '.' => List(text.replaceAllLiterally("\n", "\\\\\n").replaceAllLiterally("_", "\\_"))
         }
 
 

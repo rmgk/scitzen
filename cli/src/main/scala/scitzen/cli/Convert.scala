@@ -9,7 +9,7 @@ import com.monovore.decline.{Command, Opts}
 import scalatags.Text.attrs.id
 import scalatags.Text.implicits.stringAttr
 import scalatags.Text.tags.{SeqFrag, frag, li, ol}
-import scitzen.converter.SastToHtmlConverter
+import scitzen.converter.{NestingLevel, SastToHtmlConverter, SastToTexConverter}
 import scitzen.parser.ParsingAnnotation
 import scitzen.semantics.{SastAnalyzes, SastConverter}
 import scribe.Logger
@@ -61,19 +61,13 @@ object Convert {
               source.copyTo(targetdir / (targetname + ".bib"), overwrite = true)
               targetname
             }
-            targetFile.write(TexPages.wrap(analyzed,
-                                           sast,
+            val content = new SastToTexConverter(analyzed).sastToTex(sast)
+
+            targetFile.write(TexPages.wrap(content,
+                                           analyzed,
                                            makeTex.get,
                                            bibName))
-            scala.sys.process.Process(List("latexmk",
-                                           "-cd",
-                                           "-f",
-                                           "-pdf",
-                                           "-interaction=nonstopmode",
-                                           "-synctex=1",
-                                           "--output-directory=" + targetdir./("output"),
-                                           "--jobname=" + name,
-                                           targetFile.pathAsString)).!
+            latexmk(targetdir, name, targetFile)
           }
           else {
             val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
@@ -88,13 +82,7 @@ object Convert {
         }
         else if (sourcedir.isDirectory) {
 
-
-
           val asciiData = new PostFolder(sourcedir.path)
-
-          val postdir = targetdir / "posts"
-          postdir.createDirectories()
-
           def allAdocFiles(): List[File] = sourcedir.glob("**.{scim,adoc}").toList
 
           val posts = allAdocFiles().map { f: File =>
@@ -102,45 +90,69 @@ object Convert {
             f.path -> asciiData.makePost(f.path)
           }
 
-
           scribe.info(s"found ${posts.size} posts")
           scribe.info(s"converting to $targetdir")
 
-          var categoriesAndMore: Map[String, Set[String]] = Map()
+          if (makeTex.isDefined) {
 
-          for ((path, post) <- posts) {
-            try {
-              scribe.trace(s"converting s${post.title}")
-              val targetPath = postdir / asciiData.targetPath(path)
-              targetPath.parent.createDirectories()
-              val relpath = targetPath.parent.relativize(targetdir)
+            val name = sourcedir.nameWithoutExtension
+            val targetFile = targetdir / (name + ".tex")
+            val imagedir = targetdir / "images"
+            val imagemap = normalizeImages(sourcedir, imagedir)
+            val content = for { (path, post) <- posts.sortBy(_._2.date)
+              sast = SastConverter.blockSequence(post.document.blocks)
+              analyzed = SastAnalyzes.analyze(sast)
+              reldir = sourcedir.relativize(path.getParent).toString
+              content <- new SastToTexConverter(analyzed, reldir, imagemap).sastToTex(sast)(new NestingLevel(2))
+            } yield content
+            targetFile.write(TexPages.wrap(s"\\graphicspath{{$imagedir/}}" +: content,
+                                           SastAnalyzes.AnalyzeResult(Nil, Nil, Nil),
+                                           makeTex.get,
+                                           None))
+            latexmk(targetdir, name, targetFile)
 
-              val sast = SastConverter.blockSequence(post.document.blocks)
-              val analyzed = SastAnalyzes.analyze(sast)
-              val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed).sastToHtml(sast)
 
-              targetPath.write(Pages(s"$relpath/").wrapContentHtml(analyzed.language, content))
-            }
-            catch {
-              case e @ ParsingAnnotation(content, failure) =>
-                println(s"error while parsing $path")
-                val trace = failure
-                println(trace.msg)
-                println(trace.longMsg)
-                println(s"========\n$content\n========")
-                throw e
-              case NonFatal(other) =>
-                scribe.error(s"error while parsing $path")
-                throw other
-            }
-
-            // collect attributes
-            for (attribute <- post.attributes) {
-              val category = attribute._1
-              val categoryContents = categoriesAndMore.getOrElse(category, Set.empty)
-              categoriesAndMore = categoriesAndMore + (category -> (categoryContents + attribute._2))
-            }
           }
+          else {
+            val postdir = targetdir / "posts"
+            postdir.createDirectories()
+
+            var categoriesAndMore: Map[String, Set[String]] = Map()
+
+            for ((path, post) <- posts) {
+              try {
+                scribe.trace(s"converting s${post.title}")
+                val targetPath = postdir / asciiData.targetPath(path)
+                targetPath.parent.createDirectories()
+                val relpath = targetPath.parent.relativize(targetdir)
+
+                val sast = SastConverter.blockSequence(post.document.blocks)
+                val analyzed = SastAnalyzes.analyze(sast)
+                val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed).sastToHtml(
+                  sast)
+
+                targetPath.write(Pages(s"$relpath/").wrapContentHtml(analyzed.language, content))
+              }
+              catch {
+                case e @ ParsingAnnotation(content, failure) =>
+                  println(s"error while parsing $path")
+                  val trace = failure
+                  println(trace.msg)
+                  println(trace.longMsg)
+                  println(s"========\n$content\n========")
+                  throw e
+                case NonFatal(other)                         =>
+                  scribe.error(s"error while parsing $path")
+                  throw other
+              }
+
+              // collect attributes
+              for (attribute <- post.attributes) {
+                val category = attribute._1
+                val categoryContents = categoriesAndMore.getOrElse(category, Set.empty)
+                categoriesAndMore = categoriesAndMore + (category -> (categoryContents + attribute._2))
+              }
+            }
 
 //        categoriesAndMore.foreach{ c =>
 //          println(c._1)
@@ -149,11 +161,12 @@ object Convert {
 //        }
 
 
-          targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
+            targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
 
 
-          copyImages(sourcedir, postdir)
+            copyImages(sourcedir, postdir)
 
+          }
         }
         scribe.info("copy static resources")
         (targetdir / "scitzen.css").writeByteArray(stylesheet)
@@ -161,16 +174,41 @@ object Convert {
   }
 
 
+  private def latexmk(outputdir: File, jobname: String, sourceFile: File): Int = {
+    scala.sys.process.Process(List("latexmk",
+                                   "-cd",
+                                   "-f",
+                                   "-xelatex",
+                                   "-pdf",
+                                   "-interaction=nonstopmode",
+                                   "-synctex=1",
+                                   "--output-directory=" + outputdir./("output"),
+                                   "--jobname=" + jobname,
+                                   sourceFile.pathAsString)).!
+  }
+  def allImages(sourcedir: File): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png,svg}").toList
+
   def copyImages(sourcedir: File, targetdir: File): Unit = {
     //TODO: may want to copy all linked files, instead of all images
-    def allImages(): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png,svg}").toList
 
-    allImages().foreach { sourceImage =>
+    allImages(sourcedir).foreach { sourceImage =>
       val relimage = sourcedir.relativize(sourceImage)
       val targetfile = targetdir / relimage.toString
       scribe.trace(s"copy $sourceImage to $targetfile")
       targetfile.parent.createDirectories()
       sourceImage.copyTo(targetfile, overwrite = true)
     }
+  }
+  def normalizeImages(sourcedir: File, targetdir: File): Map[String, String] = {
+    var names = 0
+    targetdir.createDirectories()
+    allImages(sourcedir).map{ sourceImage =>
+      val targetname = names.toString + sourceImage.extension.getOrElse("")
+      names = names + 1
+      val targetfile = targetdir / targetname
+      scribe.trace(s"copy $sourceImage to $targetfile")
+      sourceImage.copyTo(targetfile, overwrite = true)
+      sourcedir.relativize(sourceImage).toString -> targetname
+    }.toMap
   }
 }
