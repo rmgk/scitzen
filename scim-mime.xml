@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+ <mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+   <mime-type type="text/x-scitzen-markup">  
+   <comment>A simple markup format for semantic content.</comment>
+   <glob pattern="*.scim"/>
+  </mime-type>
+ </mime-info>
