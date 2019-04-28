@@ -85,17 +85,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           div(stringFrag(other.toString))
       }
 
-      case ParsedBlock(delimiter, content) =>
-        if (delimiter == "") p(sastToHtml(content))
+      case ParsedBlock(delimiter, blockContent) =>
+        if (delimiter == "") p(sastToHtml(blockContent))
         else delimiter.charAt(0) match {
 
-          case '=' => blockquote(sastToHtml(content))
+          case '=' => blockquote(sastToHtml(blockContent))
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case ' ' => sastToHtml(content)
+          case ' ' => sastToHtml(blockContent)
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
-          case _   => div(delimiter, br, sastToHtml(content), br, delimiter)
+          case _   => div(delimiter, br, sastToHtml(blockContent), br, delimiter)
         }
 
       case RawBlock(delimiter, text) =>
