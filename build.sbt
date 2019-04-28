@@ -19,7 +19,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure)
                   scalatest,
                   scalacheck,
                   pprint,
-                  rmgkLogging,
                   cats,
                   scribe
                 )
