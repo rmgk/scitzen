@@ -3,6 +3,8 @@ package scitzen.semantics
 import scitzen.parser._
 import scitzen.semantics.Sast._
 
+import scala.util.control.NonFatal
+
 sealed trait Sast
 
 object Sast {
@@ -181,7 +183,15 @@ final class SastConverter(includeResolver: String => String) {
       case AttributeBlock(attribute) => AttributeDef(attribute)
 
       case Macro("include", attributes) =>
-        documentString(includeResolver(attributes.head.value))
+        val incfile = attributes.head.value
+        try {
+          documentString(includeResolver(incfile))
+        }
+        catch {
+          case NonFatal(e) =>
+            scribe.warn(s"failed to include $incfile")
+            throw e
+        }
 
       case m: Macro => MacroBlock(m)
 
@@ -191,7 +201,7 @@ final class SastConverter(includeResolver: String => String) {
         if (delimiter == "") ParsedBlock("", inlineString(text))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)
-          case '=' | ' ' => ParsedBlock(delimiter, documentString(text))
+          case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text))
           case other     =>
             scribe.warn(s"mismatched block $delimiter: $text")
             Sseq(Nil)

@@ -66,14 +66,22 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
 
 
       case Slist(children) =>
-        if (children.isEmpty) Nil
-        else {
-          "\\begin{itemize}" +:
-          children.flatMap { child =>
-            s"\\item ${sastToTex(child.content).mkString("")}" +:
-            sastToTex(child.inner)
-          } :+
-          "\\end{itemize}"
+        children match {
+          case Nil => Nil
+          case SlistItem(m, _, _) :: _ if m.contains(":") =>
+            "\\begin{description}" +:
+            children.flatMap { child =>
+              s"\\item[${child.marker.replaceAllLiterally(":", "")}] ${sastToTex(child.content).mkString("")}" +:
+              sastToTex(child.inner)
+            } :+
+            "\\end{description}"
+          case other =>
+            "\\begin{itemize}" +:
+            children.flatMap { child =>
+              s"\\item ${sastToTex(child.content).mkString("")}" +:
+              sastToTex(child.inner)
+            } :+
+            "\\end{itemize}"
         }
 
       case MacroBlock(mcro) => mcro match {
@@ -128,6 +136,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
       case 2 => "chapter"
       case 3 => "section"
       case 4 => "subsection"
+      case 5 => "subsubsection"
     }}
     else { _.i match {
       case 1 => "title"
