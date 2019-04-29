@@ -32,7 +32,7 @@ object InlineParsers {
   }
 
   def comment[_: P]: P[Macro] = P(commentStart ~ untilI(eol, 0))
-                                .map(text => Macro("//", List(Attribute("", text))))
+                                .map(text => Macro("comment", List(Attribute("", text))))
 
   def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence.? ~ End)
                                             .map(_.getOrElse(Nil))

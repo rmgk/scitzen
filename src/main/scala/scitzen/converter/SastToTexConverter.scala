@@ -29,6 +29,8 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
     nomuch.replaceAllLiterally("»ℓ§«", "\\textbackslash{}")
   }
 
+
+
   def sastToTex(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
     b match {
 
@@ -39,22 +41,27 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
       case Text(inner) => List(inlineValuesToHTML(inner))
 
       case Section(title, secContent, secChildren) =>
-        val sec = nestingLevel.i match {
-          case 1 => "title"
-          case 2 => "section"
-          case 3 => "subsection"
-          case 4 => "paragraph"
-        }
+        val sec = sectioning(nestingLevel)
 
         def rec(block: Seq[Sast]): Seq[String] = block.flatMap(sastToTex(_)(nestingLevel.inc))
 
-        s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
-        (if (nestingLevel.i == 1) {
-          ("\\begin{abstract}" +:
+        def putAbstract: Seq[String] = {
+          (if (analyzeResult.named.getOrElse("layout", "").contains("acm")) {
+          "\\begin{abstract}" +:
            rec(secContent) :+
            "\\end{abstract}" :+
-           "\\maketitle") ++
-           rec(secChildren)
+           "\\maketitle"
+          } else {
+            "\\maketitle" +:
+            "\\begin{abstract}" +:
+            rec(secContent) :+
+            "\\end{abstract}"
+          }) ++ rec(secChildren)
+        }
+
+        s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
+        (if (nestingLevel.i == 1) {
+          putAbstract
         } else rec(secContent ++ secChildren))
 
 
@@ -115,6 +122,20 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
     }
   }
 
+  val sectioning:  NestingLevel => String =
+    if (analyzeResult.named.getOrElse("layout", "").contains("thesis")) { _.i match {
+      case 1 => "title"
+      case 2 => "chapter"
+      case 3 => "section"
+      case 4 => "subsection"
+    }}
+    else { _.i match {
+      case 1 => "title"
+      case 2 => "section"
+      case 3 => "subsection"
+      case 4 => "paragraph"
+    }
+  }
   def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
     case InlineText(str) => latexencode(str)
     case InlineQuote(q, inner2) =>
@@ -126,7 +147,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
         case '`' => s"\\texttt{$inner}"
         case '$' => s"$$$inner$$"
       }
-    case Macro("//", attributes) => ""
+    case Macro("comment", attributes) => ""
     case Macro("ref", attributes) => s"\\ref{${latexencode(attributes.last.value)}}"
     case Macro("cite", attributes) =>
       s"\\cite{${latexencode(attributes.last.value)}}"

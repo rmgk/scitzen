@@ -87,8 +87,8 @@ object SastAnalyzes {
   }
 }
 
-object ListConverter {
-  import scitzen.semantics.SastConverter.{block, inlineString}
+class ListConverter(val sastConverter: SastConverter) extends AnyVal {
+  import sastConverter.{block, inlineString}
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
     case Nil                    => Nil
@@ -135,7 +135,9 @@ object ListConverter {
   }
 }
 
-object SastConverter {
+final class SastConverter(includeResolver: String => String) {
+
+  private val ListConverter = new ListConverter(this)
 
   @scala.annotation.tailrec
   def sectionize(blocks: Seq[Block], accumulator: List[Section]): Seq[Section] = {
@@ -162,7 +164,7 @@ object SastConverter {
     (abstkt.map(block),  sectionize(sections, Nil))
   }
 
-  def blockSequence(blocks: Seq[Block]): Sast = {
+  def blockSequence(blocks: Seq[Block]): Sseqf = {
     val (content, children) = blockSequenceSections(blocks)
     Sseqf(content ++ children)
   }
@@ -177,6 +179,9 @@ object SastConverter {
       case ListBlock(items) => ListConverter.listToHtml(items)
 
       case AttributeBlock(attribute) => AttributeDef(attribute)
+
+      case Macro("include", attributes) =>
+        documentString(includeResolver(attributes.head.value))
 
       case m: Macro => MacroBlock(m)
 
@@ -201,7 +206,7 @@ object SastConverter {
   }
 
 
-  def documentString(blockContent: String): Sast = {
+  def documentString(blockContent: String): Sseqf = {
     blockSequence(Parse.document(blockContent).right.get.blocks)
   }
 

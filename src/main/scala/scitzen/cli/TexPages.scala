@@ -23,6 +23,16 @@ object TexPages {
 \widowpenalty=10000
 """
   }
+
+  def thesisHeader: String = {
+    """% !TEX jobname = report
+    % !TEX output_directory = output
+    \documentclass[a4paper, oneside]{memoir}
+    \clubpenalty=10000
+    \widowpenalty=10000
+    """
+  }
+
   def memoirPackages: List[String] = {
     List("[utf8x]{inputenc}", "{graphicx}", "{url}", "{verbatim}")
   }
@@ -37,22 +47,33 @@ object TexPages {
       s"""\\author{$name}
 \\affiliation{\\institution{$inst}}"""
     }
+
+    def importBibACM = {
+      bibliography.fold(List.empty[String]) { bib =>
+        List(s"\\bibliographystyle{ACM-Reference-Format}",
+             s"\\bibliography{$bib}")
+      }
+    }
+    def importBibNatbib = {
+      bibliography.fold(List.empty[String]) { bib =>
+        List(s"\\bibliographystyle{plain}",
+             s"\\bibliography{$bib}")
+      }
+    }
+
     (analyzed.named("layout").trim.toLowerCase match {
       case "acmconf" =>
         List(
           acmHeader,
           s"\\begin{document}"
-          ) ++ authorstrings ++ content ++
-           bibliography.fold(List.empty[String]){bib =>
-             List(s"\\bibliographystyle{ACM-Reference-Format}",
-             s"\\bibliography{$bib}")} :+
+          ) ++ authorstrings ++ content ++ importBibACM :+
            s"\\end{document}"
       case "memoir" =>
         (memoirHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
         content :+ s"\\end{document}"
       case "thesis" =>
-        (memoirHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
-        content :+ s"\\end{document}"
+        (thesisHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
+        content ++ importBibNatbib :+ s"\\end{document}"
 
     }).mkString("\n")
 

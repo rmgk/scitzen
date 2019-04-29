@@ -146,7 +146,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case '`' => code(inner)
       case '$' => span(raw((scala.sys.process.Process(s"npx katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!))
     }
-    case Macro("//", attributes) => frag()
+    case Macro("comment", attributes) => frag()
     case Macro("ref", attributes) =>
       analyzeResult.targets.find(_.id == attributes.head.value).map {target =>
         target.resolution match {
