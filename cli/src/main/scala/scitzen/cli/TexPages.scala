@@ -27,7 +27,7 @@ object TexPages {
     List("[utf8x]{inputenc}", "{graphicx}", "{url}", "{verbatim}")
   }
 
-  def wrap(content: Seq[String], analyzed: AnalyzeResult, texType: String, bibliography: Option[String]): String = {
+  def wrap(content: Seq[String], analyzed: AnalyzeResult, bibliography: Option[String]): String = {
     val authors = analyzed.named.get("authors").toList.flatMap {aut =>
       Parse.paragraph(aut).right.get.collect{
         case Macro("author", attributes) => (attributes.head.value, attributes.last.value)
@@ -37,7 +37,7 @@ object TexPages {
       s"""\\author{$name}
 \\affiliation{\\institution{$inst}}"""
     }
-    (texType match {
+    (analyzed.named("layout").trim.toLowerCase match {
       case "acmconf" =>
         List(
           acmHeader,

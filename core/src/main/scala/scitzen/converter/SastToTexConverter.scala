@@ -38,16 +38,25 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
 
       case Text(inner) => List(inlineValuesToHTML(inner))
 
-      case Section(title, secContent) =>
+      case Section(title, secContent, secChildren) =>
         val sec = nestingLevel.i match {
           case 1 => "title"
           case 2 => "section"
           case 3 => "subsection"
           case 4 => "paragraph"
         }
+
+        def rec(block: Seq[Sast]): Seq[String] = block.flatMap(sastToTex(_)(nestingLevel.inc))
+
         s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
-        (if (nestingLevel.i == 1) "\\maketitle" else "") +:
-        sastToTex(secContent)(nestingLevel.inc)
+        (if (nestingLevel.i == 1) {
+          ("\\begin{abstract}" +:
+           rec(secContent) :+
+           "\\end{abstract}" :+
+           "\\maketitle") ++
+           rec(secChildren)
+        } else rec(secContent ++ secChildren))
+
 
       case Slist(children) =>
         if (children.isEmpty) Nil

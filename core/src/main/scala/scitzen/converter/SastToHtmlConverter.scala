@@ -55,10 +55,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case Text(inner) => inlineValuesToHTML(inner)
 
-      case Section(title, secContent) =>
+      case sec@Section(title, _, _) =>
         frag(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
-             if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(secContent)) else frag(),
-             sastToHtml(secContent)(nestingLevel.inc))
+             if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(sec.all)) else frag(),
+             sastToHtml(sec.all)(nestingLevel.inc))
 
       case Slist(children) =>
         if (children.isEmpty) frag()
@@ -130,7 +130,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     if (analyzeResult.attributes.exists(_.id == "toc")) {
       sectionContent match {
         case Sseqf(seq) => nav(ol(seq.collect {
-          case Section(title, _) => li(a(href := s"#${title.str}", title.str))
+          case Section(title, _, _) => li(a(href := s"#${title.str}", title.str))
         }))
         case other      => frag()
       }
@@ -150,7 +150,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     case Macro("ref", attributes) =>
       analyzeResult.targets.find(_.id == attributes.head.value).map {target =>
         target.resolution match {
-          case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
+          case Section(title, _, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
           case other =>
             scribe.error(s"can not refer to $other")
             frag()

@@ -17,7 +17,9 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, content: Sast) extends Sast
+  case class Section(title: Text, content: Seq[Sast], children: Seq[Section]) extends Sast {
+    lazy val all: Sast = Sseqf(content ++ children)
+  }
   case class MacroBlock(call: Macro) extends Sast
   case class RawBlock(delimiter: String, content: String) extends Sast
   case class ParsedBlock(delimiter: String, content: Sast) extends Sast
@@ -70,9 +72,9 @@ object SastAnalyzes {
       case InlineText(str)       => cacc
       case InlineQuote(q, inner) => cacc
     } }
-    case sec @ Section(title, content)         =>
+    case sec @ Section(title, _, _)         =>
       val target = Target(title.str, sec)
-      analyzeR(content, Some(target), acc + target)
+      analyzeR(sec.all, Some(target), acc + target)
     case AttributeDef(attribute)        => acc + attribute
     case MacroBlock(imacro)              => {
       val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.head.value, scope.get.resolution)
@@ -148,14 +150,21 @@ object SastConverter {
             case _                    => true
           }
         }
-        sectionize(next, Section(title, blockSequence(inner)) :: accumulator)
+        val (content, children) = blockSequenceSections(inner)
+        sectionize(next, Section(title, content, children) :: accumulator)
     }
   }
 
-  def blockSequence(blocks: Seq[Block]): Sast = {
-    val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
-    Sseq(abstkt.map(block) ++ sectionize(sections, Nil))
 
+
+  def blockSequenceSections(blocks: Seq[Block]): (Seq[Sast], Seq[Section]) = {
+    val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
+    (abstkt.map(block),  sectionize(sections, Nil))
+  }
+
+  def blockSequence(blocks: Seq[Block]): Sast = {
+    val (content, children) = blockSequenceSections(blocks)
+    Sseqf(content ++ children)
   }
 
 

@@ -24,7 +24,7 @@ object Convert {
                                     help = "Target output directory")
   val optBib = Opts.option[Path]("bibliography", short = "b", metavar = "file",
                                     help = "Bibliography").orNone
-  val optTex = Opts.option[String]("tex", help = "Generate tex output").orNone
+  val optTex = Opts.flag("tex", help = "Generate tex output").orFalse
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
@@ -52,7 +52,7 @@ object Convert {
           val bib = bibRel.toList.flatMap(Bibliography.parse)
           val analyzed = SastAnalyzes.analyze(sast)
           val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
-          if (makeTex.isDefined) {
+          if (makeTex) {
             val name = sourcedir.nameWithoutExtension
             val targetFile = targetdir / (name + ".tex")
             val bibName = bibRel.map{p =>
@@ -65,7 +65,6 @@ object Convert {
 
             targetFile.write(TexPages.wrap(content,
                                            analyzed,
-                                           makeTex.get,
                                            bibName))
             latexmk(targetdir, name, targetFile)
           }
@@ -93,7 +92,7 @@ object Convert {
           scribe.info(s"found ${posts.size} posts")
           scribe.info(s"converting to $targetdir")
 
-          if (makeTex.isDefined) {
+          if (makeTex) {
 
 
             val name = sourcedir.nameWithoutExtension
@@ -111,7 +110,6 @@ object Convert {
             } yield content
             targetFile.write(TexPages.wrap(s"\\graphicspath{{$imagedir/}}" +: content,
                                            SastAnalyzes.AnalyzeResult(Nil, Nil, Nil),
-                                           makeTex.get,
                                            None))
             latexmk(targetdir, name, targetFile)
 
