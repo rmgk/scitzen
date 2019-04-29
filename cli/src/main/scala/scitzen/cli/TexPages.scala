@@ -50,6 +50,9 @@ object TexPages {
       case "memoir" =>
         (memoirHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
         content :+ s"\\end{document}"
+      case "thesis" =>
+        (memoirHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
+        content :+ s"\\end{document}"
 
     }).mkString("\n")
 
