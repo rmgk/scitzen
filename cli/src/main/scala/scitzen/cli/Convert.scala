@@ -1,7 +1,7 @@
 package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import better.files._
 import cats.implicits._
@@ -49,13 +49,14 @@ object Convert {
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
           val sast = SastConverter.blockSequence(post.document.blocks)
-          val bib = bibRel.toList.flatMap(Bibliography.parse)
           val analyzed = SastAnalyzes.analyze(sast)
+          val bibPath = bibRel.orElse(analyzed.named.get("bib").map(p => Paths.get(p.trim)))
+          val bib = bibPath.toList.flatMap(Bibliography.parse)
           val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
           if (makeTex) {
             val name = sourcedir.nameWithoutExtension
             val targetFile = targetdir / (name + ".tex")
-            val bibName = bibRel.map{p =>
+            val bibName = bibPath.map{p =>
               val source = File(p)
               val targetname = source.nameWithoutExtension.replaceAll("\\s", "_")
               source.copyTo(targetdir / (targetname + ".bib"), overwrite = true)

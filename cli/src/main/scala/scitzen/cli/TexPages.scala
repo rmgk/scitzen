@@ -43,11 +43,10 @@ object TexPages {
           acmHeader,
           s"\\begin{document}"
           ) ++ authorstrings ++ content ++
-         List(
-           s"\\bibliographystyle{ACM-Reference-Format}",
-           bibliography.fold("")(bib => s"\\bibliography{$bib}"),
+           bibliography.fold(List.empty[String]){bib =>
+             List(s"\\bibliographystyle{ACM-Reference-Format}",
+             s"\\bibliography{$bib}")} :+
            s"\\end{document}"
-           )
       case "memoir" =>
         (memoirHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
         content :+ s"\\end{document}"
