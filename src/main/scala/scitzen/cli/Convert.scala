@@ -10,7 +10,7 @@ import scalatags.Text.attrs.id
 import scalatags.Text.implicits.stringAttr
 import scalatags.Text.tags.{SeqFrag, frag, li, ol}
 import scitzen.converter.{NestingLevel, SastToHtmlConverter, SastToTexConverter}
-import scitzen.parser.ParsingAnnotation
+import scitzen.parser.{Attribute, ParsingAnnotation}
 import scitzen.semantics.{SastAnalyzes, SastConverter}
 import scribe.Logger
 
@@ -119,7 +119,7 @@ object Convert {
               //})
             } yield content
             targetFile.write(TexPages.wrap(s"\\graphicspath{{$imagedir/}}" +: content,
-                                           SastAnalyzes.AnalyzeResult(Nil, Nil, Nil),
+                                           SastAnalyzes.AnalyzeResult(List(Attribute("layout", "memoir")), Nil, Nil),
                                            None))
             latexmk(targetdir, name, targetFile)
 
