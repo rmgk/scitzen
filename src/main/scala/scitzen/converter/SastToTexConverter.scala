@@ -102,7 +102,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
       }
 
       case ParsedBlock(delimiter, blockContent) =>
-        if (delimiter == "") sastToTex(blockContent)
+        if (delimiter == "") sastToTex(blockContent) :+ ""
         else delimiter.charAt(0) match {
           case '=' => sastToTex(blockContent)
           // space indented blocks are currently only used for description lists
