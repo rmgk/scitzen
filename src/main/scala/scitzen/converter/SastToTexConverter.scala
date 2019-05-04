@@ -15,7 +15,7 @@ class NestingLevel(val i: Int) extends AnyVal {
 class SastToTexConverter(analyzeResult: AnalyzeResult,
                          reldir: String = "",
                          imagemap: Map[String, String] = Map()) {
-  val reldir2 = if(reldir.isBlank) "" else reldir +"/"
+  val reldir2 = if(reldir.isEmpty) "" else reldir +"/"
 
   def latexencode(input: String): String = {
     val nobs = input.replaceAllLiterally("\\", "»ℓ§«")

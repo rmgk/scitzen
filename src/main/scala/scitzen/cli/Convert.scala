@@ -59,14 +59,13 @@ object Convert {
           val sast = new SastConverter(includeResolver).blockSequence(post.document.blocks)
           val analyzed = SastAnalyzes.analyze(sast)
           val bibPath = bibRel.orElse(analyzed.named.get("bib").map(p => Paths.get(p.trim)))
-                        .map(bp => sourcedir.parent./(bp.toString).path)
+                        .map(bp => sourcedir.parent./(bp.toString))
           val bib = bibPath.toList.flatMap(Bibliography.parse)
           val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
           if (makeTex) {
             val name = sourcedir.nameWithoutExtension
             val targetFile = targetdir / (name + ".tex")
-            val bibName = bibPath.map{p =>
-              val source = File(p)
+            val bibName = bibPath.map{source =>
               val targetname = source.nameWithoutExtension.replaceAll("\\s", "_")
               source.copyTo(targetdir / (targetname + ".bib"), overwrite = true)
               targetname

@@ -144,7 +144,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case '_' => em(inner)
       case '*' => strong(inner)
       case '`' => code(inner)
-      case '$' => span(raw((scala.sys.process.Process(s"npx katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!))
+      case '$' => span(raw((scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!))
     }
     case Macro("comment", attributes) => frag()
     case Macro("ref", attributes) =>

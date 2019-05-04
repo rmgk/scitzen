@@ -1,12 +1,9 @@
 package scitzen.cli
 
-import java.nio.file.Path
-
 import better.files.File
-import de.undercouch.citeproc.bibtex.BibTeXConverter
 import scalatags.Text.all._
 
-import scala.collection.JavaConverters._
+import scala.util.Try
 
 object Bibliography {
 
@@ -15,32 +12,61 @@ object Bibliography {
     def full = s"$given $family"
   }
 
+
   case class BibEntry(id: String,
                       authors: List[Author],
                       title: Option[String],
                       year: Option[Int],
-                      container: Option[String]) {
+                      container: Option[String],
+                      `type`: String) {
     def formatAuthors: Option[String] = {
       val res = authors.map(_.full).mkString(", ")
       if (res.nonEmpty) Some(res) else None
     }
-    def format: Frag = frag(formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
+    def format: Frag = frag(formatAuthors,
+                            ". ",
+                            br,
+                            em(title),
+                            ". ",
+                            br,
+                            container,
+                            ". ",
+                            year,
+                            ". ")
   }
 
-  def parse(source: Path): List[BibEntry] = {
-    val is = File(source).newFileInputStream
-    val btc = new BibTeXConverter()
-    val db = try {btc.loadDatabase(is)} finally {is.close()}
-    val itemdata = btc.toItemData(db)
-    itemdata.asScala.map { case (id, data) =>
-      val authors = Option(data.getAuthor)
-                    .fold(List.empty[Author])(_.map(a => Author(a.getGiven, a.getFamily)).toList)
-      val title = Option(data.getTitle)
-      val date = Option(data.getEventDate)
-                 .flatMap(_.getDateParts.headOption).flatMap(_.headOption)
-      val container = Option(data.getContainerTitle)
-      BibEntry(id, authors, title, date, container)
-    }.toList
 
+  def parse(source: File): List[BibEntry] = {
+    val jsonStr = scala.sys.process.Process(Seq("pandoc-citeproc",
+                                                "--bib2json",
+                                                source.pathAsString)).!!
+    ujson.read(jsonStr).arr.iterator.map { e =>
+      val obj = e.obj
+
+      def opt(v: ujson.Value) = Try {v.str}.toOption
+
+      val authors = {
+        obj.get("author").toList.flatMap {
+          _.arr.map(a => Author(given = a.obj("given").str, family = a.obj("family").str))
+        }
+      }
+
+      val year = {
+        for {
+          iss <- obj.get("issued")
+          parts <- iss.obj.get("date-parts")
+          first <- parts.arr.headOption
+          year <- first.arr.headOption
+        } yield year.num.toInt
+      }
+
+      BibEntry(id = obj("id").str,
+               authors = authors,
+               title = opt(obj("title")),
+               year = year,
+               container = obj.get("container-title").flatMap(opt),
+               `type` = obj("type").str
+               )
+    }.toList
   }
 }

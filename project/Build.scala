@@ -83,10 +83,11 @@ object Dependencies {
   val fastparse   = ld += "com.lihaoyi" %%% "fastparse" % "2.1.0"
   val jsoup       = ld += "org.jsoup" % "jsoup" % "1.11.3"
   val pprint      = ld += "com.lihaoyi" %%% "pprint" % "0.5.4"
+  val rmgkLogging = Def.settings(Resolvers.rmgk, ld += "de.rmgk" %%% "logging" % "0.2.1")
   val scalactic   = ld += "org.scalactic" %% "scalactic" % "3.0.7"
   val scribe      = ld += "com.outr" %%% "scribe" % "2.7.3"
-  val rmgkLogging = Def.settings(Resolvers.rmgk, ld += "de.rmgk" %%% "logging" % "0.2.1")
   val sourcecode  = ld += "com.lihaoyi" %%% "sourcecode" % "0.1.5"
+  val upickle     = ld += "com.lihaoyi" %% "upickle" % "0.7.1"
 
   val akkaHttp = ld ++= (Seq("akka-http-core",
                              "akka-http")

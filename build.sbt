@@ -13,10 +13,7 @@ lazy val scitzen = project.in(file("."))
                      Compile / resources ++= (Assets / SassKeys.sassify).value,
                      resolvers += Resolver.sonatypeRepo("public"),
                      libraryDependencies ++= Seq(
-                       "de.undercouch" % "citeproc-java" % "1.0.1",
                        "com.vdurmont" % "emoji-java" % "4.0.0"
-                       //"org.citationstyles"% "styles" % "1.0.1-SNAPSHOT",
-                       //"org.citationstyles"% "locales" % "1.0.1-SNAPSHOT"
                        ),
                      strictCompile,
                      decline,
@@ -28,6 +25,7 @@ lazy val scitzen = project.in(file("."))
                      scalacheck,
                      pprint,
                      cats,
+                     upickle,
                      scribe,
                      SassKeys.cssStyle := Maxified,
                      normalizecss
