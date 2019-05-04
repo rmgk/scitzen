@@ -4,12 +4,13 @@ import better.files.File
 import scalatags.Text.all._
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
 object Bibliography {
 
 
-  case class Author(given: String, family: String) {
-    def full = s"$given $family"
+  case class Author(given: Option[String], family: Option[String]) {
+    def full = given.fold("")(_ + " ") + family.getOrElse("")
   }
 
 
@@ -45,28 +46,35 @@ object Bibliography {
 
       def opt(v: ujson.Value) = Try {v.str}.toOption
 
-      val authors = {
-        obj.get("author").toList.flatMap {
-          _.arr.map(a => Author(given = a.obj("given").str, family = a.obj("family").str))
+      val id = obj("id").str
+      try {
+        val authors = {
+          obj.get("author").toList.flatMap {
+            _.arr.map(a => Author(given = a.obj.get("given").map(_.str), family = a.obj.get("family").map(_.str)))
+          }
         }
-      }
 
-      val year = {
-        for {
-          iss <- obj.get("issued")
-          parts <- iss.obj.get("date-parts")
-          first <- parts.arr.headOption
-          year <- first.arr.headOption
-        } yield year.num.toInt
-      }
+        val year = {
+          for {
+            iss <- obj.get("issued")
+            parts <- iss.obj.get("date-parts")
+            first <- parts.arr.headOption
+            year <- first.arr.headOption
+          } yield year.num.toInt
+        }
 
-      BibEntry(id = obj("id").str,
-               authors = authors,
-               title = opt(obj("title")),
-               year = year,
-               container = obj.get("container-title").flatMap(opt),
-               `type` = obj("type").str
-               )
+        BibEntry(id = id,
+                 authors = authors,
+                 title = opt(obj("title")),
+                 year = year,
+                 container = obj.get("container-title").flatMap(opt),
+                 `type` = obj("type").str
+                 )
+      } catch {
+        case NonFatal(e) =>
+          scribe.error(s"error while converting bib $id")
+          throw e
+      }
     }.toList
   }
 }
