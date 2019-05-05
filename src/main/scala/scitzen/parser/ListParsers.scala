@@ -9,28 +9,29 @@ import scitzen.parser.CommonParsers._
  */
 object ListParsers {
 
-  def descriptionItemStart[_:P]: P[String] = P(untilE("::" | eol) ~ ":".rep(2))
+  def descriptionMarker[_:P]: P[String] = P(untilE("::" | eol) ~ ":".rep(2)).!
 
   def simpleMarker [_:P]: P[String] = P(verticalSpaces
                        ~ ("-"
                           | "*".rep(1)
                           | (digits.? ~ ".".rep(1))
-                          | descriptionItemStart)
+                          | descriptionMarker)
                        ~ verticalSpace).!
 
-  def listContent [_:P]: P[String] = P(untilE(eol ~ (spaceLine | simpleMarker | descriptionItemStart).map(_ => ())) ~ eol)
+  def listContent [_:P]: P[String] = P(untilE(eol ~ (spaceLine | simpleMarker | descriptionMarker).map(_ => ())) ~ eol)
 
   def simpleListItem [_:P]: P[ListItem] = P((simpleMarker ~/ listContent.map(NormalBlock("", _)))
                          .map((ListItem.apply _).tupled))
 
-  def indentedDescriptionMarker [_:P]: P[String] = P(descriptionItemStart.! ~ newline)
 
-  def descriptionListItem[_:P]: P[ListItem] = P(indentedDescriptionMarker ~
-                                                ((spaceLine.rep(0) ~
+  def descriptionListItem[_:P]: P[ListItem] = P(descriptionMarker ~
+                                                ((spaceLine.rep(1) ~
                                                   DelimitedBlockParsers.whitespaceLiteral).map(Right(_)) |
                                                  listContent.map(Left(_))))
                                               .map {
-                                                case (m, Right(b)) => ListItem(m, b)
+                                                case (m, Right(b)) =>
+                                                  scribe.info(s"marker $m")
+                                                  ListItem(m, b)
                                                 case (m, Left(c)) => ListItem(m, NormalBlock("", c))
                                               }
 

@@ -19,10 +19,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
   def listItemToHtml(child: SlistItem)(implicit nestingLevel: NestingLevel) = {
-    li(
-      sastToHtml(child.content),
-      sastToHtml(child.inner)
-      )
+      List(sastToHtml(child.content),
+      sastToHtml(child.inner))
   }
 
   def tMeta() = {
@@ -60,11 +58,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
              if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(subsections)) else frag(),
              sastToHtml(subsections)(nestingLevel.inc))
 
+      case Slist(Nil) => frag()
       case Slist(children) =>
-        if (children.isEmpty) frag()
+        if (children.head.marker.contains(":")) {
+          dl(children.flatMap(c => List(dt(c.marker), dd(listItemToHtml(c)))))
+        }
         else {
           val listTag = if (children.head.marker.contains(".")) ol else ul
-          listTag(children.map(listItemToHtml))
+
+          listTag(children.map(c => li(listItemToHtml(c))))
         }
 
       case MacroBlock(mcro) => mcro match {

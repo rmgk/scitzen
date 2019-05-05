@@ -93,7 +93,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
       (item -> take.map(_._2)) +: splitted(drop)
   }
 
-  def listToHtml(items: Seq[ListItem]): Slist = {
+  def listtoSast(items: Seq[ListItem]): Slist = {
     def norm(m: String) = m.replaceAll("""[^\*\.:-]""", "")
 
     val split = splitted(items.map(i => (norm(i.marker), i)))
@@ -112,7 +112,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
       List(
         SlistItem(item.marker,
                   blockContent(item.content),
-                  listToHtml(contents)
+                  listtoSast(contents)
                   ))
     }
     Slist(listItems)
@@ -124,7 +124,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
   private def definitionListItem(item: ListItem, contents: Seq[ListItem]): SlistItem = {
     SlistItem(item.marker,
               blockContent(item.content),
-              listToHtml(contents)
+              listtoSast(contents)
               )
   }
 }
@@ -166,7 +166,7 @@ final class SastConverter(includeResolver: String => String) {
       case SectionTitle(level, title) =>
         throw new IllegalStateException("sections should be out already …")
 
-      case ListBlock(items) => ListConverter.listToHtml(items)
+      case ListBlock(items) => ListConverter.listtoSast(items)
 
       case AttributeBlock(attribute) => AttributeDef(attribute)
 
