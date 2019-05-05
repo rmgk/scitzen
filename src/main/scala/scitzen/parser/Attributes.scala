@@ -20,7 +20,7 @@ object Attributes {
                                          .map(v => Attribute("", v))
   def listElement  [_:P]: P[Attribute] = P(listDef | listValue)
   def list         [_:P]: P[Seq[Attribute]] =
-    P(open ~ anySpaces ~ listElement.rep(sep = anySpaces ~ ";" ~ anySpaces) ~ ";".? ~ anySpaces ~ close)
+    P(open ~ anySpaces ~ listElement.rep(sep = ";") ~ close)
   def line         [_:P]: P[Seq[Attribute]] = P(list ~ spaceLine)
 }
 
