@@ -117,7 +117,8 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
         }
 
       case RawBlock(delimiter, text) =>
-        delimiter.charAt(0) match {
+        if (delimiter.isEmpty) Nil
+        else delimiter.charAt(0) match {
           case '`'  =>
             List(s"\\begin{verbatim}", text, "\\end{verbatim}")
           case '.' => List(latexencode(text).replaceAllLiterally("\n", "\\newline{}\n"))
