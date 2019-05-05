@@ -31,7 +31,7 @@ object SastToScimConverter {
         toScim(sc)(nestingLevel.inc)
 
       case Slist(children) => children.flatMap {
-        case SlistItem(marker, Seq(ParsedBlock("", Seq(Text(inl))))) =>
+        case SlistItem(marker, Seq(Text(inl))) =>
           List(s"$marker" + inlineToScim(inl))
         case SlistItem(marker, inner) =>
           marker +: toScim(inner)
