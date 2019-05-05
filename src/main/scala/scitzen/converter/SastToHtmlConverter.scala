@@ -93,7 +93,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         }
 
       case RawBlock(delimiter, text) =>
-        delimiter.charAt(0) match {
+        if (delimiter.isEmpty) ""
+        else delimiter.charAt(0) match {
           // Code listing
           // Use this for monospace, space preserving, line preserving text
           // It may wrap to fit the screen content
