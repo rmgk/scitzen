@@ -50,7 +50,7 @@ object SastToScimConverter {
                              .map(line => s"$delimiter$line").toList
         }
 
-      case RawBlock("", text) => text.split("\n", -1).dropRight(1)
+      case RawBlock("", text) => List.fill(text.count(_ == '\n'))("")
       case RawBlock(delimiter, text) => List(delimiter, text, delimiter)
 
 
