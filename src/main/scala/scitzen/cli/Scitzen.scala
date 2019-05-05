@@ -9,5 +9,6 @@ object Scitzen extends CommandApp(
     Opts.subcommand(Convert.command)
     .orElse(Opts.subcommand(Rename.command))
     .orElse(Opts.subcommand(JsonSast.command))
+    .orElse(Opts.subcommand(Format.command))
   }
 )
