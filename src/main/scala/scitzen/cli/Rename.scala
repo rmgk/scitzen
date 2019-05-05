@@ -8,15 +8,6 @@ import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.parser.{Parse, DateParsingHelper, Document}
 
-object Tool {
-  def sluggify(str: String): String =
-    str
-    .trim
-    .replace("'", "")
-    .replaceAll("""[^\p{L}\d]""", "-")
-    .replaceAll("-+", "-")
-    .replaceAll("^-|-$", "")
-}
 
 object Rename {
 
@@ -48,7 +39,16 @@ object Rename {
 
   def nameFromHeader(header: Document): String = {
     val date = DateParsingHelper.parseDate(header.named("revdate").trim)
-    val title = Tool.sluggify(header.title) + ".scim"
+    val title = sluggify(header.title) + ".scim"
     date.date.full + "_" + title
   }
+
+  def sluggify(str: String): String =
+    str
+    .trim
+    .replace("'", "")
+    .replaceAll("""[^\p{L}\d]""", "-")
+    .replaceAll("-+", "-")
+    .replaceAll("^-|-$", "")
+
 }

@@ -30,6 +30,14 @@ object Convert {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
   }
 
+  def includeBelow(sourcedir: File)(include: String): String = {
+    val source = if (sourcedir.isDirectory) sourcedir else sourcedir.parent
+    val incudeF = source./(include)
+    if (incudeF.isChildOf(source)) {
+      incudeF.contentAsString
+    } else ""
+  }
+
 
   val command: Command[Unit] = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput, optBib, optTex).mapN {
@@ -46,17 +54,11 @@ object Convert {
         scribe.info(s"processing $sourcedir")
         scribe.info(s"to $targetdir")
 
-        def includeResolver(include: String): String = {
-          val source = if (sourcedir.isDirectory) sourcedir else sourcedir.parent
-          val incudeF = source./(include)
-          if (incudeF.isChildOf(source)) {
-            incudeF.contentAsString
-          } else ""
-        }
+
 
         if (sourcedir.isRegularFile) {
           val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
-          val sast = new SastConverter(includeResolver).blockSequence(post.document.blocks)
+          val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
           val analyzed = SastAnalyzes.analyze(sast)
           val bibPath = bibRel.orElse(analyzed.named.get("bib").map(p => Paths.get(p.trim)))
                         .map(bp => sourcedir.parent./(bp.toString))
@@ -109,7 +111,7 @@ object Convert {
             val imagedir = targetdir / "images"
             val imagemap = normalizeImages(sourcedir, imagedir)
             val content = for { (path, post) <- posts.sortBy(_._2.date)
-              sast = new SastConverter(includeResolver).blockSequence(post.document.blocks)
+              sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
               analyzed = SastAnalyzes.analyze(sast)
               reldir = sourcedir.relativize(path.getParent).toString
               content <- new SastToTexConverter(analyzed, reldir, imagemap).sastToTex(sast)(new NestingLevel(2))
@@ -137,7 +139,7 @@ object Convert {
                 targetPath.parent.createDirectories()
                 val relpath = targetPath.parent.relativize(targetdir)
 
-                val sast = new SastConverter(includeResolver).blockSequence(post.document.blocks)
+                val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
                 val analyzed = SastAnalyzes.analyze(sast)
                 val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed).sastToHtml(
                   sast)
