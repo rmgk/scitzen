@@ -13,18 +13,21 @@ object Format {
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
 
-
   val command: Command[Unit] = Command(name = "format",
                                        header = "Convert Scim to Scim") {
 
     Opts.arguments[Path](metavar = "paths").map {
-      _.map(File(_))
-       .filter(_.isRegularFile)
+      _.toList.iterator
+       .map(File(_))
+       .flatMap {
+         case f if f.isRegularFile => List(f)
+         case f if f.isDirectory   => f.glob("**.{scim,adoc}").toList
+       }.filter(_.isRegularFile)
        .foreach { file =>
          val content = file.contentAsString
          val sast = new SastConverter(Convert.includeBelow(file)).documentString(content)
          val result = SastToScimConverter.toScim(sast)
-         file.write(result.mkString("\n"))
+         file.write(result.mkString("", "\n", "\n"))
        }
     }
 
