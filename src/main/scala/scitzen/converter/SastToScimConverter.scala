@@ -46,8 +46,11 @@ object SastToScimConverter {
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' | '\t' => toScim(blockContent).iterator
-                             .flatMap(line => line.split("\n"))
-                             .map(line => s"$delimiter$line").toList
+                             .flatMap(line => line.split("\n", -1))
+                             .map{
+                               case line if line.forall(_.isWhitespace) => ""
+                               case line => s"$delimiter$line"
+                             }.toList
         }
 
       case RawBlock("", text) => List.fill(text.count(_ == '\n'))("")
