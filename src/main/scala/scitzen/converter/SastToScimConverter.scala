@@ -9,9 +9,9 @@ object SastToScimConverter {
 
 
   def attributesToScim(attributes: Seq[Attribute]): String = attributes.map {
-    case Attribute("", v) if !v.contains(";") => v
-    case Attribute("", v)                     => s""""$v""""
-    case Attribute(k, v)                      => s"""$k="$v""""
+    case Attribute("", v) if !(v.contains(";") || v.contains("\n")) => v
+    case Attribute("", v)                       => s""""$v""""
+    case Attribute(k, v)                        => s"""$k="$v""""
   }.mkString("[", ";", "]")
 
   def toScim(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
@@ -22,13 +22,13 @@ object SastToScimConverter {
       case Text(inner) => List(inlineToScim(inner))
 
       case Sections(secContent, secChildren) =>
-        def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_)(nestingLevel.inc))
+        def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_))
         rec(secContent) ++ rec(secChildren)
 
 
       case Section(title, sc) =>
         ("=" * nestingLevel.i + " " + inlineToScim(title.inline)) +:
-        toScim(sc)
+        toScim(sc)(nestingLevel.inc)
 
       case Slist(children) => children.flatMap {
         case SlistItem(marker, ParsedBlock("", Text(inl)), inner) =>
