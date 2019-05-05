@@ -32,8 +32,8 @@ object SastToScimConverter {
       case Slist(children) => children.flatMap {
         case SlistItem(marker, ParsedBlock("", Text(inl)), inner) =>
           (s"$marker" + inlineToScim(inl)) +: toScim(inner)
-        case SlistItem(marker, content, inner) =>
-          throw new IllegalStateException("soooo … whats this?" + content)
+        case SlistItem(marker, block, inner) =>
+          marker +: (toScim(block) ++ toScim(inner))
       }
 
       case MacroBlock(mcro) => List(macroToScim(mcro))
@@ -44,7 +44,9 @@ object SastToScimConverter {
           case '=' => delimiter +: toScim(blockContent) :+ delimiter
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case ' ' => toScim(blockContent).map(line => s"$delimiter$line")
+          case ' ' | '\t' => toScim(blockContent).iterator
+                             .flatMap(line => line.split("\n"))
+                             .map(line => s"$delimiter$line").toList
         }
 
       case RawBlock(delimiter, text) => List(delimiter, text, delimiter)

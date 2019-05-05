@@ -23,7 +23,7 @@ object ListParsers {
   def simpleListItem [_:P]: P[ListItem] = P((simpleMarker.! ~/ listContent.map(NormalBlock("", _)))
                          .map((ListItem.apply _).tupled))
 
-  def indentedDescriptionMarker [_:P]: P[String] = P((descriptionItemStart ~ newline).!)
+  def indentedDescriptionMarker [_:P]: P[String] = P(descriptionItemStart.! ~ newline)
 
   def descriptionListItem[_:P]: P[ListItem] = P(indentedDescriptionMarker ~
                                                 ((spaceLine.rep(0) ~
