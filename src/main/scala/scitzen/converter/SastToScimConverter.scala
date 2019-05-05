@@ -17,17 +17,18 @@ object SastToScimConverter {
   def toScim(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
     b match {
 
-      case Sseqf(inner) => inner.flatMap(toScim)
-
       case AttributeDef(a) => List(s":${a.id}:${a.value}")
 
       case Text(inner) => List(inlineToScim(inner))
 
-      case Section(title, secContent, secChildren) =>
+      case Sections(secContent, secChildren) =>
         def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_)(nestingLevel.inc))
+        rec(secContent) ++ rec(secChildren)
 
+
+      case Section(title, sc) =>
         ("=" * nestingLevel.i + " " + inlineToScim(title.inline)) +:
-        (rec(secContent) ++ rec(secChildren))
+        toScim(sc)
 
       case Slist(children) => children.flatMap {
         case SlistItem(marker, ParsedBlock("", Text(inl)), inner) =>
@@ -49,6 +50,7 @@ object SastToScimConverter {
                              .map(line => s"$delimiter$line").toList
         }
 
+      case RawBlock("", text) => List()
       case RawBlock(delimiter, text) => List(delimiter, text, delimiter)
 
 

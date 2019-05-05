@@ -34,13 +34,13 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
   def sastToTex(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
     b match {
 
-      case Sseqf(inner) => inner.flatMap(sastToTex)
+      case inner : Sections => inner.all.flatMap(sastToTex)
 
       case AttributeDef(_) => Nil
 
       case Text(inner) => List(inlineValuesToHTML(inner))
 
-      case Section(title, secContent, secChildren) =>
+      case Section(title, Sections(secContent, secChildren)) =>
         val sec = sectioning(nestingLevel)
 
         def rec(block: Seq[Sast]): Seq[String] = block.flatMap(sastToTex(_)(nestingLevel.inc))
@@ -64,6 +64,9 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
           putAbstract
         } else rec(secContent ++ secChildren))
 
+      case Section(title, content) =>
+        val sec = sectioning(nestingLevel)
+        s"\\$sec{${inlineValuesToHTML(title.inline)}}" +: sastToTex(content)
 
       case Slist(children) =>
         children match {

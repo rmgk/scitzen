@@ -49,16 +49,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   def sastToHtml(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Frag = {
     b match {
 
-      case Sseqf(inner) => SeqFrag(inner.map(sastToHtml))
+      case inner : Sections => SeqFrag(inner.all.map(sastToHtml))
 
       case AttributeDef(_) => frag()
 
       case Text(inner) => inlineValuesToHTML(inner)
 
-      case sec@Section(title, _, _) =>
+      case sec@Section(title, subsections) =>
         frag(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
-             if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(sec.all)) else frag(),
-             sastToHtml(sec.all)(nestingLevel.inc))
+             if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(subsections)) else frag(),
+             sastToHtml(subsections)(nestingLevel.inc))
 
       case Slist(children) =>
         if (children.isEmpty) frag()
@@ -129,8 +129,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   private def tableOfContents(sectionContent: Sast): Frag = {
     if (analyzeResult.attributes.exists(_.id == "toc")) {
       sectionContent match {
-        case Sseqf(seq) => nav(ol(seq.collect {
-          case Section(title, _, _) => li(a(href := s"#${title.str}", title.str))
+        case Sections(abtrkt, subsections) => nav(ol(subsections.map {
+          case Section(title, _) => li(a(href := s"#${title.str}", title.str))
         }))
         case other      => frag()
       }
@@ -150,7 +150,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     case Macro("ref", attributes) =>
       analyzeResult.targets.find(_.id == attributes.head.value).map {target =>
         target.resolution match {
-          case Section(title, _, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
+          case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
           case other =>
             scribe.error(s"can not refer to $other")
             frag()

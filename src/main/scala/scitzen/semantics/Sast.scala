@@ -19,23 +19,15 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, content: Seq[Sast], children: Seq[Section]) extends Sast {
-    lazy val all: Sast = Sseqf(content ++ children)
+  case class Sections(blocks: Seq[Sast], children: Seq[Section]) extends Sast {
+    lazy val all: Seq[Sast] = blocks ++ children
   }
+  case class Section(title: Text, content: Sast) extends Sast
   case class MacroBlock(call: Macro) extends Sast
   case class RawBlock(delimiter: String, content: String) extends Sast
   case class ParsedBlock(delimiter: String, content: Sast) extends Sast
   case class AttributedBlock(attr: Block, content: Sast) extends Sast
   case class AttributeDef(attribute: Attribute) extends Sast
-  case class Sseqf(sasts: Seq[Sast]) extends Sast
-  object Sseq {
-    def apply(sasts: Seq[Sast]): Sseqf = {
-      Sseqf(sasts.flatMap {
-        case Sseqf(inner) => inner
-        case other        => Seq(other)
-      })
-    }
-  }
 }
 
 object SastAnalyzes {
@@ -64,19 +56,21 @@ object SastAnalyzes {
   }
 
   def analyzeR(input: Sast, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
-    case Sseqf(sasts)                    => sasts.foldLeft(acc)((cacc, sast) => analyzeR(sast, scope, cacc))
-    case Slist(children)                 => children.foldLeft(acc){(cacc, sli) =>
+    case Slist(children)   => children.foldLeft(acc){(cacc, sli) =>
       val contentAcc = analyzeR(sli.content, scope, cacc)
       analyzeR(sli.inner, scope, contentAcc)
     }
-    case Text(inlines)                    => inlines.foldLeft(acc){ (cacc, inline) => inline match {
+    case Text(inlines)     => inlines.foldLeft(acc){ (cacc, inline) => inline match {
       case m: Macro             => cacc + m
       case InlineText(str)       => cacc
       case InlineQuote(q, inner) => cacc
     } }
-    case sec @ Section(title, _, _)         =>
+    case content: Sections =>
+      content.all.foldLeft(acc)((cacc, sast) => analyzeR(sast, scope, cacc))
+
+    case sec @ Section(title, content)         =>
       val target = Target(title.str, sec)
-      analyzeR(sec.all, Some(target), acc + target)
+      analyzeR(content, Some(target), acc + target)
     case AttributeDef(attribute)        => acc + attribute
     case MacroBlock(imacro)              => {
       val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.head.value, scope.get.resolution)
@@ -90,7 +84,7 @@ object SastAnalyzes {
 }
 
 class ListConverter(val sastConverter: SastConverter) extends AnyVal {
-  import sastConverter.{blockContent}
+  import sastConverter.blockContent
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
     case Nil                    => Nil
@@ -152,21 +146,17 @@ final class SastConverter(includeResolver: String => String) {
             case _                    => true
           }
         }
-        val (content, children) = blockSequenceSections(inner)
-        sectionize(next, Section(title, content, children) :: accumulator)
+        sectionize(next, Section(title, blockSequence(inner)) :: accumulator)
     }
   }
 
 
 
-  def blockSequenceSections(blocks: Seq[Block]): (Seq[Sast], Seq[Section]) = {
+  def blockSequence(blocks: Seq[Block]): Sast = {
     val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
-    (abstkt.map(block),  sectionize(sections, Nil))
-  }
-
-  def blockSequence(blocks: Seq[Block]): Sseqf = {
-    val (content, children) = blockSequenceSections(blocks)
-    Sseqf(content ++ children)
+    val subSections = sectionize(sections, Nil)
+    if (abstkt.isEmpty && subSections.size == 1) subSections.head
+    else Sections(abstkt.map(block), subSections)
   }
 
 
@@ -193,7 +183,7 @@ final class SastConverter(includeResolver: String => String) {
 
       case m: Macro => MacroBlock(m)
 
-      case WhitespaceBlock(_) => Sseq(Nil)
+      case WhitespaceBlock(space) => RawBlock("", space)
 
       case NormalBlock(delimiter, text) =>
         if (delimiter == "") ParsedBlock("", inlineString(text))
@@ -202,7 +192,7 @@ final class SastConverter(includeResolver: String => String) {
           case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text))
           case other     =>
             scribe.warn(s"mismatched block $delimiter: $text")
-            Sseq(Nil)
+            RawBlock(delimiter, text)
         }
 
     }
@@ -214,7 +204,7 @@ final class SastConverter(includeResolver: String => String) {
   }
 
 
-  def documentString(blockContent: String): Sseqf = {
+  def documentString(blockContent: String): Sast = {
     blockSequence(Parse.document(blockContent).right.get.blocks)
   }
 
