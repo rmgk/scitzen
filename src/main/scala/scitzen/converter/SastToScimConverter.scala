@@ -37,6 +37,7 @@ object SastToScimConverter {
           marker +: toScim(inner)
       }
 
+      case MacroBlock(Macro("horizontal-rule", attributes)) => List(attributes.head.value)
       case MacroBlock(mcro) => List(macroToScim(mcro))
 
       case ParsedBlock(delimiter, blockContent) =>
