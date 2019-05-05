@@ -9,7 +9,7 @@ object BlockParsers {
   def whitespaceBlock[_:P]: P[WhitespaceBlock] = P(significantSpaceLine.rep(1).!).map(WhitespaceBlock.apply)
 
   def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (spaceLine | sectionStart.map(_ => ()) |
-                                                       DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol).!
+                                                       DelimitedBlockParsers.anyStart.map(_ => ()))).! ~ eol)
                                           .map(NormalBlock("", _))
 
   def sectionStart[_: P]: P[Int] = P("=".rep(1).! ~ " ").map(_.length)
