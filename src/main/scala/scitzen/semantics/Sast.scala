@@ -9,7 +9,7 @@ sealed trait Sast
 
 object Sast {
   case class Slist(children: Seq[SlistItem]) extends Sast
-  case class SlistItem(marker: String, content: Sast, inner: Slist)
+  case class SlistItem(marker: String, content: Seq[Sast])
   case class Text(inline: Seq[Inline]) extends Sast {
     lazy val str = {
       inline.map{
@@ -19,13 +19,10 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Sections(blocks: Seq[Sast], children: Seq[Section]) extends Sast {
-    lazy val all: Seq[Sast] = blocks ++ children
-  }
-  case class Section(title: Text, content: Sast) extends Sast
+  case class Section(title: Text, content: Seq[Sast]) extends Sast
   case class MacroBlock(call: Macro) extends Sast
   case class RawBlock(delimiter: String, content: String) extends Sast
-  case class ParsedBlock(delimiter: String, content: Sast) extends Sast
+  case class ParsedBlock(delimiter: String, content: Seq[Sast]) extends Sast
   case class AttributedBlock(attr: Block, content: Sast) extends Sast
   case class AttributeDef(attribute: Attribute) extends Sast
 }
@@ -55,36 +52,42 @@ object SastAnalyzes {
     AnalyzeResult(a.reverse, m.reverse, t.reverse)
   }
 
+  def analyze(input: Seq[Sast]) = {
+    val AnalyzeResult(a, m, t) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil))
+    AnalyzeResult(a.reverse, m.reverse, t.reverse)
+  }
+
+  def analyzeAll(inputs: Seq[Sast], scope: Option[Target], acc: AnalyzeResult): AnalyzeResult =
+    inputs.foldLeft(acc)((cacc, sast) => analyzeR(sast, scope, cacc))
+
+
   def analyzeR(input: Sast, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
     case Slist(children)   => children.foldLeft(acc){(cacc, sli) =>
-      val contentAcc = analyzeR(sli.content, scope, cacc)
-      analyzeR(sli.inner, scope, contentAcc)
+      analyzeAll(sli.content, scope, acc)
     }
     case Text(inlines)     => inlines.foldLeft(acc){ (cacc, inline) => inline match {
       case m: Macro             => cacc + m
       case InlineText(str)       => cacc
       case InlineQuote(q, inner) => cacc
     } }
-    case content: Sections =>
-      content.all.foldLeft(acc)((cacc, sast) => analyzeR(sast, scope, cacc))
 
     case sec @ Section(title, content)         =>
       val target = Target(title.str, sec)
-      analyzeR(content, Some(target), acc + target)
+      analyzeAll(content, Some(target), acc + target)
     case AttributeDef(attribute)        => acc + attribute
     case MacroBlock(imacro)              => {
       val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.head.value, scope.get.resolution)
                  else acc
       iacc + imacro
     }
-    case ParsedBlock(delimiter, content) => analyzeR(content, scope, acc)
+    case ParsedBlock(delimiter, content) => analyzeAll(content, scope, acc)
     case RawBlock(_, _) => acc
     case AttributedBlock(attr, content) => analyzeR(content, scope, acc)
   }
 }
 
 class ListConverter(val sastConverter: SastConverter) extends AnyVal {
-  import sastConverter.blockContent
+  import sastConverter.{blockContent, inlineString}
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
     case Nil                    => Nil
@@ -98,34 +101,19 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
     val split = splitted(items.map(i => (norm(i.marker), i)))
 
-    split match {
-      case Nil                 => Slist(Nil)
-      case (firstItem, _) :: _ =>
-        val n = norm(firstItem.marker)
-        if (n.startsWith(":")) definitionList(split)
-        else otherList(split)
-    }
+    if (split.isEmpty) Slist(Nil) else otherList(split)
   }
 
   private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
-    val listItems = split.flatMap { case (item, contents) =>
-      List(
-        SlistItem(item.marker,
-                  blockContent(item.content),
-                  listtoSast(contents)
-                  ))
+    val listItems = split.map { case (item, children) =>
+      val itemSast = item.content match {
+        case NormalBlock("", paragraph) => inlineString(paragraph)
+        case other => blockContent(other)
+      }
+      val childSasts = if (children.isEmpty) Nil else List(listtoSast(children))
+      SlistItem(item.marker, itemSast +: childSasts)
     }
     Slist(listItems)
-  }
-  private def definitionList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
-    Slist(split.map { case (item, contents) => definitionListItem(item, contents) })
-  }
-
-  private def definitionListItem(item: ListItem, contents: Seq[ListItem]): SlistItem = {
-    SlistItem(item.marker,
-              blockContent(item.content),
-              listtoSast(contents)
-              )
   }
 }
 
@@ -152,11 +140,9 @@ final class SastConverter(includeResolver: String => String) {
 
 
 
-  def blockSequence(blocks: Seq[Block]): Sast = {
+  def blockSequence(blocks: Seq[Block]): Seq[Sast] = {
     val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
-    val subSections = sectionize(sections, Nil)
-    if (abstkt.isEmpty && subSections.size == 1) subSections.head
-    else Sections(abstkt.map(block), subSections)
+    abstkt.map(block) ++ sectionize(sections, Nil)
   }
 
 
@@ -173,7 +159,7 @@ final class SastConverter(includeResolver: String => String) {
       case Macro("include", attributes) =>
         val incfile = attributes.head.value
         try {
-          documentString(includeResolver(incfile))
+          ParsedBlock("include", documentString(includeResolver(incfile)))
         }
         catch {
           case NonFatal(e) =>
@@ -186,7 +172,7 @@ final class SastConverter(includeResolver: String => String) {
       case WhitespaceBlock(space) => RawBlock("", space)
 
       case NormalBlock(delimiter, text) =>
-        if (delimiter == "") ParsedBlock("", inlineString(text))
+        if (delimiter == "") ParsedBlock("", List(inlineString(text)))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)
           case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text))
@@ -204,7 +190,7 @@ final class SastConverter(includeResolver: String => String) {
   }
 
 
-  def documentString(blockContent: String): Sast = {
+  def documentString(blockContent: String): Seq[Sast] = {
     blockSequence(Parse.document(blockContent).right.get.blocks)
   }
 

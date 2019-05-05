@@ -19,8 +19,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
   def listItemToHtml(child: SlistItem)(implicit nestingLevel: NestingLevel) = {
-      List(sastToHtml(child.content),
-      sastToHtml(child.inner))
+      sastToHtml(child.content)
   }
 
   def tMeta() = {
@@ -44,22 +43,20 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       )
   }
 
-  def sastToHtml(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Frag = {
-    b match {
+  def sastToHtml(b: Seq[Sast])(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[Frag] = {
+    b.flatMap[Frag, Seq[Frag]] {
 
-      case inner : Sections => SeqFrag(inner.all.map(sastToHtml))
-
-      case AttributeDef(_) => frag()
+      case AttributeDef(_) => Nil
 
       case Text(inner) => inlineValuesToHTML(inner)
 
       case sec@Section(title, subsections) =>
-        frag(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
+        List(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
              if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(subsections)) else frag(),
              sastToHtml(subsections)(nestingLevel.inc))
 
-      case Slist(Nil) => frag()
-      case Slist(children) =>
+      case Slist(Nil) => Nil
+      case Slist(children) => List(
         if (children.head.marker.contains(":")) {
           dl(children.flatMap(c => List(dt(c.marker), dd(listItemToHtml(c)))))
         }
@@ -67,21 +64,21 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           val listTag = if (children.head.marker.contains(".")) ol else ul
 
           listTag(children.map(c => li(listItemToHtml(c))))
-        }
+        })
 
       case MacroBlock(mcro) => mcro match {
         case Macro("image", attributes) =>
           val target = attributes.last.value
-          div(cls := "imageblock",
-              img(src := target))
-        case Macro("label", attributes) => frag()
-        case Macro("horizontal-rule", attributes) => hr
+          List(div(cls := "imageblock",
+              img(src := target)))
+        case Macro("label", attributes) => Nil
+        case Macro("horizontal-rule", attributes) => List(hr)
         case other =>
           scribe.warn(s"not implemented: $other")
-          div(stringFrag(other.toString))
+          List(div(stringFrag(other.toString)))
       }
 
-      case ParsedBlock(delimiter, blockContent) =>
+      case ParsedBlock(delimiter, blockContent) => List(
         if (delimiter == "") p(sastToHtml(blockContent))
         else delimiter.charAt(0) match {
 
@@ -92,10 +89,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
           case _   => div(delimiter, br, sastToHtml(blockContent), br, delimiter)
-        }
+        })
 
-      case RawBlock(delimiter, text) =>
-        if (delimiter.isEmpty) ""
+      case RawBlock(delimiter, text) => List(
+        if (delimiter.isEmpty) stringFrag("")
         else delimiter.charAt(0) match {
           // Code listing
           // Use this for monospace, space preserving, line preserving text
@@ -107,15 +104,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           // and no special syntax, but otherwise normally formatted.
           // This is great to represent copy&pasted posts or chat messages.
           case '.' => pre(text)
-        }
+        })
 
 
 
-      case bwa: AttributedBlock =>
+      case bwa: AttributedBlock => List {
         val positiontype = bwa.attr.positional.headOption
         positiontype match {
           case Some("quote") =>
-            val innerHtml = sastToHtml(bwa.content)
+            val innerHtml = sastToHtml(List(bwa.content))
             // for blockquote layout, see example 12 (the twitter quote)
             // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
             val bq = blockquote(innerHtml)
@@ -123,20 +120,18 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             val title = bwa.attr.positional.drop(1)
             if (title.nonEmpty) bq(cite(title))
             else bq
-          case _         => sastToHtml(bwa.content)
+          case _             => sastToHtml(List(bwa.content))
         }
+      }
     }
   }
 
 
-  private def tableOfContents(sectionContent: Sast): Frag = {
+  private def tableOfContents(sectionContent: Seq[Sast]): Frag = {
     if (analyzeResult.attributes.exists(_.id == "toc")) {
-      sectionContent match {
-        case Sections(abtrkt, subsections) => nav(ol(subsections.map {
-          case Section(title, _) => li(a(href := s"#${title.str}", title.str))
-        }))
-        case other      => frag()
-      }
+      nav(ol(sectionContent.collect{
+        case Section(title, _) => li(a(href := s"#${title.str}", title.str))
+      }))
     } else frag()
   }
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {

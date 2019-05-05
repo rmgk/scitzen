@@ -31,21 +31,21 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
 
 
 
-  def sastToTex(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
-    b match {
-
-      case inner : Sections => inner.all.flatMap(sastToTex)
+  def sastToTex(b: Seq[Sast])(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
+    b.flatMap {
 
       case AttributeDef(_) => Nil
 
       case Text(inner) => List(inlineValuesToHTML(inner))
 
-      case Section(title, Sections(secContent, secChildren)) =>
+      case Section(title, contents) =>
         val sec = sectioning(nestingLevel)
 
-        def rec(block: Seq[Sast]): Seq[String] = block.flatMap(sastToTex(_)(nestingLevel.inc))
+        def rec(block: Seq[Sast]): Seq[String] = sastToTex(block)(nestingLevel.inc)
 
         def putAbstract: Seq[String] = {
+          val secContent = contents.filter(!_.isInstanceOf[Section])
+          val secChildren = contents.collect{case s: Section => s}
           (if (analyzeResult.named.getOrElse("layout", "").contains("acm")) {
           "\\begin{abstract}" +:
            rec(secContent) :+
@@ -62,27 +62,21 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
         s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
         (if (nestingLevel.i == 1) {
           putAbstract
-        } else rec(secContent ++ secChildren))
-
-      case Section(title, content) =>
-        val sec = sectioning(nestingLevel)
-        s"\\$sec{${inlineValuesToHTML(title.inline)}}" +: sastToTex(content)
+        } else rec(contents))
 
       case Slist(children) =>
         children match {
           case Nil => Nil
-          case SlistItem(m, _, _) :: _ if m.contains(":") =>
+          case SlistItem(m, _) :: _ if m.contains(":") =>
             "\\begin{description}" +:
             children.flatMap { child =>
-              s"\\item[${child.marker.replaceAllLiterally(":", "")}] ${sastToTex(child.content).mkString("")}" +:
-              sastToTex(child.inner)
+              s"\\item[${child.marker.replaceAllLiterally(":", "")}]" +: sastToTex(child.content)
             } :+
             "\\end{description}"
           case other =>
             "\\begin{itemize}" +:
             children.flatMap { child =>
-              s"\\item ${sastToTex(child.content).mkString("")}" +:
-              sastToTex(child.inner)
+              s"\\item" +: sastToTex(child.content)
             } :+
             "\\end{itemize}"
         }
@@ -129,7 +123,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
       case bwa: AttributedBlock =>
         val positiontype = bwa.attr.positional.headOption
         positiontype match {
-          case _         => sastToTex(bwa.content)
+          case _         => sastToTex(List(bwa.content))
         }
     }
   }

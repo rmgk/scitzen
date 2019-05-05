@@ -14,16 +14,16 @@ object SastToScimConverter {
     case Attribute(k, v)                        => s"""$k="$v""""
   }.mkString("[", ";", "]")
 
-  def toScim(b: Sast)(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
-    b match {
+  def toScim(b: Seq[Sast])(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
+    b.flatMap[String, Seq[String]] {
 
       case AttributeDef(a) => List(s":${a.id}:${a.value}")
 
       case Text(inner) => List(inlineToScim(inner))
 
-      case Sections(secContent, secChildren) =>
-        def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_))
-        rec(secContent) ++ rec(secChildren)
+      //case Sections(secContent, secChildren) =>
+      //  def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_))
+      //  rec(secContent) ++ rec(secChildren)
 
 
       case Section(title, sc) =>
@@ -31,10 +31,10 @@ object SastToScimConverter {
         toScim(sc)(nestingLevel.inc)
 
       case Slist(children) => children.flatMap {
-        case SlistItem(marker, ParsedBlock("", Text(inl)), inner) =>
-          (s"$marker" + inlineToScim(inl)) +: toScim(inner)
-        case SlistItem(marker, block, inner) =>
-          marker +: (toScim(block) ++ toScim(inner))
+        case SlistItem(marker, Seq(ParsedBlock("", Seq(Text(inl))))) =>
+          List(s"$marker" + inlineToScim(inl))
+        case SlistItem(marker, inner) =>
+          marker +: toScim(inner)
       }
 
       case MacroBlock(mcro) => List(macroToScim(mcro))
@@ -55,7 +55,7 @@ object SastToScimConverter {
 
 
       case bwa: AttributedBlock =>
-        bwa.attr.rawAttributes.map(attributesToScim) ++ toScim(bwa.content)
+        bwa.attr.rawAttributes.map(attributesToScim) ++ toScim(List(bwa.content))
     }
   }
 

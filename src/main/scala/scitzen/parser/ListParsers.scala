@@ -29,9 +29,7 @@ object ListParsers {
                                                   DelimitedBlockParsers.whitespaceLiteral).map(Right(_)) |
                                                  listContent.map(Left(_))))
                                               .map {
-                                                case (m, Right(b)) =>
-                                                  scribe.info(s"marker $m")
-                                                  ListItem(m, b)
+                                                case (m, Right(b)) => ListItem(m, b)
                                                 case (m, Left(c)) => ListItem(m, NormalBlock("", c))
                                               }
 
