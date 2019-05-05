@@ -90,7 +90,7 @@ object SastAnalyzes {
 }
 
 class ListConverter(val sastConverter: SastConverter) extends AnyVal {
-  import sastConverter.{block, inlineString}
+  import sastConverter.{blockContent}
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
     case Nil                    => Nil
@@ -117,8 +117,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
     val listItems = split.flatMap { case (item, contents) =>
       List(
         SlistItem(item.marker,
-                  Sseq(inlineString(item.content) +:
-                       item.continuation.map(block).toList),
+                  blockContent(item.content),
                   listToHtml(contents)
                   ))
     }
@@ -130,8 +129,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
   private def definitionListItem(item: ListItem, contents: Seq[ListItem]): SlistItem = {
     SlistItem(item.marker,
-              Sseq(inlineString(item.content) +:
-                   item.continuation.toList.map(block)),
+              blockContent(item.content),
               listToHtml(contents)
               )
   }

@@ -26,12 +26,14 @@ object SastToScimConverter {
       case Section(title, secContent, secChildren) =>
         def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_)(nestingLevel.inc))
 
-        ("=" * nestingLevel.i + " " + title) +:
+        ("=" * nestingLevel.i + " " + inlineToScim(title.inline)) +:
         (rec(secContent) ++ rec(secChildren))
 
       case Slist(children) => children.flatMap {
+        case SlistItem(marker, ParsedBlock("", Text(inl)), inner) =>
+          (s"$marker" + inlineToScim(inl)) +: toScim(inner)
         case SlistItem(marker, content, inner) =>
-          s"$marker" +: (toScim(content) ++ toScim(inner))
+          throw new IllegalStateException("soooo … whats this?" + content)
       }
 
       case MacroBlock(mcro) => List(macroToScim(mcro))

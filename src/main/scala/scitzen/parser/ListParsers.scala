@@ -18,9 +18,9 @@ object ListParsers {
                           | descriptionItemStart)
                        ~ verticalSpace).!
 
-  def listContent [_:P]: P[String] = P(untilE(eol ~ (("+".? ~ spaceLine) | (simpleMarker | indentedDescriptionMarker).map(_ => ()))) ~ eol)
+  def listContent [_:P]: P[String] = P(untilE(eol ~ (simpleMarker | indentedDescriptionMarker).map(_ => ())) ~ eol)
 
-  def simpleListItem [_:P]: P[ListItem] = P((simpleMarker.! ~/ listContent ~ ("+" ~ spaceLine ~ BlockParsers.fullBlock).?)
+  def simpleListItem [_:P]: P[ListItem] = P((simpleMarker.! ~/ listContent.map(NormalBlock("", _)))
                          .map((ListItem.apply _).tupled))
 
   def indentedDescriptionMarker [_:P]: P[String] = P((descriptionItemStart ~ newline).!)
@@ -30,8 +30,8 @@ object ListParsers {
                                                   DelimitedBlockParsers.whitespaceLiteral).map(Right(_)) |
                                                  listContent.map(Left(_))))
                                               .map {
-                                                case (m, Right(b)) => ListItem(m, "", Some(Block(Nil, Prov(), b)))
-                                                case (m, Left(c)) => ListItem(m, c, None)
+                                                case (m, Right(b)) => ListItem(m, b)
+                                                case (m, Left(c)) => ListItem(m, NormalBlock("", c))
                                               }
 
 

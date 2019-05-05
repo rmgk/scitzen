@@ -6,16 +6,16 @@ import scitzen.parser.CommonParsers._
 
 object BlockParsers {
 
-  // \ to escape newlines, + \ to escape newlines but keep newlines
-  private def titleLine[_: P] = untilI(eol)
-
   def whitespaceBlock[_:P]: P[WhitespaceBlock] = P(significantSpaceLine.rep(1).!).map(WhitespaceBlock.apply)
 
-  def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (spaceLine | DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol)
+  def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (spaceLine | sectionStart.map(_ => ()) |
+                                                       DelimitedBlockParsers.anyStart.map(_ => ()))) ~ eol).!
                                           .map(NormalBlock("", _))
 
-  def sectionTitle[_:P]: P[SectionTitle] = P("=".rep(1).! ~ " " ~ titleLine)
-                                           .map { case (level, str) => SectionTitle(level.length, str) }
+  def sectionStart[_: P]: P[Int] = P("=".rep(1).! ~ " ").map(_.length)
+
+  def sectionTitle[_:P]: P[SectionTitle] = P(sectionStart ~ untilI(eol))
+                                           .map { case (level, str) => SectionTitle(level, str) }
 
   def horizontalRuleChars[_: P] = P(AnyChar("'\\-*"))
   def horizontalRule[_: P]: P[Macro] = P(verticalSpaces ~ horizontalRuleChars.!.flatMap { chr =>

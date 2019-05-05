@@ -26,7 +26,7 @@ case class AttributeBlock(attribute: Attribute) extends BlockContent
 case class SectionTitle(level: Int, title: String) extends BlockContent
 
 
-case class ListItem(marker: String, content: String, continuation: Option[Block])
+case class ListItem(marker: String, content: BlockContent)
 
 case class Attribute(id: String, value: String)
 
