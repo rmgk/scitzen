@@ -155,8 +155,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         }
       }
     case Macro("cite", attributes) =>
-      val anchors = attributes.positional.map{ bibid =>
-        val bib = bibliography.get(bibid).getOrElse{
+      val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
+        val bib = bibliography.get(bibid.trim).getOrElse{
           scribe.error(s"bib key not found: $bibid")
           bibid
         }

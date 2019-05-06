@@ -9,7 +9,7 @@ object Scitzen extends CommandApp(
   main = {
 
     import scribe.format._
-    val myFormatter: Formatter = formatter"$message ($positionAbbreviated)"
+    val myFormatter: Formatter = formatter"$message ($position)"
     Logger.root.clearHandlers().withHandler(formatter = myFormatter,
                                             minimumLevel = Some(scribe.Level.Info)).replace()
 

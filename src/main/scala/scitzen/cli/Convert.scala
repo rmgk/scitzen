@@ -166,7 +166,7 @@ object Convert {
     val bibPath = bibRel.orElse(analyzed.named.get("bib").map(p => Paths.get(p.trim)))
                   .map(bp => sourcedir.parent./(bp.toString))
     val bib = bibPath.toList.flatMap(Bibliography.parse)
-    val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.positional.head).toSet
+    val cited = analyzed.macros.filter(_.command == "cite").flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim)).toSet
     if (makeTex) {
       val name = sourcedir.nameWithoutExtension
       val targetFile = targetdir / (name + ".tex")
