@@ -214,6 +214,10 @@ article.fullpost {
     color: darkred;
   }
 
+  dd > *:first-child {
+    margin-top: 0;
+  }
+
 }
 
 body {

@@ -8,6 +8,8 @@ import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, Scitz
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
+import kaleidoscope.RegexStringContext
+
 
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
@@ -58,11 +60,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case Slist(Nil) => Nil
       case Slist(children) => List(
         if (children.head.marker.contains(":")) {
-          dl(children.flatMap(c => List(dt(c.marker), dd(listItemToHtml(c)))))
+          dl(children.flatMap(c => List(dt(strong(c.marker.replaceAllLiterally(":", ""))), dd(listItemToHtml(c)))))
         }
         else {
           val listTag = if (children.head.marker.contains(".")) ol else ul
-
           listTag(children.map(c => li(listItemToHtml(c))))
         })
 
@@ -78,17 +79,19 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           List(div(stringFrag(other.toString)))
       }
 
-      case ParsedBlock(delimiter, blockContent) => List(
-        if (delimiter == "") p(sastToHtml(blockContent))
-        else delimiter.charAt(0) match {
-
-          case '=' => blockquote(sastToHtml(blockContent))
+      case ParsedBlock(delimiter, blockContent) =>
+        List(
+        delimiter match {
+          case "" => p(sastToHtml(blockContent))
+          case r"=+" => blockquote(sastToHtml(blockContent))
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case ' ' => sastToHtml(blockContent)
+          case r"\s+" => sastToHtml(blockContent)
+          // includes are also included as is
+          case "include" => sastToHtml(blockContent)
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
-          case _   => div(delimiter, br, sastToHtml(blockContent), br, delimiter)
+          case _ => div(delimiter, br, sastToHtml(blockContent), br, delimiter)
         })
 
       case RawBlock(delimiter, text) => List(

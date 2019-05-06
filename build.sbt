@@ -27,6 +27,7 @@ lazy val scitzen = project.in(file("."))
                      cats,
                      upickle,
                      scribe,
+                     kaleidoscope,
                      SassKeys.cssStyle := Maxified,
                      normalizecss
                      )
