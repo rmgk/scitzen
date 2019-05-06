@@ -37,7 +37,7 @@ object SastToScimConverter {
           marker +: toScim(inner)
       }
 
-      case MacroBlock(Macro("horizontal-rule", attributes)) => List(attributes.head.value)
+      case MacroBlock(Macro("horizontal-rule", attributes)) => List(attributes.target)
       case MacroBlock(mcro) => List(macroToScim(mcro))
 
       case ParsedBlock(delimiter, blockContent) =>
@@ -65,7 +65,7 @@ object SastToScimConverter {
 
 
   private def macroToScim(mcro: Macro): String = {
-    s":${mcro.command}${attributesToScim(mcro.attributes)}"
+    s":${mcro.command}${attributesToScim(mcro.attributes.all)}"
   }
   def inlineToScim(inners: Seq[Inline]): String = inners.map {
     case InlineText(str)        => str

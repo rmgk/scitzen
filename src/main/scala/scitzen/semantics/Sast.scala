@@ -36,7 +36,7 @@ object SastAnalyzes {
     def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
 
-    lazy val named: Map[String, String] = AttributesToMap(attributes)
+    lazy val named: Map[String, String] = Attributes(attributes).named
 
     lazy val language: String = named.getOrElse("lang", "")
 
@@ -76,7 +76,7 @@ object SastAnalyzes {
       analyzeAll(content, Some(target), acc + target)
     case AttributeDef(attribute)        => acc + attribute
     case MacroBlock(imacro)              => {
-      val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.head.value, scope.get.resolution)
+      val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.positional.head, scope.get.resolution)
                  else acc
       iacc + imacro
     }
@@ -157,7 +157,7 @@ final class SastConverter(includeResolver: String => String) {
       case AttributeBlock(attribute) => AttributeDef(attribute)
 
       case Macro("include", attributes) =>
-        val incfile = attributes.head.value
+        val incfile = attributes.positional.head
         try {
           ParsedBlock("include", documentString(includeResolver(incfile)))
         }

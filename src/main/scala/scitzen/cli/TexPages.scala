@@ -40,7 +40,7 @@ object TexPages {
   def wrap(content: Seq[String], analyzed: AnalyzeResult, bibliography: Option[String]): String = {
     val authors = analyzed.named.get("authors").toList.flatMap {aut =>
       Parse.paragraph(aut).right.get.collect{
-        case Macro("author", attributes) => (attributes.head.value, attributes.last.value)
+        case Macro("author", attributes) => (attributes.positional.head, attributes.positional.tail)
       }
     }
     val authorstrings = authors.map{ case (name, inst) =>

@@ -9,7 +9,7 @@ case class Post(document: Document,
                 sourcePath: String,
                 content: String,
                 biblio: Map[String, String] = Map()) {
-  lazy val attributes: Map[String, String] = document.named
+  lazy val attributes: Map[String, String] = document.attributes.named
   def commaSeparatedAttribute(key: String): List[String] =
     attributes.getOrElse(key, "").toString
     .split(',')

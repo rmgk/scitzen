@@ -40,7 +40,7 @@ object BlockParsers {
                                               MacroParsers.full ~ spaceLine |
                                               paragraph)
 
-  def fullBlock[_: P]: P[Block] = P(Index ~ Attributes.line.rep ~ alternatives ~ Index).map {
+  def fullBlock[_: P]: P[Block] = P(Index ~ AttributesParser.line.rep ~ alternatives ~ Index).map {
     case (start, attrs, content, end) => Block(attrs, Prov(start, end), content)
   }
 }

@@ -4,7 +4,7 @@ import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
 
-object Attributes {
+object AttributesParser {
   val  open = "["
   val  close= "]"
 

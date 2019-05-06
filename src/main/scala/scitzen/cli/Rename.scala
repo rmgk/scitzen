@@ -38,7 +38,7 @@ object Rename {
 
 
   def nameFromHeader(header: Document): String = {
-    val date = DateParsingHelper.parseDate(header.named("revdate").trim)
+    val date = DateParsingHelper.parseDate(header.attributes.named("revdate").trim)
     val title = sluggify(header.title) + ".scim"
     date.date.full + "_" + title
   }

@@ -1,6 +1,6 @@
 package scitzen.converter
 
-import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro}
+import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
@@ -83,7 +83,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
 
       case MacroBlock(mcro) => mcro match {
         case Macro("image", attributes) =>
-          val target = attributes.last.value
+          val target = attributes.target
           val imagepath = imagemap.getOrElse(s"$reldir2$target", target)
           scribe.info(s"resolving $target in $reldir, resulted in $imagepath")
 
@@ -92,7 +92,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
             s"\\newline{}\\includegraphics[width=\\columnwidth]{$imagepath}\\newline{}",
             )
 
-        case Macro("label", attributes) => List(s"\\label{${attributes.last.value}}")
+        case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
         case other =>
           scribe.warn(s"not implemented: $other")
           List(other.toString)
@@ -121,7 +121,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
 
 
       case bwa: AttributedBlock =>
-        val positiontype = bwa.attr.positional.headOption
+        val positiontype = bwa.attr.attributes.positional.headOption
         positiontype match {
           case _         => sastToTex(List(bwa.content))
         }
@@ -155,20 +155,20 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
         case '$' => s"$$$inner$$"
       }
     case Macro("comment", attributes) => ""
-    case Macro("ref", attributes) => s"\\ref{${latexencode(attributes.last.value)}}"
+    case Macro("ref", attributes) => s"\\ref{${latexencode(attributes.target)}}"
     case Macro("cite", attributes) =>
-      s"\\cite{${latexencode(attributes.last.value)}}"
+      s"\\cite{${latexencode(attributes.target)}}"
     case Macro("link", attributes) =>
-      val target = latexencode(attributes.last.value)
+      val target = latexencode(attributes.target)
       linkTo(attributes, target)
     case Macro("footnote", attributes) =>
-      val target = latexencode(attributes.last.value)
+      val target = latexencode(attributes.target)
       s"\\footnote{$target}"
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
-      s"$command[${attributes.mkString(",")}]"
+      s"$command[${attributes.all.mkString(",")}]"
   }.mkString("")
-  def linkTo(attributes: Seq[Attribute], linktarget: String): String = {
+  def linkTo(attributes: Attributes, linktarget: String): String = {
     s"\\url{${latexencode(linktarget)}}"
   }
 }

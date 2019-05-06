@@ -1,21 +1,24 @@
 package scitzen.parser
 
 case class Document(blocks: Seq[Block]) {
-  lazy val attributes: Seq[Attribute] = blocks.collect{case Block(_, _, AttributeBlock(attr)) => attr}
-  lazy val named : Map[String, String] = AttributesToMap(attributes)
+  lazy val attributes: Attributes = Attributes(blocks.collect{case Block(_, _, AttributeBlock(attr)) => attr})
   lazy val title: String = blocks.iterator.map(_.content).collectFirst{case SectionTitle(1, title) => title}.get
 
 }
 
-object AttributesToMap {
-  def apply(attributes: Seq[Attribute]) =
-    attributes.map { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
+case class Attributes(all: Seq[Attribute]) {
+  lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
+  lazy val target: String         = positional.last
+  lazy val named     : Map[String, String] =     all.map { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
+}
+
+object Attributes {
+  implicit def fromAttributeSeq(some: Seq[Attribute]): Attributes = Attributes(some)
 }
 
 case class Block(rawAttributes: Seq[Seq[Attribute]], prov: Prov, content: BlockContent) {
-  lazy val attributes: Seq[Attribute]      = rawAttributes.flatten
-  lazy val positional: Seq[String]         = attributes.collect { case Attribute("", value) => value }
-  lazy val named     : Map[String, String] = AttributesToMap(attributes)
+  lazy val attributes: Attributes      = Attributes(rawAttributes.flatten)
+
 }
 
 sealed trait BlockContent
@@ -34,6 +37,6 @@ case class Prov(start: Int = -1, end: Int = -1)
 
 
 sealed trait Inline
-case class Macro(command: String, attributes: Seq[Attribute]) extends Inline with BlockContent
+case class Macro(command: String, attributes: Attributes) extends Inline with BlockContent
 case class InlineText(str: String) extends Inline
 case class InlineQuote(q: String, inner: String) extends Inline

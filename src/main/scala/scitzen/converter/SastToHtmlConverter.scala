@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
 import scalatags.generic.Bundle
-import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
+import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
@@ -68,7 +68,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case MacroBlock(mcro) => mcro match {
         case Macro("image", attributes) =>
-          val target = attributes.last.value
+          val target = attributes.positional.last
           List(div(cls := "imageblock",
               img(src := target)))
         case Macro("label", attributes) => Nil
@@ -109,7 +109,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
       case bwa: AttributedBlock => List {
-        val positiontype = bwa.attr.positional.headOption
+        val positiontype = bwa.attr.attributes.positional.headOption
         positiontype match {
           case Some("quote") =>
             val innerHtml = sastToHtml(List(bwa.content))
@@ -117,7 +117,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
             val bq = blockquote(innerHtml)
             // first argument is "quote" we concat the rest and treat them as a single entity
-            val title = bwa.attr.positional.drop(1)
+            val title = bwa.attr.attributes.positional.drop(1)
             if (title.nonEmpty) bq(cite(title))
             else bq
           case _             => sastToHtml(List(bwa.content))
@@ -146,7 +146,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     }
     case Macro("comment", attributes) => frag()
     case Macro("ref", attributes) =>
-      analyzeResult.targets.find(_.id == attributes.head.value).map {target =>
+      analyzeResult.targets.find(_.id == attributes.positional.head).map {target =>
         target.resolution match {
           case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
           case other =>
@@ -155,25 +155,30 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         }
       }
     case Macro("cite", attributes) =>
-      val bibid = attributes.head.value
-      frag("\u00A0", a(href := s"#$bibid", bibliography(bibid)))
+      val anchors = attributes.positional.map{ bibid =>
+        val bib = bibliography.get(bibid).getOrElse{
+          scribe.error(s"bib key not found: $bibid")
+          bibid
+        }
+        a(href := s"#$bibid", bib)
+      }
+      frag("\u00A0", anchors)
     case Macro(tagname@("ins" | "del"), attributes) =>
-      tag(tagname)(attributes.iterator.filter(_.id.isEmpty).map(_.value).mkString(", "))
+      tag(tagname)(attributes.positional.mkString(", "))
     case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), attributes) =>
-      val target = attributes.last.value
-      val linktarget = s"$protocol:$target"
+      val linktarget = s"$protocol:${attributes.target}"
       linkTo(attributes, linktarget)
     case Macro("link", attributes) =>
-      val target = attributes.last.value
+      val target = attributes.target
       linkTo(attributes, target)
     case Macro("footnote", attributes) =>
-      val target = attributes.last.value
+      val target = attributes.target
       a(title := target, "※")
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
-      code(s"$command[${attributes.mkString(",")}]")
+      code(s"$command[${attributes.all.mkString(",")}]")
   }
-  def linkTo(attributes: Seq[Attribute], linktarget: String) = {
-    a(href := linktarget)(attributes.find(_.id == "").fold(linktarget)(_.value))
+  def linkTo(attributes: Attributes, linktarget: String) = {
+    a(href := linktarget)(attributes.positional.headOption.getOrElse[String](linktarget))
   }
 }

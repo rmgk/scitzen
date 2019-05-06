@@ -6,9 +6,11 @@ import scitzen.parser.CommonParsers._
 
 object MacroParsers {
   // ensure consistency between detect start and start
-  def detectStart[_ : P]: P[Unit] = P(identifier.? ~ "[")
+  def detectStart[_: P]: P[Unit] = P(identifier.? ~ "[")
   def start[_: P]: P[String] = P(":" ~ identifier.?.! ~ &("["))
 
-  def full[_: P]: P[Macro] = P(start ~ Attributes.list).map { (Macro.apply _).tupled }
+  def full[_: P]: P[Macro] = P(start ~ AttributesParser.list).map {
+    case (name, attributes) => Macro(name, Attributes(attributes))
+  }
 
 }
