@@ -12,7 +12,6 @@ import scalatags.Text.tags.{SeqFrag, frag, li, ol}
 import scitzen.converter.{NestingLevel, SastToHtmlConverter, SastToTexConverter}
 import scitzen.parser.{Attribute, ParsingAnnotation}
 import scitzen.semantics.{SastAnalyzes, SastConverter}
-import scribe.Logger
 
 import scala.util.control.NonFatal
 
@@ -38,15 +37,13 @@ object Convert {
     } else ""
   }
 
+  implicit val charset: Charset = StandardCharsets.UTF_8
+
 
   val command: Command[Unit] = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput, optBib, optTex).mapN {
       (sourcedirRel, targetdirRel, bibRel, makeTex) =>
-        implicit val charset: Charset = StandardCharsets.UTF_8
 
-        import scribe.format._
-        val myFormatter: Formatter = formatter"$message ($positionAbbreviated)"
-        Logger.root.clearHandlers().withHandler(formatter = myFormatter, minimumLevel = Some(scribe.Level.Info)).replace()
 
         val sourcedir = File(sourcedirRel)
         val targetdir = File(targetdirRel)
@@ -57,115 +54,96 @@ object Convert {
 
 
         if (sourcedir.isRegularFile) {
-          val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
-          val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
-          val analyzed = SastAnalyzes.analyze(sast)
-          val bibPath = bibRel.orElse(analyzed.named.get("bib").map(p => Paths.get(p.trim)))
-                        .map(bp => sourcedir.parent./(bp.toString))
-          val bib = bibPath.toList.flatMap(Bibliography.parse)
-          val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
-          if (makeTex) {
-            val name = sourcedir.nameWithoutExtension
-            val targetFile = targetdir / (name + ".tex")
-            val bibName = bibPath.map{source =>
-              val targetname = source.nameWithoutExtension.replaceAll("\\s", "_")
-              source.copyTo(targetdir / (targetname + ".bib"), overwrite = true)
-              targetname
-            }
-            val content = new SastToTexConverter(analyzed).sastToTex(sast)
-
-            targetFile.write(TexPages.wrap(content,
-                                           analyzed,
-                                           bibName))
-            latexmk(targetdir, name, targetFile)
-          }
-          else {
-            val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
-            val targetPath = targetdir / (sourcedir.nameWithoutExtension + ".html")
-            val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
-            val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed).sastToHtml(sast),
-                               ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format)}))
-
-            targetPath.write(Pages().wrapContentHtml(analyzed.language, content))
-            copyImages(sourcedir.parent, targetdir)
-          }
+          convertArticle(targetdir, sourcedir, makeTex, bibRel)
         }
         else if (sourcedir.isDirectory) {
-
-          val asciiData = new PostFolder(sourcedir.path)
-          def allAdocFiles(): List[File] = sourcedir.glob("**.{scim,adoc}").toList
-
-          val posts = allAdocFiles().map { f: File =>
-            scribe.debug(s"parsing ${f.name}")
-            f.path -> asciiData.makePost(f.path)
-          }
-
-          scribe.info(s"found ${posts.size} posts")
-          scribe.info(s"converting to $targetdir")
-
-          if (makeTex) {
+          convertBlog(sourcedir, targetdir, makeTex)
+        }
+        scribe.info("copy static resources")
+        if (!makeTex) (targetdir / "scitzen.css").writeByteArray(stylesheet)
+    }
+  }
 
 
-            val name = sourcedir.nameWithoutExtension
-            val targetFile = targetdir / (name + ".tex")
-            val imagedir = targetdir / "images"
-            val imagemap = normalizeImages(sourcedir, imagedir)
-            val content = for { (path, post) <- posts.sortBy(_._2.date)
-              sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
-              analyzed = SastAnalyzes.analyze(sast)
-              reldir = sourcedir.relativize(path.getParent).toString
-              content <- new SastToTexConverter(analyzed, reldir, imagemap).sastToTex(sast)(new NestingLevel(2))
-              //encodedContent = EmojiParser.parseFromUnicode(content, {emojidata =>
-              //  s"{\ ${emojidata.getEmoji.getUnicode}"
-              //})
-            } yield content
-            targetFile.write(TexPages.wrap(s"\\graphicspath{{$imagedir/}}" +: content,
-                                           SastAnalyzes.AnalyzeResult(List(Attribute("layout", "memoir")), Nil, Nil),
-                                           None))
-            latexmk(targetdir, name, targetFile)
+  private def convertBlog(sourcedir: File, targetdir: File, makeTex: Boolean): AnyVal = {
+    val asciiData = new PostFolder(sourcedir.path)
+
+    def allAdocFiles(): List[File] = sourcedir.glob("**.{scim,adoc}").toList
+
+    val posts = allAdocFiles().map { f: File =>
+      scribe.debug(s"parsing ${f.name}")
+      f.path -> asciiData.makePost(f.path)
+    }
+
+    scribe.info(s"found ${posts.size} posts")
+    scribe.info(s"converting to $targetdir")
+
+    if (makeTex) {
 
 
-          }
-          else {
-            val postdir = targetdir / "posts"
-            postdir.createDirectories()
+      val name = sourcedir.nameWithoutExtension
+      val targetFile = targetdir / (name + ".tex")
+      val imagedir = targetdir / "images"
+      val imagemap = normalizeImages(sourcedir, imagedir)
+      val content = for {(path, post) <- posts.sortBy(_._2.date)
+                         sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
+                         analyzed = SastAnalyzes.analyze(sast)
+                         reldir = sourcedir.relativize(path.getParent).toString
+                         content <- new SastToTexConverter(analyzed, reldir, imagemap).sastToTex(
+                           sast)(new NestingLevel(2))
+        //encodedContent = EmojiParser.parseFromUnicode(content, {emojidata =>
+        //  s"{\ ${emojidata.getEmoji.getUnicode}"
+        //})
+      } yield content
+      targetFile.write(TexPages.wrap(s"\\graphicspath{{$imagedir/}}" +: content,
+                                     SastAnalyzes.AnalyzeResult(List(Attribute("layout", "memoir")),
+                                                                Nil,
+                                                                Nil),
+                                     None))
+      latexmk(targetdir, name, targetFile)
 
-            var categoriesAndMore: Map[String, Set[String]] = Map()
 
-            for ((path, post) <- posts) {
-              try {
-                scribe.trace(s"converting s${post.title}")
-                val targetPath = postdir / asciiData.targetPath(path)
-                targetPath.parent.createDirectories()
-                val relpath = targetPath.parent.relativize(targetdir)
+    }
+    else {
+      val postdir = targetdir / "posts"
+      postdir.createDirectories()
 
-                val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
-                val analyzed = SastAnalyzes.analyze(sast)
-                val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed).sastToHtml(
-                  sast)
+      var categoriesAndMore: Map[String, Set[String]] = Map()
 
-                targetPath.write(Pages(s"$relpath/").wrapContentHtml(analyzed.language, content))
-              }
-              catch {
-                case e @ ParsingAnnotation(content, failure) =>
-                  println(s"error while parsing $path")
-                  val trace = failure
-                  println(trace.msg)
-                  println(trace.longMsg)
-                  println(s"========\n$content\n========")
-                  throw e
-                case NonFatal(other)                         =>
-                  scribe.error(s"error while parsing $path")
-                  throw other
-              }
+      for ((path, post) <- posts) {
+        try {
+          scribe.trace(s"converting s${post.title}")
+          val targetPath = postdir / asciiData.targetPath(path)
+          targetPath.parent.createDirectories()
+          val relpath = targetPath.parent.relativize(targetdir)
 
-              // collect attributes
-              for (attribute <- post.attributes) {
-                val category = attribute._1
-                val categoryContents = categoriesAndMore.getOrElse(category, Set.empty)
-                categoriesAndMore = categoriesAndMore + (category -> (categoryContents + attribute._2))
-              }
-            }
+          val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
+          val analyzed = SastAnalyzes.analyze(sast)
+          val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed).sastToHtml(
+            sast)
+
+          targetPath.write(Pages(s"$relpath/").wrapContentHtml(analyzed.language, content))
+        }
+        catch {
+          case e @ ParsingAnnotation(content, failure) =>
+            println(s"error while parsing $path")
+            val trace = failure
+            println(trace.msg)
+            println(trace.longMsg)
+            println(s"========\n$content\n========")
+            throw e
+          case NonFatal(other)                         =>
+            scribe.error(s"error while parsing $path")
+            throw other
+        }
+
+        // collect attributes
+        for (attribute <- post.attributes) {
+          val category = attribute._1
+          val categoryContents = categoriesAndMore.getOrElse(category, Set.empty)
+          categoriesAndMore = categoriesAndMore + (category -> (categoryContents + attribute._2))
+        }
+      }
 
 //        categoriesAndMore.foreach{ c =>
 //          println(c._1)
@@ -174,19 +152,49 @@ object Convert {
 //        }
 
 
-            targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
+      targetdir./("index.html").write(Pages().makeIndexOf(posts.map(_._2)))
 
 
-            copyImages(sourcedir, postdir)
+      copyImages(sourcedir, postdir)
 
-          }
-        }
-        scribe.info("copy static resources")
-        (targetdir / "scitzen.css").writeByteArray(stylesheet)
     }
   }
+  def convertArticle(targetdir: File, sourcedir: File, makeTex: Boolean, bibRel: Option[Path]): AnyVal = {
+    val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
+    val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
+    val analyzed = SastAnalyzes.analyze(sast)
+    val bibPath = bibRel.orElse(analyzed.named.get("bib").map(p => Paths.get(p.trim)))
+                  .map(bp => sourcedir.parent./(bp.toString))
+    val bib = bibPath.toList.flatMap(Bibliography.parse)
+    val cited = analyzed.macros.filter(_.command == "cite").map(_.attributes.head.value).toSet
+    if (makeTex) {
+      val name = sourcedir.nameWithoutExtension
+      val targetFile = targetdir / (name + ".tex")
+      val bibName = bibPath.map { source =>
+        val targetname = source.nameWithoutExtension.replaceAll("\\s", "_")
+        source.copyTo(targetdir / (targetname + ".bib"), overwrite = true)
+        targetname
+      }
+      val content = new SastToTexConverter(analyzed).sastToTex(sast)
 
+      targetFile.write(TexPages.wrap(content,
+                                     analyzed,
+                                     bibName))
+      latexmk(targetdir, name, targetFile)
+    }
+    else {
+      val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+      val targetPath = targetdir / (sourcedir.nameWithoutExtension + ".html")
+      val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
+      val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed).sastToHtml(sast),
+                         ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id,
+                                                                             be.format)
+                         }))
 
+      targetPath.write(Pages().wrapContentHtml(analyzed.language, content))
+      copyImages(sourcedir.parent, targetdir)
+    }
+  }
   private def latexmk(outputdir: File, jobname: String, sourceFile: File): Int = {
     scala.sys.process.Process(List("latexmk",
                                    "-cd",
