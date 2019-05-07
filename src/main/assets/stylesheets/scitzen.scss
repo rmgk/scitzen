@@ -1,7 +1,5 @@
 @import 'lib/normalize.css/normalize';
 
-/* style based on the hugo theme even: https://github.com/olOwOlo/hugo-theme-even */
-
 $theme-color: #c05b4d;
 $color-subdued: #aaa;
 // a4 paper has 21cm, subtract 1.5 inch for print margins
@@ -9,14 +7,9 @@ $main-content-width: 171.9mm;
 
 $monospace: "Liberation Mono", monospace;
 
-
-@mixin card-like {
+@mixin boxed-content {
   box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
   background: #fffc;
-}
-
-@mixin boxed-content {
-  @include card-like;
   border-radius: 5px;
 }
 
@@ -65,10 +58,6 @@ html {
   @include text-font;
 }
 
-
-body {
-  height: 100vh;
-}
 
 ::selection {
   background: transparentize($theme-color, 0.8);
@@ -187,14 +176,10 @@ article.fullpost {
   figure, blockquote {
     @include float-box;
   }
-  figure {
-    text-align: center;
-  }
 
   p > code {
     padding: 0.4ex;
     font-family: $monospace;
-    @include boxed-content;
   }
 
   cite::before {
@@ -219,8 +204,6 @@ article.fullpost {
 }
 
 body {
-  display: flex;
-
   // makes jumping to links animate instead of instant
   scroll-behavior: smooth;
 
@@ -261,15 +244,8 @@ body {
   }
 
   & > main {
-    flex-grow: 1;
-    box-sizing: border-box;
     padding: 1em;
-    height: 100%;
-
-    & > :last-child {
-      margin-bottom: calc(100vh - 1.5em);
-    }
-
+    margin-bottom: calc(100vh - 3.5em);
   }
 }
 
