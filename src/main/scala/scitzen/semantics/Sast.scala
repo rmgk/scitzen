@@ -38,7 +38,7 @@ object SastAnalyzes {
 
     lazy val named: Map[String, String] = Attributes(attributes).named
 
-    lazy val language: String = named.getOrElse("lang", "")
+    lazy val language: String = named.getOrElse("lang", "").trim
 
     lazy val date    : Option[ScitzenDateTime] = named.get("revdate")
                                                  .map(v => DateParsingHelper.parseDate(v.trim))
