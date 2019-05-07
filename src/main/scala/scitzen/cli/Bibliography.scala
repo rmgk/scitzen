@@ -1,5 +1,7 @@
 package scitzen.cli
 
+import java.nio.charset.StandardCharsets
+
 import better.files.File
 import scalatags.Text.all._
 
@@ -38,9 +40,18 @@ object Bibliography {
 
 
   def parse(source: File): List[BibEntry] = {
-    val jsonStr = scala.sys.process.Process(Seq("pandoc-citeproc",
-                                                "--bib2json",
-                                                source.pathAsString)).!!
+    val jsonStr = {
+      val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
+      val cachefile = source.sibling(hash + ".json")
+      if (cachefile.exists) { cachefile.contentAsString }
+      else {
+        val res = scala.sys.process.Process(Seq("pandoc-citeproc",
+                                      "--bib2json",
+                                      source.pathAsString)).!!
+        cachefile.write(res)
+        res
+      }
+    }
     ujson.read(jsonStr).arr.iterator.map { e =>
       val obj = e.obj
 

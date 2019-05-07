@@ -14,6 +14,8 @@ import scitzen.parser.{Attribute, ParsingAnnotation}
 import scitzen.semantics.{SastAnalyzes, SastConverter}
 import scitzen.extern.Tex.latexmk
 
+import scala.collection.mutable
+import scala.util.Try
 import scala.util.control.NonFatal
 
 object Convert {
@@ -120,7 +122,7 @@ object Convert {
 
           val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
           val analyzed = SastAnalyzes.analyze(sast)
-          val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed).sastToHtml(
+          val content = new SastToHtmlConverter(scalatags.Text, Map(), analyzed, mutable.Map()).sastToHtml(
             sast)
 
           targetPath.write(Pages(s"$relpath/").wrapContentHtml(analyzed.language, content))
@@ -160,14 +162,27 @@ object Convert {
 
     }
   }
-  def convertArticle(targetdir: File, sourcedir: File, makeTex: Boolean, bibRel: Option[Path]): AnyVal = {
+  def convertArticle(targetdir: File, sourcedir: File, makeTex: Boolean, bibRel: Option[Path]): Unit = {
+    var start = System.nanoTime()
+    def t = {
+      val now = System.nanoTime()
+      val diff = (now - start) / 1000000
+      start = now
+      diff
+    }
+    def infoT(str: String) = scribe.info(str)
     val post = new PostFolder(sourcedir.path).makePost(sourcedir.path)
+    infoT(s"parsed $t")
     val sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
+    infoT(s"sastd $t")
     val analyzed = SastAnalyzes.analyze(sast)
+    infoT(s"analyzed $t")
     val bibPath = bibRel.orElse(analyzed.named.get("bib").map(p => Paths.get(p.trim)))
                   .map(bp => sourcedir.parent./(bp.toString))
     val bib = bibPath.toList.flatMap(Bibliography.parse)
+    infoT(s"bibd $t")
     val cited = analyzed.macros.filter(_.command == "cite").flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim)).toSet
+    infoT(s"cited $t")
     if (makeTex) {
       val name = sourcedir.nameWithoutExtension
       val targetFile = targetdir / (name + ".tex")
@@ -185,15 +200,25 @@ object Convert {
     }
     else {
       val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+      infoT(s"cited entries $t")
       val targetPath = targetdir / (sourcedir.nameWithoutExtension + ".html")
+      val katexmapfile = sourcedir.sibling("katexmap.json")
+      val katexmap = Try {
+        scala.collection.mutable.Map(upickle.default.read[Seq[(String, String)]](katexmapfile.path): _*)
+      }.getOrElse(mutable.Map())
       val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
-      val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed).sastToHtml(sast),
+      infoT(s"katex loaded $t")
+      val content = frag(new SastToHtmlConverter(scalatags.Text, biblio, analyzed, katexmap).sastToHtml(sast),
                          ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id,
                                                                              be.format)
                          }))
+      infoT(s"content generated $t")
+      katexmapfile.write(upickle.default.write[Seq[(String, String)]](katexmap.toSeq))
 
       targetPath.write(Pages().wrapContentHtml(analyzed.language, content))
+      infoT(s"written $t")
       copyImages(sourcedir.parent, targetdir)
+      infoT(s"imaged $t")
     }
   }
 

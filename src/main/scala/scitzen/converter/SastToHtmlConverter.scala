@@ -12,13 +12,15 @@ import scitzen.semantics.SastAnalyzes.AnalyzeResult
 import kaleidoscope.RegexStringContext
 import scitzen.extern.Tex
 
+import scala.collection.mutable
 import scala.util.Try
 
 
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
                                                            bibliography: Map[String, String],
-                                                           analyzeResult: AnalyzeResult) {
+                                                           analyzeResult: AnalyzeResult,
+                                                           katexMap: mutable.Map[String, String]) {
 
   import bundle.all._
   import bundle.tags2.nav
@@ -172,7 +174,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case '_' => em(inner)
       case '*' => strong(inner)
       case '`' => code(inner)
-      case '$' => span(raw((scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!))
+      case '$' =>
+        val mathml = katexMap.getOrElseUpdate(inner, {
+          (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
+        })
+        span(raw(mathml))
     }
     case Macro("comment", attributes) => frag()
     case Macro("ref", attributes) =>
