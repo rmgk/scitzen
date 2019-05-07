@@ -12,6 +12,8 @@ import scitzen.semantics.SastAnalyzes.AnalyzeResult
 import kaleidoscope.RegexStringContext
 import scitzen.extern.Tex
 
+import scala.util.Try
+
 
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
@@ -140,12 +142,30 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
   private def tableOfContents(sectionContent: Seq[Sast]): Frag = {
-    if (analyzeResult.attributes.exists(_.id == "toc")) {
-      nav(ol(sectionContent.collect{
-        case Section(title, _) => li(a(href := s"#${title.str}", title.str))
-      }))
-    } else frag()
+    def findSections(cont: Seq[Sast]): Seq[Section] = {
+      cont.flatMap {
+        case s: Section => List(s)
+        case AttributedBlock(_, content) => findSections(List(content))
+        case ParsedBlock(_, content) => findSections(content)
+        case _ => Nil
+      }
+    }
+    def makeToc(cont: Seq[Sast], depth: Int): Tag = {
+      ol(findSections(cont).map {
+        case Section(title, inner) =>
+          val sub = if (depth > 1) makeToc(inner, depth - 1) else frag()
+          li(a(href := s"#${title.str}", title.str))(sub)
+      })
+    }
+
+    analyzeResult.named.get("toc") match {
+      case Some(depth) =>
+        val d = Try {depth.trim.toInt}.getOrElse(1)
+        nav(makeToc(sectionContent, d))
+      case None        => frag()
+    }
   }
+
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
     case InlineText(str) => str
     case InlineQuote(q, inner) =>
