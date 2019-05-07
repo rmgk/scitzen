@@ -87,7 +87,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         List(
         delimiter match {
           case "" => p(sastToHtml(blockContent))
-          case r"=+" => blockquote(sastToHtml(blockContent))
+          case r"=+" => figure(sastToHtml(blockContent))
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case r"\s+" => sastToHtml(blockContent)

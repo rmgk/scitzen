@@ -41,6 +41,18 @@ $monospace: "Liberation Mono", monospace;
   }
 }
 
+@mixin float-box {
+  border-left: 1px solid $color-subdued;
+  padding-left: 1em;
+  padding-right: 1em;
+  & > :first-child {
+    margin-top: 0;
+  }
+  & > :last-child {
+    margin-bottom: 0;
+  }
+}
+
 
 
 html {
@@ -89,25 +101,6 @@ h1, h2 {
   letter-spacing: -0.0625em;
 }
 
-
-@mixin highlight-box {
-  border-top: 1px solid black;
-  border-bottom: 1px solid black;
-  margin-top: 2em;
-  margin-bottom: 2em;
-  padding: 1em 0;
-  border-radius: 3px;
-  //@media screen {
-  //  border-left: 3px solid $theme-color;
-  //}
-  & > :first-child {
-    margin-top: 0;
-  }
-  & > :last-child {
-    margin-bottom: 0;
-  }
-}
-
 textarea {
   display: block;
   @include main-content-element;
@@ -140,16 +133,15 @@ article.fullpost {
   }
 
   pre {
-    overflow-x: auto;
     white-space: pre-line;
     text-align: justify;
     hyphens: auto;
-    @include highlight-box;
     @include text-font;
   }
 
   pre > code {
     white-space: pre;
+    overflow-x: auto;
     display: block;
   }
 
@@ -193,7 +185,10 @@ article.fullpost {
 
 
   figure, blockquote {
-    @include highlight-box;
+    @include float-box;
+  }
+  figure {
+    text-align: center;
   }
 
   p > code {
@@ -214,7 +209,10 @@ article.fullpost {
     color: darkred;
   }
 
-  dd > *:first-child {
+  dd > :first-child {
+    margin-top: 0;
+  }
+  dd > :last-child {
     margin-top: 0;
   }
 
