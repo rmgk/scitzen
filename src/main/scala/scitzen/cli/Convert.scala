@@ -12,6 +12,7 @@ import scalatags.Text.tags.{SeqFrag, frag, li, ol}
 import scitzen.converter.{NestingLevel, SastToHtmlConverter, SastToTexConverter}
 import scitzen.parser.{Attribute, ParsingAnnotation}
 import scitzen.semantics.{SastAnalyzes, SastConverter}
+import scitzen.extern.Tex.latexmk
 
 import scala.util.control.NonFatal
 
@@ -100,7 +101,7 @@ object Convert {
                                                                 Nil,
                                                                 Nil),
                                      None))
-      latexmk(targetdir, name, targetFile)
+      latexmk(targetdir / ("output"), name, targetFile)
 
 
     }
@@ -180,7 +181,7 @@ object Convert {
       targetFile.write(TexPages.wrap(content,
                                      analyzed,
                                      bibName))
-      latexmk(targetdir, name, targetFile)
+      latexmk(targetdir/("output"), name, targetFile)
     }
     else {
       val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
@@ -195,17 +196,7 @@ object Convert {
       copyImages(sourcedir.parent, targetdir)
     }
   }
-  private def latexmk(outputdir: File, jobname: String, sourceFile: File): Int = {
-    scala.sys.process.Process(List("latexmk",
-                                   "-cd",
-                                   "-f",
-                                   "-lualatex",
-                                   "-interaction=nonstopmode",
-                                   "-synctex=1",
-                                   "--output-directory=" + outputdir./("output"),
-                                   "--jobname=" + jobname,
-                                   sourceFile.pathAsString)).!
-  }
+
   def allImages(sourcedir: File): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png,svg}").toList
 
   def copyImages(sourcedir: File, targetdir: File): Unit = {

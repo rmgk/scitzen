@@ -3,12 +3,14 @@ package scitzen.converter
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
+import better.files.File
 import scalatags.generic.Bundle
-import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
+import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 import scitzen.semantics.SastAnalyzes.AnalyzeResult
 import kaleidoscope.RegexStringContext
+import scitzen.extern.Tex
 
 
 
@@ -114,7 +116,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case bwa: AttributedBlock => List {
         val positiontype = bwa.attr.attributes.positional.headOption
         positiontype match {
-          case Some("quote") =>
+          case Some("image") =>
+            scribe.info(bwa.attr.attributes.named.toString())
+            val target = File("tempdir")
+            scribe.info(s"converting tikz picture to $target")
+            val pdf = Tex.convert(bwa.content.asInstanceOf[RawBlock].content, target)
+            val svg = Tex.pdfToSvg(pdf)
+            sastToHtml(List(MacroBlock(Macro("image", List(Attribute("", svg.pathAsString))))))
+          case Some("quote")                                                          =>
             val innerHtml = sastToHtml(List(bwa.content))
             // for blockquote layout, see example 12 (the twitter quote)
             // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
