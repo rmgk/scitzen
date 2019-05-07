@@ -168,12 +168,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       }
     case Macro("cite", attributes) =>
       val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
-        val bib = bibliography.get(bibid.trim).getOrElse{
+        bibid -> bibliography.getOrElse(bibid.trim, {
           scribe.error(s"bib key not found: $bibid")
           bibid
-        }
-        a(href := s"#$bibid", bib)
-      }
+        })
+      }.sortBy(_._2).map{case (bibid, bib) => a(href := s"#$bibid", bib)}
       frag("\u00A0", anchors)
     case Macro(tagname@("ins" | "del"), attributes) =>
       tag(tagname)(attributes.positional.mkString(", "))
