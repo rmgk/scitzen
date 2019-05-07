@@ -119,9 +119,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         val positiontype = bwa.attr.attributes.positional.headOption
         positiontype match {
           case Some("image") =>
-            scribe.info(bwa.attr.attributes.named.toString())
             val target = File("tempdir")
-            scribe.info(s"converting tikz picture to $target")
             val pdf = Tex.convert(bwa.content.asInstanceOf[RawBlock].content, target)
             val svg = Tex.pdfToSvg(pdf)
             sastToHtml(List(MacroBlock(Macro("image", List(Attribute("", svg.pathAsString))))))

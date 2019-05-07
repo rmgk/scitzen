@@ -60,6 +60,7 @@ object Tex {
 
   def pdfToSvg(in: File): File = {
     val out = in.sibling(in.name + ".svg")
+    if (out.exists) return out
     Process(List("inkscape", in.pathAsString, "--export-plain-svg", out.pathAsString)).!
     out
   }
