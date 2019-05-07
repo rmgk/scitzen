@@ -8,8 +8,8 @@ case class Document(blocks: Seq[Block]) {
 
 case class Attributes(all: Seq[Attribute]) {
   lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
-  lazy val target: String         = positional.last
-  lazy val named     : Map[String, String] =     all.map { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
+  lazy val target    : String              = positional.last
+  lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value)}.toMap
 }
 
 object Attributes {
