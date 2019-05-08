@@ -3,7 +3,7 @@ package scitzen.cli
 import scalatags.Text.all.{SeqFrag, frag, raw}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, rel, title, name => attrname}
 import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
-import scalatags.Text.tags.{a, body, h1, head, html, input, label, link, meta, span}
+import scalatags.Text.tags.{a, body, h1, head, html, input, label, link, meta, span, div}
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
 import scitzen.converter.Post
@@ -90,17 +90,19 @@ class Pages(val relative: String) {
 
     htmlDocument(makeHtml(body(
       cls := "index",
-      input(`type` := "checkbox", id := "nav-switch"),
-      nav(label(`for` := "nav-switch", raw("""
-      <svg viewBox="0 0 48 48">
-        <g stroke="black" stroke-width="4" stroke-linecap="round">
-        <path d="M 6 12 H 42" />
-        <path d="M 6 24 H 42" />
-        <path d="M 6 36 H 42" />
-        </g>
-      </svg>
-      """)))(
-        years.map(y => a(href := s"#$y", y.toString))),
+      div(
+        input(`type` := "checkbox", id := "nav-switch"),
+        cls := "sidebar",
+        nav(label(`for` := "nav-switch", raw("""
+              |<svg viewBox="0 0 48 48">
+              |  <g stroke="black" stroke-width="4" stroke-linecap="round">
+              |  <path d="M 6 12 H 42" />
+              |  <path d="M 6 24 H 42" />
+              |  <path d="M 6 36 H 42" />
+              |  </g>
+              |</svg>
+              |""".stripMargin)))(
+          years.map(y => a(href := s"#$y", y.toString)))),
       main(SeqFrag(sections)))))
   }
 
