@@ -88,16 +88,19 @@ object Convert {
       val targetFile = targetdir / (name + ".tex")
       val imagedir = targetdir / "images"
       val imagemap = normalizeImages(sourcedir, imagedir)
-      val content = for {(path, post) <- posts.sortBy(_._2.date)
-                         sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
-                         analyzed = SastAnalyzes.analyze(sast)
-                         reldir = sourcedir.relativize(path.getParent).toString
-                         content <- new SastToTexConverter(analyzed, reldir, imagemap).sastToTex(
-                           sast)(new NestingLevel(2))
+      val years = (for {(path, post) <- posts.sortBy(_._2.date)
+                              sast = new SastConverter(includeBelow(sourcedir)).blockSequence(post.document.blocks)
+                              analyzed = SastAnalyzes.analyze(sast)
+                              reldir = sourcedir.relativize(path.getParent).toString
+                              content <- new SastToTexConverter(analyzed.copy(attributes = analyzed.attributes :+ Attribute("layout", "unnumbered")),
+                                                                reldir,
+                                                                imagemap)
+                              .sastToTex(sast)(new NestingLevel(2))
         //encodedContent = EmojiParser.parseFromUnicode(content, {emojidata =>
         //  s"{\ ${emojidata.getEmoji.getUnicode}"
         //})
-      } yield content
+      } yield (post.date.get.date.year, content)).groupBy(_._1)
+      val content = years.toIndexedSeq.sortBy(_._1).flatMap{case (y, content) => s"\\part{$y}" +: content.map(_._2)}
       targetFile.write(TexPages.wrap(s"\\graphicspath{{$imagedir/}}" +: content,
                                      SastAnalyzes.AnalyzeResult(List(Attribute("layout", "memoir")),
                                                                 Nil,

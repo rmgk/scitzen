@@ -89,7 +89,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
 
           println()
           List(
-            s"\\newline{}\\includegraphics[width=\\columnwidth]{$imagepath}\\newline{}",
+            s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\\newline{}",
             )
 
         case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
@@ -115,7 +115,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
         else delimiter.charAt(0) match {
           case '`'  =>
             List(s"\\begin{verbatim}", text, "\\end{verbatim}")
-          case '.' => List(latexencode(text).replaceAllLiterally("\n", "\\newline{}\n"))
+          case '.' => List("\\newline{}\n\\noindent", latexencode(text).replaceAllLiterally("\n", "\\newline{}\n"))
         }
 
 
@@ -128,20 +128,28 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
     }
   }
 
-  val sectioning:  NestingLevel => String =
-    if (analyzeResult.named.getOrElse("layout", "").contains("thesis")) { _.i match {
-      case 1 => "title"
-      case 2 => "chapter"
-      case 3 => "section"
-      case 4 => "subsection"
-      case 5 => "subsubsection"
-    }}
-    else { _.i match {
-      case 1 => "title"
-      case 2 => "section"
-      case 3 => "subsection"
-      case 4 => "paragraph"
+  val sectioning:  NestingLevel => String = nesting => {
+    val layout = analyzeResult.named.getOrElse("layout", "")
+    val sec = if (layout.contains("thesis")) {
+      nesting.i match {
+        case 1 => "title"
+        case 2 => "chapter"
+        case 3 => "section"
+        case 4 => "subsection"
+        case 5 => "subsubsection"
+      }
     }
+    else {
+      nesting.i match {
+        case 1 => "title"
+        case 2 => "section"
+        case 3 => "subsection"
+        case 4 => "paragraph"
+      }
+    }
+    scribe.info(layout)
+    if (layout.contains("unnumbered")) sec + "*"
+    else sec
   }
   def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
     case InlineText(str) => latexencode(str)
@@ -159,7 +167,7 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
     case Macro("cite", attributes) =>
       s"\\cite{${latexencode(attributes.target)}}"
     case Macro("link", attributes) =>
-      val target = latexencode(attributes.target)
+      val target = attributes.target
       linkTo(attributes, target)
     case Macro("footnote", attributes) =>
       val target = latexencode(attributes.target)
@@ -169,6 +177,6 @@ class SastToTexConverter(analyzeResult: AnalyzeResult,
       s"$command[${attributes.all.mkString(",")}]"
   }.mkString("")
   def linkTo(attributes: Attributes, linktarget: String): String = {
-    s"\\url{${latexencode(linktarget)}}"
+    s"\\url{${linktarget}}"
   }
 }

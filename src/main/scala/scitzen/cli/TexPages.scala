@@ -19,8 +19,29 @@ object TexPages {
 """% !TEX jobname = report
 % !TEX output_directory = output
 \documentclass[a4paper, oneside]{memoir}
-\clubpenalty=10000
-\widowpenalty=10000
+% set \clubpenalty, etc. to distinctive values for use
+% in tracing page breaks. These values are chosen so that
+% no single penalty will absolutely prohibit a page break, but
+% certain combinations of two or more will.
+\clubpenalt=9996
+\widowpenalty=9999
+\brokenpenalty=4991
+% Reiterate the default value of \redisplaypenalty, for
+% completeness.
+% Set postdisplaypenalty to a fairly high value to discourage a
+% page break between a display and a widow line at the end of a
+% paragraph.
+\predisplaypenalty=10000
+\postdisplaypenalty=1549
+% And then \displaywidowpenalty should be at least as high as
+% \postdisplaypenalty, otherwise in a situation where two displays
+% are separated by two lines, TeX will prefer to break between the
+% two lines, rather than before the first line.
+\displaywidowpenalty=1602
+
+\setlength{\topskip}{1.6\topskip}
+\checkandfixthelayout
+\sloppybottom
 """
   }
 
@@ -28,13 +49,19 @@ object TexPages {
     """% !TEX jobname = report
     % !TEX output_directory = output
     \documentclass[a4paper, oneside]{memoir}
-    \clubpenalty=10000
-    \widowpenalty=10000
     """
   }
 
+  def luatexPackages: List[String] = {
+    List("\\usepackage{luatextra}", "\\defaultfontfeatures{Ligatures=TeX}")
+  }
+
+  def pdflatexPackages: List[String] = {
+    List("\\usepackage[T1]{fontenc}", "\\usepackage[utf8x]{inputenc}")
+  }
+
   def memoirPackages: List[String] = {
-    List("[utf8x]{inputenc}", "{graphicx}", "{url}", "{verbatim}")
+    List("{microtype}", "[german, english]{babel}", "{libertine}", "{graphicx}", "{url}", "{verbatim}")
   }
 
   def wrap(content: Seq[String], analyzed: AnalyzeResult, bibliography: Option[String]): String = {
@@ -69,10 +96,10 @@ object TexPages {
           ) ++ authorstrings ++ content ++ importBibACM :+
            s"\\end{document}"
       case "memoir" =>
-        (memoirHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
+        (memoirHeader +: (luatexPackages ++ memoirPackages.map(p => s"\\usepackage$p")) :+ s"\\begin{document}" :+ "\\sloppy") ++
         content :+ s"\\end{document}"
       case "thesis" =>
-        (thesisHeader +: memoirPackages.map(p => s"\\usepackage$p") :+ s"\\begin{document}") ++
+        (thesisHeader +: (luatexPackages ++ memoirPackages.map(p => s"\\usepackage$p")) :+ s"\\begin{document}") ++
         content ++ importBibNatbib :+ s"\\end{document}"
 
     }).mkString("\n")
