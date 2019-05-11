@@ -8,7 +8,7 @@ import cats.data.NonEmptyList
 import com.monovore.decline.{Command, Opts}
 import scitzen.converter.SastToScimConverter
 import scitzen.parser.DateParsingHelper
-import scitzen.semantics.{SastConverter, Sdoc}
+import scitzen.semantics.{Sast, SastConverter, Sdoc}
 
 case class DocumentDiscovery(sourcePaths: List[File]) {
 
@@ -46,12 +46,19 @@ object Format {
       dd.sourceFiles.foreach { file =>
         val content = file.contentAsString
         val sast = SastConverter().documentString(content)
-        val sdoc = Sdoc(sast)
-        val result = SastToScimConverter().toScim(sast)
-        val resultStr = result.mkString("", "\n", "\n")
-        if (resultStr != content) file.write(resultStr)
-        renameFileFromHeader(file, sdoc)
+        formatContent(file, content, sast)
+        renameFileFromHeader(file, Sdoc(sast))
       }
+    }
+  }
+
+
+  def formatContent(file: File, originalContent: String, sast: Seq[Sast]): Unit = {
+    val result = SastToScimConverter().toScim(sast)
+    val resultStr = result.mkString("", "\n", "\n")
+    if (resultStr != originalContent) {
+      scribe.info(s"formatting ${file.name}")
+      file.write(resultStr)
     }
   }
 
@@ -60,7 +67,7 @@ object Format {
     val newName: String = nameFromHeader(sdoc)
 
     if (newName != f.name) {
-      println(s"rename ${f.name} to $newName")
+      scribe.info(s"rename ${f.name} to $newName")
       f.renameTo(newName)
     }
   }
