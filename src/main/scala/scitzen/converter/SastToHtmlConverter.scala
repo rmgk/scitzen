@@ -25,7 +25,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   import bundle.tags2.nav
 
 
-  def listItemToHtml(child: SlistItem)(implicit nestingLevel: NestingLevel) = {
+  def listItemToHtml(child: SlistItem)(implicit nestingLevel: Scope) = {
       sastToHtml(child.content)
   }
 
@@ -50,7 +50,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       )
   }
 
-  def sastToHtml(b: Seq[Sast])(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[Frag] = {
+  def sastToHtml(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
     b.flatMap[Frag, Seq[Frag]] {
 
       case AttributeDef(_) => Nil
@@ -58,8 +58,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case Text(inner) => inlineValuesToHTML(inner)
 
       case sec@Section(title, subsections) =>
-        List(tag("h" + nestingLevel.i)(id := title.str, inlineValuesToHTML(title.inline)),
-             if (nestingLevel.i == 1) frag(tMeta(), tableOfContents(subsections)) else frag(),
+        List(tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)),
+             if (nestingLevel.level == 1) frag(tMeta(), tableOfContents(subsections)) else frag(),
              sastToHtml(subsections)(nestingLevel.inc))
 
       case Slist(Nil) => Nil

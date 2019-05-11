@@ -12,7 +12,7 @@ import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast.{MacroBlock, Section, Text}
 
-class DocumentManager(documents: List[ParsedDocument]) {
+class DocumentManager(val documents: List[ParsedDocument]) {
   def makeIndex(): List[Sast] = {
     val years = documents.groupBy(_.sdoc.date.fold("Sometime")(_.year))
     years.toList.sortBy(_._1).map{ case (year, docs) =>
@@ -26,6 +26,22 @@ class DocumentManager(documents: List[ParsedDocument]) {
   def mainSast() = makeIndex()
   def find(path: String): Option[ParsedDocument] = documents.find(d => d.file.pathAsString == path)
 
+}
+
+class ImageResolver(val substitutions: Map[File, String]) {
+  def image(root: File, target: String): String = substitutions(root / target)
+}
+
+object ImageResolver {
+  def fromDM(documentManager: DocumentManager): ImageResolver = {
+    new scitzen.cli.ImageResolver(documentManager.documents.flatMap{ pd =>
+      pd.sdoc.analyzeResult.macros.collect{
+        case Macro("image", attributes) => pd.file.parent/attributes.target
+      }
+    }.mapWithIndex{
+      case (image, index) => image -> s"images/$index${image.extension().getOrElse("")}"
+    }.toMap)
+  }
 }
 
 object Convert {
@@ -79,14 +95,24 @@ object Convert {
     scribe.info(s"converting to $targetdir")
 
     val dm = new DocumentManager(documents)
+    val ir = ImageResolver.fromDM(dm)
 
-    val content = new SastToTexConverter(dm, numbered = false).convert()
+    val content = new SastToTexConverter(dm,
+                                         numbered = false,
+                                         root = sourcedir,
+                                         imageResolver = ir).convert()
 
     val name = "document"
     val targetFile = targetdir / (name + ".tex")
 
+    (targetdir/"images").createDirectories()
+    ir.substitutions.foreach{
+      case (source, target) => source.copyTo(targetdir/target, overwrite = true)
+    }
+
     //s"\\graphicspath{{$imagedir/}}" +:
     targetFile.write(TexPages.wrap(content, None, "memoir", None))
+
     latexmk(targetdir / ("output"), name, targetFile)
 
 

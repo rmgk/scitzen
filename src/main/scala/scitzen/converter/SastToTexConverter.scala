@@ -1,30 +1,30 @@
 package scitzen.converter
 
-import scitzen.cli.DocumentManager
+import better.files.File
+import scitzen.cli.{DocumentManager, ImageResolver}
 import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 
-class NestingLevel(val i: Int) extends AnyVal {
-  def inc: NestingLevel = {
-    new NestingLevel(i + 1)
+class Scope(val level: Int) extends AnyVal {
+  def inc: Scope = {
+    new Scope(level + 1)
   }
 }
 
 
 class SastToTexConverter(documents: DocumentManager,
+                         root: File,
                          numbered: Boolean = true,
-                         reldir: String = "",
-                         imagemap: Map[String, String] = Map()) {
-  val reldir2 = if(reldir.isEmpty) "" else reldir +"/"
+                         imageResolver: ImageResolver) {
 
   def convert(): Seq[String]= {
     documents.mainSast() match {
       case List(Section(title, content)) =>
         val secChildren = content.collect{case s: Section => s}
         s"\\title{${inlineValuesToHTML(title.inline)}}" +:
-        (putAbstract(content) ++ sastToTex(secChildren)(nestingLevel = new NestingLevel(2)))
-      case list => sastToTex(list)
+        (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(2)))
+      case list => sastToTex(list)(scope = new Scope(1))
 
     }
   }
@@ -44,12 +44,12 @@ class SastToTexConverter(documents: DocumentManager,
   def putAbstract(contents: Seq[Sast]): Seq[String] = {
     val secContent = contents.filter(!_.isInstanceOf[Section])
       "\\begin{abstract}" +:
-      sastToTex(secContent) :+
+      sastToTex(secContent)(new Scope(1)) :+
       "\\end{abstract}"
   }
 
 
-  def sastToTex(b: Seq[Sast])(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
+  def sastToTex(b: Seq[Sast])(implicit scope: Scope): Seq[String] = {
     b.flatMap {
 
       case AttributeDef(_) => Nil
@@ -57,9 +57,9 @@ class SastToTexConverter(documents: DocumentManager,
       case Text(inner) => List(inlineValuesToHTML(inner))
 
       case Section(title, contents) =>
-        val sec = sectioning(nestingLevel)
+        val sec = sectioning(scope)
         s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
-        sastToTex(contents)(nestingLevel.inc)
+        sastToTex(contents)(scope.inc)
 
       case Slist(children) =>
         children match {
@@ -81,23 +81,20 @@ class SastToTexConverter(documents: DocumentManager,
       case MacroBlock(mcro) => mcro match {
         case Macro("image", attributes) =>
           val target = attributes.target
-          val imagepath = imagemap.getOrElse(s"$reldir2$target", target)
-          scribe.info(s"resolving $target in $reldir, resulted in $imagepath")
-
-          println()
-          List(
-            s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\\newline{}",
-            )
+          val imagepath = imageResolver.image(root, target)
+          List(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n")
 
         case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
         case Macro("include", attributes) =>
           val docOpt = documents.find(attributes.target)
-          docOpt.toList.flatMap{doc =>
+          docOpt.toList.flatMap { doc =>
             val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
             val section = doc.sast.head.asInstanceOf[Section]
-            val sast = section.copy(title = Text(InlineText(date) +: section.title.inline ))
-            sastToTex(List(sast))(new NestingLevel(3))}
-        case other =>
+            val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
+            new SastToTexConverter(documents, doc.file.parent, numbered, imageResolver)
+            .sastToTex(List(sast))(new Scope(3))
+          }
+        case other                        =>
           scribe.warn(s"not implemented: $other")
           List(other.toString)
       }
@@ -132,8 +129,8 @@ class SastToTexConverter(documents: DocumentManager,
     }
   }
 
-  val sectioning:  NestingLevel => String = nesting => {
-    val sec = nesting.i match {
+  val sectioning:  Scope => String = nesting => {
+    val sec = nesting.level match {
       case 1 => "part"
       case 2 => "chapter"
       case 3 => "section"

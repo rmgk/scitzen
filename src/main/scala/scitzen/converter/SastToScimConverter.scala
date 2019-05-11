@@ -14,7 +14,7 @@ case class SastToScimConverter() {
     case Attribute(k, v)                        => s"""$k="$v""""
   }.mkString("[", ";", "]")
 
-  def toScim(b: Seq[Sast])(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
+  def toScim(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     b.flatMap[String, Seq[String]] {
 
       case AttributeDef(a) => List(s":${a.id}:${a.value}")
@@ -27,7 +27,7 @@ case class SastToScimConverter() {
 
 
       case Section(title, sc) =>
-        ("=" * nestingLevel.i + " " + inlineToScim(title.inline)) +:
+        ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
         toScim(sc)(nestingLevel.inc)
 
       case Slist(children) => children.flatMap {

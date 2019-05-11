@@ -60,7 +60,7 @@ object TexPages {
   }
 
   def memoirPackages: List[String] = {
-    List("{microtype}", "[german, english]{babel}", "{libertine}", "{graphicx}", "{url}", "{verbatim}")
+    List("{microtype}", "[ngerman, english]{babel}", "{libertine}", "{graphicx}", "{url}", "{verbatim}")
   }
 
   def wrap(content: Seq[String], authorsOpt: Option[String], layout: String, bibliography: Option[String]): String = {
