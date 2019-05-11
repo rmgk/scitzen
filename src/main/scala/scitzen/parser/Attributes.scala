@@ -12,7 +12,7 @@ object AttributesParser {
   // https://asciidoctor.org/docs/user-manual/#named-attribute
   // tells us that unquoted attribute values may not contain spaces, but this seems to be untrue in practice
   // however, in the hope of better error messages, we will not allow newlines
-  def unquotedValue[_:P]: P[String]    = P(untilE(";" | close | eol))
+  def unquotedValue[_:P]: P[String]    = P(untilE(";" | close | eol)).map(_.trim)
   def value        [_:P]: P[String]    = P(quoted("\"") | quoted("'") | unquotedValue)
   def listDef      [_:P]: P[Attribute] = P(identifier.! ~ equals ~ value)
                                          .map { case (id, v) => Attribute(id, v) }
