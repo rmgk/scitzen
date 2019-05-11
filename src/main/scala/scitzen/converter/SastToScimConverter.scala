@@ -12,7 +12,7 @@ case class SastToScimConverter() {
     case Attribute("", v) if !(v.contains(";") || v.contains("\n")) => v
     case Attribute("", v)                       => s""""$v""""
     case Attribute(k, v)                        => s"""$k="$v""""
-  }.mkString("[", ";", "]")
+  }.mkString("[", "; ", "]")
 
   def toScim(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     b.flatMap[String, Seq[String]] {
