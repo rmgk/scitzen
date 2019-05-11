@@ -40,15 +40,15 @@ object Rename {
   def nameFromHeader(header: Document): String = {
     val date = DateParsingHelper.parseDate(header.attributes.named("revdate").trim)
     val title = sluggify(header.title) + ".scim"
-    date.date.full + "_" + title
+    date.date.full + " " + title
   }
 
   def sluggify(str: String): String =
     str
-    .trim
-    .replace("'", "")
-    .replaceAll("""[^\p{L}\d]""", "-")
+    .replaceAll("""[<>":;%/\?\[\]\\\*\|]""", "-")
+    .replaceAll("\\s+", " ")
     .replaceAll("-+", "-")
+    .trim
     .replaceAll("^-|-$", "")
 
 }
