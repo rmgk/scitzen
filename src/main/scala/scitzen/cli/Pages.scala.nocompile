@@ -6,7 +6,6 @@ import scalatags.Text.implicits.{Tag, stringAttr, stringFrag}
 import scalatags.Text.tags.{a, body, h1, head, html, input, label, link, meta, span, div}
 import scalatags.Text.tags2.{article, main, nav, section}
 import scalatags.Text.{Frag, Modifier, TypedTag}
-import scitzen.converter.Post
 import scitzen.parser.ScitzenDateTime
 
 object Pages {

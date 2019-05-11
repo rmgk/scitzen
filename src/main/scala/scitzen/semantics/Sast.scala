@@ -3,8 +3,6 @@ package scitzen.semantics
 import scitzen.parser._
 import scitzen.semantics.Sast._
 
-import scala.util.control.NonFatal
-
 sealed trait Sast
 
 object Sast {
@@ -27,64 +25,6 @@ object Sast {
   case class AttributeDef(attribute: Attribute) extends Sast
 }
 
-object SastAnalyzes {
-  case class Target(id: String, resolution: Sast)
-  case class AnalyzeResult(attributes: List[Attribute],
-                           macros: List[Macro],
-                           targets: List[Target]) {
-    def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
-    def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
-    def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
-
-    lazy val named: Map[String, String] = Attributes(attributes).named
-
-    lazy val language: String = named.getOrElse("lang", "").trim
-
-    lazy val date    : Option[ScitzenDateTime] = named.get("revdate")
-                                                 .map(v => DateParsingHelper.parseDate(v.trim))
-    lazy val modified: Option[ScitzenDateTime] = named.get("modified")
-                                                 .map(m => DateParsingHelper.parseDate(m.trim))
-
-  }
-
-  def analyze(input: Sast) = {
-    val AnalyzeResult(a, m, t) = analyzeR(input, None, AnalyzeResult(Nil, Nil, Nil))
-    AnalyzeResult(a.reverse, m.reverse, t.reverse)
-  }
-
-  def analyze(input: Seq[Sast]) = {
-    val AnalyzeResult(a, m, t) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil))
-    AnalyzeResult(a.reverse, m.reverse, t.reverse)
-  }
-
-  def analyzeAll(inputs: Seq[Sast], scope: Option[Target], acc: AnalyzeResult): AnalyzeResult =
-    inputs.foldLeft(acc)((cacc, sast) => analyzeR(sast, scope, cacc))
-
-
-  def analyzeR(input: Sast, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
-    case Slist(children)   => children.foldLeft(acc){(cacc, sli) =>
-      analyzeAll(sli.content, scope, acc)
-    }
-    case Text(inlines)     => inlines.foldLeft(acc){ (cacc, inline) => inline match {
-      case m: Macro             => cacc + m
-      case InlineText(str)       => cacc
-      case InlineQuote(q, inner) => cacc
-    } }
-
-    case sec @ Section(title, content)         =>
-      val target = Target(title.str, sec)
-      analyzeAll(content, Some(target), acc + target)
-    case AttributeDef(attribute)        => acc + attribute
-    case MacroBlock(imacro)              => {
-      val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.positional.head, scope.get.resolution)
-                 else acc
-      iacc + imacro
-    }
-    case ParsedBlock(delimiter, content) => analyzeAll(content, scope, acc)
-    case RawBlock(_, _) => acc
-    case AttributedBlock(attr, content) => analyzeR(content, scope, acc)
-  }
-}
 
 class ListConverter(val sastConverter: SastConverter) extends AnyVal {
   import sastConverter.{blockContent, inlineString}
@@ -117,7 +57,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
   }
 }
 
-final class SastConverter(includeResolver: String => String) {
+final case class SastConverter() {
 
   private val ListConverter = new ListConverter(this)
 
@@ -156,17 +96,6 @@ final class SastConverter(includeResolver: String => String) {
 
       case AttributeBlock(attribute) => AttributeDef(attribute)
 
-      case Macro("include", attributes) =>
-        val incfile = attributes.positional.head
-        try {
-          ParsedBlock("include", documentString(includeResolver(incfile)))
-        }
-        catch {
-          case NonFatal(e) =>
-            scribe.warn(s"failed to include $incfile")
-            throw e
-        }
-
       case m: Macro => MacroBlock(m)
 
       case WhitespaceBlock(space) => RawBlock("", space)
@@ -191,7 +120,7 @@ final class SastConverter(includeResolver: String => String) {
 
 
   def documentString(blockContent: String): Seq[Sast] = {
-    blockSequence(Parse.document(blockContent).right.get.blocks)
+    blockSequence(Parse.document(blockContent).right.get)
   }
 
 

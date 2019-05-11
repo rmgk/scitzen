@@ -4,13 +4,12 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import scalatags.generic.Bundle
-import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
-import scitzen.semantics.Sast
-import scitzen.semantics.Sast._
-import scitzen.semantics.SastAnalyzes.AnalyzeResult
 import kaleidoscope.RegexStringContext
+import scalatags.generic.Bundle
 import scitzen.extern.Tex
+import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
+import scitzen.semantics.Sast._
+import scitzen.semantics.{Sast, Sdoc}
 
 import scala.collection.mutable
 import scala.util.Try
@@ -19,7 +18,7 @@ import scala.util.Try
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
                                                            bibliography: Map[String, String],
-                                                           analyzeResult: AnalyzeResult,
+                                                           analyzeResult: Sdoc,
                                                            katexMap: mutable.Map[String, String]) {
 
   import bundle.all._

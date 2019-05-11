@@ -13,8 +13,7 @@ object Scitzen extends CommandApp(
     Logger.root.clearHandlers().withHandler(formatter = myFormatter,
                                             minimumLevel = Some(scribe.Level.Info)).replace()
 
-    Opts.subcommand(Convert.command)
-    .orElse(Opts.subcommand(Rename.command))
+    Opts.subcommand(Format.command)
     .orElse(Opts.subcommand(JsonSast.command))
     .orElse(Opts.subcommand(Format.command))
   }

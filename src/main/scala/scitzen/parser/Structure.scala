@@ -1,10 +1,6 @@
 package scitzen.parser
 
-case class Document(blocks: Seq[Block]) {
-  lazy val attributes: Attributes = Attributes(blocks.collect{case Block(_, _, AttributeBlock(attr)) => attr})
-  lazy val title: String = blocks.iterator.map(_.content).collectFirst{case SectionTitle(1, title) => title}.get
 
-}
 
 case class Attributes(all: Seq[Attribute]) {
   lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }

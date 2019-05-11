@@ -5,7 +5,7 @@ import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 
 
-object SastToScimConverter {
+case class SastToScimConverter() {
 
 
   def attributesToScim(attributes: Seq[Attribute]): String = attributes.map {
@@ -64,9 +64,10 @@ object SastToScimConverter {
   }
 
 
-  private def macroToScim(mcro: Macro): String = {
+  def macroToScim(mcro: Macro): String = {
     s":${mcro.command}${attributesToScim(mcro.attributes.all)}"
   }
+
   def inlineToScim(inners: Seq[Inline]): String = inners.map {
     case InlineText(str)        => str
     case InlineQuote(q, inner2) => s":$q$inner2$q"

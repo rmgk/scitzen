@@ -1,9 +1,8 @@
 package scitzen.converter
 
 import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro}
-import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
-import scitzen.semantics.SastAnalyzes.AnalyzeResult
+import scitzen.semantics.{Sast, Sdoc}
 
 class NestingLevel(val i: Int) extends AnyVal {
   def inc: NestingLevel = {
@@ -12,7 +11,7 @@ class NestingLevel(val i: Int) extends AnyVal {
 }
 
 
-class SastToTexConverter(analyzeResult: AnalyzeResult,
+class SastToTexConverter(analyzeResult: Sdoc,
                          reldir: String = "",
                          imagemap: Map[String, String] = Map()) {
   val reldir2 = if(reldir.isEmpty) "" else reldir +"/"
