@@ -13,7 +13,7 @@ import scitzen.semantics.{Sast, SastConverter, Sdoc}
 case class DocumentDiscovery(sourcePaths: List[File]) {
 
   val fileEnding  = "scim"
-  val globPattern = "*." + fileEnding
+  val globPattern = "**." + fileEnding
 
   lazy val sourceDirectories: List[File] = sourcePaths.filter(_.isDirectory)
   lazy val sourceFiles      : List[File] = sourcePaths.flatMap {
