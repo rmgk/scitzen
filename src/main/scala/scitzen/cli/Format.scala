@@ -46,12 +46,26 @@ object Format {
       dd.sourceFiles.foreach { file =>
         val content = file.contentAsString
         val sast = SastConverter().documentString(content)
+        val sdoc = Sdoc(sast)
+        checkReferences(file, sdoc)
         formatContent(file, content, sast)
-        renameFileFromHeader(file, Sdoc(sast))
+        renameFileFromHeader(file, sdoc)
       }
     }
   }
 
+
+  def checkReferences(file: File, sdoc: Sdoc): Unit = {
+    sdoc.analyzeResult.macros.foreach { mcro =>
+      mcro.command match {
+        case "image" =>
+          val path = file.parent./(mcro.attributes.target.trim)
+          if (path.isRegularFile && file.parent.isParentOf(path)) ()
+          else scribe.warn(s"${file} references nonexisting $path")
+        case other   => ()
+      }
+    }
+  }
 
   def formatContent(file: File, originalContent: String, sast: Seq[Sast]): Unit = {
     val result = SastToScimConverter().toScim(sast)
