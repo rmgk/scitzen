@@ -13,6 +13,7 @@ case class ScitzenDateTime(date: ScitzenDate, timeO: Option[ScitzenTime]) {
   def timeAppend : String = timeO.fold("")(st => s" ${st.short}")
   def full: String = s"${date.full}$timeAppend"
   def monthDayTime: String = s"${date.month}-${date.day}$timeAppend"
+  def year: String = date.year
 }
 object ScitzenDateTime {
   implicit val ord: Ordering[ScitzenDateTime] = Ordering.by(_.full)

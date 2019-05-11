@@ -1,8 +1,9 @@
 package scitzen.converter
 
+import scitzen.cli.DocumentManager
 import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro}
+import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
-import scitzen.semantics.{Sast, Sdoc}
 
 class NestingLevel(val i: Int) extends AnyVal {
   def inc: NestingLevel = {
@@ -11,10 +12,14 @@ class NestingLevel(val i: Int) extends AnyVal {
 }
 
 
-class SastToTexConverter(analyzeResult: Sdoc,
+class SastToTexConverter(documents: DocumentManager,
                          reldir: String = "",
                          imagemap: Map[String, String] = Map()) {
   val reldir2 = if(reldir.isEmpty) "" else reldir +"/"
+
+  def convert(): Seq[String]= {
+    sastToTex(documents.mainSast())
+  }
 
   def latexencode(input: String): String = {
     val nobs = input.replaceAllLiterally("\\", "»ℓ§«")
@@ -45,7 +50,7 @@ class SastToTexConverter(analyzeResult: Sdoc,
         def putAbstract: Seq[String] = {
           val secContent = contents.filter(!_.isInstanceOf[Section])
           val secChildren = contents.collect{case s: Section => s}
-          (if (analyzeResult.named.getOrElse("layout", "").contains("acm")) {
+          (if ("".contains("acm")) {
           "\\begin{abstract}" +:
            rec(secContent) :+
            "\\end{abstract}" :+
@@ -128,7 +133,7 @@ class SastToTexConverter(analyzeResult: Sdoc,
   }
 
   val sectioning:  NestingLevel => String = nesting => {
-    val layout = analyzeResult.named.getOrElse("layout", "")
+    val layout = ""
     val sec = if (layout.contains("thesis")) {
       nesting.i match {
         case 1 => "title"

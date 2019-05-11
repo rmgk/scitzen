@@ -1,7 +1,6 @@
 package scitzen.cli
 
 import scitzen.parser.{Macro, Parse}
-import scitzen.semantics.Sdoc
 
 object TexPages {
 
@@ -64,8 +63,8 @@ object TexPages {
     List("{microtype}", "[german, english]{babel}", "{libertine}", "{graphicx}", "{url}", "{verbatim}")
   }
 
-  def wrap(content: Seq[String], analyzed: Sdoc, bibliography: Option[String]): String = {
-    val authors = analyzed.named.get("authors").toList.flatMap {aut =>
+  def wrap(content: Seq[String], authorsOpt: Option[String], layout: String, bibliography: Option[String]): String = {
+    val authors = authorsOpt.toList.flatMap {aut =>
       Parse.paragraph(aut).right.get.collect{
         case Macro("author", attributes) => (attributes.positional.head, attributes.positional.tail)
       }
@@ -88,7 +87,7 @@ object TexPages {
       }
     }
 
-    (analyzed.named("layout").trim.toLowerCase match {
+    (layout match {
       case "acmconf" =>
         List(
           acmHeader,
