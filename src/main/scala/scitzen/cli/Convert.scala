@@ -13,9 +13,9 @@ import scitzen.semantics.Sast
 import scitzen.semantics.Sast.{MacroBlock, Section, Text}
 
 class DocumentManager(documents: List[ParsedDocument]) {
-  def makeIndex(): Seq[Sast] = {
+  def makeIndex(): List[Sast] = {
     val years = documents.groupBy(_.sdoc.date.fold("Sometime")(_.year))
-    years.toSeq.sortBy(_._1).map{ case (year, docs) =>
+    years.toList.sortBy(_._1).map{ case (year, docs) =>
       Section(Text(List(InlineText(year))),
               docs.sortBy(_.sdoc.date).map{doc =>
                 MacroBlock(Macro("include",
@@ -24,6 +24,7 @@ class DocumentManager(documents: List[ParsedDocument]) {
   }
 
   def mainSast() = makeIndex()
+  def find(path: String): Option[ParsedDocument] = documents.find(d => d.file.pathAsString == path)
 
 }
 
@@ -79,7 +80,7 @@ object Convert {
 
     val dm = new DocumentManager(documents)
 
-    val content = new SastToTexConverter(dm).convert()
+    val content = new SastToTexConverter(dm, numbered = false).convert()
 
     val name = "document"
     val targetFile = targetdir / (name + ".tex")

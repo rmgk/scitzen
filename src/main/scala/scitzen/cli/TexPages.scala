@@ -22,7 +22,7 @@ object TexPages {
 % in tracing page breaks. These values are chosen so that
 % no single penalty will absolutely prohibit a page break, but
 % certain combinations of two or more will.
-\clubpenalt=9996
+\clubpenalty=9996
 \widowpenalty=9999
 \brokenpenalty=4991
 % Reiterate the default value of \redisplaypenalty, for

@@ -13,12 +13,20 @@ class NestingLevel(val i: Int) extends AnyVal {
 
 
 class SastToTexConverter(documents: DocumentManager,
+                         numbered: Boolean = true,
                          reldir: String = "",
                          imagemap: Map[String, String] = Map()) {
   val reldir2 = if(reldir.isEmpty) "" else reldir +"/"
 
   def convert(): Seq[String]= {
-    sastToTex(documents.mainSast())
+    documents.mainSast() match {
+      case List(Section(title, content)) =>
+        val secChildren = content.collect{case s: Section => s}
+        s"\\title{${inlineValuesToHTML(title.inline)}}" +:
+        (putAbstract(content) ++ sastToTex(secChildren)(nestingLevel = new NestingLevel(2)))
+      case list => sastToTex(list)
+
+    }
   }
 
   def latexencode(input: String): String = {
@@ -33,6 +41,12 @@ class SastToTexConverter(documents: DocumentManager,
     nomuch.replaceAllLiterally("»ℓ§«", "\\textbackslash{}")
   }
 
+  def putAbstract(contents: Seq[Sast]): Seq[String] = {
+    val secContent = contents.filter(!_.isInstanceOf[Section])
+      "\\begin{abstract}" +:
+      sastToTex(secContent) :+
+      "\\end{abstract}"
+  }
 
 
   def sastToTex(b: Seq[Sast])(implicit nestingLevel: NestingLevel = new NestingLevel(1)): Seq[String] = {
@@ -44,29 +58,8 @@ class SastToTexConverter(documents: DocumentManager,
 
       case Section(title, contents) =>
         val sec = sectioning(nestingLevel)
-
-        def rec(block: Seq[Sast]): Seq[String] = sastToTex(block)(nestingLevel.inc)
-
-        def putAbstract: Seq[String] = {
-          val secContent = contents.filter(!_.isInstanceOf[Section])
-          val secChildren = contents.collect{case s: Section => s}
-          (if ("".contains("acm")) {
-          "\\begin{abstract}" +:
-           rec(secContent) :+
-           "\\end{abstract}" :+
-           "\\maketitle"
-          } else {
-            "\\maketitle" +:
-            "\\begin{abstract}" +:
-            rec(secContent) :+
-            "\\end{abstract}"
-          }) ++ rec(secChildren)
-        }
-
         s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
-        (if (nestingLevel.i == 1) {
-          putAbstract
-        } else rec(contents))
+        sastToTex(contents)(nestingLevel.inc)
 
       case Slist(children) =>
         children match {
@@ -97,6 +90,13 @@ class SastToTexConverter(documents: DocumentManager,
             )
 
         case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
+        case Macro("include", attributes) =>
+          val docOpt = documents.find(attributes.target)
+          docOpt.toList.flatMap{doc =>
+            val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
+            val section = doc.sast.head.asInstanceOf[Section]
+            val sast = section.copy(title = Text(InlineText(date) +: section.title.inline ))
+            sastToTex(List(sast))(new NestingLevel(3))}
         case other =>
           scribe.warn(s"not implemented: $other")
           List(other.toString)
@@ -133,27 +133,14 @@ class SastToTexConverter(documents: DocumentManager,
   }
 
   val sectioning:  NestingLevel => String = nesting => {
-    val layout = ""
-    val sec = if (layout.contains("thesis")) {
-      nesting.i match {
-        case 1 => "title"
-        case 2 => "chapter"
-        case 3 => "section"
-        case 4 => "subsection"
-        case 5 => "subsubsection"
-      }
+    val sec = nesting.i match {
+      case 1 => "part"
+      case 2 => "chapter"
+      case 3 => "section"
+      case 4 => "subsection"
+      case 5 => "paragraph"
     }
-    else {
-      nesting.i match {
-        case 1 => "title"
-        case 2 => "section"
-        case 3 => "subsection"
-        case 4 => "paragraph"
-      }
-    }
-    scribe.info(layout)
-    if (layout.contains("unnumbered")) sec + "*"
-    else sec
+    if (numbered) sec else sec + "*"
   }
   def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
     case InlineText(str) => latexencode(str)
