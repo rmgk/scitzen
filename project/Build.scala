@@ -2,8 +2,8 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
 import sbt._
 
-/** This file is shared between multiple projects
-  * and may contain unused dependencies */
+/* This file is shared between multiple projects
+ * and may contain unused dependencies */
 
 
 object Settings {
@@ -77,7 +77,7 @@ object Dependencies {
 
   def ld = libraryDependencies
 
-  val betterFiles = ld += "com.github.pathikrit" %% "better-files" % "3.7.1"
+  val betterFiles = ld += "com.github.pathikrit" %% "better-files" % "3.8.0"
   val cats        = ld += "org.typelevel" %%% "cats-core" % "1.6.0"
   val decline     = ld += "com.monovore" %% "decline" % "0.6.2"
   val fastparse   = ld += "com.lihaoyi" %%% "fastparse" % "2.1.2"
