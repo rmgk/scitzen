@@ -3,11 +3,15 @@ package scitzen.generic
 import java.time.format.TextStyle
 import java.util.Locale
 
+import better.files.File
 import scitzen.cli.ParsedDocument
 import scitzen.generic.Sast.{MacroBlock, Section, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
-class DocumentManager(val documents: List[ParsedDocument]) {
+class DocumentManager(_documents: List[ParsedDocument]) {
+
+  def documents: List[ParsedDocument] = _documents
+  val byPath: Map[File, ParsedDocument] = _documents.map(pd => pd.file -> pd).toMap
 
   def sectionBy(pdocs: List[ParsedDocument])
                (f: ParsedDocument => String)
@@ -30,13 +34,17 @@ class DocumentManager(val documents: List[ParsedDocument]) {
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.sdoc.date).map { doc =>
           MacroBlock(Macro("include",
-                           Attributes(List(Attribute("", doc.file.pathAsString)))))
+                           Attributes(List(
+                             Attribute("", doc.file.pathAsString),
+                             Attribute("type", "article")))))
         }
       }
     }
   }
 
-  def mainSast() = makeIndex()
-  def find(path: String): Option[ParsedDocument] = documents.find(d => d.file.pathAsString == path)
+  def mainSast(): Seq[Sast] = if (documents.size > 1) makeIndex() else documents.head.sast
+  def find(root: File, path: String): Option[ParsedDocument] = {
+    byPath.get(root / path).filter(d => root.isParentOf(d.file))
+  }
 
 }

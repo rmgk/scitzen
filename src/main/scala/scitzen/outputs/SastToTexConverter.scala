@@ -17,15 +17,12 @@ class SastToTexConverter(documents: DocumentManager,
                          numbered: Boolean = true,
                          imageResolver: ImageResolver) {
 
-  def convert(): Seq[String]= {
-    documents.mainSast() match {
-      case List(Section(title, content)) =>
-        val secChildren = content.collect{case s: Section => s}
-        s"\\title{${inlineValuesToHTML(title.inline)}}" +:
-        (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(3)))
-      case list => sastToTex(list)(scope = new Scope(1))
-
-    }
+  def convert(mainSast: List[Sast]): Seq[String] = mainSast match {
+    case List(Section(title, content)) =>
+      val secChildren = content.collect { case s: Section => s }
+      s"\\title{${inlineValuesToHTML(title.inline)}}\\maketitle{}" +:
+      (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(2)))
+    case list                          => sastToTex(list)(scope = new Scope(1))
   }
 
   def latexencode(input: String): String = {
@@ -89,13 +86,20 @@ class SastToTexConverter(documents: DocumentManager,
 
         case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
         case Macro("include", attributes) =>
-          val docOpt = documents.find(attributes.target)
-          docOpt.toList.flatMap { doc =>
-            val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
-            val section = doc.sast.head.asInstanceOf[Section]
-            val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
-            new SastToTexConverter(documents, doc.file.parent, numbered, imageResolver)
-            .sastToTex(List(sast))(new Scope(3))
+          val docOpt = documents.find(root, attributes.target)
+          docOpt match {
+            case None =>
+              scribe.warn(s"include unknown document ${attributes.target} omitting")
+              Nil
+            case Some(doc) =>
+              val sast = if (attributes.named.get("format").contains("article")) {
+                val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
+                val section = doc.sast.head.asInstanceOf[Section]
+                val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
+                List(sast)
+              } else doc.sast
+              new SastToTexConverter(documents, doc.file.parent, numbered, imageResolver)
+              .sastToTex(sast)(new Scope(3))
           }
         case other                        =>
           scribe.warn(s"not implemented: $other")

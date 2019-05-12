@@ -14,10 +14,7 @@ object TexPages {
 """
   }
 
-  def memoirHeader: String = {
-"""% !TEX jobname = report
-% !TEX output_directory = output
-\documentclass[a4paper, oneside]{memoir}
+  def sloppyStuff: String = """
 % set \clubpenalty, etc. to distinctive values for use
 % in tracing page breaks. These values are chosen so that
 % no single penalty will absolutely prohibit a page break, but
@@ -42,13 +39,9 @@ object TexPages {
 \checkandfixthelayout
 \sloppybottom
 """
-  }
 
-  def thesisHeader: String = {
-    """% !TEX jobname = report
-    % !TEX output_directory = output
-    \documentclass[a4paper, oneside]{memoir}
-    """
+  def memoirHeader: String = {
+"""\documentclass[a4paper, oneside]{memoir}"""
   }
 
   def usePackages(list: String*) : List[String] = list.map(p => s"\\usepackage$p").toList
@@ -68,13 +61,13 @@ object TexPages {
   }
 
   def memoirPackages: List[String] = {
-    usePackages("{microtype}", "{libertine}",
-         "{graphicx}", "[colorlinks]{hyperref}", "{verbatim}")
+    usePackages("{microtype}", "{graphicx}", "[colorlinks]{hyperref}", "{verbatim}") ++
+    List("\\nouppercaseheads")
   }
 
-  def wrap(content: Seq[String], authorsOpt: Option[String], layout: String, bibliography: Option[String]): String = {
-    val authors = authorsOpt.toList.flatMap {aut =>
-      Parse.paragraph(aut).right.get.collect{
+  def wrap(content: Seq[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
+    val authors = {
+      Parse.paragraph(authorsStr).right.get.collect{
         case Macro("author", attributes) => (attributes.positional.head, attributes.positional.tail)
       }
     }
@@ -103,11 +96,8 @@ object TexPages {
           s"\\begin{document}"
           ) ++ authorstrings ++ content ++ importBibACM :+
            s"\\end{document}"
-      case "memoir" =>
-        (memoirHeader +: (xelatexPackages ++ memoirPackages) :+ s"\\begin{document}" :+ "\\sloppy") ++
-        content :+ s"\\end{document}"
-      case "thesis" =>
-        (thesisHeader +: (xelatexPackages ++ memoirPackages.map(p => s"\\usepackage$p")) :+ s"\\begin{document}") ++
+      case _ =>
+        (memoirHeader +: sloppyStuff +: (xelatexPackages ++ memoirPackages) :+ s"\\begin{document}" :+ "\\sloppy") ++
         content ++ importBibNatbib :+ s"\\end{document}"
 
     }).mkString("\n")

@@ -40,8 +40,12 @@ object SastAnalyzes {
       analyzeAll(content, Some(target), acc + target)
     case AttributeDef(attribute)         => acc + attribute
     case MacroBlock(imacro)              => {
-      val iacc = if (imacro.command == "label") acc + Target(imacro.attributes.positional.head,
-                                                             scope.get.resolution)
+      val iacc =
+        if (imacro.command == "label") {
+          if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}")
+          acc + Target(imacro.attributes.target,
+                       scope.get.resolution)
+        }
                  else acc
       iacc + imacro
     }

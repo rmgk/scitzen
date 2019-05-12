@@ -18,6 +18,8 @@ import scitzen.outputs.SastToTexConverter
 
 object Convert {
 
+  implicit val charset: Charset = StandardCharsets.UTF_8
+
   val optSource = Opts.argument[Path](metavar = "directory")
   val optOutput: Opts[Path] = Opts.option[Path]("out", short = "o", metavar = "directory",
                                     help = "Output directory").withDefault(Paths.get("out"))
@@ -27,38 +29,42 @@ object Convert {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
   }
 
-  def includeBelow(sourcedir: File)(include: String): String = {
-    val source = if (sourcedir.isDirectory) sourcedir else sourcedir.parent
-    val incudeF = source./(include)
-    if (incudeF.isChildOf(source)) {
-      incudeF.contentAsString
-    } else ""
-  }
-
-  implicit val charset: Charset = StandardCharsets.UTF_8
 
 
-  val command: Command[Unit] = Command(name = "convert", header = "Convert Asciidoc documents into HTML.") {
+  val command: Command[Unit] = Command(name = "convert",
+                                       header = "Convert Asciidoc documents into HTML.") {
     (optSource, optOutput).mapN {
       (sourcedirRel, targetdirRel) =>
 
 
-        val sourcedir = File(sourcedirRel)
-        val targetdir = File(targetdirRel)
-        targetdir.createDirectories()
-        scribe.info(s"processing $sourcedir")
-        scribe.info(s"to $targetdir")
+        val sourcefile = File(sourcedirRel)
+        val targetfile = File(targetdirRel)
+        targetfile.createDirectories()
+        scribe.info(s"processing $sourcefile")
+        scribe.info(s"to $targetfile")
 
 
-        if (sourcedir.isDirectory) {
-          convertBlog(sourcedir, targetdir)
-        }
-        scribe.info("copy static resources")
+        convertToPdf(sourcefile, targetfile)
     }
   }
 
+  def resolveIncludes(documentManager: DocumentManager): DocumentManager = {
+    val includes = (for {
+      docs <- documentManager.documents
+      macrs <- docs.sdoc.analyzeResult.macros
+      if macrs.command == "include"
+      file = docs.file.parent / macrs.attributes.target
+      if !documentManager.byPath.contains(file)
+    } yield file).toSet
+    if (includes.isEmpty) documentManager
+    else {
+      scribe.info(s"found includes: $includes")
+      val newPF = includes.iterator.map(ParsedDocument.apply) ++: documentManager.documents
+      resolveIncludes(new DocumentManager(newPF))
+    }
+  }
 
-  def convertBlog(sourcedir: File, targetdir: File): Unit = {
+  def convertToPdf(sourcedir: File, targetdir: File): Unit = {
     val dd = DocumentDiscovery(List(sourcedir))
 
     val documents: List[ParsedDocument] = dd.sourceFiles.map(ParsedDocument.apply)
@@ -66,13 +72,17 @@ object Convert {
     scribe.info(s"found ${documents.size} posts")
     scribe.info(s"converting to $targetdir")
 
-    val dm = new DocumentManager(documents)
+    val dm = resolveIncludes(new DocumentManager(documents))
     val ir = ImageResolver.fromDM(dm)
 
+    val singleFile = sourcedir.isRegularFile
+
     val content = new SastToTexConverter(dm,
-                                         numbered = false,
-                                         root = sourcedir,
-                                         imageResolver = ir).convert()
+                                         numbered = singleFile,
+                                         root = if (singleFile) sourcedir.parent else sourcedir,
+                                         imageResolver = ir).convert(
+      if (singleFile) dm.byPath(sourcedir).sast.toList else dm.makeIndex()
+    )
 
     val name = "document"
     val targetFile = targetdir / (name + ".tex")
@@ -82,10 +92,13 @@ object Convert {
       case (source, target) => source.copyTo(targetdir/target, overwrite = true)
     }
 
-    //s"\\graphicspath{{$imagedir/}}" +:
-    targetFile.write(TexPages.wrap(content, None, "memoir", None))
+    val bibliography = dm.documents.collectFirstSome{ pd =>
+      pd.sdoc.named.get("bib").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
+    val authors = dm.documents.collectSomeFold(_.sdoc.named.get("authors"))
 
-    latexmk(targetdir / ("output"), name, targetFile)
+    targetFile.write(TexPages.wrap(content, authors, if(singleFile)"thesis" else "memoir", bibliography))
+
+    latexmk(targetdir / ".texcache", name, targetFile)
 
 
 //    else {
@@ -143,7 +156,7 @@ object Convert {
 //
 //    }
   }
-  //def convertArticle(targetdir: File, sourcedir: File, makeTex: Boolean, bibRel: Option[Path]): Unit = {
+  //def convertArticle(targetdir: File, sourcedir: File): Unit = {
   //  var start = System.nanoTime()
   //  def t = {
   //    val now = System.nanoTime()
@@ -164,7 +177,6 @@ object Convert {
   //  infoT(s"bibd $t")
   //  val cited = analyzed.macros.filter(_.command == "cite").flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim)).toSet
   //  infoT(s"cited $t")
-  //  if (makeTex) {
   //    val name = sourcedir.nameWithoutExtension
   //    val targetFile = targetdir / (name + ".tex")
   //    val bibName = bibPath.map { source =>
@@ -178,8 +190,7 @@ object Convert {
   //                                   analyzed,
   //                                   bibName))
   //    latexmk(targetdir/("output"), name, targetFile)
-  //  }
-  //  else {
+  //  makeTexelse {
   //    val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
   //    infoT(s"cited entries $t")
   //    val targetPath = targetdir / (sourcedir.nameWithoutExtension + ".html")
