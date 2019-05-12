@@ -1,14 +1,17 @@
 package scitzen.generic
 
-import java.time.format.TextStyle
-import java.util.Locale
-
 import better.files.File
 import scitzen.cli.ParsedDocument
 import scitzen.generic.Sast.{MacroBlock, Section, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
+object Months {
+  val en = Array("January", "February", "March", "April", "May", "June",
+                 "July", "August", "September", "October", "November", "December")
+}
+
 class DocumentManager(_documents: List[ParsedDocument]) {
+
 
   def relTargetPath(root: File, post: ParsedDocument) = {
     "posts/" + post.file.name.toString.replace(".scim", ".html")
@@ -30,7 +33,7 @@ class DocumentManager(_documents: List[ParsedDocument]) {
   def secmon(d: ParsedDocument) = {
     d.sdoc.date.fold("(???)"){date =>
       val m = date.date.month
-      m +" " + java.time.Month.of(m.toInt).getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault)
+      m +" " + Months.en(m.toInt - 1)
     }
   }
 
