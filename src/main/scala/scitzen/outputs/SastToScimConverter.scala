@@ -1,8 +1,8 @@
-package scitzen.converter
+package scitzen.outputs
 
 import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro}
-import scitzen.semantics.Sast
-import scitzen.semantics.Sast._
+import scitzen.generic.Sast
+import scitzen.generic.Sast._
 
 
 case class SastToScimConverter() {

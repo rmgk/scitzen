@@ -1,10 +1,9 @@
-package scitzen.converter
+package scitzen.outputs
 
 import better.files.File
-import scitzen.cli.{DocumentManager, ImageResolver}
 import scitzen.parser.{Inline, InlineQuote, InlineText, Macro}
-import scitzen.semantics.Sast
-import scitzen.semantics.Sast._
+import scitzen.generic.{DocumentManager, ImageResolver, Sast}
+import scitzen.generic.Sast._
 
 class Scope(val level: Int) extends AnyVal {
   def inc: Scope = {

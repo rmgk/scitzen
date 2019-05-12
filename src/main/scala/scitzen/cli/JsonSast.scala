@@ -6,8 +6,8 @@ import java.nio.file.Path
 import better.files.File
 import com.monovore.decline.{Command, Opts}
 import scitzen.parser.{Attribute, AttributeBlock, Attributes, Block, BlockContent, Inline, InlineQuote, InlineText, ListBlock, ListItem, Macro, NormalBlock, Prov, SectionTitle, WhitespaceBlock}
-import scitzen.semantics.{Sast, SastConverter}
-import scitzen.semantics.Sast.{AttributeDef, AttributedBlock, MacroBlock, ParsedBlock, RawBlock, Section, Slist, SlistItem, Text}
+import scitzen.generic.{Sast, SastConverter}
+import scitzen.generic.Sast.{AttributeDef, AttributedBlock, MacroBlock, ParsedBlock, RawBlock, Section, Slist, SlistItem, Text}
 import upickle.default.macroW
 import upickle.default.Writer
 

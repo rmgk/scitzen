@@ -2,67 +2,19 @@ package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Path, Paths}
-import java.time.format.TextStyle
-import java.util.Locale
 
 import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
-import scitzen.converter.SastToTexConverter
 import scitzen.extern.Tex.latexmk
-import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
-import scitzen.semantics.Sast
-import scitzen.semantics.Sast.{MacroBlock, Section, Text}
+import scitzen.generic.{DocumentManager, ImageResolver}
+import scitzen.outputs.SastToTexConverter
 
-class DocumentManager(val documents: List[ParsedDocument]) {
 
-  def sectionBy(pdocs: List[ParsedDocument])
-               (f: ParsedDocument => String)
-               (cont: List[ParsedDocument] => List[Sast]) = {
-    val years = pdocs.groupBy(f)
-    years.toList.sortBy(_._1).map { case (year, docs) =>
-      Section(Text(List(InlineText(year))), cont(docs))
-    }
-  }
 
-  def secmon(d: ParsedDocument) = {
-    d.sdoc.date.fold("(???)"){date =>
-      val m = date.date.month
-      m +" " + java.time.Month.of(m.toInt).getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault)
-    }
-  }
 
-  def makeIndex(): List[Sast] = {
-    sectionBy(documents)(_.sdoc.date.fold("(???)")(_.year)) { docs =>
-      sectionBy(docs)(secmon) { idocs =>
-        idocs.sortBy(_.sdoc.date).map { doc =>
-          MacroBlock(Macro("include",
-                           Attributes(List(Attribute("", doc.file.pathAsString)))))
-        }
-      }
-    }
-  }
 
-  def mainSast() = makeIndex()
-  def find(path: String): Option[ParsedDocument] = documents.find(d => d.file.pathAsString == path)
 
-}
-
-class ImageResolver(val substitutions: Map[File, String]) {
-  def image(root: File, target: String): String = substitutions(root / target)
-}
-
-object ImageResolver {
-  def fromDM(documentManager: DocumentManager): ImageResolver = {
-    new scitzen.cli.ImageResolver(documentManager.documents.flatMap{ pd =>
-      pd.sdoc.analyzeResult.macros.collect{
-        case Macro("image", attributes) => pd.file.parent/attributes.target
-      }
-    }.mapWithIndex{
-      case (image, index) => image -> s"images/$index${image.extension().getOrElse("")}"
-    }.toMap)
-  }
-}
 
 object Convert {
 

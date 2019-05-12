@@ -6,9 +6,9 @@ import java.nio.file.Path
 import better.files.File
 import cats.data.NonEmptyList
 import com.monovore.decline.{Command, Opts}
-import scitzen.converter.SastToScimConverter
+import scitzen.outputs.SastToScimConverter
 import scitzen.parser.DateParsingHelper
-import scitzen.semantics.{Sast, SastConverter, Sdoc}
+import scitzen.generic.{Sast, SastConverter, Sdoc}
 
 case class DocumentDiscovery(sourcePaths: List[File]) {
 

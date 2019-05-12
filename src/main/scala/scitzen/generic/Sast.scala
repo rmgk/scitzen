@@ -1,7 +1,7 @@
-package scitzen.semantics
+package scitzen.generic
 
 import scitzen.parser._
-import scitzen.semantics.Sast._
+import scitzen.generic.Sast._
 
 sealed trait Sast
 

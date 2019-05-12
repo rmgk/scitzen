@@ -1,4 +1,4 @@
-package scitzen.converter
+package scitzen.outputs
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
@@ -8,8 +8,8 @@ import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
 import scitzen.extern.Tex
 import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
-import scitzen.semantics.Sast._
-import scitzen.semantics.{Sast, Sdoc}
+import scitzen.generic.Sast._
+import scitzen.generic.{Sast, Sdoc}
 
 import scala.collection.mutable
 import scala.util.Try
