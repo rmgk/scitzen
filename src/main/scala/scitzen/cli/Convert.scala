@@ -7,16 +7,12 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.Tex.latexmk
+import scitzen.generic.Sast.AttributeDef
 import scitzen.generic.{DocumentManager, ImageResolver, Sdoc}
 import scitzen.outputs.{SastToHtmlConverter, SastToTexConverter}
+import scitzen.parser.Attribute
 
 import scala.collection.mutable
-
-
-
-
-
-
 
 object Convert {
 
@@ -133,27 +129,31 @@ object Convert {
     val relcsspostpath = postdir.relativize(cssfile).toString
 
     dm.documents.foreach { doc =>
-      val content = new SastToHtmlConverter(scalatags.Text,
+    val converter = new SastToHtmlConverter(scalatags.Text,
                                             dm,
                                             Map(),
                                             doc.sdoc,
                                             doc.file.parent,
-                                            katexMap).convert()
-
-      val res = Pages(relcsspostpath).wrapContentHtml(content, "fullpost", None, doc.sdoc.language)
+                                            katexMap)
+      val res = Pages(relcsspostpath).wrapContentHtml(converter.convert(),
+                                                      "fullpost",
+                                                      converter.tableOfContents(),
+                                                      doc.sdoc.language)
       postdir./(doc.file.nameWithoutExtension + ".html").write(res)
     }
 
     {
-      val sdoc = Sdoc(dm.makeIndex())
-      val content = new SastToHtmlConverter(scalatags.Text,
+      val sdoc = Sdoc(dm.makeIndex() :+ AttributeDef(Attribute("toc", "2")))
+      val converter = new SastToHtmlConverter(scalatags.Text,
                                             dm,
                                             Map(),
                                             sdoc,
                                             sourcefile,
-                                            katexMap).convert()
+                                            katexMap)
 
-      val res = Pages(targetdir.relativize(cssfile).toString).wrapContentHtml(content, "index", None, sdoc.language)
+      val res = Pages(targetdir.relativize(cssfile).toString).wrapContentHtml(converter.convert(),
+                                                                              "index",
+                                                                              converter.tableOfContents(), sdoc.language)
       targetdir./("index.html").write(res)
     }
 

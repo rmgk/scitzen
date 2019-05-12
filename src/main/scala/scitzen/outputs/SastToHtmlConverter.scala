@@ -7,9 +7,9 @@ import better.files.File
 import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
 import scitzen.extern.Tex
-import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, Sast, Sdoc}
+import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
 import scala.util.Try
@@ -24,7 +24,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                                                            katexMap: mutable.Map[String, String]) {
 
   import bundle.all._
-  import bundle.tags2.{nav, article}
+  import bundle.tags2.article
 
   def convert() = sastToHtml(sdoc.sast)
 
@@ -63,7 +63,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case sec@Section(title, subsections) =>
         List(tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)),
-             if (nestingLevel.level == 1) frag(tMeta(), tableOfContents(subsections)) else frag(),
+             if (nestingLevel.level == 1) tMeta() else frag(),
              sastToHtml(subsections)(nestingLevel.inc))
 
       case Slist(Nil) => Nil
@@ -167,7 +167,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   }
 
 
-  private def tableOfContents(sectionContent: Seq[Sast]): Frag = {
+
+
+  def tableOfContents(): Option[Frag] = {
     def findSections(cont: Seq[Sast]): Seq[Section] = {
       cont.flatMap {
         case s: Section => List(s)
@@ -184,11 +186,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       })
     }
 
-    sdoc.named.get("toc") match {
-      case Some(depth) =>
-        val d = Try {depth.trim.toInt}.getOrElse(1)
-        nav(makeToc(sectionContent, d))
-      case None        => frag()
+    sdoc.named.get("toc") map { depth =>
+      val d = Try {depth.trim.toInt}.getOrElse(1)
+      sdoc.sast match {
+        case Seq(Section(_, secCon)) => makeToc(secCon, d)
+        case other                   => makeToc(other, d)
+      }
     }
   }
 

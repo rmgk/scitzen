@@ -5,7 +5,7 @@ import scalatags.Text.all.{SeqFrag, frag}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, name, rel, title}
 import scalatags.Text.implicits.{Tag, raw, stringAttr}
 import scalatags.Text.tags.{body, div, head, html, input, label, link, meta}
-import scalatags.Text.tags2.main
+import scalatags.Text.tags2.{main, nav}
 
 object Pages {
   def apply(relative: String = ""): Pages = new Pages(relative)
@@ -44,7 +44,7 @@ class Pages(path_css: String) {
 
     htmlDocument(html(tHead)(body(
       cls := bodyClass,
-      sidebar.map(sidebarContainer(_)).toSeq,
+      sidebar.map(s => sidebarContainer(nav(s))).toSeq,
       main(content)(if (language.nonEmpty) lang := language else frag()),
       )))
   }
