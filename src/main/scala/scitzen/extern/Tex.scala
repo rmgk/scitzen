@@ -30,7 +30,7 @@ object Tex {
     |\end{document}
     |""".stripMargin
 
-  def latexmk(outputdir: File, jobname: String, sourceFile: File): Unit = {
+  def latexmk(outputdir: File, jobname: String, sourceFile: File): File = {
     val start = System.nanoTime()
     Process(List("latexmk",
                  "-cd",
@@ -42,6 +42,7 @@ object Tex {
                  "--jobname=" + jobname,
                  sourceFile.pathAsString)).!
     scribe.info(s"tex compilation finished in ${(System.nanoTime() - start)/1000000}ms")
+    outputdir / (jobname + ".pdf")
   }
 
   def convert(content: String, working: File): File = {

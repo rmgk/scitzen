@@ -1,7 +1,7 @@
 package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
 
 import better.files._
 import cats.implicits._
@@ -20,9 +20,10 @@ object Convert {
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  val optSource = Opts.argument[Path](metavar = "directory")
-  val optOutput: Opts[Path] = Opts.option[Path]("out", short = "o", metavar = "directory",
-                                    help = "Output directory").withDefault(Paths.get("out"))
+  val optSource = Opts.argument[Path](metavar = "path")
+  val optOutput: Opts[Path] = Opts.argument[Path](metavar = "path")
+  val optCachedir: Opts[Option[Path]] = Opts.option[Path]("cache", metavar = "directory",
+                                                help = "Temoperary cache folder").orNone
 
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
@@ -33,18 +34,21 @@ object Convert {
 
   val command: Command[Unit] = Command(name = "convert",
                                        header = "Convert Asciidoc documents into HTML.") {
-    (optSource, optOutput).mapN {
-      (sourcedirRel, targetdirRel) =>
+    (optSource, optOutput, optCachedir).mapN {
+      (sourcedirRel, targetdirRel, cachedirRel) =>
 
 
         val sourcefile = File(sourcedirRel)
         val targetfile = File(targetdirRel)
-        targetfile.createDirectories()
+        val cachedir = cachedirRel.fold {
+          if (targetfile.isDirectory) targetfile / ".scitzen-cache"
+          else targetfile.sibling(targetfile.name + ".scitzen-cache")
+        }(File(_))
+
         scribe.info(s"processing $sourcefile")
         scribe.info(s"to $targetfile")
 
-
-        convertToPdf(sourcefile, targetfile)
+        convertToPdf(sourcefile, targetfile, cachedir)
     }
   }
 
@@ -64,42 +68,45 @@ object Convert {
     }
   }
 
-  def convertToPdf(sourcedir: File, targetdir: File): Unit = {
-    val dd = DocumentDiscovery(List(sourcedir))
+  def convertToPdf(sourcefile: File, targetfile: File, cacheDir: File): Unit = {
+    val dd = DocumentDiscovery(List(sourcefile))
 
     val documents: List[ParsedDocument] = dd.sourceFiles.map(ParsedDocument.apply)
 
     scribe.info(s"found ${documents.size} posts")
-    scribe.info(s"converting to $targetdir")
+    scribe.info(s"converting to $targetfile")
 
     val dm = resolveIncludes(new DocumentManager(documents))
     val ir = ImageResolver.fromDM(dm)
 
-    val singleFile = sourcedir.isRegularFile
+    val singleFile = sourcefile.isRegularFile
 
     val content = new SastToTexConverter(dm,
                                          numbered = singleFile,
-                                         root = if (singleFile) sourcedir.parent else sourcedir,
+                                         root = if (singleFile) sourcefile.parent else sourcefile,
                                          imageResolver = ir).convert(
-      if (singleFile) dm.byPath(sourcedir).sast.toList else dm.makeIndex()
+      if (singleFile) dm.byPath(sourcefile).sast.toList else dm.makeIndex()
     )
 
-    val name = "document"
-    val targetFile = targetdir / (name + ".tex")
 
-    (targetdir/"images").createDirectories()
+    (cacheDir / "images").createDirectories()
     ir.substitutions.foreach{
-      case (source, target) => source.copyTo(targetdir/target, overwrite = true)
+      case (source, target) => source.copyTo(cacheDir / target, overwrite = true)
     }
 
     val bibliography = dm.documents.collectFirstSome{ pd =>
       pd.sdoc.named.get("bib").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
     val authors = dm.documents.collectSomeFold(_.sdoc.named.get("authors"))
 
-    targetFile.write(TexPages.wrap(content, authors, if(singleFile)"thesis" else "memoir", bibliography))
+    val jobname = targetfile.nameWithoutExtension
+    val temptexfile = cacheDir / (jobname + ".tex")
+    val temptexdir = cacheDir / "tex"
+    temptexfile.write(TexPages.wrap(content, authors,
+                                    if (singleFile) "thesis" else "memoir", bibliography))
+    latexmk(temptexdir, jobname, temptexfile).copyTo(targetfile, overwrite = true)
 
-    latexmk(targetdir / ".texcache", name, targetFile)
 
+  }
 
 //    else {
 //      val postdir = targetdir / "posts"
@@ -155,7 +162,6 @@ object Convert {
 //      copyImages(sourcedir, postdir)
 //
 //    }
-  }
   //def convertArticle(targetdir: File, sourcedir: File): Unit = {
   //  var start = System.nanoTime()
   //  def t = {
