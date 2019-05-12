@@ -10,6 +10,11 @@ import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
 class DocumentManager(_documents: List[ParsedDocument]) {
 
+  def relTargetPath(root: File, post: ParsedDocument) = {
+    "posts/" + post.file.name.toString.replace(".scim", ".html")
+  }
+
+
   def documents: List[ParsedDocument] = _documents
   val byPath: Map[File, ParsedDocument] = _documents.map(pd => pd.file -> pd).toMap
 

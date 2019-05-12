@@ -9,7 +9,7 @@ import scalatags.generic.Bundle
 import scitzen.extern.Tex
 import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 import scitzen.generic.Sast._
-import scitzen.generic.{Sast, Sdoc}
+import scitzen.generic.{DocumentManager, Sast, Sdoc}
 
 import scala.collection.mutable
 import scala.util.Try
@@ -17,12 +17,16 @@ import scala.util.Try
 
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
+                                                           documentManager: DocumentManager,
                                                            bibliography: Map[String, String],
-                                                           analyzeResult: Sdoc,
+                                                           sdoc: Sdoc,
+                                                           root: File,
                                                            katexMap: mutable.Map[String, String]) {
 
   import bundle.all._
-  import bundle.tags2.nav
+  import bundle.tags2.{nav, article}
+
+  def convert() = sastToHtml(sdoc.sast)
 
 
   def listItemToHtml(child: SlistItem)(implicit nestingLevel: Scope) = {
@@ -37,16 +41,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     }
 
     def categoriesSpan() = {
-      val categories = List("categories", "people").flatMap(analyzeResult.named.get)
+      val categories = List("categories", "people").flatMap(sdoc.named.get)
                        .flatMap(_.split(","))
       span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
     }
 
     p(cls := "metadata",
-      analyzeResult.date.map(timeFull).getOrElse(""),
-      frag(analyzeResult.modified.map(timeFull).toList: _*),
+      sdoc.date.map(timeFull).getOrElse(""),
+      frag(sdoc.modified.map(timeFull).toList: _*),
       categoriesSpan(),
-      frag(analyzeResult.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
+      frag(sdoc.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
       )
   }
 
@@ -79,6 +83,29 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
               img(src := target)))
         case Macro("label", attributes) => Nil
         case Macro("horizontal-rule", attributes) => List(hr)
+        case Macro("include", attributes) if attributes.named.get("type").contains("article") =>
+          val post = documentManager.find(root, attributes.target).get
+
+          def timeShort(date: ScitzenDateTime) = {
+            span(cls := "time",
+                 stringFrag(
+                   date.monthDayTime))
+          }
+
+          def categoriesSpan() = {
+            span(cls := "category")(post.sdoc.named.get("categories"), post.sdoc.named.get("people"))
+          }
+
+         val aref = documentManager.relTargetPath(root, post)
+
+          List(a( cls:= "articleref",
+            href := aref,
+            article(timeShort(post.sdoc.date.get),
+                    span(cls := "title", post.sdoc.title),
+                    categoriesSpan()
+            )))
+
+
         case other =>
           scribe.warn(s"not implemented: $other")
           List(div(stringFrag(other.toString)))
@@ -157,7 +184,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       })
     }
 
-    analyzeResult.named.get("toc") match {
+    sdoc.named.get("toc") match {
       case Some(depth) =>
         val d = Try {depth.trim.toInt}.getOrElse(1)
         nav(makeToc(sectionContent, d))
@@ -181,7 +208,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     }
     case Macro("comment", attributes) => frag()
     case Macro("ref", attributes) =>
-      analyzeResult.targets.find(_.id == attributes.positional.head).map {target =>
+      sdoc.targets.find(_.id == attributes.positional.head).map { target =>
         target.resolution match {
           case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
           case other =>

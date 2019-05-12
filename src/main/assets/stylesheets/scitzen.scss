@@ -17,6 +17,7 @@ $monospace: "Liberation Mono", monospace;
   max-width: $main-content-width;
   margin-left: auto;
   margin-right: auto;
+  display: block;
 }
 
 @mixin hover-down {
@@ -71,7 +72,7 @@ a {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Liberation Serif", serif;
+  font-family: "Liberation Sans", sans-serif;
   text-align: center;
 }
 h1, h2 {
@@ -91,18 +92,28 @@ h1, h2 {
   letter-spacing: -0.0625em;
 }
 
-textarea {
-  display: block;
-  @include main-content-element;
-  width: $main-content-width;
-  padding: 0.5em;
-  line-height: inherit;
+
+
+
+.fullpost a {
+  word-break: break-all;
+  &:before{
+    content: "[";
+  }
+  &:after {
+    content: "]";
+  }
 }
 
-article.fullpost {
 
-  & > * {
-    @include main-content-element;
+body {
+
+  // makes jumping to links animate instead of instant
+  scroll-behavior: smooth;
+
+  & > main {
+    padding: 1em;
+    margin-bottom: calc(100vh - 3.5em);
   }
 
   header .metadata {
@@ -141,16 +152,6 @@ article.fullpost {
     border-radius:  0.2em;
     margin-bottom: 2em;
     margin-top: 2em;
-  }
-
-  a {
-    word-break: break-all;
-    &:before{
-      content: "[";
-    }
-    &:after {
-      content: "]";
-    }
   }
 
   // image blocks are contained in an oversized container
@@ -202,24 +203,46 @@ article.fullpost {
     margin-top: 0;
   }
 
-}
+  .articleref article {
+    margin: .25em 0;
 
-body {
-  // makes jumping to links animate instead of instant
-  scroll-behavior: smooth;
+    display: flex;
 
-  & > main {
-    padding: 1em;
-    margin-bottom: calc(100vh - 3.5em);
+    @media screen and (max-width: $main-content-width) {
+      flex-direction: column;
+    }
+
+    @media screen and (min-width: $main-content-width) {
+      & > .category {
+        text-align: right;
+      }
+    }
+
+    // space between the items of the article
+    & > * {
+      margin-right: 0.5em;
+    }
+
+    // make the title get most of the space,
+    // to cause the tags to be right aligned
+    & > .title {
+      flex: 1;
+    }
   }
+
 }
 
-// in place fixed sidebar for index page
-body.index {
+
+// sidebar specific style
+body {
   display: flex;
 
   & > main {
     flex-grow: 1;
+
+    & > * {
+      @include main-content-element;
+    }
   }
 
   .sidebar {
@@ -261,7 +284,7 @@ body.index {
   }
 
 
-  #nav-switch:checked ~ nav {
+  #nav-switch:checked ~ * {
     // fixed position and resetting height makes this occupy no more space physically,
     // and only the minimum to display the label visually
     position: fixed;
@@ -274,42 +297,6 @@ body.index {
   }
 
 
-}
-
-
-.index section {
-  @include main-content-element;
-
-  a {
-    display: block;
-  }
-
-  article {
-    margin: .25em 0;
-
-    display: flex;
-
-    @media screen and (max-width: $main-content-width) {
-      flex-direction: column;
-    }
-
-    @media screen and (min-width: $main-content-width) {
-      & > .category {
-        text-align: right;
-      }
-    }
-
-    // space between the items of the article
-    & > * {
-      margin-right: 0.5em;
-    }
-
-    // make the title get most of the space,
-    // to cause the tags to be right aligned
-    & > .title {
-      flex: 1;
-    }
-  }
 }
 
 

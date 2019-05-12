@@ -7,8 +7,10 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.Tex.latexmk
-import scitzen.generic.{DocumentManager, ImageResolver}
-import scitzen.outputs.SastToTexConverter
+import scitzen.generic.{DocumentManager, ImageResolver, Sdoc}
+import scitzen.outputs.{SastToHtmlConverter, SastToTexConverter}
+
+import scala.collection.mutable
 
 
 
@@ -47,8 +49,12 @@ object Convert {
 
         scribe.info(s"processing $sourcefile")
         scribe.info(s"to $targetfile")
-
-        convertToPdf(sourcefile, targetfile, cachedir)
+        if (targetfile.extension().contains(".pdf"))
+          convertToPdf(sourcefile, targetfile, cachedir)
+        else if (targetfile.isDirectory || targetfile.notExists)
+          convertToHtml(sourcefile, targetfile, cachedir)
+        else
+          scribe.warn(s"unknown target $targetfile")
     }
   }
 
@@ -74,7 +80,6 @@ object Convert {
     val documents: List[ParsedDocument] = dd.sourceFiles.map(ParsedDocument.apply)
 
     scribe.info(s"found ${documents.size} posts")
-    scribe.info(s"converting to $targetfile")
 
     val dm = resolveIncludes(new DocumentManager(documents))
     val ir = ImageResolver.fromDM(dm)
@@ -104,6 +109,55 @@ object Convert {
     temptexfile.write(TexPages.wrap(content, authors,
                                     if (singleFile) "thesis" else "memoir", bibliography))
     latexmk(temptexdir, jobname, temptexfile).copyTo(targetfile, overwrite = true)
+  }
+
+
+  def convertToHtml(sourcefile: File, targetdir: File, cacheDir: File): Unit = {
+    targetdir.createDirectories()
+
+    val dd = DocumentDiscovery(List(sourcefile))
+    val documents: List[ParsedDocument] = dd.sourceFiles.map(ParsedDocument.apply)
+
+    scribe.info(s"found ${documents.size} posts")
+
+    val dm = resolveIncludes(new DocumentManager(documents))
+    //val ir = ImageResolver.fromDM(dm)
+
+    val postdir = targetdir / "posts"
+    postdir.createDirectories()
+
+    val katexMap = mutable.Map[String, String]()
+
+    val cssfile = targetdir./("scitzen.css")
+    cssfile.writeByteArray(stylesheet)
+    val relcsspostpath = postdir.relativize(cssfile).toString
+
+    dm.documents.foreach { doc =>
+      val content = new SastToHtmlConverter(scalatags.Text,
+                                            dm,
+                                            Map(),
+                                            doc.sdoc,
+                                            doc.file.parent,
+                                            katexMap).convert()
+
+      val res = Pages(relcsspostpath).wrapContentHtml(content, "fullpost", None, doc.sdoc.language)
+      postdir./(doc.file.nameWithoutExtension + ".html").write(res)
+    }
+
+    {
+      val sdoc = Sdoc(dm.makeIndex())
+      val content = new SastToHtmlConverter(scalatags.Text,
+                                            dm,
+                                            Map(),
+                                            sdoc,
+                                            sourcefile,
+                                            katexMap).convert()
+
+      val res = Pages(targetdir.relativize(cssfile).toString).wrapContentHtml(content, "index", None, sdoc.language)
+      targetdir./("index.html").write(res)
+    }
+
+
 
 
   }
