@@ -51,16 +51,25 @@ object TexPages {
     """
   }
 
+  def usePackages(list: String*) : List[String] = list.map(p => s"\\usepackage$p").toList
+
   def luatexPackages: List[String] = {
-    List("\\usepackage{luatextra}", "\\defaultfontfeatures{Ligatures=TeX}")
+    usePackages("{luatextra}", "[ngerman, english]{babel}") :+
+    "\\defaultfontfeatures{Ligatures=TeX}"
+  }
+
+  def xelatexPackages: List[String] = {
+    usePackages("{polyglossia}")++
+    List("\\setmainlanguage{english}", "\\setotherlanguage{german}")
   }
 
   def pdflatexPackages: List[String] = {
-    List("\\usepackage[T1]{fontenc}", "\\usepackage[utf8x]{inputenc}")
+    usePackages("[T1]{fontenc}", "[utf8x]{inputenc}", "[ngerman, english]{babel}")
   }
 
   def memoirPackages: List[String] = {
-    List("{microtype}", "[ngerman, english]{babel}", "{libertine}", "{graphicx}", "{url}", "{verbatim}")
+    usePackages("{microtype}", "{libertine}",
+         "{graphicx}", "[colorlinks]{hyperref}", "{verbatim}")
   }
 
   def wrap(content: Seq[String], authorsOpt: Option[String], layout: String, bibliography: Option[String]): String = {
@@ -95,10 +104,10 @@ object TexPages {
           ) ++ authorstrings ++ content ++ importBibACM :+
            s"\\end{document}"
       case "memoir" =>
-        (memoirHeader +: (luatexPackages ++ memoirPackages.map(p => s"\\usepackage$p")) :+ s"\\begin{document}" :+ "\\sloppy") ++
+        (memoirHeader +: (xelatexPackages ++ memoirPackages) :+ s"\\begin{document}" :+ "\\sloppy") ++
         content :+ s"\\end{document}"
       case "thesis" =>
-        (thesisHeader +: (luatexPackages ++ memoirPackages.map(p => s"\\usepackage$p")) :+ s"\\begin{document}") ++
+        (thesisHeader +: (xelatexPackages ++ memoirPackages.map(p => s"\\usepackage$p")) :+ s"\\begin{document}") ++
         content ++ importBibNatbib :+ s"\\end{document}"
 
     }).mkString("\n")

@@ -30,16 +30,18 @@ object Tex {
     |\end{document}
     |""".stripMargin
 
-  def latexmk(outputdir: File, jobname: String, sourceFile: File): Int = {
+  def latexmk(outputdir: File, jobname: String, sourceFile: File): Unit = {
+    val start = System.nanoTime()
     Process(List("latexmk",
                  "-cd",
                  "-f",
-                 "-lualatex",
+                 "-xelatex",
                  "-interaction=nonstopmode",
-                 "-synctex=1",
+                 //"-synctex=1",
                  "--output-directory=" + outputdir,
                  "--jobname=" + jobname,
                  sourceFile.pathAsString)).!
+    scribe.info(s"tex compilation finished in ${(System.nanoTime() - start)/1000000}ms")
   }
 
   def convert(content: String, working: File): File = {

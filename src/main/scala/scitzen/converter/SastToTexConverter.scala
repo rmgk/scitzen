@@ -2,7 +2,7 @@ package scitzen.converter
 
 import better.files.File
 import scitzen.cli.{DocumentManager, ImageResolver}
-import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro}
+import scitzen.parser.{Inline, InlineQuote, InlineText, Macro}
 import scitzen.semantics.Sast
 import scitzen.semantics.Sast._
 
@@ -23,7 +23,7 @@ class SastToTexConverter(documents: DocumentManager,
       case List(Section(title, content)) =>
         val secChildren = content.collect{case s: Section => s}
         s"\\title{${inlineValuesToHTML(title.inline)}}" +:
-        (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(2)))
+        (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(3)))
       case list => sastToTex(list)(scope = new Scope(1))
 
     }
@@ -82,7 +82,11 @@ class SastToTexConverter(documents: DocumentManager,
         case Macro("image", attributes) =>
           val target = attributes.target
           val imagepath = imageResolver.image(root, target)
-          List(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n")
+          if (imagepath.endsWith(".gif") || imagepath.endsWith(".webp")) {
+            scribe.warn(s"tex output currently does not support '$imagepath', omitting")
+            List()
+          }
+          else List(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n")
 
         case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
         case Macro("include", attributes) =>
@@ -114,9 +118,13 @@ class SastToTexConverter(documents: DocumentManager,
       case RawBlock(delimiter, text) =>
         if (delimiter.isEmpty) Nil
         else delimiter.charAt(0) match {
-          case '`'  =>
+          case '`' =>
             List(s"\\begin{verbatim}", text, "\\end{verbatim}")
-          case '.' => List("\\newline{}\n\\noindent", latexencode(text).replaceAllLiterally("\n", "\\newline{}\n"))
+          case '.' =>
+            val latexenc = latexencode(text).trim
+                           .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
+                            .replaceAllLiterally("\n", "\\newline{}\n")
+            List("\\noindent",latexenc)
         }
 
 
@@ -130,13 +138,8 @@ class SastToTexConverter(documents: DocumentManager,
   }
 
   val sectioning:  Scope => String = nesting => {
-    val sec = nesting.level match {
-      case 1 => "part"
-      case 2 => "chapter"
-      case 3 => "section"
-      case 4 => "subsection"
-      case 5 => "paragraph"
-    }
+    val secs = Array("book", "part", "chapter", "section", "subsection", "paragraph")
+    val sec = secs(nesting.level)
     if (numbered) sec else sec + "*"
   }
   def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
@@ -156,7 +159,11 @@ class SastToTexConverter(documents: DocumentManager,
       s"\\cite{${latexencode(attributes.target)}}"
     case Macro("link", attributes) =>
       val target = attributes.target
-      linkTo(attributes, target)
+      if (attributes.positional.size > 1) {
+        val name = """{"""" + attributes.positional.head + """"}"""
+        s"\\href{$target}{$name}"
+      }
+      else s"\\url{$target}"
     case Macro("footnote", attributes) =>
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
@@ -164,7 +171,4 @@ class SastToTexConverter(documents: DocumentManager,
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.all.mkString(",")}]"
   }.mkString("")
-  def linkTo(attributes: Attributes, linktarget: String): String = {
-    s"\\url{${linktarget}}"
-  }
 }
