@@ -76,7 +76,7 @@ object Convert {
     scribe.info(s"found ${documents.size} posts")
 
     val dm = resolveIncludes(new DocumentManager(documents))
-    val ir = ImageResolver.fromDM(dm)
+    val ir = ImageResolver.fromDM(dm, keepName = false)
 
     val singleFile = sourcefile.isRegularFile
 
@@ -88,10 +88,7 @@ object Convert {
     )
 
 
-    (cacheDir / "images").createDirectories()
-    ir.substitutions.foreach{
-      case (source, target) => source.copyTo(cacheDir / target, overwrite = true)
-    }
+    ir.copyToTarget(cacheDir)
 
     val bibliography = dm.documents.collectFirstSome{ pd =>
       pd.sdoc.named.get("bib").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
@@ -126,9 +123,14 @@ object Convert {
     cssfile.writeByteArray(stylesheet)
     val relcsspostpath = postdir.relativize(cssfile).toString
 
+    val imageResolver = ImageResolver.fromDM(dm, keepName = true)
+
+    imageResolver.copyToTarget(postdir)
+
     dm.documents.foreach { doc =>
       val converter = new SastToHtmlConverter(scalatags.Text,
                                               dm,
+        imageResolver,
                                               Map(),
                                               doc.sdoc,
                                               doc.file.parent,
@@ -145,6 +147,7 @@ object Convert {
       val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true))
       val converter = new SastToHtmlConverter(scalatags.Text,
                                               dm,
+                                              imageResolver,
                                               Map(),
                                               sdoc,
                                               sourcefile,

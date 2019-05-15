@@ -8,17 +8,15 @@ import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
 import scitzen.extern.Tex
 import scitzen.generic.Sast._
-import scitzen.generic.{DocumentManager, Sast, Sdoc}
+import scitzen.generic.{DocumentManager, ImageResolver, Sast, Sdoc}
 import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
 
 
-
-
-
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
                                                            documentManager: DocumentManager,
+                                                           imageResolver: ImageResolver,
                                                            bibliography: Map[String, String],
                                                            sdoc: Sdoc,
                                                            root: File,
@@ -79,7 +77,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case MacroBlock(mcro) => mcro match {
         case Macro("image", attributes) =>
-          val target = attributes.positional.last
+          val target = imageResolver.image(root, attributes.positional.last)
           List(div(cls := "imageblock",
               img(src := target)))
         case Macro("label", attributes) => Nil
