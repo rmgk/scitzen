@@ -21,26 +21,39 @@ class DocumentManager(_documents: List[ParsedDocument]) {
   def documents: List[ParsedDocument] = _documents
   val byPath: Map[File, ParsedDocument] = _documents.map(pd => pd.file -> pd).toMap
 
-  def sectionBy(pdocs: List[ParsedDocument])
-               (f: ParsedDocument => String)
-               (cont: List[ParsedDocument] => List[Sast]) = {
-    val years = pdocs.groupBy(f)
-    years.toList.sortBy(_._1).map { case (year, docs) =>
-      Section(Text(List(InlineText(year))), cont(docs))
-    }
+
+  def find(root: File, path: String): Option[ParsedDocument] = {
+    byPath.get(root / path).filter(d => root.isParentOf(d.file))
   }
 
-  def secmon(d: ParsedDocument) = {
-    d.sdoc.date.fold("(???)"){date =>
-      val m = date.date.month
-      m +" " + Months.en(m.toInt - 1)
-    }
-  }
+}
 
-  def makeIndex(): List[Sast] = {
-    sectionBy(documents)(_.sdoc.date.fold("(???)")(_.year)) { docs =>
+object GenIndexPage {
+
+
+  def makeIndex(dm: DocumentManager, reverse: Boolean = false): List[Sast] = {
+    def ordering[T: Ordering]:Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
+
+    def sectionBy(pdocs: List[ParsedDocument])
+                 (f: ParsedDocument => String)
+                 (cont: List[ParsedDocument] => List[Sast]) = {
+      val years = pdocs.groupBy(f)
+      years.toList.sortBy(_._1)(ordering).map { case (year, docs) =>
+        Section(Text(List(InlineText(year))), cont(docs))
+      }
+    }
+
+    def secmon(d: ParsedDocument) = {
+      d.sdoc.date.fold("(???)"){date =>
+        val m = date.date.month
+        m +" " + Months.en(m.toInt - 1)
+      }
+    }
+
+
+    sectionBy(dm.documents)(_.sdoc.date.fold("(???)")(_.year)) { docs =>
       sectionBy(docs)(secmon) { idocs =>
-        idocs.sortBy(_.sdoc.date).map { doc =>
+        idocs.sortBy(_.sdoc.date)(ordering).map { doc =>
           MacroBlock(Macro("include",
                            Attributes(List(
                              Attribute("", doc.file.pathAsString),
@@ -48,11 +61,6 @@ class DocumentManager(_documents: List[ParsedDocument]) {
         }
       }
     }
-  }
-
-  def mainSast(): Seq[Sast] = if (documents.size > 1) makeIndex() else documents.head.sast
-  def find(root: File, path: String): Option[ParsedDocument] = {
-    byPath.get(root / path).filter(d => root.isParentOf(d.file))
   }
 
 }

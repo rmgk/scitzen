@@ -7,10 +7,8 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.Tex.latexmk
-import scitzen.generic.Sast.AttributeDef
-import scitzen.generic.{DocumentManager, ImageResolver, Sdoc}
-import scitzen.outputs.{SastToHtmlConverter, SastToTexConverter}
-import scitzen.parser.Attribute
+import scitzen.generic.{DocumentManager, GenIndexPage, ImageResolver, Sdoc}
+import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
 
 import scala.collection.mutable
 
@@ -86,7 +84,7 @@ object Convert {
                                          numbered = singleFile,
                                          root = if (singleFile) sourcefile.parent else sourcefile,
                                          imageResolver = ir).convert(
-      if (singleFile) dm.byPath(sourcefile).sast.toList else dm.makeIndex()
+      if (singleFile) dm.byPath(sourcefile).sast.toList else GenIndexPage.makeIndex(dm)
     )
 
 
@@ -129,31 +127,33 @@ object Convert {
     val relcsspostpath = postdir.relativize(cssfile).toString
 
     dm.documents.foreach { doc =>
-    val converter = new SastToHtmlConverter(scalatags.Text,
-                                            dm,
-                                            Map(),
-                                            doc.sdoc,
-                                            doc.file.parent,
-                                            katexMap)
+      val converter = new SastToHtmlConverter(scalatags.Text,
+                                              dm,
+                                              Map(),
+                                              doc.sdoc,
+                                              doc.file.parent,
+                                              katexMap)
+      val toc = HtmlToc.tableOfContents(doc.sdoc.sast, 2)
       val res = Pages(relcsspostpath).wrapContentHtml(converter.convert(),
                                                       "fullpost",
-                                                      converter.tableOfContents(),
+                                                      toc,
                                                       doc.sdoc.language)
       postdir./(doc.file.nameWithoutExtension + ".html").write(res)
     }
 
     {
-      val sdoc = Sdoc(dm.makeIndex() :+ AttributeDef(Attribute("toc", "2")))
+      val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true))
       val converter = new SastToHtmlConverter(scalatags.Text,
-                                            dm,
-                                            Map(),
-                                            sdoc,
-                                            sourcefile,
-                                            katexMap)
+                                              dm,
+                                              Map(),
+                                              sdoc,
+                                              sourcefile,
+                                              katexMap)
+      val toc = HtmlToc.tableOfContents(sdoc.sast, 2)
 
       val res = Pages(targetdir.relativize(cssfile).toString).wrapContentHtml(converter.convert(),
                                                                               "index",
-                                                                              converter.tableOfContents(), sdoc.language)
+                                                                              toc, sdoc.language)
       targetdir./("index.html").write(res)
     }
 
