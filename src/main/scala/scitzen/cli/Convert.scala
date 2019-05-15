@@ -94,7 +94,7 @@ object Convert {
       pd.sdoc.named.get("bib").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
     val authors = dm.documents.collectSomeFold(_.sdoc.named.get("authors"))
 
-    val jobname = targetfile.nameWithoutExtension
+    val jobname = targetfile.nameWithoutExtension(includeAll = false)
     val temptexfile = cacheDir / (jobname + ".tex")
     val temptexdir = cacheDir / "tex"
     temptexfile.write(TexPages.wrap(content, authors,
@@ -140,7 +140,10 @@ object Convert {
                                                       "fullpost",
                                                       toc,
                                                       doc.sdoc.language)
-      postdir./(doc.file.nameWithoutExtension + ".html").write(res)
+      val target = postdir./(doc.file.nameWithoutExtension(false) + ".html")
+      if (doc.file.name.contains("Früh")) scribe.info(s"${doc.file.name} -> ${target}")
+
+      target.write(res)
     }
 
     {

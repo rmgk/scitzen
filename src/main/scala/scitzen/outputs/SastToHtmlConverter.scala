@@ -78,8 +78,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case MacroBlock(mcro) => mcro match {
         case Macro("image", attributes) =>
           val target = imageResolver.image(root, attributes.positional.last)
-          List(div(cls := "imageblock",
-              img(src := target)))
+          List(img(src := target))
         case Macro("label", attributes) => Nil
         case Macro("horizontal-rule", attributes) => List(hr)
         case Macro("include", attributes) if attributes.named.get("type").contains("article") =>

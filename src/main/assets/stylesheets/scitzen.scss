@@ -13,13 +13,6 @@ $monospace: "Liberation Mono", monospace;
   border-radius: 5px;
 }
 
-@mixin main-content-element {
-  max-width: $main-content-width;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-}
-
 @mixin hover-down {
   &:hover {
     transition: 0.2s ease-out;
@@ -120,8 +113,16 @@ body {
     padding: 1em;
     margin-bottom: calc(100vh - 3.5em);
 
+    display: grid;
+    grid-template-columns: 1fr [left] 1fr
+                           [content-start] minmax(0, $main-content-width)
+                           [content-end] 1fr  [right] 2fr;
+    justify-content: space-between;
+
+
+
     & > * {
-      @include main-content-element;
+      grid-column: content-start / content-end;
     }
   }
 
@@ -164,22 +165,28 @@ body {
   }
 
   // image blocks are contained in an oversized container
-  & > .imageblock {
-    max-width: $main-content-width * 1.64;
+  .imageblock {
+
+
     img {
-      @include boxed-content;
     }
   }
 
   img {
     // why is this not the default?
     image-orientation: from-image;
-    max-width: 100%;
+
     height: auto;
-    margin: auto;
     max-height: 40em;
     // without block display, the outer div becomes a bit larger (line height?)
     display: block;
+
+
+    max-width: 100%;
+    grid-column: left / right;
+    justify-self: center;
+
+    @include boxed-content;
   }
 
 
