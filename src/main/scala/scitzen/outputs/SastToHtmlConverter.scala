@@ -178,20 +178,24 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         case _ => Nil
       }
     }
-    def makeToc(cont: Seq[Sast], depth: Int): Tag = {
-      ol(findSections(cont).map {
-        case Section(title, inner) =>
-          val sub = if (depth > 1) makeToc(inner, depth - 1) else frag()
-          li(a(href := s"#${title.str}", title.str))(sub)
-      })
+
+    def makeToc(cont: Seq[Sast], depth: Int): Option[Tag] = {
+      findSections(cont) match {
+        case Nil      => None
+        case sections =>
+          Some(ol(sections.map {
+            case Section(title, inner) =>
+              val sub = if (depth > 1) makeToc(inner, depth - 1) else None
+              li(a(href := s"#${title.str}", title.str))(sub)
+          }))
+      }
     }
 
-    sdoc.named.get("toc") map { depth =>
-      val d = Try {depth.trim.toInt}.getOrElse(1)
-      sdoc.sast match {
-        case Seq(Section(_, secCon)) => makeToc(secCon, d)
-        case other                   => makeToc(other, d)
-      }
+    val depth = sdoc.named.get("toc").flatMap { depth => Try {depth.trim.toInt}.toOption }.getOrElse(1)
+
+    sdoc.sast match {
+      case Seq(Section(_, secCon)) => makeToc(secCon, depth)
+      case other                   => makeToc(other, depth)
     }
   }
 
