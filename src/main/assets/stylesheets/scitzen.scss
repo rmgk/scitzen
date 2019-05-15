@@ -47,6 +47,16 @@ $monospace: "Liberation Mono", monospace;
   }
 }
 
+@mixin quoted {
+  &:before{
+    // ⸢ ⸣ ⸤ ⸥
+    content: "⸤";
+  }
+  &:after {
+    content: "⸣";
+  }
+}
+
 
 
 html {
@@ -97,12 +107,7 @@ h1, h2 {
 
 .fullpost a {
   word-break: break-all;
-  &:before{
-    content: "[";
-  }
-  &:after {
-    content: "]";
-  }
+  @include quoted;
 }
 
 
@@ -114,6 +119,10 @@ body {
   & > main {
     padding: 1em;
     margin-bottom: calc(100vh - 3.5em);
+
+    & > * {
+      @include main-content-element;
+    }
   }
 
   .metadata {
@@ -182,6 +191,7 @@ body {
   p > code {
     font-family: $monospace;
     color: black;
+    @include quoted;
   }
 
   cite::before {
@@ -240,10 +250,6 @@ body {
 
   & > main {
     flex-grow: 1;
-
-    & > * {
-      @include main-content-element;
-    }
   }
 
   .sidebar {
@@ -266,8 +272,7 @@ body {
       }
     }
 
-    border-right: 1px solid $theme-color;
-    background-color: white;
+
 
 
 
@@ -287,10 +292,9 @@ body {
       // top margin to not collide with the label as much
       padding: 2.5em 0.5em;
 
+      border-right: 1px solid $theme-color;
+      background-color: white;
 
-      & > * {
-        display: block;
-      }
     }
 
   }
