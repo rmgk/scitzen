@@ -141,7 +141,6 @@ object Convert {
                                                       toc,
                                                       doc.sdoc.language)
       val target = postdir./(doc.file.nameWithoutExtension(false) + ".html")
-      if (doc.file.name.contains("Früh")) scribe.info(s"${doc.file.name} -> ${target}")
 
       target.write(res)
     }
