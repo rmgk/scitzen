@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.generic.Sast.{AttributedBlock, ParsedBlock, Section}
+import scitzen.generic.Sast.Section
 import scitzen.generic.SastAnalyzes.AnalyzeResult
 import scitzen.parser.{Attributes, DateParsingHelper, ScitzenDateTime}
 
@@ -21,15 +21,4 @@ case class Sdoc(sast: Seq[Sast]) {
 
   def targets = analyzeResult.targets
 
-}
-
-object Sdoc {
-  def findSections(cont: Seq[Sast]): Seq[Section] = {
-    cont.flatMap {
-      case s: Section => List(s)
-      case AttributedBlock(_, content) => findSections(List(content))
-      case ParsedBlock(_, content) => findSections(content)
-      case _ => Nil
-    }
-  }
 }
