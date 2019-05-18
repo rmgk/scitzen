@@ -134,15 +134,20 @@ object Convert {
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
 
-    def convertDoc(doc: ParsedDocument) = {
+    val (bibEntries, biblio) = if (singlefile) {
+      val doc = dm.byPath(sourcefile)
       val bibPath = doc.sdoc.named.get("bibliography").map { p =>
         doc.file.parent./(p.trim)
       }
       val bib = bibPath.toList.flatMap(Bibliography.parse(cacheDir))
-      val cited = doc.sdoc.analyzeResult.macros.filter(_.command == "cite")
-                  .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim)).toSet
+      val cited = dm.documents.flatMap{_.sdoc.analyzeResult.macros.filter(_.command == "cite")
+                  .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))}.toSet
       val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
       val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
+      bibEntries -> biblio
+    } else (Nil, Map[String, String]())
+
+    def convertDoc(doc: ParsedDocument) = {
 
       val citations = if (bibEntries.isEmpty) Nil else {
         import scalatags.Text.all.{ol, li, id}
