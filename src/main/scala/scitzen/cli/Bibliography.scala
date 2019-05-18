@@ -39,10 +39,11 @@ object Bibliography {
   }
 
 
-  def parse(source: File): List[BibEntry] = {
+  def parse(cacheDir: File)(source: File): List[BibEntry] = {
     val jsonStr = {
       val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
-      val cachefile = source.sibling(hash + ".json")
+      cacheDir.createDirectories()
+      val cachefile = cacheDir/(hash + ".json")
       if (cachefile.exists) { cachefile.contentAsString }
       else {
         val res = scala.sys.process.Process(Seq("pandoc-citeproc",

@@ -114,7 +114,9 @@ object Convert {
     val dm = resolveIncludes(new DocumentManager(documents))
     //val ir = ImageResolver.fromDM(dm)
 
-    val postdir = targetdir / "posts"
+    val singlefile = sourcefile.isRegularFile
+
+    val postdir = if (singlefile) targetdir else targetdir / "posts"
     postdir.createDirectories()
 
     val katexMap = mutable.Map[String, String]()
@@ -130,16 +132,32 @@ object Convert {
     val scitzenconfdir = sourcefile/"scitzen"
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
-    dm.documents.foreach { doc =>
+
+    def convertDoc(doc: ParsedDocument) = {
+      val bibPath = doc.sdoc.named.get("bibliography").map { p =>
+        doc.file.parent./(p.trim)
+      }
+      val bib = bibPath.toList.flatMap(Bibliography.parse(cacheDir))
+      val cited = doc.sdoc.analyzeResult.macros.filter(_.command == "cite")
+                  .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim)).toSet
+      val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+      val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
+
+      val citations = if (bibEntries.isEmpty) Nil else {
+        import scalatags.Text.all.{ol, li, id}
+        import scalatags.Text.short._
+        List(ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format) } ))
+      }
+
       val converter = new SastToHtmlConverter(scalatags.Text,
                                               dm,
                                               imageResolver,
-                                              Map(),
+                                              biblio,
                                               doc.sdoc,
                                               doc.file.parent,
                                               katexMap)
       val toc = HtmlToc.tableOfContents(doc.sdoc.sast, 2)
-      val res = Pages(relcsspostpath).wrapContentHtml(converter.convert(),
+      val res = Pages(relcsspostpath).wrapContentHtml(converter.convert() ++ citations,
                                                       "fullpost",
                                                       toc,
                                                       doc.sdoc.language
@@ -150,26 +168,32 @@ object Convert {
       target.write(res)
     }
 
+    if (singlefile) convertDoc(dm.byPath(sourcefile))
+
+    else {
+
+      dm.documents.foreach {convertDoc}
 
 
+      {
+        val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp))
+        val converter = new SastToHtmlConverter(scalatags.Text,
+                                                dm,
+                                                imageResolver,
+                                                Map(),
+                                                sdoc,
+                                                sourcefile,
+                                                katexMap)
+        val toc = HtmlToc.tableOfContents(sdoc.sast, 2)
 
-    {
-      val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp))
-      val converter = new SastToHtmlConverter(scalatags.Text,
-                                              dm,
-                                              imageResolver,
-                                              Map(),
-                                              sdoc,
-                                              sourcefile,
-                                              katexMap)
-      val toc = HtmlToc.tableOfContents(sdoc.sast, 2)
-
-      val res = Pages(targetdir.relativize(cssfile).toString).wrapContentHtml(converter.convert(),
-                                                                              "index",
-                                                                              toc, sdoc.language.getOrElse(""))
-      targetdir./("index.html").write(res)
+        val res = Pages(targetdir.relativize(cssfile).toString)
+                  .wrapContentHtml(converter.convert(),
+                                   "index",
+                                   toc,
+                                   sdoc.language.getOrElse(""))
+        targetdir./("index.html").write(res)
+      }
     }
-
 
 
 
@@ -287,29 +311,4 @@ object Convert {
   //  }
   //}
 
-  def allImages(sourcedir: File): List[File] = sourcedir.glob("**.{jpg,jpeg,webp,gif,png,svg}").toList
-
-  def copyImages(sourcedir: File, targetdir: File): Unit = {
-    //TODO: may want to copy all linked files, instead of all images
-
-    allImages(sourcedir).foreach { sourceImage =>
-      val relimage = sourcedir.relativize(sourceImage)
-      val targetfile = targetdir / relimage.toString
-      scribe.trace(s"copy $sourceImage to $targetfile")
-      targetfile.parent.createDirectories()
-      sourceImage.copyTo(targetfile, overwrite = true)
-    }
-  }
-  def normalizeImages(sourcedir: File, targetdir: File): Map[String, String] = {
-    var names = 0
-    targetdir.createDirectories()
-    allImages(sourcedir).map{ sourceImage =>
-      val targetname = names.toString + sourceImage.extension.getOrElse("")
-      names = names + 1
-      val targetfile = targetdir / targetname
-      scribe.trace(s"copy $sourceImage to $targetfile")
-      sourceImage.copyTo(targetfile, overwrite = true)
-      sourcedir.relativize(sourceImage).toString -> targetname
-    }.toMap
-  }
 }
