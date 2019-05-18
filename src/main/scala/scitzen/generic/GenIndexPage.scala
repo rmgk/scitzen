@@ -1,13 +1,13 @@
 package scitzen.generic
 
 import scitzen.cli.ParsedDocument
-import scitzen.generic.Sast.{MacroBlock, Section, Text}
+import scitzen.generic.Sast.{MacroBlock, ParsedBlock, Section, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
 object GenIndexPage {
 
 
-  def makeIndex(dm: DocumentManager, reverse: Boolean = false): List[Sast] = {
+  def makeIndex(dm: DocumentManager, reverse: Boolean = false, nlp: Option[NLP] = None): List[Sast] = {
     def ordering[T: Ordering]:Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
     def sectionBy(pdocs: List[ParsedDocument])
@@ -29,11 +29,16 @@ object GenIndexPage {
 
     sectionBy(dm.documents)(_.sdoc.date.fold("(???)")(_.year)) { docs =>
       sectionBy(docs)(secmon) { idocs =>
-        idocs.sortBy(_.sdoc.date)(ordering).map { doc =>
-          MacroBlock(Macro("include",
+        idocs.sortBy(_.sdoc.date)(ordering).flatMap { doc =>
+          List(MacroBlock(Macro("include",
                            Attributes(List(
                              Attribute("", doc.file.pathAsString),
-                             Attribute("type", "article")))))
+                             Attribute("type", "article"))))),
+               ParsedBlock("", List(Text(
+                 nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
+                   case (word, prob) => InlineText(s"$word ")
+                 }))
+                                    )))
         }
       }
     }

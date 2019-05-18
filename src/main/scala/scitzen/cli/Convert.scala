@@ -128,7 +128,7 @@ object Convert {
     imageResolver.copyToTarget(postdir)
 
     val scitzenconfdir = sourcefile/"scitzen"
-    val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir)) else None
+    val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
     dm.documents.foreach { doc =>
       val converter = new SastToHtmlConverter(scalatags.Text,
@@ -154,7 +154,7 @@ object Convert {
 
 
     {
-      val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true))
+      val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp))
       val converter = new SastToHtmlConverter(scalatags.Text,
                                               dm,
                                               imageResolver,
