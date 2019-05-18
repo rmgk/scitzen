@@ -7,7 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.Tex.latexmk
-import scitzen.generic.{DocumentManager, GenIndexPage, ImageResolver, Sdoc}
+import scitzen.generic.{DocumentManager, GenIndexPage, ImageResolver, NLP, Sdoc}
 import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
 
 import scala.collection.mutable
@@ -127,10 +127,13 @@ object Convert {
 
     imageResolver.copyToTarget(postdir)
 
+    val scitzenconfdir = sourcefile/"scitzen"
+    val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir)) else None
+
     dm.documents.foreach { doc =>
       val converter = new SastToHtmlConverter(scalatags.Text,
                                               dm,
-        imageResolver,
+                                              imageResolver,
                                               Map(),
                                               doc.sdoc,
                                               doc.file.parent,
@@ -139,11 +142,16 @@ object Convert {
       val res = Pages(relcsspostpath).wrapContentHtml(converter.convert(),
                                                       "fullpost",
                                                       toc,
-                                                      doc.sdoc.language)
+                                                      doc.sdoc.language
+                                                      .orElse(nlp.map(_.language(doc.sdoc)))
+                                                      .getOrElse(""))
       val target = postdir./(doc.file.nameWithoutExtension(false) + ".html")
 
       target.write(res)
     }
+
+
+
 
     {
       val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true))
@@ -158,7 +166,7 @@ object Convert {
 
       val res = Pages(targetdir.relativize(cssfile).toString).wrapContentHtml(converter.convert(),
                                                                               "index",
-                                                                              toc, sdoc.language)
+                                                                              toc, sdoc.language.getOrElse(""))
       targetdir./("index.html").write(res)
     }
 
