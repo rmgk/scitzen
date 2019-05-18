@@ -1,11 +1,15 @@
 @import 'lib/normalize.css/normalize';
 
-$theme-color: #c05b4d;
-$color-subdued: #aaa;
-// a4 paper has 21cm, subtract 1.5 inch for print margins
-$main-content-width: 171.9mm;
+:root {
 
-$monospace: "Liberation Mono", monospace;
+  --theme-color-values: 0, 50%, 50%;
+  --theme-color: hsl(var(--theme-color-values));
+  --theme-color-light: hsl(var(--theme-color-values), 0.3);
+  --color-subdued: hsl(0, 0%, 66%);
+  // a4 paper has 21cm, subtract 1.5 inch for print margins
+  --main-content-width: 171.9mm;
+  --monospace: "Liberation Mono", monospace;
+}
 
 @mixin boxed-content {
   box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
@@ -29,7 +33,7 @@ $monospace: "Liberation Mono", monospace;
 }
 
 @mixin float-box {
-  border-left: 1px solid $color-subdued;
+  border-left: 1px solid var(--color-subdued);
   padding-left: 1em;
   padding-right: 1em;
   & > :first-child {
@@ -43,10 +47,10 @@ $monospace: "Liberation Mono", monospace;
 @mixin quoted {
   &:before{
     // ⸢ ⸣ ⸤ ⸥
-    content: "⸤";
+    content: "⸢";
   }
   &:after {
-    content: "⸣";
+    content: "⸥";
   }
 }
 
@@ -65,12 +69,13 @@ html {
 
 
 ::selection {
-  background: transparentize($theme-color, 0.8);
+  background: var(--theme-color-light);
+  opacity: 20%;
 }
 
 a {
   text-decoration: none;
-  color: $theme-color;
+  color: var(--theme-color);
   @include hover-down;
 }
 
@@ -85,13 +90,13 @@ h1, h2 {
 
 .time, .category {
   @media screen {
-    color: $color-subdued;
+    color: var(--color-subdued);
   }
 }
 
 .time {
   white-space: nowrap;
-  font-family: $monospace;
+  font-family: var(--monospace);
   letter-spacing: -0.0625em;
 }
 
@@ -114,9 +119,11 @@ body {
     margin-bottom: calc(100vh - 3.5em);
 
     display: grid;
-    grid-template-columns: 1fr [left] 1fr
-                           [content-start] minmax(0, $main-content-width)
-                           [content-end] 1fr  [right] 2fr;
+    grid-template-columns: 1fr
+                           [image-start] 1fr
+                           [content-start] minmax(min-content, var(--main-content-width))
+                           [content-end] 1fr
+                           [image-end] 2fr;
     justify-content: space-between;
 
 
@@ -157,7 +164,7 @@ body {
   }
 
   hr {
-    border: 0.2em dashed $color-subdued;
+    border: 0.2em dashed var(--color-subdued);
     max-width: 7em;
     border-radius:  0.2em;
     margin-bottom: 2em;
@@ -183,7 +190,7 @@ body {
 
 
     max-width: 100%;
-    grid-column: left / right;
+    grid-column: image-start / image-end;
     justify-self: center;
 
     @include boxed-content;
@@ -196,7 +203,7 @@ body {
   }
 
   p > code {
-    font-family: $monospace;
+    font-family: var(--monospace);
     color: black;
     @include quoted;
   }
@@ -225,11 +232,11 @@ body {
 
     display: flex;
 
-    @media screen and (max-width: $main-content-width) {
+    @media screen and (max-width: var(--main-content-width)) {
       flex-direction: column;
     }
 
-    @media screen and (min-width: $main-content-width) {
+    @media screen and (min-width: var(--main-content-width)) {
       & > .category {
         text-align: right;
       }
@@ -256,11 +263,11 @@ body {
   align-items: stretch;
 
   & > main {
-    flex-grow: 1;
+    flex: 1 1 var(--main-content-width);
   }
 
   .sidebar {
-    flex: 1 1 0;
+    flex: 0 100 max-content;
     & > input {
       display: none;
     }
@@ -300,7 +307,7 @@ body {
       // top margin to not collide with the label as much
       padding: 2.5em 0.5em;
 
-      border-right: 1px solid $theme-color;
+      border-right: 1px solid var(--theme-color);
       background-color: white;
 
     }
