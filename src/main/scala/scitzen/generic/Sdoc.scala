@@ -12,7 +12,7 @@ case class Sdoc(sast: Seq[Sast]) {
 
   lazy val named: Map[String, String] = Attributes(analyzeResult.attributes).named
 
-  lazy val language: Option[String] = named.get("lang").map(_.trim)
+  lazy val language: Option[String] = named.get("language").map(_.trim)
 
   lazy val date    : Option[ScitzenDateTime] = named.get("revdate")
                                                .map(v => DateParsingHelper.parseDate(v.trim))
