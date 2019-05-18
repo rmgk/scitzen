@@ -103,6 +103,23 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                     categoriesSpan()
             )))
 
+        case Macro("include", attributes) =>
+          val docOpt = documentManager.find(root, attributes.target)
+          docOpt match {
+            case None =>
+              scribe.warn(s"include unknown document ${attributes.target} omitting")
+              Nil
+            case Some(doc) =>
+              val sast = if (attributes.named.get("format").contains("article")) {
+                val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
+                val section = doc.sast.head.asInstanceOf[Section]
+                val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
+                List(sast)
+              } else doc.sast
+              new SastToHtmlConverter(bundle, documentManager, imageResolver, bibliography, doc.sdoc, doc.file, katexMap)
+              .sastToHtml(sast)(new Scope(3))
+          }
+
 
         case other =>
           scribe.warn(s"not implemented: $other")
