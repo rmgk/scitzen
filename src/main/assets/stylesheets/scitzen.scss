@@ -33,9 +33,8 @@
 }
 
 @mixin float-box {
-  border-left: 1px solid var(--color-subdued);
-  padding-left: 1em;
-  padding-right: 1em;
+  border: 1px solid var(--color-subdued);
+  padding: 1em;
   & > :first-child {
     margin-top: 0;
   }
@@ -131,6 +130,19 @@ body {
     & > * {
       grid-column: content-start / content-end;
     }
+
+    & > {
+      figure, img {
+        grid-column: image-start / image-end;
+        justify-self: center;
+        margin-left: 0;
+        margin-right: 0;
+
+        @include boxed-content;
+      }
+    }
+
+
   }
 
   .metadata {
@@ -171,14 +183,6 @@ body {
     margin-top: 2em;
   }
 
-  // image blocks are contained in an oversized container
-  .imageblock {
-
-
-    img {
-    }
-  }
-
   img {
     // why is this not the default?
     image-orientation: from-image;
@@ -187,16 +191,13 @@ body {
     max-height: 40em;
     // without block display, the outer div becomes a bit larger (line height?)
     display: block;
-
-
     max-width: 100%;
-    grid-column: image-start / image-end;
-    justify-self: center;
-
-    @include boxed-content;
   }
 
-
+  figure img {
+    max-width: 100%;
+    margin: auto;
+  }
 
   figure, blockquote {
     @include float-box;
