@@ -76,7 +76,7 @@ object Convert {
     scribe.info(s"found ${documents.size} posts")
 
     val dm = resolveIncludes(new DocumentManager(documents))
-    val ir = ImageResolver.fromDM(dm, keepName = false)
+    val ir = ImageResolver.fromDM(dm, cacheDir, keepName = false)
 
     val singleFile = sourcefile.isRegularFile
 
@@ -126,7 +126,7 @@ object Convert {
     cssfile.writeByteArray(stylesheet)
     val relcsspostpath = postdir.relativize(cssfile).toString
 
-    val imageResolver = ImageResolver.fromDM(dm, keepName = true)
+    val imageResolver = ImageResolver.fromDM(dm, cacheDir, keepName = true)
 
     imageResolver.copyToTarget(postdir)
 

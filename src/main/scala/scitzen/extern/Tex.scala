@@ -45,20 +45,24 @@ object Tex {
     outputdir / (jobname + ".pdf")
   }
 
-  def convert(content: String, working: File): File = {
+  def getHash(content: String): (String, Array[Byte]) = {
     val texstring = header + content + footer
     val texbytes = texstring.getBytes(StandardCharsets.UTF_8)
-    val hash = Hashes.sha1hex(texbytes)
+    Hashes.sha1hex(texbytes) -> texbytes
+  }
+
+  def convert(content: String, working: File): (String, File) = {
+    val (hash, texbytes) = getHash(content)
     val dir = working / hash
     val target = dir / (hash + ".pdf")
-    if (target.exists) return target
+    if (target.exists) return hash -> target
 
 
     dir.createDirectories()
     val texfile = dir / (hash + ".tex")
     texfile.writeByteArray(texbytes)
     latexmk(dir, hash, texfile)
-    target
+    hash -> target
   }
 
   def pdfToSvg(in: File): File = {

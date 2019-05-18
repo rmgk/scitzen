@@ -9,7 +9,7 @@ import scalatags.generic.Bundle
 import scitzen.extern.Tex
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast, Sdoc}
-import scitzen.parser.{Attribute, Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
+import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
 
@@ -162,10 +162,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         val positiontype = bwa.attr.attributes.positional.headOption
         positiontype match {
           case Some("image") =>
-            val target = File("tempdir")
-            val pdf = Tex.convert(bwa.content.asInstanceOf[RawBlock].content, target)
-            val svg = Tex.pdfToSvg(pdf)
-            sastToHtml(List(MacroBlock(Macro("image", List(Attribute("", svg.pathAsString))))))
+            val (hash, _) = Tex.getHash(bwa.content.asInstanceOf[RawBlock].content)
+            val path = imageResolver.image(hash)
+            List(img(src := path))
           case Some("quote")                                                          =>
             val innerHtml = sastToHtml(List(bwa.content))
             // for blockquote layout, see example 12 (the twitter quote)

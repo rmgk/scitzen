@@ -8,15 +8,17 @@ object SastAnalyzes {
   case class Target(id: String, resolution: Sast)
   case class AnalyzeResult(attributes: List[Attribute],
                            macros: List[Macro],
-                           targets: List[Target]) {
+                           targets: List[Target],
+                           blocks: List[AttributedBlock]) {
     def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
     def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
+    def +(m: AttributedBlock): AnalyzeResult = copy(blocks = m :: blocks)
   }
 
   def analyze(input: Seq[Sast]) = {
-    val AnalyzeResult(a, m, t) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil))
-    AnalyzeResult(a.reverse, m.reverse, t.reverse)
+    val AnalyzeResult(a, m, t, b) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
+    AnalyzeResult(a.reverse, m.reverse, t.reverse, b.reverse)
   }
 
   def analyzeAll(inputs: Seq[Sast], scope: Option[Target], acc: AnalyzeResult): AnalyzeResult =
@@ -51,6 +53,6 @@ object SastAnalyzes {
     }
     case ParsedBlock(delimiter, content) => analyzeAll(content, scope, acc)
     case RawBlock(_, _)                  => acc
-    case AttributedBlock(attr, content)  => analyzeR(content, scope, acc)
+    case ab @ AttributedBlock(attr, content)  => analyzeR(content, scope, acc + ab)
   }
 }
