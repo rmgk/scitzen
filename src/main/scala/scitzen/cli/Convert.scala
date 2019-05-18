@@ -11,6 +11,7 @@ import scitzen.generic.{DocumentManager, GenIndexPage, ImageResolver, NLP, Sdoc}
 import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
 
 import scala.collection.mutable
+import scala.util.Try
 
 object Convert {
 
@@ -120,8 +121,6 @@ object Convert {
     val postdir = if (singlefile) targetdir else targetdir / "posts"
     postdir.createDirectories()
 
-    val katexMap = mutable.Map[String, String]()
-
     val cssfile = targetdir./("scitzen.css")
     cssfile.writeByteArray(stylesheet)
     val relcsspostpath = postdir.relativize(cssfile).toString
@@ -146,6 +145,14 @@ object Convert {
       val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
       bibEntries -> biblio
     } else (Nil, Map[String, String]())
+
+
+      val katexmapfile = cacheDir/("katexmap.json")
+      val katexMap = Try {
+        scala.collection.mutable.Map(upickle.default.read[Seq[(String, String)]](katexmapfile.path): _*)
+      }.getOrElse(mutable.Map())
+
+
 
     def convertDoc(doc: ParsedDocument) = {
 
@@ -201,6 +208,7 @@ object Convert {
       }
     }
 
+    katexmapfile.write(upickle.default.write[Seq[(String, String)]](katexMap.toSeq))
 
 
   }
