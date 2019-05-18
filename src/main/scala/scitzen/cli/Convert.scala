@@ -88,6 +88,7 @@ object Convert {
     )
 
 
+    cacheDir.createDirectories()
     ir.copyToTarget(cacheDir)
 
     val bibliography = dm.documents.collectFirstSome{ pd =>
