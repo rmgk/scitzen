@@ -50,7 +50,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   import bundle.tags2.article
 
   val root = ownpath.parent
-  var synced = false
 
   val syncPos = {
     if (sync.exists(_._1 == ownpath)) sync.get._2 else Int.MaxValue
@@ -104,14 +103,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         case _             =>
           val prov = bwa.prov
           val html = sastToHtml(List(bwa.content))
-          scribe.info(s"???highlighting $syncPos: $prov")
-          if (!synced && prov.end >= syncPos) {
-            scribe.info(s"highlighting $syncPos: $bwa")
+          if (prov.start <= syncPos && syncPos <= prov.end) {
+            scribe.info(s"highlighting $syncPos: $prov")
             html.toList match {
-              case (h: Tag) :: tail =>
-                synced = true
-                h(id := "highlight") :: tail
-              case other            => other
+              case h :: tail =>
+                div(id := "highlight", h) :: tail
+              case Nil            => List(div(id := "highlight"))
             }
           } else html
       }
@@ -124,9 +121,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case AttributeDef(_) => Nil
 
       case sec@Section(title, subsections) =>
+        val inner = (if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
+                     cBlocks(subsections)(nestingLevel.inc)
         tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)) +:
-        ((if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
-             cBlocks(subsections)(nestingLevel.inc))
+        inner
 
       case Slist(Nil) => Nil
       case Slist(children) => List(
