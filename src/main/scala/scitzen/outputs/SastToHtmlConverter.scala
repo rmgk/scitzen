@@ -10,7 +10,6 @@ import scitzen.extern.Tex
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast, Sdoc}
 import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
-
 import scala.collection.mutable
 
 
@@ -19,11 +18,19 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                                                            imageResolver: ImageResolver,
                                                            bibliography: Map[String, String],
                                                            sdoc: Sdoc,
-                                                           root: File,
-                                                           katexMap: mutable.Map[String, String]) {
+                                                           ownpath: File,
+                                                           katexMap: mutable.Map[String, String],
+                                                           sync: Option[(File, Int)]) {
 
   import bundle.all._
   import bundle.tags2.article
+
+  val root = ownpath.parent
+  var synced = false
+
+  val syncPos = {
+    if (sync.exists(_._1 == ownpath)) sync.get._2 else Int.MaxValue
+  }
 
   def convert() = sastToHtml(sdoc.sast)
 
@@ -61,8 +68,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case Text(inner) => inlineValuesToHTML(inner)
 
       case sec@Section(title, subsections) =>
-        List(tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)),
-             if (nestingLevel.level == 1) tMeta() else frag(),
+        tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)) +:
+        ((if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
              sastToHtml(subsections)(nestingLevel.inc))
 
       case Slist(Nil) => Nil
@@ -116,7 +123,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                 val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
                 List(sast)
               } else doc.sast
-              new SastToHtmlConverter(bundle, documentManager, imageResolver, bibliography, doc.sdoc, doc.file, katexMap)
+              new SastToHtmlConverter(bundle, documentManager, imageResolver, bibliography, doc.sdoc, doc.file, katexMap, sync)
               .sastToHtml(sast)(new Scope(3))
           }
 
@@ -127,10 +134,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       }
 
       case ParsedBlock(delimiter, blockContent) =>
-        List(
         delimiter match {
-          case "" => p(sastToHtml(blockContent))
-          case r"=+" => figure(sastToHtml(blockContent))
+          case "" => List(p(sastToHtml(blockContent)))
+          case r"=+" => List(figure(sastToHtml(blockContent)))
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case r"\s+" => sastToHtml(blockContent)
@@ -138,27 +144,27 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           case "include" => sastToHtml(blockContent)
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
-          case _ => div(delimiter, br, sastToHtml(blockContent), br, delimiter)
-        })
+          case _ => List(div(delimiter, br, sastToHtml(blockContent), br, delimiter))
+        }
 
-      case RawBlock(delimiter, text) => List(
-        if (delimiter.isEmpty) stringFrag("")
+      case RawBlock(delimiter, text) =>
+        if (delimiter.isEmpty) Nil
         else delimiter.charAt(0) match {
           // Code listing
           // Use this for monospace, space preserving, line preserving text
           // It may wrap to fit the screen content
-          case '`' => pre(code(text))
+          case '`' => List(pre(code(text)))
           // Literal block
           // This seems to be supposed to work similar to code? But whats the point then?
           // We interpret this as text with predetermined line wrappings
           // and no special syntax, but otherwise normally formatted.
           // This is great to represent copy&pasted posts or chat messages.
-          case '.' => pre(text)
-        })
+          case '.' => List(pre(text))
+        }
 
 
 
-      case bwa: AttributedBlock => List {
+      case bwa: AttributedBlock =>
         val positiontype = bwa.attr.attributes.positional.headOption
         positiontype match {
           case Some("image") =>
@@ -172,11 +178,20 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             val bq = blockquote(innerHtml)
             // first argument is "quote" we concat the rest and treat them as a single entity
             val title = bwa.attr.attributes.positional.drop(1)
-            if (title.nonEmpty) bq(cite(title))
-            else bq
-          case _             => sastToHtml(List(bwa.content))
+            List(if (title.nonEmpty) bq(cite(title))
+            else bq)
+          case _             =>
+            val prov = bwa.attr.prov
+            val html = sastToHtml(List(bwa.content))
+            if (!synced && prov.end >= syncPos) {
+              html.toList match {
+                case (h: Tag) :: tail =>
+                  synced = true
+                  h(id := "highlight") :: tail
+                case other => other
+              }
+            } else html
         }
-      }
     }
   }
 

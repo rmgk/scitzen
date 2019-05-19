@@ -316,8 +316,7 @@ body {
 
   }
 
-  // fixed position and resetting height makes this occupy no more space physically,
-  // and only the minimum to display the label visually
+  // remove sidebar nav content
   #sidebar-switch:checked ~ nav {
     display: none;
   }
@@ -335,4 +334,8 @@ body {
 
 .katex-html {
   display: none;
+}
+
+:target {
+  background: yellow;
 }
