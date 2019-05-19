@@ -91,7 +91,7 @@ object Convert {
                                          numbered = singleFile,
                                          root = if (singleFile) sourcefile.parent else sourcefile,
                                          imageResolver = ir).convert(
-      if (singleFile) dm.byPath(sourcefile).sast.toList else GenIndexPage.makeIndex(dm)
+      if (singleFile) dm.byPath(sourcefile).blocks.toList else GenIndexPage.makeIndex(dm)
     )
 
 
@@ -176,7 +176,7 @@ object Convert {
                                               doc.file,
                                               katexMap,
                                               sync)
-      val toc = HtmlToc.tableOfContents(doc.sdoc.sast, 2)
+      val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
       val res = Pages(relcsspostpath).wrapContentHtml(converter.convert() ++ citations,
                                                       "fullpost",
                                                       toc,
@@ -205,7 +205,7 @@ object Convert {
                                                 sourcefile,
                                                 katexMap,
                                                 None)
-        val toc = HtmlToc.tableOfContents(sdoc.sast, 2)
+        val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
 
         val res = Pages(targetdir.relativize(cssfile).toString)
                   .wrapContentHtml(converter.convert(),
@@ -216,6 +216,7 @@ object Convert {
       }
     }
 
+    katexmapfile.parent.createDirectories()
     katexmapfile.write(upickle.default.write[Seq[(String, String)]](katexMap.toSeq))
 
 

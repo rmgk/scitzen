@@ -1,14 +1,14 @@
 package scitzen.generic
 
-import scitzen.parser._
 import scitzen.generic.Sast._
+import scitzen.parser._
 
 sealed trait Sast
 
 object Sast {
   case class Slist(children: Seq[SlistItem]) extends Sast
   case class SlistItem(marker: String, content: Seq[Sast])
-  case class Text(inline: Seq[Inline]) extends Sast {
+  case class Text(inline: Seq[Inline]) {
     lazy val str = {
       inline.map{
         case Macro(command, attributes) => ""
@@ -17,17 +17,21 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, content: Seq[Sast]) extends Sast
+  case class Section(title: Text, content: Seq[TLBlock]) extends Sast
   case class MacroBlock(call: Macro) extends Sast
+  case class Paragraph(content: Text) extends Sast
   case class RawBlock(delimiter: String, content: String) extends Sast
-  case class ParsedBlock(delimiter: String, content: Seq[Sast]) extends Sast
-  case class AttributedBlock(attr: Block, content: Sast) extends Sast
+  case class ParsedBlock(delimiter: String, content: Seq[TLBlock]) extends Sast
+  case class TLBlock(attr: Attributes, prov: Prov, content: Sast)
+  object TLBlock{
+    def synt(content: Sast) = TLBlock(Attributes(Nil), Prov(), content)
+  }
   case class AttributeDef(attribute: Attribute) extends Sast
 }
 
 
 class ListConverter(val sastConverter: SastConverter) extends AnyVal {
-  import sastConverter.{blockContent, inlineString}
+  import sastConverter.blockContent
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
     case Nil                    => Nil
@@ -46,10 +50,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
   private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
     val listItems = split.map { case (item, children) =>
-      val itemSast = item.content match {
-        case NormalBlock("", paragraph) => inlineString(paragraph)
-        case other => blockContent(other)
-      }
+      val itemSast = blockContent(item.content)
       val childSasts = if (children.isEmpty) Nil else List(listtoSast(children))
       SlistItem(item.marker, itemSast +: childSasts)
     }
@@ -62,7 +63,7 @@ final case class SastConverter() {
   private val ListConverter = new ListConverter(this)
 
   @scala.annotation.tailrec
-  def sectionize(blocks: Seq[Block], accumulator: List[Section]): Seq[Section] = {
+  def sectionize(blocks: Seq[Block], accumulator: List[TLBlock]): Seq[TLBlock] = {
     blocks.toList match {
       case Nil => accumulator.reverse
       case section :: rest =>
@@ -74,13 +75,14 @@ final case class SastConverter() {
             case _                    => true
           }
         }
-        sectionize(next, Section(title, blockSequence(inner)) :: accumulator)
+        sectionize(next, TLBlock(section.attributes, section.prov,
+                                 Section(title, blockSequence(inner))) :: accumulator)
     }
   }
 
 
 
-  def blockSequence(blocks: Seq[Block]): Seq[Sast] = {
+  def blockSequence(blocks: Seq[Block]): Seq[TLBlock] = {
     val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
     abstkt.map(block) ++ sectionize(sections, Nil)
   }
@@ -101,7 +103,7 @@ final case class SastConverter() {
       case WhitespaceBlock(space) => RawBlock("", space)
 
       case NormalBlock(delimiter, text) =>
-        if (delimiter == "") ParsedBlock("", List(inlineString(text)))
+        if (delimiter == "") Paragraph(inlineString(text))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)
           case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text))
@@ -113,13 +115,13 @@ final case class SastConverter() {
     }
   }
 
-  def block(bwa: Block): Sast = {
+  def block(bwa: Block): TLBlock = {
     val inner = blockContent(bwa.content)
-    AttributedBlock(bwa, inner)
+    TLBlock(bwa.attributes, bwa.prov, inner)
   }
 
 
-  def documentString(blockContent: String): Seq[Sast] = {
+  def documentString(blockContent: String): Seq[TLBlock] = {
     blockSequence(Parse.document(blockContent).right.get)
   }
 

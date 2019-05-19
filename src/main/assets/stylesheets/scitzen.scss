@@ -336,6 +336,6 @@ body {
   display: none;
 }
 
-:target {
+#highlight:target {
   background: yellow;
 }

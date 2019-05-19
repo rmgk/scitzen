@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import cats.implicits._
 import scitzen.extern.Tex
-import scitzen.generic.Sast.{AttributedBlock, RawBlock}
+import scitzen.generic.Sast.{TLBlock, RawBlock}
 import scitzen.parser.Macro
 
 
@@ -44,8 +44,8 @@ object ImageResolver {
 
     val imageBlocks = documentManager.documents.flatMap { pd =>
       pd.sdoc.analyzeResult.blocks.collect({
-        case AttributedBlock(attr, content)
-          if attr.attributes.positional.headOption.contains("image") =>
+        case TLBlock(attr, _,  content)
+          if attr.positional.headOption.contains("image") =>
           val (hash, pdf)    = Tex.convert(content.asInstanceOf[RawBlock].content, cachedir)
           val svg    = Tex.pdfToSvg(pdf)
           hash -> svg

@@ -17,12 +17,12 @@ class SastToTexConverter(documents: DocumentManager,
                          numbered: Boolean = true,
                          imageResolver: ImageResolver) {
 
-  def convert(mainSast: List[Sast]): Seq[String] = mainSast match {
-    case List(Section(title, content)) =>
-      val secChildren = content.collect { case s: Section => s }
+  def convert(mainSast: List[TLBlock]): Seq[String] = mainSast match {
+    case List(TLBlock(_, _, Section(title, content))) =>
+      val secChildren = content.collect { case TLBlock(_, _, s: Section) => s }
       s"\\title{${inlineValuesToHTML(title.inline)}}\\maketitle{}" +:
-      (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(2)))
-    case list                          => sastToTex(list)(scope = new Scope(1))
+      (putAbstract(content.map(_.content)) ++ sastToTex(secChildren)(scope = new Scope(2)))
+    case list                                         => cBlocks(list)(scope = new Scope(1))
   }
 
   def latexencode(input: String): String = {
@@ -44,18 +44,25 @@ class SastToTexConverter(documents: DocumentManager,
       "\\end{abstract}"
   }
 
+  def cBlocks(b: Seq[TLBlock])(implicit scope: Scope): Seq[String] = {
+    b.flatMap { bwa: TLBlock =>
+      val positiontype = bwa.attr.positional.headOption
+      positiontype match {
+        case _ => sastToTex(List(bwa.content))
+      }
+    }
+  }
 
   def sastToTex(b: Seq[Sast])(implicit scope: Scope): Seq[String] = {
     b.flatMap {
 
       case AttributeDef(_) => Nil
 
-      case Text(inner) => List(inlineValuesToHTML(inner))
 
       case Section(title, contents) =>
         val sec = sectioning(scope)
         s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
-        sastToTex(contents)(scope.inc)
+        cBlocks(contents)(scope.inc)
 
       case Slist(children) =>
         children match {
@@ -87,35 +94,29 @@ class SastToTexConverter(documents: DocumentManager,
         case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
         case Macro("include", attributes) =>
           val docOpt = documents.find(root, attributes.target)
-          docOpt match {
-            case None =>
-              scribe.warn(s"include unknown document ${attributes.target} omitting")
-              Nil
-            case Some(doc) =>
-              val sast = if (attributes.named.get("format").contains("article")) {
-                val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
-                val section = doc.sast.head.asInstanceOf[Section]
-                val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
-                List(sast)
-              } else doc.sast
+          ImportPreproc.macroImportPreproc(docOpt, attributes) match {
+            case Some((doc, sast)) =>
               new SastToTexConverter(documents, doc.file.parent, numbered, imageResolver)
-              .sastToTex(sast)(new Scope(3))
+              .cBlocks(sast)(new Scope(3))
+            case None => Nil
           }
         case other                        =>
           scribe.warn(s"not implemented: $other")
           List(other.toString)
       }
 
+      case Paragraph(content) => List(inlineValuesToHTML(content.inline)) :+ ""
+
+
       case ParsedBlock(delimiter, blockContent) =>
-        if (delimiter == "") sastToTex(blockContent) :+ ""
-        else delimiter.charAt(0) match {
-          case '=' => sastToTex(blockContent)
+        delimiter.charAt(0) match {
+          case '=' => cBlocks(blockContent)
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case ' ' => sastToTex(blockContent)
+          case ' ' => cBlocks(blockContent)
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
-          case _   => sastToTex(blockContent)
+          case _   => cBlocks(blockContent)
         }
 
       case RawBlock(delimiter, text) =>
@@ -132,11 +133,7 @@ class SastToTexConverter(documents: DocumentManager,
 
 
 
-      case bwa: AttributedBlock =>
-        val positiontype = bwa.attr.attributes.positional.headOption
-        positiontype match {
-          case _         => sastToTex(List(bwa.content))
-        }
+
     }
   }
 

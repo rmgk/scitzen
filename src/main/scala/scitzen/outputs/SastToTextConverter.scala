@@ -7,13 +7,15 @@ import scitzen.parser.{Inline, InlineQuote, InlineText, Macro}
 
 object SastToTextConverter {
 
+  def convert(b: Seq[TLBlock]): Seq[String] = {
+    convertSast(b.map(_.content))
+  }
 
-  def convert(b: Seq[Sast]): Seq[String] = {
+  def convertSast(b: Seq[Sast]): Seq[String] = {
     b.flatMap[String, Seq[String]] {
 
       case AttributeDef(a) => Nil
 
-      case Text(inner) => List(convertInline(inner))
 
 
       case Section(title, sc) =>
@@ -21,21 +23,20 @@ object SastToTextConverter {
         convert(sc)
 
       case Slist(children) => children.flatMap {
-        case SlistItem(marker, Seq(Text(inl))) =>
+        case SlistItem(marker, Seq(Paragraph(Text(inl)))) =>
           List(convertInline(inl))
         case SlistItem(marker, inner) =>
-          convert(inner)
+          convertSast(inner)
       }
 
       case MacroBlock(mcro) => Nil
 
+      case Paragraph(content) => List(convertInline(content.inline))
+
+
       case ParsedBlock(_, blockContent) => convert(blockContent)
 
       case RawBlock(_, text) => List(text)
-
-
-      case bwa: AttributedBlock =>
-        convert(List(bwa.content))
     }
   }
 

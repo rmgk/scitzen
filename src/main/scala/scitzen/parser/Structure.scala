@@ -2,18 +2,20 @@ package scitzen.parser
 
 
 
-case class Attributes(all: Seq[Attribute]) {
+case class Attributes(raw: Seq[Seq[Attribute]]) {
+  lazy val all = raw.flatten
   lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
   lazy val target    : String              = positional.last
   lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value)}.toMap
 }
 
 object Attributes {
-  implicit def fromAttributeSeq(some: Seq[Attribute]): Attributes = Attributes(some)
+  implicit def fromAttributeSeq(some: Seq[Attribute]): Attributes = Attributes(List(some))
+  def synt(attr: Attribute*) = Attributes(List(attr))
 }
 
 case class Block(rawAttributes: Seq[Seq[Attribute]], prov: Prov, content: BlockContent) {
-  lazy val attributes: Attributes      = Attributes(rawAttributes.flatten)
+  lazy val attributes: Attributes      = Attributes(rawAttributes)
 
 }
 
@@ -25,7 +27,7 @@ case class AttributeBlock(attribute: Attribute) extends BlockContent
 case class SectionTitle(level: Int, title: String) extends BlockContent
 
 
-case class ListItem(marker: String, content: BlockContent)
+case class ListItem(marker: String, content: NormalBlock)
 
 case class Attribute(id: String, value: String)
 

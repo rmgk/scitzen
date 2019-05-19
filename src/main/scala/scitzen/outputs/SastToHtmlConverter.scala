@@ -6,11 +6,35 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
+import scitzen.cli.ParsedDocument
 import scitzen.extern.Tex
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast, Sdoc}
 import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
+
 import scala.collection.mutable
+
+
+object ImportPreproc {
+  def macroImportPreproc(docOpt: Option[ParsedDocument], attributes: Attributes)
+  : Option[(ParsedDocument, Seq[TLBlock])] = {
+    val res = docOpt match {
+      case None      =>
+        scribe.warn(s"include unknown document ${attributes.target} omitting")
+        None
+      case Some(doc) =>
+        val sast = if (attributes.named.get("format").contains("article")) {
+          val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
+          val head = doc.blocks.head
+          val section = head.content.asInstanceOf[Section]
+          val sast = head.copy(content = section.copy(title = Text(InlineText(date) +: section.title.inline)))
+          List(sast)
+        } else doc.blocks
+        Some(doc -> sast)
+    }
+    res
+  }
+}
 
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
@@ -32,7 +56,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
     if (sync.exists(_._1 == ownpath)) sync.get._2 else Int.MaxValue
   }
 
-  def convert() = sastToHtml(sdoc.sast)
+  def convert() = cBlocks(sdoc.blocks)
 
 
   def listItemToHtml(child: SlistItem)(implicit nestingLevel: Scope) = {
@@ -60,17 +84,49 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       )
   }
 
+  def cBlocks(blocks: Seq[TLBlock])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
+    blocks.flatMap { bwa: TLBlock =>
+      val positiontype = bwa.attr.positional.headOption
+      positiontype match {
+        case Some("image") =>
+          val (hash, _) = Tex.getHash(bwa.content.asInstanceOf[RawBlock].content)
+          val path = imageResolver.image(hash)
+          List(img(src := path))
+        case Some("quote") =>
+          val innerHtml = sastToHtml(List(bwa.content))
+          // for blockquote layout, see example 12 (the twitter quote)
+          // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
+          val bq = blockquote(innerHtml)
+          // first argument is "quote" we concat the rest and treat them as a single entity
+          val title = bwa.attr.positional.drop(1)
+          List(if (title.nonEmpty) bq(cite(title))
+               else bq)
+        case _             =>
+          val prov = bwa.prov
+          val html = sastToHtml(List(bwa.content))
+          scribe.info(s"???highlighting $syncPos: $prov")
+          if (!synced && prov.end >= syncPos) {
+            scribe.info(s"highlighting $syncPos: $bwa")
+            html.toList match {
+              case (h: Tag) :: tail =>
+                synced = true
+                h(id := "highlight") :: tail
+              case other            => other
+            }
+          } else html
+      }
+    }
+  }
+
   def sastToHtml(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
     b.flatMap[Frag, Seq[Frag]] {
 
       case AttributeDef(_) => Nil
 
-      case Text(inner) => inlineValuesToHTML(inner)
-
       case sec@Section(title, subsections) =>
         tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)) +:
         ((if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
-             sastToHtml(subsections)(nestingLevel.inc))
+             cBlocks(subsections)(nestingLevel.inc))
 
       case Slist(Nil) => Nil
       case Slist(children) => List(
@@ -111,21 +167,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             )))
 
         case Macro("include", attributes) =>
-          val docOpt = documentManager.find(root, attributes.target)
-          docOpt match {
-            case None =>
-              scribe.warn(s"include unknown document ${attributes.target} omitting")
-              Nil
-            case Some(doc) =>
-              val sast = if (attributes.named.get("format").contains("article")) {
-                val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
-                val section = doc.sast.head.asInstanceOf[Section]
-                val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
-                List(sast)
-              } else doc.sast
-              new SastToHtmlConverter(bundle, documentManager, imageResolver, bibliography, doc.sdoc, doc.file, katexMap, sync)
-              .sastToHtml(sast)(new Scope(3))
+          ImportPreproc.macroImportPreproc(documentManager.find(root, attributes.target), attributes) match {
+            case Some((doc, sast)) =>
+              new SastToHtmlConverter(bundle, documentManager, imageResolver,
+                                      bibliography, doc.sdoc, doc.file, katexMap, sync)
+              .cBlocks(sast)(new Scope(3))
+            case None => Nil
           }
+
 
 
         case other =>
@@ -133,18 +182,19 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           List(div(stringFrag(other.toString)))
       }
 
+      case Paragraph(content) => List(p(inlineValuesToHTML(content.inline)))
+
       case ParsedBlock(delimiter, blockContent) =>
         delimiter match {
-          case "" => List(p(sastToHtml(blockContent)))
-          case r"=+" => List(figure(sastToHtml(blockContent)))
+          case r"=+" => List(figure(cBlocks(blockContent)))
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case r"\s+" => sastToHtml(blockContent)
+          case r"\s+" => cBlocks(blockContent)
           // includes are also included as is
-          case "include" => sastToHtml(blockContent)
+          case "include" => cBlocks(blockContent)
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
-          case _ => List(div(delimiter, br, sastToHtml(blockContent), br, delimiter))
+          case _ => List(div(delimiter, br, cBlocks(blockContent), br, delimiter))
         }
 
       case RawBlock(delimiter, text) =>
@@ -161,39 +211,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           // This is great to represent copy&pasted posts or chat messages.
           case '.' => List(pre(text))
         }
-
-
-
-      case bwa: AttributedBlock =>
-        val positiontype = bwa.attr.attributes.positional.headOption
-        positiontype match {
-          case Some("image") =>
-            val (hash, _) = Tex.getHash(bwa.content.asInstanceOf[RawBlock].content)
-            val path = imageResolver.image(hash)
-            List(img(src := path))
-          case Some("quote")                                                          =>
-            val innerHtml = sastToHtml(List(bwa.content))
-            // for blockquote layout, see example 12 (the twitter quote)
-            // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
-            val bq = blockquote(innerHtml)
-            // first argument is "quote" we concat the rest and treat them as a single entity
-            val title = bwa.attr.attributes.positional.drop(1)
-            List(if (title.nonEmpty) bq(cite(title))
-            else bq)
-          case _             =>
-            val prov = bwa.attr.prov
-            val html = sastToHtml(List(bwa.content))
-            if (!synced && prov.end >= syncPos) {
-              html.toList match {
-                case (h: Tag) :: tail =>
-                  synced = true
-                  h(id := "highlight") :: tail
-                case other => other
-              }
-            } else html
-        }
     }
   }
+
 
 
   def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {

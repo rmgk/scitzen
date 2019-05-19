@@ -1,17 +1,23 @@
 package scitzen.outputs
 
 import scitzen.generic.Sast
-import scitzen.generic.Sast.{AttributedBlock, ParsedBlock, Section}
+import scitzen.generic.Sast.{TLBlock, ParsedBlock, Section}
 import scalatags.Text.all._
 
 object HtmlToc {
-  def tableOfContents(document: Seq[Sast], tocDepth: Int): Option[Frag] = {
+
+  def tableOfContents(document: Seq[TLBlock], tocDepth: Int): Option[Frag] = {
+    tableOfContentsS(document.map(_.content), tocDepth)
+  }
+
+
+    def tableOfContentsS(document: Seq[Sast], tocDepth: Int): Option[Frag] = {
     def findSections(cont: Seq[Sast]): Seq[Section] = {
       cont.flatMap {
-        case s: Section => List(s)
-        case AttributedBlock(_, content) => findSections(List(content))
-        case ParsedBlock(_, content) => findSections(content)
-        case _ => Nil
+        case s: Section              => List(s)
+        case tlb: TLBlock     => findSections(List(tlb.content))
+        case ParsedBlock(_, content) => findSections(content.map(_.content))
+        case _                       => Nil
       }
     }
 
@@ -21,7 +27,7 @@ object HtmlToc {
         case sections =>
           Some(ol(sections.map {
             case Section(title, inner) =>
-              val sub = if (depth > 1) makeToc(inner, depth - 1) else None
+              val sub = if (depth > 1) makeToc(inner.map(_.content), depth - 1) else None
               li(a(href := s"#${title.str}", title.str))(sub)
           }))
       }
@@ -29,7 +35,7 @@ object HtmlToc {
 
 
     document match {
-      case Seq(Section(_, secCon)) => makeToc(secCon, tocDepth)
+      case Seq(Section(_, secCon)) => makeToc(secCon.map(_.content), tocDepth)
       case other                   => makeToc(other, tocDepth)
     }
   }

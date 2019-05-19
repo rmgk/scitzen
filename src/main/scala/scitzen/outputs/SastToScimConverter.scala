@@ -14,12 +14,16 @@ case class SastToScimConverter() {
     case Attribute(k, v)                        => s"""$k="$v""""
   }.mkString("[", "; ", "]")
 
-  def toScim(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
+  def toScim(blocks: Seq[TLBlock])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
+    blocks.flatMap { bwa =>
+      bwa.attr.raw.map(attributesToScim) ++ toScimS(List(bwa.content))
+    }
+  }
+
+    def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     b.flatMap[String, Seq[String]] {
 
       case AttributeDef(a) => List(s":${a.id}:${a.value}")
-
-      case Text(inner) => List(inlineToScim(inner))
 
       //case Sections(secContent, secChildren) =>
       //  def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_))
@@ -31,18 +35,19 @@ case class SastToScimConverter() {
         toScim(sc)(nestingLevel.inc)
 
       case Slist(children) => children.flatMap {
-        case SlistItem(marker, Seq(Text(inl))) =>
+        case SlistItem(marker, List(Paragraph(Text(inl)))) =>
           List(s"$marker" + inlineToScim(inl))
         case SlistItem(marker, inner) =>
-          marker +: toScim(inner)
+          marker +: toScimS(inner)
       }
 
       case MacroBlock(Macro("horizontal-rule", attributes)) => List(attributes.target)
       case MacroBlock(mcro) => List(macroToScim(mcro))
 
+      case Paragraph(content) => List(inlineToScim(content.inline))
+
       case ParsedBlock(delimiter, blockContent) =>
-        if (delimiter == "") toScim(blockContent)
-        else delimiter.charAt(0) match {
+        delimiter.charAt(0) match {
           case '=' => delimiter +: toScim(blockContent) :+ delimiter
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
@@ -57,9 +62,6 @@ case class SastToScimConverter() {
       case RawBlock("", text) => List.fill(text.count(_ == '\n'))("")
       case RawBlock(delimiter, text) => List(delimiter, text, delimiter)
 
-
-      case bwa: AttributedBlock =>
-        bwa.attr.rawAttributes.map(attributesToScim) ++ toScim(List(bwa.content))
     }
   }
 

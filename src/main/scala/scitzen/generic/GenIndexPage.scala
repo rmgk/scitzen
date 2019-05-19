@@ -1,21 +1,21 @@
 package scitzen.generic
 
 import scitzen.cli.ParsedDocument
-import scitzen.generic.Sast.{MacroBlock, ParsedBlock, Section, Text}
+import scitzen.generic.Sast.{MacroBlock, Paragraph, Section, TLBlock, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
 object GenIndexPage {
 
 
-  def makeIndex(dm: DocumentManager, reverse: Boolean = false, nlp: Option[NLP] = None): List[Sast] = {
+  def makeIndex(dm: DocumentManager, reverse: Boolean = false, nlp: Option[NLP] = None): List[TLBlock] = {
     def ordering[T: Ordering]:Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
     def sectionBy(pdocs: List[ParsedDocument])
                  (f: ParsedDocument => String)
-                 (cont: List[ParsedDocument] => List[Sast]) = {
+                 (cont: List[ParsedDocument] => List[TLBlock]) = {
       val years = pdocs.groupBy(f)
       years.toList.sortBy(_._1)(ordering).map { case (year, docs) =>
-        Section(Text(List(InlineText(year))), cont(docs))
+        TLBlock.synt(Section(Text(List(InlineText(year))), cont(docs)))
       }
     }
 
@@ -31,14 +31,15 @@ object GenIndexPage {
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.sdoc.date)(ordering).flatMap { doc =>
           List(MacroBlock(Macro("include",
-                           Attributes(List(
+                           Attributes.synt(
                              Attribute("", doc.file.pathAsString),
-                             Attribute("type", "article"))))),
-               ParsedBlock("", List(Text(
+                             Attribute("type", "article")))),
+               Paragraph(Text(
                  nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
                    case (word, prob) => InlineText(s"$word ")
                  }))
-                                    )))
+                                    ))
+          .map(TLBlock.synt)
         }
       }
     }

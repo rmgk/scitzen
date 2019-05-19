@@ -10,7 +10,7 @@ object MacroParsers {
   def start[_: P]: P[String] = P(":" ~ identifier.?.! ~ &("["))
 
   def full[_: P]: P[Macro] = P(start ~ AttributesParser.list).map {
-    case (name, attributes) => Macro(name, Attributes(attributes))
+    case (name, attributes) => Macro(name, Attributes.fromAttributeSeq(attributes))
   }
 
 }
