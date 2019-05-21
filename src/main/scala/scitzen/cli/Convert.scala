@@ -44,7 +44,7 @@ object Convert {
         val sourcefile = File(sourcedirRel)
         val targetfile = File(targetdirRel)
         val cachedir = cachedirRel.fold {
-          if (targetfile.isDirectory) targetfile / ".scitzen-cache"
+          if (targetfile.extension.isEmpty) targetfile / ".scitzen-cache"
           else targetfile.sibling(targetfile.name + ".scitzen-cache")
         }(File(_))
 
