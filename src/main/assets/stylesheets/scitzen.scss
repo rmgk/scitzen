@@ -338,4 +338,11 @@ body {
 
 #highlight:target {
   background: yellow;
+  background-clip: padding-box;
+}
+
+#highlight {
+  border-top: 30vh transparent solid;
+  margin-top: -30vh;
+  background-clip: padding-box;
 }
