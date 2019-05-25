@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
-import scitzen.cli.ParsedDocument
+import scitzen.generic.ParsedDocument
 import scitzen.extern.Tex
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast, Sdoc}

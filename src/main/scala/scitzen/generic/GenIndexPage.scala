@@ -1,6 +1,5 @@
 package scitzen.generic
 
-import scitzen.cli.ParsedDocument
 import scitzen.generic.Sast.{MacroBlock, Paragraph, Section, TLBlock, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 

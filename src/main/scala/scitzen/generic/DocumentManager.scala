@@ -1,7 +1,6 @@
 package scitzen.generic
 
 import better.files.File
-import scitzen.cli.ParsedDocument
 
 object Months {
   val en = Array("January", "February", "March", "April", "May", "June",

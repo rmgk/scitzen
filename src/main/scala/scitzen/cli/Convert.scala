@@ -5,9 +5,10 @@ import java.nio.file.Path
 
 import better.files._
 import cats.implicits._
+import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.Tex.latexmk
-import scitzen.generic.{DocumentManager, GenIndexPage, ImageResolver, NLP, Sdoc}
+import scitzen.generic.{DocumentDiscovery, DocumentManager, GenIndexPage, ImageResolver, NLP, ParsedDocument, Sdoc}
 import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
 
 import scala.collection.mutable
@@ -20,11 +21,13 @@ object Convert {
   val optSource  : Opts[Path]         = Opts.argument[Path](metavar = "path")
   val optOutput  : Opts[Path]         = Opts.argument[Path](metavar = "path")
   val optCachedir: Opts[Option[Path]] = Opts.option[Path]("cache", metavar = "directory",
-                                                help = "Temoperary cache folder").orNone
+                                                          help = "Temoperary cache folder").orNone
 
   val optSyncFile: Opts[Option[Path]] = Opts.option[Path]("sync-file", metavar = "file",
+                                                          visibility = Partial,
                                                           help = "file to show in output").orNone
   val optSyncPos : Opts[Option[Int]]  = Opts.option[Int]("sync-position", metavar = "integer",
+                                                         visibility = Partial,
                                                          help = "character offset to show in output").orNone
 
   // loading ressource statically allows Graal AOT to inline on build
