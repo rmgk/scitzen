@@ -14,13 +14,12 @@ import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
 import scala.collection.mutable
 import scala.util.Try
 
-case class Project(root: File) {
+case class Project(root: File, singleSource: Option[File] = None) {
   val projectDir: File = root / Project.scitzenfolder
   val cacheDir  : File = projectDir / "cache"
   lazy val sources: List[File] = Project.discoverSources(root)
   lazy val documents: List[ParsedDocument] = sources.map(ParsedDocument.apply)
   val outputdir: File = projectDir / "output"
-
 }
 
 object Project {
@@ -31,18 +30,29 @@ object Project {
   }
   def fromSource(file: File): Project = {
     val root = findRoot(file)
-    Project(root.getOrElse(file / "meh"))
+    val source =
+      if (isScim(file)) Some(file)
+      else if (file.isDirectory) {
+        file.collectChildren(isScim).toList match {
+          case List(single) => Some(single)
+          case other => None
+        }
+      } else None
+    Project(root.getOrElse(file / "meh"), source)
   }
 
-  val fileEnding  = "scim"
+  def isScim(c: File): Boolean =
+    c.isRegularFile &&
+    c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
+
+  val fileEnding = "scim"
   def discoverSources(source: File): List[File] = {
     import scala.collection.JavaConverters._
     source match {
       case f if f.isRegularFile => List(f)
       case f if f.isDirectory   =>
         f.collectChildren{ c =>
-          c.isRegularFile &&
-          c.extension(includeDot = false, toLowerCase = true).contains(fileEnding) &&
+          isScim(c) &&
           !f.relativize(c).iterator().asScala.exists {_.toString.startsWith("_") }
         }.toList
     }
@@ -88,6 +98,7 @@ object Convert {
     }
   }
 
+  @scala.annotation.tailrec
   def resolveIncludes(documentManager: DocumentManager): DocumentManager = {
     val includes = (for {
       docs <- documentManager.documents
@@ -163,30 +174,34 @@ object Convert {
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
 
-    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = /*if (singlefile) {
-      val doc = dm.byPath(sourcefile)
-      val bibPath = doc.sdoc.named.get("bibliography").map { p =>
-        doc.file.parent./(p.trim)
-      }
-      val bib = bibPath.toList.flatMap(Bibliography.parse(cacheDir))
-      val cited = dm.documents.flatMap{_.sdoc.analyzeResult.macros.filter(_.command == "cite")
-                  .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))}.toSet
-      val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
-      val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
-      bibEntries -> biblio
-    } else*/ (Nil, Map[String, String]())
+    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = project.singleSource match {
+      case None             => (Nil, Map[String, String]())
+      case Some(sourcefile) =>
+        val doc = dm.byPath(sourcefile)
+        val bibPath = doc.sdoc.named.get("bibliography").map { p =>
+          doc.file.parent./(p.trim)
+        }
+        val bib = bibPath.toList.flatMap(Bibliography.parse(project.cacheDir))
+        val cited = dm.documents.flatMap {
+          _.sdoc.analyzeResult.macros.filter(_.command == "cite")
+           .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))
+        }.toSet
+        val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+        val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
+        bibEntries -> biblio
+    }
 
 
-      val katexmapfile = project.cacheDir/ "katexmap.json"
-      val katexMap = Try {
-        scala.collection.mutable.Map(upickle.default.read[Seq[(String, String)]](katexmapfile.path): _*)
-      }.getOrElse(mutable.Map())
+    val katexmapfile = project.cacheDir / "katexmap.json"
+    val katexMap = Try {
+      scala.collection.mutable.Map(upickle.default.read[Seq[(String, String)]](katexmapfile.path): _*)
+    }.getOrElse(mutable.Map())
 
 
 
 
     val cssrelpath = postoutput.relativize(cssfile).toString
-    def convertDoc(doc: ParsedDocument) = {
+    def convertDoc(doc: ParsedDocument): Unit = {
 
       val citations = if (bibEntries.isEmpty) Nil else {
         import scalatags.Text.all.{id, li, ol}
@@ -214,14 +229,12 @@ object Convert {
       target.write(res)
     }
 
-    //if (singlefile) convertDoc(dm.byPath(sourcefile))
-    //
-    //else {
 
-      dm.documents.foreach {convertDoc}
+    project.singleSource match {
+      case Some(sourcefile) =>  convertDoc(dm.byPath(sourcefile))
+      case None =>
+        dm.documents.foreach {convertDoc}
 
-
-      {
         val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp))
         val converter = new SastToHtmlConverter(scalatags.Text,
                                                 dm,
@@ -239,12 +252,12 @@ object Convert {
                                    toc,
                                    sdoc.language.getOrElse(""))
         project.outputdir./("index.html").write(res)
-      }
-    //}
+    }
 
-    katexmapfile.parent.createDirectories()
-    katexmapfile.write(upickle.default.write[Seq[(String, String)]](katexMap.toSeq))
-
+    if (katexMap.nonEmpty) {
+      katexmapfile.parent.createDirectories()
+      katexmapfile.write(upickle.default.write[Seq[(String, String)]](katexMap.toSeq))
+    }
 
   }
 
