@@ -34,7 +34,7 @@
 
 @mixin float-box {
   border: 1px solid var(--color-subdued);
-  padding: 1em;
+  padding: calc(1em - 1px);
   & > :first-child {
     margin-top: 0;
   }
@@ -118,17 +118,19 @@ body {
     margin-bottom: calc(100vh - 3.5em);
 
     display: grid;
-    grid-template-columns: 1fr
-                           [image-start] 1fr
-                           [content-start] minmax(min-content, var(--main-content-width))
-                           [content-end] 1fr
-                           [image-end] 2fr;
+    grid-template-columns: [image-start] minmax(0, 1fr)
+                           [content-start] minmax(10em, var(--main-content-width))
+                           [content-end] minmax(0, 1fr)
+                           [image-end] 1fr;
     justify-content: space-between;
 
 
 
     & > * {
       grid-column: content-start / content-end;
+      // keep all content inside the page
+      max-width: 100%;
+      overflow-x: scroll;
     }
 
     & > {
@@ -156,6 +158,8 @@ body {
   p {
     text-align: justify;
     hyphens: auto;
+    // restrict max width also when nested inside something else
+    max-width: var(--main-content-width);
   }
 
   ul {
@@ -166,14 +170,13 @@ body {
     white-space: pre-line;
     text-align: justify;
     hyphens: auto;
+    overflow-x: auto;
     @include text-font;
   }
 
   pre > code {
     white-space: pre;
-    overflow-x: auto;
     display: block;
-    max-width: var(--main-content-width);
   }
 
   hr {
@@ -192,12 +195,8 @@ body {
     max-height: 40em;
     // without block display, the outer div becomes a bit larger (line height?)
     display: block;
-    max-width: 100%;
-  }
-
-  figure img {
-    max-width: 100%;
     margin: auto;
+    max-width: 100%;
   }
 
   figure, blockquote {
