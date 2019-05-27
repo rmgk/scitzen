@@ -17,8 +17,12 @@ import scala.util.Try
 case class Project(root: File, singleSource: Option[File] = None) {
   val projectDir: File = root / Project.scitzenfolder
   val cacheDir  : File = projectDir / "cache"
-  lazy val sources: List[File] = Project.discoverSources(root)
-  lazy val documents: List[ParsedDocument] = sources.map(ParsedDocument.apply)
+  lazy val sources        : List[File]           = singleSource match {
+    case None => Project.discoverSources(root)
+    case Some(source) => List(source)
+  }
+  lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
+  lazy val documentManager: DocumentManager      = DocumentManager.resolveIncludes(new DocumentManager(documents))
   val outputdir: File = projectDir / "output"
 }
 
@@ -33,7 +37,7 @@ object Project {
     val source =
       if (isScim(file)) Some(file)
       else if (file.isDirectory) {
-        file.collectChildren(isScim).toList match {
+        file.collectChildren(isScim, 1).toList match {
           case List(single) => Some(single)
           case other => None
         }
@@ -98,22 +102,6 @@ object Convert {
     }
   }
 
-  @scala.annotation.tailrec
-  def resolveIncludes(documentManager: DocumentManager): DocumentManager = {
-    val includes = (for {
-      docs <- documentManager.documents
-      macrs <- docs.sdoc.analyzeResult.macros
-      if macrs.command == "include"
-      file = docs.file.parent / macrs.attributes.target
-      if !documentManager.byPath.contains(file)
-    } yield file).toSet
-    if (includes.isEmpty) documentManager
-    else {
-      scribe.info(s"found includes: $includes")
-      val newPF = includes.iterator.map(ParsedDocument.apply) ++: documentManager.documents
-      resolveIncludes(new DocumentManager(newPF))
-    }
-  }
 
   def convertToPdf(sourcefile: File, targetfile: File, cacheDir: File): Unit = {
     val dd = DocumentDiscovery(List(sourcefile))
@@ -122,7 +110,7 @@ object Convert {
 
     scribe.info(s"found ${documents.size} posts")
 
-    val dm = resolveIncludes(new DocumentManager(documents))
+    val dm = DocumentManager.resolveIncludes(new DocumentManager(documents))
     val ir = ImageResolver.fromDM(dm, cacheDir, keepName = false)
 
     val singleFile = sourcefile.isRegularFile
@@ -157,7 +145,7 @@ object Convert {
 
     scribe.info(s"found ${documents.size} posts")
 
-    val dm = resolveIncludes(new DocumentManager(documents))
+    val dm = project.documentManager
 
     project.outputdir.createDirectories()
 

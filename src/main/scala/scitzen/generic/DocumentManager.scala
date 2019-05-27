@@ -25,3 +25,21 @@ class DocumentManager(_documents: List[ParsedDocument]) {
 
 }
 
+object DocumentManager {
+  @scala.annotation.tailrec
+  def resolveIncludes(documentManager: DocumentManager): DocumentManager = {
+    val includes = (for {
+      docs <- documentManager.documents
+      macrs <- docs.sdoc.analyzeResult.macros
+      if macrs.command == "include"
+      file = docs.file.parent / macrs.attributes.target
+      if !documentManager.byPath.contains(file)
+    } yield file).toSet
+    if (includes.isEmpty) documentManager
+    else {
+      scribe.info(s"found includes: $includes")
+      val newPF = includes.iterator.map(ParsedDocument.apply) ++: documentManager.documents
+      resolveIncludes(new DocumentManager(newPF))
+    }
+  }
+}
