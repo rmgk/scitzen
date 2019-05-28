@@ -305,7 +305,6 @@ body {
 // highlight targets are for forward sync when writing text
 #highlight:target + * {
   background: yellow;
-  background-clip: padding-box;
 }
 
 #highlight {
