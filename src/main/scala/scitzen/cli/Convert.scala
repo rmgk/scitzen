@@ -8,7 +8,7 @@ import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.Tex.latexmk
-import scitzen.generic.{DocumentDiscovery, DocumentManager, GenIndexPage, ImageResolver, NLP, ParsedDocument, Sdoc}
+import scitzen.generic.{DocumentDiscovery, DocumentManager, GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
 import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
 
 import scala.collection.mutable

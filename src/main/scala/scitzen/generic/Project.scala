@@ -1,7 +1,6 @@
-package scitzen.cli
+package scitzen.generic
 
 import better.files.File
-import scitzen.generic.{DocumentManager, ParsedDocument}
 
 case class Project(root: File, singleSource: Option[File] = None) {
   val projectDir: File = root / Project.scitzenfolder
@@ -22,16 +21,19 @@ object Project {
     else source.parentOption.flatMap(findRoot)
   }
   def fromSource(file: File): Project = {
-    val root = findRoot(file)
-    val source =
-      if (isScim(file)) Some(file)
-      else if (file.isDirectory) {
-        file.collectChildren(isScim, 1).toList match {
+    val root = findRoot(file).get
+    scribe.info(s"found root at $root")
+    val source = {
+      if (isScim(file) && root.children.contains(file)) Some(file)
+      else {
+        root.collectChildren(isScim, 1).toList match {
           case List(single) => Some(single)
-          case other => None
+          case other        => None
         }
-      } else None
-    Project(root.getOrElse(file / "meh"), source)
+      }
+    }
+
+    Project(root, source)
   }
 
   def isScim(c: File): Boolean =
