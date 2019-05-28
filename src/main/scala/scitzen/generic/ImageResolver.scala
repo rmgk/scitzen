@@ -2,10 +2,10 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.extern.TexTikz
-import scitzen.generic.Sast.{TLBlock, RawBlock}
+import scitzen.extern.{Graphviz, ImageConvert, TexTikz}
+import scitzen.generic.Sast.{RawBlock, TLBlock}
 import scitzen.parser.Macro
-
+import kaleidoscope._
 
 class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[String, File], cachedir: File) {
 
@@ -18,8 +18,8 @@ class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[Stri
         tar.parent.createDirectories()
         source.copyTo(tar, overwrite = true)
     }
-    blockSubsts.foreach{ case (hash, source) =>
-      val tar = imageTarget/ generated / source.name
+    blockSubsts.foreach { case (hash, source) =>
+      val tar = imageTarget / generated / source.name
       tar.parent.createDirectories()
       source.copyTo(tar, overwrite = true)
     }
@@ -43,13 +43,28 @@ object ImageResolver {
     }.toMap
 
     val imageBlocks = documentManager.documents.flatMap { pd =>
-      pd.sdoc.analyzeResult.blocks.collect({
-        case TLBlock(attr, _,  content)
-          if attr.positional.headOption.contains("image") =>
-          val (hash, pdf)    = TexTikz.convert(content.asInstanceOf[RawBlock].content, cachedir)
-          val svg    = TexTikz.pdfToSvg(pdf)
-          hash -> svg
+      val imageBlocks = pd.sdoc.analyzeResult.blocks.collect({
+        case tlb@TLBlock(attr, _, content) if attr.positional.headOption.contains("image") => tlb
       })
+      imageBlocks.flatMap { tlb =>
+        tlb.attr.named.get("converter") match {
+          case Some("tikz")             =>
+            val (hash, pdf) = TexTikz.convert(tlb.content.asInstanceOf[RawBlock].content, cachedir)
+            val svg = ImageConvert.pdfToSvg(pdf)
+            scribe.info(s"converting $hash to $svg")
+            List(hash -> svg)
+          case Some(gr @ r"graphviz.*") =>
+            val (hash, svg) = Graphviz.convert(tlb.content.asInstanceOf[RawBlock].content,
+                                               cachedir,
+                                               gr.split("\\s+", 2)(1),
+                                               "svg")
+            scribe.info(s"converting $hash to $svg")
+            List(hash -> svg)
+          case other                    =>
+            scribe.warn(s"unknown converter $tlb")
+            Nil
+        }
+      }
     }.toMap
 
 

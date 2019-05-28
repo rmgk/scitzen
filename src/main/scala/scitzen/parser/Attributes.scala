@@ -14,7 +14,7 @@ object AttributesParser {
   // however, in the hope of better error messages, we will not allow newlines
   def unquotedValue[_:P]: P[String]    = P(untilE(";" | close | eol)).map(_.trim)
   def value        [_:P]: P[String]    = P(quoted("\"") | quoted("'") | unquotedValue)
-  def listDef      [_:P]: P[Attribute] = P(identifier.! ~ equals ~ value)
+  def listDef      [_:P]: P[Attribute] = P(anySpaces ~ identifier.! ~ equals ~ value)
                                          .map { case (id, v) => Attribute(id, v) }
   def listValue    [_:P]: P[Attribute] = P(value)
                                          .map(v => Attribute("", v))
