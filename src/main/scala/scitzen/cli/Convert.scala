@@ -14,64 +14,12 @@ import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
 import scala.collection.mutable
 import scala.util.Try
 
-case class Project(root: File, singleSource: Option[File] = None) {
-  val projectDir: File = root / Project.scitzenfolder
-  val cacheDir  : File = projectDir / "cache"
-  lazy val sources        : List[File]           = singleSource match {
-    case None => Project.discoverSources(root)
-    case Some(source) => List(source)
-  }
-  lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
-  lazy val documentManager: DocumentManager      = DocumentManager.resolveIncludes(new DocumentManager(documents))
-  val outputdir: File = projectDir / "output"
-}
-
-object Project {
-  val scitzenfolder: String = ".scitzen"
-  def findRoot(source: File): Option[File] = {
-    if (( source / scitzenfolder).isDirectory) Some(source)
-    else source.parentOption.flatMap(findRoot)
-  }
-  def fromSource(file: File): Project = {
-    val root = findRoot(file)
-    val source =
-      if (isScim(file)) Some(file)
-      else if (file.isDirectory) {
-        file.collectChildren(isScim, 1).toList match {
-          case List(single) => Some(single)
-          case other => None
-        }
-      } else None
-    Project(root.getOrElse(file / "meh"), source)
-  }
-
-  def isScim(c: File): Boolean =
-    c.isRegularFile &&
-    c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
-
-  val fileEnding = "scim"
-  def discoverSources(source: File): List[File] = {
-    import scala.collection.JavaConverters._
-    source match {
-      case f if f.isRegularFile => List(f)
-      case f if f.isDirectory   =>
-        f.collectChildren{ c =>
-          isScim(c) &&
-          !f.relativize(c).iterator().asScala.exists {_.toString.startsWith("_") }
-        }.toList
-    }
-  }
-
-}
 
 object Convert {
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
   val optSource  : Opts[Path]         = Opts.argument[Path](metavar = "path")
-  val optOutput  : Opts[Path]         = Opts.argument[Path](metavar = "path")
-  val optCachedir: Opts[Option[Path]] = Opts.option[Path]("cache", metavar = "directory",
-                                                          help = "Temoperary cache folder").orNone
 
   val optSyncFile: Opts[Option[Path]] = Opts.option[Path]("sync-file", metavar = "file",
                                                           visibility = Partial,
@@ -89,8 +37,8 @@ object Convert {
 
   val command: Command[Unit] = Command(name = "convert",
                                        header = "Convert Scitzen documents into HTML.") {
-    (optSource, optCachedir, optSyncFile, optSyncPos).mapN {
-      (sourcedirRel, cachedirRel, syncFileRelOption, syncPos) =>
+    (optSource, optSyncFile, optSyncPos).mapN {
+      (sourcedirRel, syncFileRelOption, syncPos) =>
 
         val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
 
@@ -154,10 +102,6 @@ object Convert {
 
     val imageResolver = ImageResolver.fromDM(dm, project.cacheDir, keepName = true)
 
-    val postoutput = project.outputdir / "posts"
-    postoutput.createDirectories()
-    imageResolver.copyToTarget(postoutput)
-
     val scitzenconfdir = project.projectDir
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
@@ -188,8 +132,7 @@ object Convert {
 
 
 
-    val cssrelpath = postoutput.relativize(cssfile).toString
-    def convertDoc(doc: ParsedDocument): Unit = {
+    def convertDoc(doc: ParsedDocument, postoutputdir: File): Unit = {
 
       val citations = if (bibEntries.isEmpty) Nil else {
         import scalatags.Text.all.{id, li, ol}
@@ -206,22 +149,30 @@ object Convert {
                                               katexMap,
                                               sync)
       val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
+      val cssrelpath = postoutputdir.relativize(cssfile).toString
       val res = Pages(cssrelpath).wrapContentHtml(converter.convert() ++ citations,
                                                       "fullpost",
                                                       toc,
                                                       doc.sdoc.language
                                                       .orElse(nlp.map(_.language(doc.sdoc)))
                                                       .getOrElse(""))
-      val target = postoutput./(doc.file.nameWithoutExtension(false) + ".html")
+      val target = postoutputdir./(doc.file.nameWithoutExtension(false) + ".html")
 
       target.write(res)
     }
 
 
     project.singleSource match {
-      case Some(sourcefile) =>  convertDoc(dm.byPath(sourcefile))
+      case Some(sourcefile) =>
+        val postoutput = project.outputdir
+        postoutput.createDirectories()
+        imageResolver.copyToTarget(postoutput)
+        convertDoc(dm.byPath(sourcefile), postoutput)
       case None =>
-        dm.documents.foreach {convertDoc}
+        val postoutput = project.outputdir / "posts"
+        postoutput.createDirectories()
+        imageResolver.copyToTarget(postoutput)
+        dm.documents.foreach {convertDoc(_, postoutput)}
 
         val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp))
         val converter = new SastToHtmlConverter(scalatags.Text,

@@ -9,7 +9,7 @@ import scitzen.parser.Macro
 
 class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[String, File], cachedir: File) {
 
-  val generated = "generated/"
+  val generated = "generated-graphics/"
 
   def copyToTarget(imageTarget: File) = {
     fileSubsts.foreach {
