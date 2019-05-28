@@ -2,7 +2,7 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.extern.Tex
+import scitzen.extern.TexTikz
 import scitzen.generic.Sast.{TLBlock, RawBlock}
 import scitzen.parser.Macro
 
@@ -46,8 +46,8 @@ object ImageResolver {
       pd.sdoc.analyzeResult.blocks.collect({
         case TLBlock(attr, _,  content)
           if attr.positional.headOption.contains("image") =>
-          val (hash, pdf)    = Tex.convert(content.asInstanceOf[RawBlock].content, cachedir)
-          val svg    = Tex.pdfToSvg(pdf)
+          val (hash, pdf)    = TexTikz.convert(content.asInstanceOf[RawBlock].content, cachedir)
+          val svg    = TexTikz.pdfToSvg(pdf)
           hash -> svg
       })
     }.toMap

@@ -7,7 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
-import scitzen.extern.Tex.latexmk
+import scitzen.extern.TexTikz.latexmk
 import scitzen.generic.{DocumentDiscovery, DocumentManager, GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToTexConverter, TexPages}
 

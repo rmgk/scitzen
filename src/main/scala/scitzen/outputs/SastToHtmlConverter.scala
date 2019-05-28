@@ -7,7 +7,7 @@ import better.files.File
 import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
 import scitzen.generic.ParsedDocument
-import scitzen.extern.Tex
+import scitzen.extern.TexTikz
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast, Sdoc}
 import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
@@ -88,7 +88,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       val positiontype = bwa.attr.positional.headOption
       positiontype match {
         case Some("image") =>
-          val (hash, _) = Tex.getHash(bwa.content.asInstanceOf[RawBlock].content)
+          val (hash, _) = TexTikz.getHash(bwa.content.asInstanceOf[RawBlock].content)
           val path = imageResolver.image(hash)
           List(img(src := path))
         case Some("quote") =>
