@@ -1,57 +1,15 @@
 @import 'lib/normalize.css/normalize';
 
 :root {
-
   --theme-color-values: 0, 50%, 50%;
   --theme-color: hsl(var(--theme-color-values));
   --theme-color-light: hsl(var(--theme-color-values), 0.3);
   --color-subdued: hsl(0, 0%, 66%);
   // a4 paper has 21cm, subtract 1.5 inch for print margins
   --main-content-width: 171.9mm;
-  --monospace: "Liberation Mono", monospace;
 }
 
-@mixin boxed-content {
-  box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
-  background: #fffc;
-  border-radius: 5px;
-}
 
-@mixin hover-down {
-  &:hover {
-    transition: 0.2s ease-out;
-    transform: translateX(4px);
-    filter: brightness(75%);
-  }
-}
-
-@mixin text-font {
-  font-family: "Liberation Sans", sans-serif;
-  @media (min-resolution: 192dpi) {
-    font-family: "Liberation Serif", serif;
-  }
-}
-
-@mixin float-box {
-  border: 1px solid var(--color-subdued);
-  padding: calc(1em - 1px);
-  & > :first-child {
-    margin-top: 0;
-  }
-  & > :last-child {
-    margin-bottom: 0;
-  }
-}
-
-@mixin quoted {
-  &:before{
-    // ⸢ ⸣ ⸤ ⸥
-    content: "⸢";
-  }
-  &:after {
-    content: "⸥";
-  }
-}
 
 
 
@@ -62,7 +20,12 @@ html {
     background: snow;
   }
 
-  @include text-font;
+  // use a sans serif font on screens,
+  // and a serif font on print and high DPI screens
+  font-family: sans-serif;
+  @media (min-resolution: 192dpi) {
+    font-family: serif;
+  }
   color: #222;
 }
 
@@ -75,11 +38,26 @@ html {
 a {
   text-decoration: none;
   color: var(--theme-color);
-  @include hover-down;
+
+  // add a “push down” effect when hovering links
+  &:hover {
+    transition: 0.2s ease-out;
+    transform: translateX(4px);
+    filter: brightness(75%);
+  }
 }
 
+.metadata {
+  display: flex;
+  justify-content: center;
+  > * {
+    margin-right: 0.5em;
+  }
+}
+
+
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Liberation Serif", serif;
+  font-family: serif;
   text-align: center;
 }
 h1, h2 {
@@ -95,170 +73,167 @@ h1, h2 {
 
 .time {
   white-space: nowrap;
-  font-family: var(--monospace);
+  font-family: monospace;
   letter-spacing: -0.0625em;
 }
 
 
 
+main {
+  padding: 1em;
+  margin-bottom: calc(100vh - 3.5em);
 
-.fullpost a {
-  word-break: break-all;
-  @include quoted;
+  display: grid;
+  grid-template-columns: [image-start] minmax(0, 1fr)
+  [content-start] minmax(10em, var(--main-content-width))
+  [content-end] minmax(0, 1fr)
+  [image-end] 1fr;
+  justify-content: space-between;
+}
+
+main > * {
+  grid-column: content-start / content-end;
+  // keep all content inside the page
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 
-body {
+// oversized figures and images
+main > figure, main > img {
+  grid-column: image-start / image-end;
+  justify-self: center;
+  margin-left: 0;
+  margin-right: 0;
 
-  // makes jumping to links animate instead of instant
-  //scroll-behavior: smooth;
-
-  & > main {
-    padding: 1em;
-    margin-bottom: calc(100vh - 3.5em);
-
-    display: grid;
-    grid-template-columns: [image-start] minmax(0, 1fr)
-                           [content-start] minmax(10em, var(--main-content-width))
-                           [content-end] minmax(0, 1fr)
-                           [image-end] 1fr;
-    justify-content: space-between;
-
-
-
-    & > * {
-      grid-column: content-start / content-end;
-      // keep all content inside the page
-      max-width: 100%;
-      overflow-x: scroll;
-    }
-
-    & > {
-      figure, img {
-        grid-column: image-start / image-end;
-        justify-self: center;
-        margin-left: 0;
-        margin-right: 0;
-
-        @include boxed-content;
-      }
-    }
-
-
-  }
-
-  .metadata {
-    display: flex;
-    justify-content: center;
-    > * {
-      margin-right: 0.5em;
-    }
-  }
-
-  p {
-    text-align: justify;
-    hyphens: auto;
-    // restrict max width also when nested inside something else
-    max-width: var(--main-content-width);
-  }
-
-  ul {
-    box-sizing: border-box;
-  }
-
-  pre {
-    white-space: pre-line;
-    text-align: justify;
-    hyphens: auto;
-    overflow-x: auto;
-    @include text-font;
-  }
-
-  pre > code {
-    white-space: pre;
-    display: block;
-  }
-
-  hr {
-    border: 0.2em dashed var(--color-subdued);
-    max-width: 7em;
-    border-radius:  0.2em;
-    margin-bottom: 2em;
-    margin-top: 2em;
-  }
-
-  img {
-    // why is this not the default?
-    image-orientation: from-image;
-
-    height: auto;
-    max-height: 40em;
-    // without block display, the outer div becomes a bit larger (line height?)
-    display: block;
-    margin: auto;
-    max-width: 100%;
-  }
-
-  figure, blockquote {
-    @include float-box;
-  }
-
-  p > code {
-    font-family: var(--monospace);
-    color: black;
-    @include quoted;
-  }
-
-  cite::before {
-    content: "– ";
-  }
-
-  ins {
-    text-decoration: none;
-    color:darkgreen;
-  }
-  del {
-    color: darkred;
-  }
-
-  dd > :first-child {
-    margin-top: 0;
-  }
-  dd > :last-child {
-    margin-top: 0;
-  }
-
-  .articleref article {
-    margin: .25em 0;
-
-    display: flex;
-
-    @media screen and (max-width: var(--main-content-width)) {
-      flex-direction: column;
-    }
-
-    @media screen and (min-width: var(--main-content-width)) {
-      & > .category {
-        text-align: right;
-      }
-    }
-
-    // space between the items of the article
-    & > * {
-      margin-right: 0.5em;
-    }
-
-    // make the title get most of the space,
-    // to cause the tags to be right aligned
-    & > .title {
-      flex: 1;
-    }
-  }
-
+  // add borders around figures and pure images
+  box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
+  background: #fffc;
+  border-radius: 5px;
 }
 
 
-// sidebar specific style
+main {
+  hyphens: auto;
+}
+
+p, pre {
+  text-align: justify;
+  // restrict max width also when nested inside something else
+  max-width: var(--main-content-width);
+  font-family: inherit;
+
+}
+
+pre {
+  white-space: pre-line;
+}
+
+pre > code {
+  white-space: pre;
+}
+
+p > code {
+  font-family: monospace;
+  color: black;
+}
+
+// quote links and code in paragraphs to clarify their borders
+p > a, p > code {
+  &:before{
+    // ⸢ ⸣ ⸤ ⸥
+    content: "⸢";
+  }
+  &:after {
+    content: "⸥";
+  }
+}
+
+li > p:only-child {
+  margin: 0;
+}
+
+img {
+  // why is this not the default?
+  image-orientation: from-image;
+
+  height: auto;
+  max-height: 40em;
+  margin: auto;
+  max-width: 100%;
+}
+
+
+figure, blockquote {
+  border: 1px solid var(--color-subdued);
+  padding: calc(1em - 1px);
+}
+
+figure, blockquote, dd {
+  & > :first-child {
+    margin-top: 0;
+  }
+  & > :last-child {
+    margin-bottom: 0;
+  }
+}
+
+cite::before {
+  content: "– ";
+}
+
+ins {
+  text-decoration: none;
+  color:darkgreen;
+}
+
+del {
+  color: darkred;
+}
+
+
+// index page styling
+.articleref article {
+  margin: .25em 0;
+
+  display: flex;
+
+  @media screen and (max-width: var(--main-content-width)) {
+    flex-direction: column;
+  }
+
+  @media screen and (min-width: var(--main-content-width)) {
+    & > .category {
+      text-align: right;
+    }
+  }
+
+  // space between the items of the article
+  & > * {
+    margin-right: 0.5em;
+  }
+
+  // make the title get most of the space,
+  // to cause the tags to be right aligned
+  & > .title {
+    flex: 1;
+  }
+}
+
+
+// style sidbar list
+aside nav ol {
+  list-style: disc;
+  margin: 0;
+  margin-left: 1em;
+  padding: 0;
+}
+
+
+// Sidebar design
+// body has an optional aside and a main
+// if the aside exists, it is pinned on the full height,
+// unless a button is pressed to hide it
 body {
   display: flex;
   align-items: stretch;
@@ -267,8 +242,12 @@ body {
     flex: 1 1 var(--main-content-width);
   }
 
-  .sidebar {
+  & > aside {
+    // the sidebar never shrinks below its minimum content,
+    // and tries to grow as soon as possible
     flex: 0 100 max-content;
+
+    //input label pair to allow hiding the sidebar content (nav)
     & > input {
       display: none;
     }
@@ -287,10 +266,6 @@ body {
         height: 100%;
       }
     }
-
-
-
-
 
     nav {
       // sticky at top 0 (original position of the element) essentially causes the
@@ -321,20 +296,13 @@ body {
   }
 }
 
-.sidebar ol {
-  list-style: disc;
-  margin: 0;
-  margin-left: 1em;
-  padding: 0;
-}
 
-
-
-
+// not what crap katex is adding here, but we just hide it …
 .katex-html {
   display: none;
 }
 
+// highlight targets are for forward sync when writing text
 #highlight:target {
   background: yellow;
   background-clip: padding-box;

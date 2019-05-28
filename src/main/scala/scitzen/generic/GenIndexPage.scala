@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.generic.Sast.{MacroBlock, Paragraph, Section, TLBlock, Text}
+import scitzen.generic.Sast.{MacroBlock, Section, TLBlock, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
 object GenIndexPage {
@@ -33,11 +33,11 @@ object GenIndexPage {
                            Attributes.synt(
                              Attribute("", doc.file.pathAsString),
                              Attribute("type", "article")))),
-               Paragraph(Text(
-                 nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
-                   case (word, prob) => InlineText(s"$word ")
-                 }))
-                                    ))
+               //Paragraph(Text(
+               //  nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
+               //    case (word, prob) => InlineText(s"$word ")
+               //  })))
+               )
           .map(TLBlock.synt)
         }
       }

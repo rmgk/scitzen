@@ -1,4 +1,4 @@
-package scitzen.cli
+package scitzen.outputs
 
 import scitzen.parser.{Macro, Parse}
 

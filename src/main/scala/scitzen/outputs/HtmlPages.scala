@@ -1,17 +1,17 @@
-package scitzen.cli
+package scitzen.outputs
 
 import scalatags.Text.Frag
 import scalatags.Text.all.{SeqFrag, frag}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, name, rel, title}
 import scalatags.Text.implicits.{Tag, raw, stringAttr}
-import scalatags.Text.tags.{body, div, head, html, input, label, link, meta}
-import scalatags.Text.tags2.{main, nav}
+import scalatags.Text.tags.{body, head, html, input, label, link, meta}
+import scalatags.Text.tags2.{main, nav, aside}
 
-object Pages {
-  def apply(relative: String = ""): Pages = new Pages(relative)
+object HtmlPages {
+  def apply(relative: String = ""): HtmlPages = new HtmlPages(relative)
 }
 
-class Pages(path_css: String) {
+class HtmlPages(path_css: String) {
 
   val tHead = {
     head(
@@ -26,8 +26,7 @@ class Pages(path_css: String) {
   def htmlDocument(tag: Tag): String = "<!DOCTYPE html>" + tag.render
 
   val sidebarContainer: Tag =
-    div(
-      cls := "sidebar",
+    aside(
       input(`type` := "checkbox", id := "sidebar-switch"),
       label(`for` := "sidebar-switch", raw("""
               |<svg viewBox="0 0 48 48">

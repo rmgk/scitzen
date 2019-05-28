@@ -9,7 +9,7 @@ import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.Tex.latexmk
 import scitzen.generic.{DocumentDiscovery, DocumentManager, GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
-import scitzen.outputs.{HtmlToc, SastToHtmlConverter, SastToTexConverter}
+import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToTexConverter, TexPages}
 
 import scala.collection.mutable
 import scala.util.Try
@@ -150,7 +150,7 @@ object Convert {
                                               sync)
       val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
       val cssrelpath = postoutputdir.relativize(cssfile).toString
-      val res = Pages(cssrelpath).wrapContentHtml(converter.convert() ++ citations,
+      val res = HtmlPages(cssrelpath).wrapContentHtml(converter.convert() ++ citations,
                                                       "fullpost",
                                                       toc,
                                                       doc.sdoc.language
@@ -185,7 +185,7 @@ object Convert {
                                                 None)
         val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
 
-        val res = Pages(project.outputdir.relativize(cssfile).toString)
+        val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
                   .wrapContentHtml(converter.convert(),
                                    "index",
                                    toc,
