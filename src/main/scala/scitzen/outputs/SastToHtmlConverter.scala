@@ -146,9 +146,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           val post = documentManager.find(root, attributes.target).get
 
           def timeShort(date: ScitzenDateTime) = {
-            span(cls := "time",
-                 stringFrag(
-                   date.monthDayTime))
+            span(cls := "time", stringFrag(date.monthDayTime + " "))
           }
 
           def categoriesSpan() = {
@@ -157,7 +155,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
          val aref = documentManager.relTargetPath(root, post)
 
-          List(a( cls:= "articleref",
+          List(a(
             href := aref,
             article(timeShort(post.sdoc.date.get),
                     span(cls := "title", post.sdoc.title),

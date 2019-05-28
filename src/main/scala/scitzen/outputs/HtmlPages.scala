@@ -29,7 +29,7 @@ class HtmlPages(path_css: String) {
     aside(
       input(`type` := "checkbox", id := "sidebar-switch"),
       label(`for` := "sidebar-switch", raw("""
-              |<svg viewBox="0 0 48 48">
+              |<svg viewBox="0 0 48 48" width="48px" height="48px">
               |  <g stroke="black" stroke-width="4" stroke-linecap="round">
               |  <path d="M 6 12 H 42" />
               |  <path d="M 6 24 H 42" />

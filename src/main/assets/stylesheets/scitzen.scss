@@ -1,5 +1,8 @@
 @import 'lib/normalize.css/normalize';
 
+// define here for media queries, same as css variable below …
+$main-content-width: 171.9mm;
+
 :root {
   --theme-color-values: 0, 50%, 50%;
   --theme-color: hsl(var(--theme-color-values));
@@ -8,10 +11,6 @@
   // a4 paper has 21cm, subtract 1.5 inch for print margins
   --main-content-width: 171.9mm;
 }
-
-
-
-
 
 html {
   line-height: 1.5;
@@ -87,7 +86,7 @@ main {
   grid-template-columns: [image-start] minmax(0, 1fr)
   [content-start] minmax(10em, var(--main-content-width))
   [content-end] minmax(0, 1fr)
-  [image-end] 1fr;
+  [image-end];
   justify-content: space-between;
 }
 
@@ -193,16 +192,16 @@ del {
 
 
 // index page styling
-.articleref article {
+a > article {
   margin: .25em 0;
 
   display: flex;
 
-  @media screen and (max-width: var(--main-content-width)) {
+  @media screen and (max-width: $main-content-width) {
     flex-direction: column;
   }
 
-  @media screen and (min-width: var(--main-content-width)) {
+  @media screen and (min-width: $main-content-width) {
     & > .category {
       text-align: right;
     }
