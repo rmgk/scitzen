@@ -303,7 +303,7 @@ body {
 }
 
 // highlight targets are for forward sync when writing text
-#highlight:target {
+#highlight:target + * {
   background: yellow;
   background-clip: padding-box;
 }
@@ -311,5 +311,4 @@ body {
 #highlight {
   border-top: 30vh transparent solid;
   margin-top: -30vh;
-  background-clip: padding-box;
 }

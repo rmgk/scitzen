@@ -104,11 +104,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           val html = sastToHtml(List(bwa.content))
           if (prov.start <= syncPos && syncPos <= prov.end) {
             scribe.info(s"highlighting $syncPos: $prov")
-            html.toList match {
-              case h :: tail =>
-                div(id := "highlight", h) :: tail
-              case Nil            => List(div(id := "highlight"))
-            }
+            div(id := "highlight") :: html.toList
           } else html
       }
     }
