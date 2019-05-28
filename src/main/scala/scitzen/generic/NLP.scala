@@ -20,9 +20,13 @@ case class NLP(stopwords: Map[String, Set[String]], dm: DocumentManager) {
       .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
   }
 
-  def language(sdoc: Sdoc) = stopwords.mapValues {
-    _.toList.foldMap(sdoc.wordcount.getOrElse(_, 0))
-  }.maxBy(_._2)._1
+  def language(sdoc: Sdoc) = {
+    val candidates =
+    stopwords.mapValues {
+      _.toList.foldMap(sdoc.wordcount.getOrElse(_, 0))
+    }.iterator
+    (List("" -> 0).iterator ++ candidates).maxBy(_._2)._1
+  }
 
 }
 
