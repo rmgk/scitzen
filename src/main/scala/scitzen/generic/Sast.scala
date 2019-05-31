@@ -88,8 +88,8 @@ final case class SastConverter() {
   }
 
 
-  def blockContent(b: BlockContent): Sast = {
-    b match {
+  def blockContent(blockContent: BlockContent): Sast = {
+    blockContent match {
 
       case SectionTitle(level, title) =>
         throw new IllegalStateException("sections should be out already …")
@@ -100,7 +100,7 @@ final case class SastConverter() {
 
       case m: Macro => MacroBlock(m)
 
-      case WhitespaceBlock(space) => RawBlock("", space)
+      case WhitespaceBlock(space) => RawBlock("comment", space)
 
       case NormalBlock(delimiter, text) =>
         if (delimiter == "") Paragraph(inlineString(text))

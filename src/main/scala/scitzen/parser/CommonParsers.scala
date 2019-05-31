@@ -11,7 +11,7 @@ object CommonParsers {
   def verticalSpaces[_: P]: P[Unit] = P(CharsWhileIn(" \t", 0))
   def significantVerticalSpaces[_: P]: P[Unit] = P(CharsWhileIn(" \t", 1))
   def spaceLine[_: P]: P[Unit] = P(verticalSpaces ~ eol)
-  def significantSpaceLine[_: P]: P[Unit] = P((significantVerticalSpaces ~ End) | "\n")
+  def significantSpaceLine[_: P]: P[Unit] = P((significantVerticalSpaces ~ eol) | "\n")
   def anySpaces[_: P]: P[Unit] = P(CharsWhileIn(" \t\n", 0))
   def significantAnySpaces[_: P]: P[Unit] = P(CharsWhileIn(" \t\n", 1))
   def letter[_: P]: P[Unit] = P(CharPred(_.isLetter)).opaque("<letter>")

@@ -173,7 +173,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           List(div(stringFrag(other.toString)))
       }
 
-      case Paragraph(content) => List(p(inlineValuesToHTML(content.inline)))
+      case Paragraph(text) => List(p(inlineValuesToHTML(text.inline)))
 
       case ParsedBlock(delimiter, blockContent) =>
         delimiter match {
@@ -189,7 +189,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         }
 
       case RawBlock(delimiter, text) =>
-        if (delimiter.isEmpty) Nil
+        if (delimiter.isEmpty || delimiter == "comment") Nil
         else delimiter.charAt(0) match {
           // Code listing
           // Use this for monospace, space preserving, line preserving text
