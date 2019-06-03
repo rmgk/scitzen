@@ -59,7 +59,7 @@ case class SastToScimConverter() {
                              }.toList
         }
 
-      case RawBlock("", text) => List.fill(text.count(_ == '\n'))("")
+      case RawBlock("comment", text) => List.fill(text.count(_ == '\n'))("")
       case RawBlock(delimiter, text) => List(delimiter, text, delimiter)
 
     }
