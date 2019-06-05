@@ -6,7 +6,6 @@ $main-content-width: 171.9mm;
 :root {
   --theme-color-values: 0, 50%, 50%;
   --theme-color: hsl(var(--theme-color-values));
-  --theme-color-light: hsl(var(--theme-color-values), 0.3);
   --color-subdued: hsl(0, 0%, 66%);
   // a4 paper has 21cm, subtract 1.5 inch for print margins
   --main-content-width: 171.9mm;
@@ -17,6 +16,7 @@ html {
 
   @media screen {
     background: snow;
+    color: #222;
   }
 
   // use a sans serif font on screens,
@@ -25,13 +25,6 @@ html {
   @media (min-resolution: 192dpi) {
     font-family: serif;
   }
-  color: #222;
-}
-
-
-::selection {
-  background: var(--theme-color-light);
-  opacity: 20%;
 }
 
 a {
@@ -64,13 +57,13 @@ h1, h2 {
 }
 
 
-.time, .category {
+time, .category {
   @media screen {
     color: var(--color-subdued);
   }
 }
 
-.time {
+time {
   white-space: nowrap;
   font-family: monospace;
   letter-spacing: -0.0625em;

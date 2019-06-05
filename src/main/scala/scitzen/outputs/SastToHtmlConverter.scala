@@ -46,7 +46,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                                                            sync: Option[(File, Int)]) {
 
   import bundle.all._
-  import bundle.tags2.article
+  import bundle.tags2.{article, time}
 
   val root = ownpath.parent
 
@@ -63,10 +63,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
   def tMeta() = {
 
-    def timeFull(date: ScitzenDateTime): Tag = {
-      //need time formatter, because to string removes seconds if all zero
-      span(cls := "time", date.full)
-    }
+    def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
     def categoriesSpan() = {
       val categories = List("categories", "people").flatMap(sdoc.named.get)
@@ -74,7 +71,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
     }
 
-    p(cls := "metadata",
+    div(cls := "metadata",
       sdoc.date.map(timeFull).getOrElse(""),
       frag(sdoc.modified.map(timeFull).toList: _*),
       categoriesSpan(),
@@ -141,7 +138,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           val post = documentManager.find(root, attributes.target).get
 
           def timeShort(date: ScitzenDateTime) = {
-            span(cls := "time", stringFrag(date.monthDayTime + " "))
+            time(stringFrag(date.monthDayTime + " "))
           }
 
           def categoriesSpan() = {
