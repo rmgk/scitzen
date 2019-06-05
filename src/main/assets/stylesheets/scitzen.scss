@@ -52,9 +52,6 @@ h1, h2, h3, h4, h5, h6 {
   font-family: serif;
   text-align: center;
 }
-h1, h2 {
-  font-weight: normal;
-}
 
 
 time, .category {
@@ -70,33 +67,48 @@ time {
 }
 
 
-
+// grid related things in main
 main {
-  padding: 1em;
-  margin-bottom: calc(100vh - 3.5em);
-
+  // use grid to have text centered, but allow oversized image content
   display: grid;
+  // the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
+  // but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
+  // causing the thing to widen in case the content is large,
+  // as could happen with some images.
+  // the content has a fixed minimum width to force a scrollbar on the content at some point
+  // note that everything breaks if --main-content-width is smaller than the minimum here,
+  // which is why the minimum is not min-content
   grid-template-columns: [image-start] minmax(0, 1fr)
   [content-start] minmax(10em, var(--main-content-width))
   [content-end] minmax(0, 1fr)
   [image-end];
-  justify-content: space-between;
+}
+
+main {
+  hyphens: auto;
+  // outer edge to keep everything from hugging the screen
+  padding: 1em;
+  // allow overscrolling past the end of the content
+  margin-bottom: calc(100vh - 3.5em);
 }
 
 main > * {
   grid-column: content-start / content-end;
   // keep all content inside the page
+  // this causes per element scrollbars, instead of breaking the full layout
   max-width: 100%;
   overflow-x: auto;
-}
 
-
-// oversized figures and images
-main > figure, main > img {
-  grid-column: image-start / image-end;
+  // justify instead of margins to center elements
   justify-self: center;
   margin-left: 0;
   margin-right: 0;
+}
+
+
+main > figure, main > img {
+  // oversized figures and images
+  grid-column: image-start / image-end;
 
   // add borders around figures and pure images
   box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
@@ -105,9 +117,11 @@ main > figure, main > img {
 }
 
 
-main {
-  hyphens: auto;
-}
+
+
+// general styling of elements follow, these should not affect overall layout
+
+
 
 p, pre {
   text-align: justify;
@@ -185,7 +199,13 @@ del {
 }
 
 
+
+
+
 // index page styling
+
+
+
 a > article {
   margin: .25em 0;
 
