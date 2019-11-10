@@ -5,7 +5,7 @@ import java.nio.file.Path
 
 import better.files.File
 import com.monovore.decline.{Command, Opts}
-import scitzen.parser.{Attribute, AttributeBlock, Attributes, Block, BlockContent, Inline, InlineQuote, InlineText, ListBlock, ListItem, Macro, NormalBlock, Prov, SectionTitle, WhitespaceBlock}
+import scitzen.parser.{Attribute, AttributeBlock, Attributes, Block, BlockContent, Inline, InlineProv, InlineQuote, InlineText, ListBlock, ListItem, Macro, NormalBlock, Prov, SectionTitle, WhitespaceBlock}
 import scitzen.generic.{Sast, SastConverter}
 import scitzen.generic.Sast.{AttributeDef, MacroBlock, Paragraph, ParsedBlock, RawBlock, Section, Slist, SlistItem, TLBlock, Text}
 import upickle.default.macroW
@@ -16,9 +16,9 @@ object JsonSast {
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
   implicit val AttributesEncoder     : Writer[Attributes]      = macroW
+  implicit val ProvEncoder           : Writer[Prov]            = macroW
   implicit val MacroEncoder          : Writer[Macro]           = macroW
   implicit val InlineTextEncoder     : Writer[InlineText]      = macroW
-  implicit val ProvEncoder           : Writer[Prov]            = macroW
   implicit val AttributeBlockEncoder : Writer[AttributeBlock]  = macroW
   implicit val ListBlockEncoder      : Writer[ListBlock]       = macroW
   implicit val NormalBlockEncoder    : Writer[NormalBlock]     = macroW
@@ -28,6 +28,7 @@ object JsonSast {
   implicit val BlockContentEncoder   : Writer[BlockContent]    = macroW
   implicit val InlineQuoteEncoder    : Writer[InlineQuote]     = macroW
   implicit val InlineEncoder         : Writer[Inline]          = macroW
+  implicit val InlineProvEncoder     : Writer[InlineProv]      = macroW
   implicit val BlockEncoder          : Writer[Block]           = macroW
   implicit val AttributeEncoder      : Writer[Attribute]       = macroW
   implicit val SlistEncoder          : Writer[Slist]           = macroW
@@ -51,9 +52,9 @@ object JsonSast {
        .filter(_.isRegularFile)
        .foreach { file =>
          val content = file.contentAsString
-         val sast = SastConverter().documentString(content)
-         val target = file.sibling(file.name + ".json")
-         val json = upickle.default.write(sast, indent = 2)
+         val sast    = SastConverter().documentString(content)
+         val target  = file.sibling(file.name + ".json")
+         val json    = upickle.default.write(sast, indent = 2)
          target.write(json)
        }
     }

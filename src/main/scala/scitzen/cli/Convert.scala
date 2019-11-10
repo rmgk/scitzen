@@ -125,7 +125,7 @@ object Convert {
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val katexMap = Try {
-      scala.collection.mutable.Map(upickle.default.read[Seq[(String, String)]](katexmapfile.path): _*)
+      upickle.default.read[mutable.Map[String, String]](katexmapfile.path)
     }.getOrElse(mutable.Map())
 
 
@@ -194,7 +194,7 @@ object Convert {
 
     if (katexMap.nonEmpty) {
       katexmapfile.parent.createDirectories()
-      katexmapfile.write(upickle.default.write[Seq[(String, String)]](katexMap.toSeq))
+      katexmapfile.write(upickle.default.write[mutable.Map[String, String]](katexMap, indent = 2))
     }
 
   }

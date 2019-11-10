@@ -34,15 +34,16 @@ object InlineParsers {
   def comment[_: P]: P[Macro] = P(commentStart ~ untilI(eol, 0))
                                 .map(text => Macro("comment", List(Attribute("", text))))
 
-  def fullParagraph[_: P]: P[Seq[Inline]] = P(inlineSequence.? ~ End)
-                                            .map(_.getOrElse(Nil))
+  def fullParagraph[_: P]: P[Seq[InlineProv]] =
+    P(inlineSequence.? ~ End)
+    .map(_.getOrElse(Nil))
 
-  def inlineSequence[_: P]: P[Seq[Inline]] = P {
-    (comment
+  def inlineSequence[_: P]: P[Seq[InlineProv]] = P {
+    (Index ~ (comment
      | MacroParsers.full
      | quoted
      | simpleText
-    ).rep(1)
+    ) ~ Index).map{case (s, i, e)=> InlineProv(i, Prov(s, e))}.rep(1)
   }
 
   def quoted[_: P]: P[InlineQuote] = P {

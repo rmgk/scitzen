@@ -8,14 +8,18 @@ sealed trait Sast
 object Sast {
   case class Slist(children: Seq[SlistItem]) extends Sast
   case class SlistItem(marker: String, content: Seq[Sast])
-  case class Text(inline: Seq[Inline]) {
+  case class Text(inline: Seq[InlineProv]) {
     lazy val str = {
-      inline.map{
+      inline.map(_.content).map{
         case Macro(command, attributes) => ""
         case InlineQuote(q, inner) => inner
         case InlineText(string) => string
       }.mkString("").trim
     }
+  }
+  object Text {
+    def synt(inline: Seq[Inline]): Text = Text(inline.map(synt))
+    def synt(inline: Inline): InlineProv = InlineProv(inline, Prov())
   }
   case class Section(title: Text, content: Seq[TLBlock]) extends Sast
   case class MacroBlock(call: Macro) extends Sast

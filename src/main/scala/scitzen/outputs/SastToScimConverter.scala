@@ -1,8 +1,8 @@
 package scitzen.outputs
 
-import scitzen.parser.{Attribute, Inline, InlineQuote, InlineText, Macro}
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
+import scitzen.parser.{Attribute, InlineProv, InlineQuote, InlineText, Macro}
 
 
 case class SastToScimConverter() {
@@ -70,7 +70,7 @@ case class SastToScimConverter() {
     s":${mcro.command}${attributesToScim(mcro.attributes.all)}"
   }
 
-  def inlineToScim(inners: Seq[Inline]): String = inners.map {
+  def inlineToScim(inners: Seq[InlineProv]): String = inners.map(_.content).map {
     case InlineText(str)        => str
     case InlineQuote(q, inner2) => s":$q$inner2$q"
     case m: Macro               => macroToScim(m)

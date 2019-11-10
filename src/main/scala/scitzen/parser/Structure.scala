@@ -34,6 +34,7 @@ case class Attribute(id: String, value: String)
 case class Prov(start: Int = -1, end: Int = -1)
 
 
+case class InlineProv(content: Inline, prov: Prov)
 sealed trait Inline
 case class Macro(command: String, attributes: Attributes) extends Inline with BlockContent
 case class InlineText(str: String) extends Inline

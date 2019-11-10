@@ -1,9 +1,9 @@
 package scitzen.outputs
 
 import better.files.File
-import scitzen.parser.{Inline, InlineQuote, InlineText, Macro}
-import scitzen.generic.{DocumentManager, ImageResolver, Sast}
 import scitzen.generic.Sast._
+import scitzen.generic.{DocumentManager, ImageResolver, Sast}
+import scitzen.parser.{InlineProv, InlineQuote, InlineText, Macro}
 
 class Scope(val level: Int) extends AnyVal {
   def inc: Scope = {
@@ -142,7 +142,7 @@ class SastToTexConverter(documents: DocumentManager,
     val sec = secs(nesting.level)
     if (numbered) sec else sec + "*"
   }
-  def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
+  def inlineValuesToHTML(inners: Seq[InlineProv]): String = inners.map(_.content).map {
     case InlineText(str) => latexencode(str)
     case InlineQuote(q, inner2) =>
       val inner = latexencode(inner2)

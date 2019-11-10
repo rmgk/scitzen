@@ -54,7 +54,7 @@ object SastAnalyzes {
         else acc
       iacc + imacro
     case Paragraph(content) => content.inline.foldLeft(acc) { (cacc, inline) =>
-      inline match {
+      inline.content match {
         case m: Macro              => cacc + m
         case InlineText(str)       => cacc
         case InlineQuote(q, inner) => cacc
@@ -66,7 +66,7 @@ object SastAnalyzes {
 
 
   def analyzeText(input: Text, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
-    val inlines = input.inline
+    val inlines = input.inline.map(_.content)
     inlines.foldLeft(acc) { (cacc, inline) =>
       inline match {
         case m: Macro              => cacc + m

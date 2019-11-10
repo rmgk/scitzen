@@ -14,7 +14,7 @@ object GenIndexPage {
                  (cont: List[ParsedDocument] => List[TLBlock]) = {
       val years = pdocs.groupBy(f)
       years.toList.sortBy(_._1)(ordering).map { case (year, docs) =>
-        TLBlock.synt(Section(Text(List(InlineText(year))), cont(docs)))
+        TLBlock.synt(Section(Text.synt(List(InlineText(year))), cont(docs)))
       }
     }
 

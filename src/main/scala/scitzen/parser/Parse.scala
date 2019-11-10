@@ -24,6 +24,6 @@ object Parse {
   def document(blockContent: String): Result[Seq[Block]] =
     parseResult(blockContent, scitzen.parser.DocumentParsers.document(_))
 
-  def paragraph(paragraphString: String): Result[Seq[Inline]] =
+  def paragraph(paragraphString: String): Result[Seq[InlineProv]] =
     parseResult(paragraphString, scitzen.parser.InlineParsers.fullParagraph(_))
 }

@@ -9,7 +9,7 @@ import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, ParsedDocument, Sast, Sdoc}
-import scitzen.parser.{Attributes, Inline, InlineQuote, InlineText, Macro, ScitzenDateTime}
+import scitzen.parser.{Attributes, InlineProv, InlineQuote, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
 
@@ -26,7 +26,8 @@ object ImportPreproc {
           val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
           val head = doc.blocks.head
           val section = head.content.asInstanceOf[Section]
-          val sast = head.copy(content = section.copy(title = Text(InlineText(date) +: section.title.inline)))
+          val sast = head.copy(
+            content = section.copy(title = Text(Text.synt(InlineText(date)) +: section.title.inline)))
           List(sast)
         } else doc.blocks
         Some(doc -> sast)
@@ -204,7 +205,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
 
-  def inlineValuesToHTML(inners: Seq[Inline]): Seq[Frag] = inners.map[Frag, Seq[Frag]] {
+  def inlineValuesToHTML(inners: Seq[InlineProv]): Seq[Frag] = inners.map(_.content).map[Frag, Seq[Frag]] {
     case InlineText(str) => str
     case InlineQuote(q, inner) =>
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
