@@ -9,7 +9,7 @@ import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, ParsedDocument, Project, Sast, Sdoc}
-import scitzen.parser.{Attributes, InlineProv, InlineQuote, InlineText, Macro, ScitzenDateTime}
+import scitzen.parser.{Attributes, InlineProv, InlineQuote, InlineText, Macro, Prov, ScitzenDateTime}
 
 import scala.collection.mutable
 
@@ -205,9 +205,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   }
 
 
-
   def inlineValuesToHTML(inlineProvs: Seq[InlineProv]): Seq[Frag] =
     inlineProvs.map[Frag, Seq[Frag]] { inlineProv =>
+
+
       inlineProv.content match {
         case InlineText(str) => str
         case InlineQuote(q, inner) =>
@@ -235,7 +236,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         case Macro("cite", attributes) =>
           val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
             bibid -> bibliography.getOrElse(bibid.trim, {
-              scribe.error(s"bib key not found: $bibid")
+              scribe.error(s"bib key not found: $bibid " + positionString(inlineProv.prov))
               bibid
             })
           }.sortBy(_._2).map{case (bibid, bib) => a(href := s"#$bibid", bib)}
@@ -252,13 +253,18 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           val target = attributes.target
           a(title := target, "※")
         case im @ Macro(command, attributes) =>
-          val pos = documentManager.byPath(ownpath).indexToPosition(inlineProv.prov.start)
           scribe.warn(s"unknown macro “${SastToScimConverter().macroToScim(im)}” " +
-                      s"(at »${File.currentWorkingDirectory.relativize(ownpath)}:" +
-                      s"${pos._1}:${pos._2}«)")
+                      positionString(inlineProv.prov))
           code(s"$command[${attributes.all.mkString(",")}]")
       }
   }
+
+  def positionString(prov: Prov) = {
+    val pos = documentManager.byPath(ownpath).indexToPosition(prov.start)
+    s"(at »${File.currentWorkingDirectory.relativize(ownpath)}:" +
+    s"${pos._1}:${pos._2}«)"
+  }
+
   def linkTo(attributes: Attributes, linktarget: String) = {
     a(href := linktarget)(attributes.positional.headOption.getOrElse[String](linktarget))
   }
