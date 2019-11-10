@@ -43,7 +43,10 @@ object InlineParsers {
      | MacroParsers.full
      | quoted
      | simpleText
-    ) ~ Index).map{case (s, i, e)=> InlineProv(i, Prov(s, e))}.rep(1)
+    ) ~ Index).map{case (s, i, e) =>
+      val prov = implicitly[P[_]].misc.getOrElse("provenanceOffset", Prov(0,0)).asInstanceOf[Prov]
+      InlineProv(i, Prov(prov.start + s, prov.start + e))
+    }.rep(1)
   }
 
   def quoted[_: P]: P[InlineQuote] = P {

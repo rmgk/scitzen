@@ -10,8 +10,8 @@ object Parse {
 
   type Result[T] = Either[ParsingAnnotation, T]
 
-  def parseResult[T](content: String, parser: P[_] => P[T]): Result[T] = {
-    val parsed = fastparse.parse(content, parser)
+  def parseResult[T](content: String, parser: P[_] => P[T], prov: Prov): Result[T] = {
+    val parsed = fastparse.parse(content, {p: P[_] => p.misc("provenanceOffset") = prov; parser(p)})
     parsed match {
       case Success(value, index) => value.asRight
       case f: Failure            =>
@@ -21,9 +21,9 @@ object Parse {
     }
   }
 
-  def document(blockContent: String): Result[Seq[Block]] =
-    parseResult(blockContent, scitzen.parser.DocumentParsers.document(_))
+  def document(blockContent: String, prov: Prov): Result[Seq[Block]] =
+    parseResult(blockContent, scitzen.parser.DocumentParsers.document(_), prov)
 
-  def paragraph(paragraphString: String): Result[Seq[InlineProv]] =
-    parseResult(paragraphString, scitzen.parser.InlineParsers.fullParagraph(_))
+  def paragraph(paragraphString: String, prov: Prov): Result[Seq[InlineProv]] =
+    parseResult(paragraphString, scitzen.parser.InlineParsers.fullParagraph(_), prov)
 }

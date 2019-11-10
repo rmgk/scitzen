@@ -146,7 +146,8 @@ object Convert {
                                               doc.sdoc,
                                               doc.file,
                                               katexMap,
-                                              sync)
+                                              sync,
+                                              project)
       val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
       val cssrelpath = postoutputdir.relativize(cssfile).toString
       val res = HtmlPages(cssrelpath).wrapContentHtml(converter.convert() ++ citations,
@@ -181,7 +182,8 @@ object Convert {
                                                 sdoc,
                                                 project.root,
                                                 katexMap,
-                                                None)
+                                                None,
+                                                project)
         val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
 
         val res = HtmlPages(project.outputdir.relativize(cssfile).toString)

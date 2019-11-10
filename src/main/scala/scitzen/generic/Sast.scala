@@ -54,7 +54,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
   private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
     val listItems = split.map { case (item, children) =>
-      val itemSast = blockContent(item.content)
+      val itemSast = blockContent(item.content, Prov())
       val childSasts = if (children.isEmpty) Nil else List(listtoSast(children))
       SlistItem(item.marker, itemSast +: childSasts)
     }
@@ -72,7 +72,7 @@ final case class SastConverter() {
       case Nil => accumulator.reverse
       case section :: rest =>
         val currentSection = section.content.asInstanceOf[SectionTitle]
-        val title = inlineString(currentSection.title)
+        val title = inlineString(currentSection.title, section.prov)
         val (inner, next) = rest.span{ block =>
           block.content match {
             case innerTitle: SectionTitle => innerTitle.level > currentSection.level
@@ -92,8 +92,8 @@ final case class SastConverter() {
   }
 
 
-  def blockContent(blockContent: BlockContent): Sast = {
-    blockContent match {
+  def blockContent(block: BlockContent, prov: Prov): Sast = {
+    block match {
 
       case SectionTitle(level, title) =>
         throw new IllegalStateException("sections should be out already …")
@@ -107,10 +107,10 @@ final case class SastConverter() {
       case WhitespaceBlock(space) => RawBlock("comment", space)
 
       case NormalBlock(delimiter, text) =>
-        if (delimiter == "") Paragraph(inlineString(text))
+        if (delimiter == "") Paragraph(inlineString(text, prov))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)
-          case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text))
+          case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text, prov))
           case other     =>
             scribe.warn(s"mismatched block $delimiter: $text")
             RawBlock(delimiter, text)
@@ -120,17 +120,17 @@ final case class SastConverter() {
   }
 
   def block(bwa: Block): TLBlock = {
-    val inner = blockContent(bwa.content)
+    val inner = blockContent(bwa.content, bwa.prov)
     TLBlock(bwa.attributes, bwa.prov, inner)
   }
 
 
-  def documentString(blockContent: String): Seq[TLBlock] = {
-    blockSequence(Parse.document(blockContent).right.get)
+  def documentString(blockContent: String, prov: Prov): Seq[TLBlock] = {
+    blockSequence(Parse.document(blockContent, prov).right.get)
   }
 
 
-  def inlineString(paragraphString: String): Text = {
-    Text(Parse.paragraph(paragraphString).toTry.get)
+  def inlineString(paragraphString: String, prov: Prov): Text = {
+    Text(Parse.paragraph(paragraphString, prov).toTry.get)
   }
 }

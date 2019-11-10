@@ -30,7 +30,7 @@ object Format {
     pathsOpt.map { paths =>
       val dd = DocumentDiscovery(paths)
       dd.sourceFiles.foreach { file =>
-        val ParsedDocument(_, content, sast, sdoc) = ParsedDocument(file)
+        val ParsedDocument(_, content, sast, sdoc, _) = ParsedDocument(file)
         checkReferences(file, sdoc)
         formatContent(file, content, sast)
         renameFileFromHeader(file, sdoc)

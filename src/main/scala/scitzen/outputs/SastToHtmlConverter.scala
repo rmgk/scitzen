@@ -8,7 +8,7 @@ import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
-import scitzen.generic.{DocumentManager, ImageResolver, ParsedDocument, Sast, Sdoc}
+import scitzen.generic.{DocumentManager, ImageResolver, ParsedDocument, Project, Sast, Sdoc}
 import scitzen.parser.{Attributes, InlineProv, InlineQuote, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
@@ -44,7 +44,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                                                            sdoc: Sdoc,
                                                            ownpath: File,
                                                            katexMap: mutable.Map[String, String],
-                                                           sync: Option[(File, Int)]) {
+                                                           sync: Option[(File, Int)],
+                                                           project: Project) {
 
   import bundle.all._
   import bundle.tags2.{article, time}
@@ -159,7 +160,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           ImportPreproc.macroImportPreproc(documentManager.find(root, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToHtmlConverter(bundle, documentManager, imageResolver,
-                                      bibliography, doc.sdoc, doc.file, katexMap, sync)
+                                      bibliography, doc.sdoc, doc.file, katexMap, sync, project)
               .cBlocks(sast)(new Scope(3))
             case None => Nil
           }
@@ -205,52 +206,58 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
 
-  def inlineValuesToHTML(inners: Seq[InlineProv]): Seq[Frag] = inners.map(_.content).map[Frag, Seq[Frag]] {
-    case InlineText(str) => str
-    case InlineQuote(q, inner) =>
-      //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
-      q.head match {
-      case '_' => em(inner)
-      case '*' => strong(inner)
-      case '`' => code(inner)
-      case '$' =>
-        val mathml = katexMap.getOrElseUpdate(inner, {
-          (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
-        })
-        span(raw(mathml))
-    }
-    case Macro("comment", attributes) => frag()
-    case Macro("ref", attributes) =>
-      sdoc.targets.find(_.id == attributes.positional.head).map { target =>
-        target.resolution match {
-          case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
-          case other =>
-            scribe.error(s"can not refer to $other")
-            frag()
+  def inlineValuesToHTML(inlineProvs: Seq[InlineProv]): Seq[Frag] =
+    inlineProvs.map[Frag, Seq[Frag]] { inlineProv =>
+      inlineProv.content match {
+        case InlineText(str) => str
+        case InlineQuote(q, inner) =>
+          //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
+          q.head match {
+          case '_' => em(inner)
+          case '*' => strong(inner)
+          case '`' => code(inner)
+          case '$' =>
+            val mathml = katexMap.getOrElseUpdate(inner, {
+              (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
+            })
+            span(raw(mathml))
         }
+        case Macro("comment", attributes) => frag()
+        case Macro("ref", attributes) =>
+          sdoc.targets.find(_.id == attributes.positional.head).map { target =>
+            target.resolution match {
+              case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
+              case other =>
+                scribe.error(s"can not refer to $other")
+                frag()
+            }
+          }
+        case Macro("cite", attributes) =>
+          val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
+            bibid -> bibliography.getOrElse(bibid.trim, {
+              scribe.error(s"bib key not found: $bibid")
+              bibid
+            })
+          }.sortBy(_._2).map{case (bibid, bib) => a(href := s"#$bibid", bib)}
+          frag("\u00A0", anchors)
+        case Macro(tagname@("ins" | "del"), attributes) =>
+          tag(tagname)(attributes.positional.mkString(", "))
+        case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), attributes) =>
+          val linktarget = s"$protocol:${attributes.target}"
+          linkTo(attributes, linktarget)
+        case Macro("link", attributes) =>
+          val target = attributes.target
+          linkTo(attributes, target)
+        case Macro("footnote", attributes) =>
+          val target = attributes.target
+          a(title := target, "※")
+        case im @ Macro(command, attributes) =>
+          val pos = documentManager.byPath(ownpath).indexToPosition(inlineProv.prov.start)
+          scribe.warn(s"unknown macro “${SastToScimConverter().macroToScim(im)}” " +
+                      s"(at »${File.currentWorkingDirectory.relativize(ownpath)}:" +
+                      s"${pos._1}:${pos._2}«)")
+          code(s"$command[${attributes.all.mkString(",")}]")
       }
-    case Macro("cite", attributes) =>
-      val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
-        bibid -> bibliography.getOrElse(bibid.trim, {
-          scribe.error(s"bib key not found: $bibid")
-          bibid
-        })
-      }.sortBy(_._2).map{case (bibid, bib) => a(href := s"#$bibid", bib)}
-      frag("\u00A0", anchors)
-    case Macro(tagname@("ins" | "del"), attributes) =>
-      tag(tagname)(attributes.positional.mkString(", "))
-    case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), attributes) =>
-      val linktarget = s"$protocol:${attributes.target}"
-      linkTo(attributes, linktarget)
-    case Macro("link", attributes) =>
-      val target = attributes.target
-      linkTo(attributes, target)
-    case Macro("footnote", attributes) =>
-      val target = attributes.target
-      a(title := target, "※")
-    case im @ Macro(command, attributes) =>
-      scribe.warn(s"inline macro “$command[$attributes]”")
-      code(s"$command[${attributes.all.mkString(",")}]")
   }
   def linkTo(attributes: Attributes, linktarget: String) = {
     a(href := linktarget)(attributes.positional.headOption.getOrElse[String](linktarget))

@@ -52,7 +52,7 @@ object JsonSast {
        .filter(_.isRegularFile)
        .foreach { file =>
          val content = file.contentAsString
-         val sast    = SastConverter().documentString(content)
+         val sast    = SastConverter().documentString(content, Prov(0, content.length))
          val target  = file.sibling(file.name + ".json")
          val json    = upickle.default.write(sast, indent = 2)
          target.write(json)
