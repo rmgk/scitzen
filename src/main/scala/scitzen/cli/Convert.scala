@@ -36,7 +36,7 @@ object Convert {
 
 
   val command: Command[Unit] = Command(name = "convert",
-                                       header = "Convert Scitzen documents into HTML.") {
+                                       header = "Convert Scim to HTML/PDF.") {
     (optSource, optSyncFile, optSyncPos).mapN {
       (sourcedirRel, syncFileRelOption, syncPos) =>
 
