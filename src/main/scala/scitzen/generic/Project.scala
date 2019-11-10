@@ -15,25 +15,30 @@ case class Project(root: File, singleSource: Option[File] = None) {
 }
 
 object Project {
-  val scitzenfolder: String = ".scitzen"
+  val scitzenfolder: String = "scitzen"
   def findRoot(source: File): Option[File] = {
     if (( source / scitzenfolder).isDirectory) Some(source)
     else source.parentOption.flatMap(findRoot)
   }
-  def fromSource(file: File): Project = {
-    val root = findRoot(file).get
-    scribe.info(s"found root at $root")
-    val source = {
-      if (isScim(file) && root.children.contains(file)) Some(file)
-      else {
-        root.collectChildren(isScim, 1).toList match {
-          case List(single) => Some(single)
-          case other        => None
+  def fromSource(file: File): Option[Project] = {
+    findRoot(file) match {
+      case None       => scribe.info(
+        s"""could not find project root containing the directory `$scitzenfolder`""")
+        None
+      case Some(root) =>
+        scribe.info(s"found root at $root")
+        val source = {
+          if (isScim(file) && root.listRecursively.contains(file)) Some(file)
+          else {
+            root.collectChildren(isScim, 1).toList match {
+              case List(single) => Some(single)
+              case other        => None
+            }
+          }
         }
-      }
-    }
 
-    Project(root, source)
+        Some(Project(root, source))
+    }
   }
 
   def isScim(c: File): Boolean =

@@ -42,11 +42,10 @@ object Convert {
 
         val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
 
-        val project = Project.fromSource(File(sourcedirRel))
-
-        scribe.info(project.toString)
-
-        convertToHtml(project, sync)
+        Project.fromSource(File(sourcedirRel)).foreach { project =>
+          scribe.info(project.toString)
+          convertToHtml(project, sync)
+        }
     }
   }
 
