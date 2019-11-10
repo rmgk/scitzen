@@ -13,7 +13,7 @@ lazy val scitzen = project.in(file("."))
                      Compile / resources ++= (Assets / SassKeys.sassify).value,
                      resolvers += Resolver.sonatypeRepo("public"),
                      libraryDependencies ++= Seq(
-                       "com.vdurmont" % "emoji-java" % "4.0.0"
+                       "com.vdurmont" % "emoji-java" % "5.1.1"
                        ),
                      strictCompile,
                      decline,
