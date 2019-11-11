@@ -18,7 +18,7 @@ object CommonParsers {
   def digits[_: P]: P[Unit] = P(CharsWhile(_.isDigit))
 
   def quoted[_: P](close: String, open: String = null): P[String] = {
-    P(Option(open).getOrElse(close) ~/ (("\\" ~ ("\\" | close)) | (!close ~ AnyChar)).rep.! ~/ close)
+    P(anySpaces ~ Option(open).getOrElse(close) ~/ (("\\" ~ ("\\" | close)) | (!close ~ AnyChar)).rep.! ~/ close)
     .map { str =>
       (if (close == "\\") str else str.replace(s"\\$close", close))
       .replace("\\\\", "\\")

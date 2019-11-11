@@ -102,7 +102,7 @@ final case class SastConverter() {
 
       case m: Macro => MacroBlock(m)
 
-      case WhitespaceBlock(space) => RawBlock("comment", space)
+      case WhitespaceBlock(space) => RawBlock("comment|space", space)
 
       case NormalBlock(delimiter, text, cprov) =>
         if (delimiter == "") Paragraph(inlineString(text, cprov))

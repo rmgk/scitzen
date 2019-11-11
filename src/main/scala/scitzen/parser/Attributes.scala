@@ -22,6 +22,13 @@ object AttributesParser {
   def list         [_:P]: P[Seq[Attribute]] =
     P(open ~ anySpaces ~ listElement.rep(sep = ";") ~ close)
   def line         [_:P]: P[Seq[Attribute]] = P(list ~ spaceLine)
+
+  def quoted[_: P]: P[String] = {
+    P(anySpaces ~ "'".rep.!.flatMap { quotes =>
+      "\"" ~ (!("\"" ~ quotes) ~ AnyChar).rep.! ~ "\"" ~ quotes
+    })
+  }
+
 }
 
 object AttributeBlockParser {
