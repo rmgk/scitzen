@@ -45,8 +45,8 @@ object Format {
       mcro.command match {
         case Image =>
           val path = file.parent./(mcro.attributes.target.trim)
-          if (path.isRegularFile && file.parent.isParentOf(path)) ()
-          else scribe.warn(s"${file} references nonexisting $path")
+          if (!path.isRegularFile) scribe.warn(s"${file} references nonexisting $path")
+          if (!file.parent.isParentOf(path)) scribe.warn(s"${file} is not a parent of referenced $path")
         case other   => ()
       }
     }
