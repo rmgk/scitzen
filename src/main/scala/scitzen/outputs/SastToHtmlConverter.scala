@@ -168,7 +168,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
         case other=>
-          List(div(unknownMacroOutput(other)))
+          inlineValuesToHTML(List(other))
       }
 
       case Paragraph(text) => List(p(inlineValuesToHTML(text.inline)))
