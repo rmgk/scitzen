@@ -34,7 +34,7 @@ object Format {
         val ParsedDocument(_, content, sast, sdoc, _) = ParsedDocument(file)
         checkReferences(file, sdoc)
         formatContent(file, content, sast)
-        renameFileFromHeader(file, sdoc)
+        if (renamePossible(sdoc)) renameFileFromHeader(file, sdoc)
       }
     }
   }
@@ -71,6 +71,7 @@ object Format {
     }
   }
 
+  def renamePossible(header: Sdoc): Boolean = header.title.isDefined && header.named.contains("revdate")
 
   def nameFromHeader(header: Sdoc): String = {
     val date = DateParsingHelper.parseDate(header.named("revdate").trim)
