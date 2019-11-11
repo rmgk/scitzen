@@ -3,7 +3,7 @@ package scitzen.outputs
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Other, Quote}
-import scitzen.parser.{Attribute, Inline, InlineText, Macro}
+import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 
 
 case class SastToScimConverter() {
@@ -68,7 +68,7 @@ case class SastToScimConverter() {
 
 
   def macroToScim(mcro: Macro): String = {
-    s":${mcro.command}${attributesToScim(mcro.attributes.all)}"
+    s":${MacroCommand.print(mcro.command)}${attributesToScim(mcro.attributes.all)}"
   }
 
   def inlineToScim(inners: Seq[Inline]): String = inners.map {

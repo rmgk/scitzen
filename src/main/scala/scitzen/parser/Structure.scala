@@ -21,7 +21,10 @@ case class Block(rawAttributes: Seq[Seq[Attribute]], prov: Prov, content: BlockC
 
 sealed trait BlockContent
 case class WhitespaceBlock(content: String) extends BlockContent
-case class NormalBlock(delimiter: String, content: String) extends BlockContent
+case class NormalBlock(delimiter: String, content: String, cprov: Prov) extends BlockContent
+object NormalBlock {
+  def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, cp._1, cp._2)
+}
 case class ListBlock(items: Seq[ListItem]) extends BlockContent
 case class AttributeBlock(attribute: Attribute) extends BlockContent
 case class SectionTitle(level: Int, title: String) extends BlockContent
@@ -31,14 +34,14 @@ case class ListItem(marker: String, content: NormalBlock)
 
 case class Attribute(id: String, value: String)
 
-case class Prov(start: Int = -1, end: Int = -1)
+case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
 
 sealed trait MacroCommand
 object MacroCommand {
   val (parseMap, printMap) = {
     val seq = List(
-      "label" -> Label,
       "cite" -> Cite,
+      "label" -> Label,
       "image" -> Image,
       "include" -> Include,
       "link" -> Link,
@@ -47,7 +50,11 @@ object MacroCommand {
     (seq.toMap, seq.map(p => p._2 -> p._1).toMap)
   }
   def parse(str: String): MacroCommand = parseMap.getOrElse(str, Other(str))
-  def print(m: MacroCommand): String = printMap.getOrElse(m, m.toString)
+  def print(m: MacroCommand): String = m match {
+    case Other(str) => str
+    case Quote(q) => q
+    case o => printMap(o)
+  }
 
   case class Quote(q: String) extends MacroCommand
   object Cite extends MacroCommand

@@ -41,4 +41,12 @@ object CommonParsers {
   def identifier[_: P]: P[Unit] = Identifier.identifier
 
   def line[_: P]: P[String] = P(untilE(eol, min = 0)).opaque("<line>")
+
+  def withProv[T, _: P](parser: => P[T]): P[(T, Prov)] =
+    P(Index ~ parser ~ Index).map {case (s, r, e) => r -> withOffset(s, e)}
+
+  def withOffset(s: Int, e: Int)(implicit p: P[_]) = {
+    val prov = p.misc.getOrElse("provenanceOffset", Prov(0,0)).asInstanceOf[Prov]
+    Prov(prov.start + s, prov.start + e)
+  }
 }

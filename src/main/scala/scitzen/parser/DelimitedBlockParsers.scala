@@ -13,17 +13,18 @@ object DelimitedBlockParsers {
 
   def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
     (start ~/ Pass).flatMap { delimiter =>
-      untilI(eol ~ delimiter ~ spaceLine, min = 0).map(content => NormalBlock(delimiter, content))
+      def closing = eol ~ delimiter ~ spaceLine
+      (withProv(untilE(closing, min = 0)) ~ closing).map{case (content, prov) => NormalBlock(delimiter, content, prov)}
     }
 
   def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart))
 
 
-  def whitespaceLiteral[_: P]: P[NormalBlock] = P(
+  def whitespaceLiteral[_: P]: P[NormalBlock] = P(withProv(
     (significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
       (untilI(eol) ~ significantSpaceLine.rep).!.rep(min = 1, sep = indentation)
-                                              .map(lines => NormalBlock(indentation, lines.mkString))
-    }
+                                              .map(lines => NormalBlock(indentation, lines.mkString, Prov()))
+    }).map{case (nb, prov) => nb.copy(cprov = prov.copy(indent = nb.delimiter.length))}
   )
 
 }

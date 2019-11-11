@@ -104,11 +104,11 @@ final case class SastConverter() {
 
       case WhitespaceBlock(space) => RawBlock("comment", space)
 
-      case NormalBlock(delimiter, text) =>
-        if (delimiter == "") Paragraph(inlineString(text, prov))
+      case NormalBlock(delimiter, text, cprov) =>
+        if (delimiter == "") Paragraph(inlineString(text, cprov))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)
-          case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text, prov))
+          case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text, cprov))
           case other     =>
             scribe.warn(s"mismatched block $delimiter: $text")
             RawBlock(delimiter, text)

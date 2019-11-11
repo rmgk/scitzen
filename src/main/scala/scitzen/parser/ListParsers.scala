@@ -18,7 +18,7 @@ object ListParsers {
                           | descriptionMarker)
                        ~ verticalSpace).!
 
-  def listContent [_:P]: P[String] = P(untilE(eol ~ (spaceLine | simpleMarker | descriptionMarker).map(_ => ())) ~ eol)
+  def listContent [_:P]: P[(String, Prov)] = P(withProv(untilE(eol ~ (spaceLine | simpleMarker | descriptionMarker).map(_ => ()))) ~ eol)
 
   def simpleListItem [_:P]: P[ListItem] = P((simpleMarker ~/ listContent.map(NormalBlock("", _)))
                          .map((ListItem.apply _).tupled))

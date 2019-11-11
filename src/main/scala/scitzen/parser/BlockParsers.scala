@@ -9,9 +9,9 @@ object BlockParsers {
 
   def whitespaceBlock[_:P]: P[WhitespaceBlock] = P(significantSpaceLine.rep(1).!).map(WhitespaceBlock.apply)
 
-  def paragraph[_:P]: P[NormalBlock] = P(untilE(eol ~ (spaceLine | sectionStart.map(_ => ()) |
-                                                       DelimitedBlockParsers.anyStart.map(_ => ()))).! ~ eol)
-                                          .map(NormalBlock("", _))
+  def paragraph[_:P]: P[NormalBlock] = P(withProv(untilE(eol ~ (spaceLine | sectionStart.map(_ => ()) |
+                                                       DelimitedBlockParsers.anyStart.map(_ => ()))).! ~ eol))
+                                          .map{case (c, p) => NormalBlock("", c, p)}
 
   def sectionStart[_: P]: P[Int] = P("=".rep(1).! ~ " ").map(_.length)
 
@@ -24,10 +24,10 @@ object BlockParsers {
   }.!)~ Index).map{case (s, text, e) => Macro(Other("horizontal-rule"), Attributes(List(List(Attribute("", text.dropRight(1)))), Prov(s, e)))}
 
   def commentBlock[_:P]: P[NormalBlock] =
-    P((DelimitedBlockParsers.makeDelimited("/".rep(4).!)
+    P(withProv((DelimitedBlockParsers.makeDelimited("/".rep(4).!)
        | (":%" ~ untilI(eol))
       ).rep(1).!)
-    .map(NormalBlock("", _))
+    .map{case (c,p) => NormalBlock("", c, p)})
 
   def extendedWhitespace[_: P]: P[WhitespaceBlock] = P((whitespaceBlock | commentBlock).rep(1).!)
                                                      .map(WhitespaceBlock.apply)
@@ -41,7 +41,7 @@ object BlockParsers {
                                               MacroParsers.full ~ spaceLine |
                                               paragraph)
 
-  def fullBlock[_: P]: P[Block] = P(Index ~ AttributesParser.line.rep ~ alternatives ~ Index).map {
-    case (start, attrs, content, end) => Block(attrs, Prov(start, end), content)
+  def fullBlock[_: P]: P[Block] = P(withProv(AttributesParser.line.rep ~ alternatives)).map {
+    case ((attrs, content), prov) => Block(attrs, prov, content)
   }
 }
