@@ -8,17 +8,18 @@ import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 
 case class SastToScimConverter() {
 
-  val attributeEscapes = """[;\]\n]|^[\s'"]|\s$""".r
-  val countQuotes = """([']+)""".r
+  val attributeEscapes = """[;\]\n]|^[\s"\[]|\s$""".r
+  val countQuotes = """(]"*)""".r
 
   def encodeValue(v: String): String = {
-    if (attributeEscapes.pattern.matcher(v).find()) {
-      val mi = countQuotes.findAllIn(v)
+    if (!attributeEscapes.pattern.matcher(v).find()) v
+    else if (!v.contains("\"")) s""""$v""""
+    else {
+      val mi         = countQuotes.findAllIn(v)
       val quoteCount = if (mi.isEmpty) 0 else mi.map(_.length).max
-      val quotes = "\'" * quoteCount
-      s"""$quotes"$v"$quotes"""
+      val quotes     = "\"" * quoteCount
+      s"""$quotes[$v]$quotes"""
     }
-    else v
   }
 
   def attributesToScim(attributes: Seq[Attribute]): String = attributes.map {
