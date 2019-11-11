@@ -42,7 +42,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
   }
 
   def listtoSast(items: Seq[ListItem]): Slist = {
-    /** defines which characters are distinguishing list levels*/
+    /* defines which characters are distinguishing list levels */
     def norm(m: String) = m.replaceAll("""[^\s*.:-]""", "")
 
     val split = splitted(items.map(i => (norm(i.marker), i)))
