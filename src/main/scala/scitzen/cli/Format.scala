@@ -10,6 +10,7 @@ import scitzen.generic.Sast.TLBlock
 import scitzen.generic.{DocumentDiscovery, ParsedDocument, Sdoc}
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.DateParsingHelper
+import scitzen.parser.MacroCommand.Image
 
 
 
@@ -42,7 +43,7 @@ object Format {
   def checkReferences(file: File, sdoc: Sdoc): Unit = {
     sdoc.analyzeResult.macros.foreach { mcro =>
       mcro.command match {
-        case "image" =>
+        case Image =>
           val path = file.parent./(mcro.attributes.target.trim)
           if (path.isRegularFile && file.parent.isParentOf(path)) ()
           else scribe.warn(s"${file} references nonexisting $path")

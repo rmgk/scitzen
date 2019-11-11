@@ -1,8 +1,7 @@
 package scitzen.parser
 
 
-
-case class Attributes(raw: Seq[Seq[Attribute]]) {
+case class Attributes(raw: Seq[Seq[Attribute]], prov: Prov) {
   lazy val all = raw.flatten
   lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
   lazy val target    : String              = positional.last
@@ -10,12 +9,13 @@ case class Attributes(raw: Seq[Seq[Attribute]]) {
 }
 
 object Attributes {
-  implicit def fromAttributeSeq(some: Seq[Attribute]): Attributes = Attributes(List(some))
-  def synt(attr: Attribute*) = Attributes(List(attr))
+  def a(attrs: Attribute, prov: Prov): Attributes = Attributes(List(List(attrs)), prov)
+  def l(attrs: Seq[Attribute], prov: Prov): Attributes = Attributes(List(attrs), prov)
+  def synt(attr: Attribute*) = Attributes(List(attr), Prov())
 }
 
 case class Block(rawAttributes: Seq[Seq[Attribute]], prov: Prov, content: BlockContent) {
-  lazy val attributes: Attributes      = Attributes(rawAttributes)
+  lazy val attributes: Attributes = Attributes(rawAttributes, prov)
 
 }
 
@@ -33,9 +33,37 @@ case class Attribute(id: String, value: String)
 
 case class Prov(start: Int = -1, end: Int = -1)
 
+sealed trait MacroCommand
+object MacroCommand {
+  val (parseMap, printMap) = {
+    val seq = List(
+      "label" -> Label,
+      "cite" -> Cite,
+      "image" -> Image,
+      "include" -> Include,
+      "link" -> Link,
+      "comment" -> Comment,
+      )
+    (seq.toMap, seq.map(p => p._2 -> p._1).toMap)
+  }
+  def parse(str: String): MacroCommand = parseMap.getOrElse(str, Other(str))
+  def print(m: MacroCommand): String = printMap.getOrElse(m, m.toString)
 
-case class InlineProv(content: Inline, prov: Prov)
+  case class Quote(q: String) extends MacroCommand
+  object Cite extends MacroCommand
+  object Label extends MacroCommand
+  object Image extends MacroCommand
+  object Include extends MacroCommand
+  object Link extends MacroCommand
+  object Comment extends MacroCommand
+  case class Other(str: String) extends MacroCommand
+
+  implicit val codecQ: upickle.default.ReadWriter[Quote] = upickle.default.macroRW
+  implicit val codecO: upickle.default.ReadWriter[Other] = upickle.default.macroRW
+  implicit val codec: upickle.default.ReadWriter[MacroCommand] = upickle.default.macroRW
+}
+
 sealed trait Inline
-case class Macro(command: String, attributes: Attributes) extends Inline with BlockContent
+case class Macro(command: MacroCommand, attributes: Attributes) extends Inline with BlockContent
 case class InlineText(str: String) extends Inline
-case class InlineQuote(q: String, inner: String) extends Inline
+

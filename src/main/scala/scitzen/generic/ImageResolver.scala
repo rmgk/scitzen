@@ -6,6 +6,7 @@ import scitzen.extern.{Graphviz, ImageConvert, TexTikz}
 import scitzen.generic.Sast.{RawBlock, TLBlock}
 import scitzen.parser.Macro
 import kaleidoscope._
+import scitzen.parser.MacroCommand.Image
 
 class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[String, File], cachedir: File) {
 
@@ -33,7 +34,7 @@ object ImageResolver {
   def fromDM(documentManager: DocumentManager, cachedir: File, keepName: Boolean = false): ImageResolver = {
     val imageMacros = documentManager.documents.flatMap { pd =>
       pd.sdoc.analyzeResult.macros.collect {
-        case Macro("image", attributes) => pd.file.parent / attributes.target
+        case Macro(Image, attributes) => pd.file.parent / attributes.target
       }
     }.mapWithIndex {
       case (image, index) =>
@@ -44,7 +45,7 @@ object ImageResolver {
 
     val imageBlocks = documentManager.documents.flatMap { pd =>
       val imageBlocks = pd.sdoc.analyzeResult.blocks.collect({
-        case tlb@TLBlock(attr, _, content) if attr.positional.headOption.contains("image") => tlb
+        case tlb@TLBlock(attr, content) if attr.positional.headOption.contains("image") => tlb
       })
       imageBlocks.flatMap { tlb =>
         tlb.attr.named.get("converter") match {

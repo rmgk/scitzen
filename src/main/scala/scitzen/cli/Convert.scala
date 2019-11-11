@@ -10,6 +10,7 @@ import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
 import scitzen.generic.{DocumentDiscovery, DocumentManager, GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToTexConverter, TexPages}
+import scitzen.parser.MacroCommand.Cite
 
 import scala.collection.mutable
 import scala.util.Try
@@ -114,7 +115,7 @@ object Convert {
         }
         val bib = bibPath.toList.flatMap(Bibliography.parse(project.cacheDir))
         val cited = dm.documents.flatMap {
-          _.sdoc.analyzeResult.macros.filter(_.command == "cite")
+          _.sdoc.analyzeResult.macros.filter(_.command == Cite)
            .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))
         }.toSet
         val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))

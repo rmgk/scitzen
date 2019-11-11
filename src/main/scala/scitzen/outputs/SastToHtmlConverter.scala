@@ -9,7 +9,8 @@ import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, ParsedDocument, Project, Sast, Sdoc}
-import scitzen.parser.{Attributes, InlineProv, InlineQuote, InlineText, Macro, Prov, ScitzenDateTime}
+import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
+import scitzen.parser.{Attributes, Inline, InlineText, Macro, Prov, ScitzenDateTime}
 
 import scala.collection.mutable
 
@@ -27,7 +28,7 @@ object ImportPreproc {
           val head = doc.blocks.head
           val section = head.content.asInstanceOf[Section]
           val sast = head.copy(
-            content = section.copy(title = Text(Text.synt(InlineText(date)) +: section.title.inline)))
+            content = section.copy(title = Text(InlineText(date) +: section.title.inline)))
           List(sast)
         } else doc.blocks
         Some(doc -> sast)
@@ -99,7 +100,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           List(if (title.nonEmpty) bq(cite(title))
                else bq)
         case _             =>
-          val prov = bwa.prov
+          val prov = bwa.attr.prov
           val html = sastToHtml(List(bwa.content))
           if (prov.start <= syncPos && syncPos <= prov.end) {
             scribe.info(s"highlighting $syncPos: $prov")
@@ -131,12 +132,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         })
 
       case MacroBlock(mcro) => mcro match {
-        case Macro("image", attributes) =>
+        case Macro(Image, attributes) =>
           val target = imageResolver.image(root, attributes.positional.last)
           List(img(src := target))
-        case Macro("label", attributes) => Nil
-        case Macro("horizontal-rule", attributes) => List(hr)
-        case Macro("include", attributes) if attributes.named.get("type").contains("article") =>
+        case Macro(Other("horizontal-rule"), attributes) => List(hr)
+        case Macro(Include, attributes) if attributes.named.get("type").contains("article") =>
           val post = documentManager.find(root, attributes.target).get
 
           def timeShort(date: ScitzenDateTime) = {
@@ -156,7 +156,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                     categoriesSpan()
             )))
 
-        case Macro("include", attributes) =>
+        case Macro(Include, attributes) =>
           ImportPreproc.macroImportPreproc(documentManager.find(root, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToHtmlConverter(bundle, documentManager, imageResolver,
@@ -167,9 +167,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
 
-        case other =>
-          scribe.warn(s"not implemented: $other")
-          List(div(stringFrag(other.toString)))
+        case other=>
+          List(div(unknownMacroOutput(other)))
       }
 
       case Paragraph(text) => List(p(inlineValuesToHTML(text.inline)))
@@ -205,58 +204,59 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   }
 
 
-  def inlineValuesToHTML(inlineProvs: Seq[InlineProv]): Seq[Frag] =
-    inlineProvs.map[Frag, Seq[Frag]] { inlineProv =>
-
-
-      inlineProv.content match {
-        case InlineText(str) => str
-        case InlineQuote(q, inner) =>
-          //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
-          q.head match {
-          case '_' => em(inner)
-          case '*' => strong(inner)
-          case '`' => code(inner)
-          case '$' =>
-            val mathml = katexMap.getOrElseUpdate(inner, {
-              (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
-            })
-            span(raw(mathml))
-        }
-        case Macro("comment", attributes) => frag()
-        case Macro("ref", attributes) =>
-          sdoc.targets.find(_.id == attributes.positional.head).map { target =>
-            target.resolution match {
-              case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
-              case other =>
-                scribe.error(s"can not refer to $other")
-                frag()
-            }
-          }
-        case Macro("cite", attributes) =>
-          val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
-            bibid -> bibliography.getOrElse(bibid.trim, {
-              scribe.error(s"bib key not found: $bibid " + positionString(inlineProv.prov))
-              bibid
-            })
-          }.sortBy(_._2).map{case (bibid, bib) => a(href := s"#$bibid", bib)}
-          frag("\u00A0", anchors)
-        case Macro(tagname@("ins" | "del"), attributes) =>
-          tag(tagname)(attributes.positional.mkString(", "))
-        case Macro(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto"), attributes) =>
-          val linktarget = s"$protocol:${attributes.target}"
-          linkTo(attributes, linktarget)
-        case Macro("link", attributes) =>
-          val target = attributes.target
-          linkTo(attributes, target)
-        case Macro("footnote", attributes) =>
-          val target = attributes.target
-          a(title := target, "※")
-        case im @ Macro(command, attributes) =>
-          scribe.warn(s"unknown macro “${SastToScimConverter().macroToScim(im)}” " +
-                      positionString(inlineProv.prov))
-          code(s"$command[${attributes.all.mkString(",")}]")
+  def inlineValuesToHTML(inlines: Seq[Inline]): Seq[Frag] =
+    inlines.map[Frag, Seq[Frag]] {
+      case InlineText(str) => str
+      case Macro(Quote(q), attrs) =>
+        val inner = attrs.target
+        //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
+        q.head match {
+        case '_' => em(inner)
+        case '*' => strong(inner)
+        case '`' => code(inner)
+        case '$' =>
+          val mathml = katexMap.getOrElseUpdate(inner, {
+            (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
+          })
+          span(raw(mathml))
       }
+      case Macro(Comment, attributes) => frag()
+      case Macro(Other("ref"), attributes) =>
+        sdoc.targets.find(_.id == attributes.positional.head).map { target =>
+          target.resolution match {
+            case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
+            case other =>
+              scribe.error(s"can not refer to $other")
+              frag()
+          }
+        }
+      case Macro(Cite, attributes) =>
+        val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
+          bibid -> bibliography.getOrElse(bibid.trim, {
+            scribe.error(s"bib key not found: $bibid " + positionString(attributes.prov))
+            bibid
+          })
+        }.sortBy(_._2).map{case (bibid, bib) => a(href := s"#$bibid", bib)}
+        frag("\u00A0", anchors)
+      case Macro(Other(tagname@("ins" | "del")), attributes) =>
+        tag(tagname)(attributes.positional.mkString(", "))
+      case Macro(Other(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto")), attributes) =>
+        val linktarget = s"$protocol:${attributes.target}"
+        linkTo(attributes, linktarget)
+      case Macro(Link, attributes) =>
+        val target = attributes.target
+        linkTo(attributes, target)
+      case Macro(Other("footnote"), attributes) =>
+        val target = attributes.target
+        a(title := target, "※")
+      case im @ Macro(command, attributes) => unknownMacroOutput(im)
+
+  }
+
+  def unknownMacroOutput(im: Macro): Tag = {
+    val str = SastToScimConverter().macroToScim(im)
+    scribe.warn(s"unknown macro “$str” " + positionString(im.attributes.prov))
+    code(str)
   }
 
   def positionString(prov: Prov) = {

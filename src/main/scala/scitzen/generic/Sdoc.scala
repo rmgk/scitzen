@@ -3,14 +3,14 @@ package scitzen.generic
 import scitzen.generic.Sast.{Section, TLBlock}
 import scitzen.generic.SastAnalyzes.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
-import scitzen.parser.{Attributes, DateParsingHelper, ScitzenDateTime}
+import scitzen.parser.{Attributes, DateParsingHelper, Prov, ScitzenDateTime}
 import cats.implicits._
 
 case class Sdoc(blocks: Seq[TLBlock]) {
 
   lazy val analyzeResult: AnalyzeResult = SastAnalyzes.analyze(blocks)
 
-  lazy val named: Map[String, String] = Attributes.fromAttributeSeq(analyzeResult.attributes).named
+  lazy val named: Map[String, String] = Attributes.l(analyzeResult.attributes, Prov()).named
 
   lazy val language: Option[String] = named.get("language").map(_.trim)
 
@@ -19,7 +19,7 @@ case class Sdoc(blocks: Seq[TLBlock]) {
   lazy val modified: Option[ScitzenDateTime] = named.get("modified")
                                                .map(m => DateParsingHelper.parseDate(m.trim))
 
-  lazy val title: Option[String] = blocks.headOption.collect { case TLBlock(_, _, s: Section) => s }.map(_.title.str)
+  lazy val title: Option[String] = blocks.headOption.collect { case TLBlock(_, s: Section) => s }.map(_.title.str)
 
   lazy val words: List[String] = SastToTextConverter.convert(blocks)
                                  .flatMap(_.split("[^\\p{L}]+")).toList

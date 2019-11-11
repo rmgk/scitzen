@@ -3,6 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
+import scitzen.parser.MacroCommand.{Comment, Quote}
 
 
 object InlineParsers {
@@ -31,29 +32,35 @@ object InlineParsers {
     P(notSyntax.!).map(InlineText)
   }
 
-  def comment[_: P]: P[Macro] = P(commentStart ~ untilI(eol, 0))
-                                .map(text => Macro("comment", List(Attribute("", text))))
+  def comment[_: P]: P[Macro] = P(Index ~ commentStart ~ untilI(eol, 0) ~ Index)
+                                .map{case (s, text, e) => Macro(Comment, Attributes.a(Attribute("", text), Prov(s, e)))}
 
-  def fullParagraph[_: P]: P[Seq[InlineProv]] =
+  def fullParagraph[_: P]: P[Seq[Inline]] =
     P(inlineSequence.? ~ End)
     .map(_.getOrElse(Nil))
 
-  def inlineSequence[_: P]: P[Seq[InlineProv]] = P {
-    (Index ~ (comment
+  def inlineSequence[_: P]: P[Seq[Inline]] = P {
+    (comment
      | MacroParsers.full
      | quoted
      | simpleText
-    ) ~ Index).map{case (s, i, e) =>
-      val prov = implicitly[P[_]].misc.getOrElse("provenanceOffset", Prov(0,0)).asInstanceOf[Prov]
-      InlineProv(i, Prov(prov.start + s, prov.start + e))
-    }.rep(1)
+    ).rep(1)
   }
 
-  def quoted[_: P]: P[InlineQuote] = P {
-    CharIn(":") ~ quoteChars.!.flatMap { delimiter =>
-      (!(delimiter | anySpace) ~ untilE(delimiter))
-      .!.map(v => InlineQuote(delimiter, v)) ~ delimiter
-    }
+  def quoted[_: P]: P[Macro] = P {
+    withProv {
+      CharIn(":") ~ quoteChars.!.flatMap { delimiter =>
+        (!(delimiter | anySpace) ~ untilE(delimiter))
+        .! ~ delimiter.!
+      }
+    }.map{case ((v, delimiter), prov) => Macro(Quote(delimiter), Attributes.a(Attribute("", v), prov))}
   }
 
+  def withProv[T, _: P](parser: => P[T]): P[(T, Prov)] =
+    P(Index ~ parser ~ Index).map {case (s, r, e) => r -> withOffset(s, e)}
+
+  def withOffset(s: Int, e: Int)(implicit p: P[_]) = {
+    val prov = p.misc.getOrElse("provenanceOffset", Prov(0,0)).asInstanceOf[Prov]
+    Prov(prov.start + s, prov.start + e)
+  }
 }

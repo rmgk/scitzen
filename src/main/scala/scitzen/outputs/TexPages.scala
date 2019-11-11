@@ -1,5 +1,6 @@
 package scitzen.outputs
 
+import scitzen.parser.MacroCommand.Other
 import scitzen.parser.{Macro, Parse, Prov}
 
 object TexPages {
@@ -67,8 +68,8 @@ object TexPages {
 
   def wrap(content: Seq[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
     val authors = {
-      Parse.paragraph(authorsStr, Prov()).right.get.map(_.content).collect{
-        case Macro("author", attributes) => (attributes.positional.head, attributes.positional.tail)
+      Parse.paragraph(authorsStr, Prov()).right.get.collect{
+        case Macro(Other("author"), attributes) => (attributes.positional.head, attributes.positional.tail)
       }
     }
     val authorstrings = authors.map{ case (name, inst) =>

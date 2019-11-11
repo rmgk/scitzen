@@ -1,6 +1,7 @@
 package scitzen.generic
 
 import scitzen.generic.Sast._
+import scitzen.parser.MacroCommand.{Label, Quote}
 import scitzen.parser._
 
 
@@ -46,7 +47,7 @@ object SastAnalyzes {
     case AttributeDef(attribute) => acc + attribute
     case MacroBlock(imacro)      =>
       val iacc =
-        if (imacro.command == "label") {
+        if (imacro.command == Label) {
           if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}")
           acc + Target(imacro.attributes.target,
                        scope.get.resolution)
@@ -54,10 +55,10 @@ object SastAnalyzes {
         else acc
       iacc + imacro
     case Paragraph(content) => content.inline.foldLeft(acc) { (cacc, inline) =>
-      inline.content match {
-        case m: Macro              => cacc + m
-        case InlineText(str)       => cacc
-        case InlineQuote(q, inner) => cacc
+      inline match {
+        case Macro(_ : Quote, inner) => cacc
+        case m: Macro                => cacc + m
+        case InlineText(str)         => cacc
       }
     }
     case ParsedBlock(delimiter, content) => analyzeAll(content, scope, acc)
@@ -66,12 +67,10 @@ object SastAnalyzes {
 
 
   def analyzeText(input: Text, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
-    val inlines = input.inline.map(_.content)
-    inlines.foldLeft(acc) { (cacc, inline) =>
+    input.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
-        case m: Macro              => cacc + m
-        case InlineText(str)       => cacc
-        case InlineQuote(q, inner) => cacc
+        case m: Macro                => cacc + m
+        case InlineText(str)         => cacc
       }
     }
   }

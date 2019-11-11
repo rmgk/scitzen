@@ -3,6 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
+import scitzen.parser.MacroCommand.Other
 
 object BlockParsers {
 
@@ -18,9 +19,9 @@ object BlockParsers {
                                            .map { case (level, str) => SectionTitle(level, str) }
 
   def horizontalRuleChars[_: P] = P(AnyChar("'\\-*"))
-  def horizontalRule[_: P]: P[Macro] = P((verticalSpaces ~ horizontalRuleChars.!.flatMap { chr =>
+  def horizontalRule[_: P]: P[Macro] = P(Index ~ (verticalSpaces ~ horizontalRuleChars.!.flatMap { chr =>
     (verticalSpace ~ chr).rep(2) ~ spaceLine
-  }).!).map(text => Macro("horizontal-rule", List(Attribute("", text.dropRight(1)))))
+  }.!)~ Index).map{case (s, text, e) => Macro(Other("horizontal-rule"), Attributes(List(List(Attribute("", text.dropRight(1)))), Prov(s, e)))}
 
   def commentBlock[_:P]: P[NormalBlock] =
     P((DelimitedBlockParsers.makeDelimited("/".rep(4).!)

@@ -1,6 +1,7 @@
 package scitzen.generic
 
 import scitzen.generic.Sast._
+import scitzen.parser.MacroCommand.Quote
 import scitzen.parser._
 
 sealed trait Sast
@@ -8,27 +9,23 @@ sealed trait Sast
 object Sast {
   case class Slist(children: Seq[SlistItem]) extends Sast
   case class SlistItem(marker: String, content: Seq[Sast])
-  case class Text(inline: Seq[InlineProv]) {
+  case class Text(inline: Seq[Inline]) {
     lazy val str = {
-      inline.map(_.content).map{
+      inline.map{
+        case Macro(_ : Quote, attributes) => attributes.target
         case Macro(command, attributes) => ""
-        case InlineQuote(q, inner) => inner
         case InlineText(string) => string
       }.mkString("").trim
     }
-  }
-  object Text {
-    def synt(inline: Seq[Inline]): Text = Text(inline.map(synt))
-    def synt(inline: Inline): InlineProv = InlineProv(inline, Prov())
   }
   case class Section(title: Text, content: Seq[TLBlock]) extends Sast
   case class MacroBlock(call: Macro) extends Sast
   case class Paragraph(content: Text) extends Sast
   case class RawBlock(delimiter: String, content: String) extends Sast
   case class ParsedBlock(delimiter: String, content: Seq[TLBlock]) extends Sast
-  case class TLBlock(attr: Attributes, prov: Prov, content: Sast)
+  case class TLBlock(attr: Attributes, content: Sast)
   object TLBlock{
-    def synt(content: Sast) = TLBlock(Attributes(Nil), Prov(), content)
+    def synt(content: Sast) = TLBlock(Attributes(Nil, Prov()), content)
   }
   case class AttributeDef(attribute: Attribute) extends Sast
 }
@@ -80,7 +77,7 @@ final case class SastConverter() {
             case _                    => true
           }
         }
-        sectionize(next, TLBlock(section.attributes, section.prov,
+        sectionize(next, TLBlock(section.attributes,
                                  Section(title, blockSequence(inner))) :: accumulator)
     }
   }
@@ -122,7 +119,7 @@ final case class SastConverter() {
 
   def block(bwa: Block): TLBlock = {
     val inner = blockContent(bwa.content, bwa.prov)
-    TLBlock(bwa.attributes, bwa.prov, inner)
+    TLBlock(bwa.attributes, inner)
   }
 
 

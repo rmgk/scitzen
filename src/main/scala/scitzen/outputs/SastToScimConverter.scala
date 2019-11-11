@@ -2,7 +2,8 @@ package scitzen.outputs
 
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
-import scitzen.parser.{Attribute, InlineProv, InlineQuote, InlineText, Macro}
+import scitzen.parser.MacroCommand.{Other, Quote}
+import scitzen.parser.{Attribute, Inline, InlineText, Macro}
 
 
 case class SastToScimConverter() {
@@ -41,7 +42,7 @@ case class SastToScimConverter() {
           marker +: toScimS(inner)
       }
 
-      case MacroBlock(Macro("horizontal-rule", attributes)) => List(attributes.target)
+      case MacroBlock(Macro(Other("horizontal-rule"), attributes)) => List(attributes.target)
       case MacroBlock(mcro) => List(macroToScim(mcro))
 
       case Paragraph(content) => List(inlineToScim(content.inline))
@@ -70,9 +71,9 @@ case class SastToScimConverter() {
     s":${mcro.command}${attributesToScim(mcro.attributes.all)}"
   }
 
-  def inlineToScim(inners: Seq[InlineProv]): String = inners.map(_.content).map {
-    case InlineText(str)        => str
-    case InlineQuote(q, inner2) => s":$q$inner2$q"
-    case m: Macro               => macroToScim(m)
+  def inlineToScim(inners: Seq[Inline]): String = inners.map {
+    case InlineText(str)         => str
+    case Macro(Quote(q), inner2) => s":$q$inner2$q"
+    case m: Macro                => macroToScim(m)
   }.mkString("")
 }

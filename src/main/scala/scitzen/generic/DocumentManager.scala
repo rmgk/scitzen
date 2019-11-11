@@ -1,6 +1,7 @@
 package scitzen.generic
 
 import better.files.File
+import scitzen.parser.MacroCommand.Include
 
 object Months {
   val en = Array("January", "February", "March", "April", "May", "June",
@@ -31,7 +32,7 @@ object DocumentManager {
     val includes = (for {
       docs <- documentManager.documents
       macrs <- docs.sdoc.analyzeResult.macros
-      if macrs.command == "include"
+      if macrs.command == Include
       file = docs.file.parent / macrs.attributes.target
       if !documentManager.byPath.contains(file)
     } yield file).toSet

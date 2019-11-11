@@ -3,7 +3,8 @@ package scitzen.outputs
 import better.files.File
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast}
-import scitzen.parser.{InlineProv, InlineQuote, InlineText, Macro}
+import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
+import scitzen.parser.{Inline, InlineText, Macro}
 
 class Scope(val level: Int) extends AnyVal {
   def inc: Scope = {
@@ -18,8 +19,8 @@ class SastToTexConverter(documents: DocumentManager,
                          imageResolver: ImageResolver) {
 
   def convert(mainSast: List[TLBlock]): Seq[String] = mainSast match {
-    case List(TLBlock(_, _, Section(title, content))) =>
-      val secChildren = content.collect { case TLBlock(_, _, s: Section) => s }
+    case List(TLBlock(_, Section(title, content))) =>
+      val secChildren = content.collect { case TLBlock(_, s: Section) => s }
       s"\\title{${inlineValuesToHTML(title.inline)}}\\maketitle{}" +:
       (putAbstract(content.map(_.content)) ++ sastToTex(secChildren)(scope = new Scope(2)))
     case list                                         => cBlocks(list)(scope = new Scope(1))
@@ -82,7 +83,7 @@ class SastToTexConverter(documents: DocumentManager,
         }
 
       case MacroBlock(mcro) => mcro match {
-        case Macro("image", attributes) =>
+        case Macro(Image, attributes) =>
           val target = attributes.target
           val imagepath = imageResolver.image(root, target)
           if (imagepath.endsWith(".gif") || imagepath.endsWith(".webp")) {
@@ -91,8 +92,8 @@ class SastToTexConverter(documents: DocumentManager,
           }
           else List(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n")
 
-        case Macro("label", attributes) => List(s"\\label{${attributes.target}}")
-        case Macro("include", attributes) =>
+        case Macro(Other("label"), attributes) => List(s"\\label{${attributes.target}}")
+        case Macro(Include, attributes) =>
           val docOpt = documents.find(root, attributes.target)
           ImportPreproc.macroImportPreproc(docOpt, attributes) match {
             case Some((doc, sast)) =>
@@ -142,10 +143,10 @@ class SastToTexConverter(documents: DocumentManager,
     val sec = secs(nesting.level)
     if (numbered) sec else sec + "*"
   }
-  def inlineValuesToHTML(inners: Seq[InlineProv]): String = inners.map(_.content).map {
+  def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
     case InlineText(str) => latexencode(str)
-    case InlineQuote(q, inner2) =>
-      val inner = latexencode(inner2)
+    case Macro(Quote(q), inner2) =>
+      val inner = latexencode(inner2.target)
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
       q.head match {
         case '_' => s"\\emph{$inner}"
@@ -153,18 +154,18 @@ class SastToTexConverter(documents: DocumentManager,
         case '`' => s"\\texttt{$inner}"
         case '$' => s"$$$inner$$"
       }
-    case Macro("comment", attributes) => ""
-    case Macro("ref", attributes) => s"\\ref{${latexencode(attributes.target)}}"
-    case Macro("cite", attributes) =>
+    case Macro(Comment, attributes) => ""
+    case Macro(Other("ref"), attributes) => s"\\ref{${latexencode(attributes.target)}}"
+    case Macro(Cite, attributes) =>
       s"\\cite{${latexencode(attributes.target)}}"
-    case Macro("link", attributes) =>
+    case Macro(Link, attributes) =>
       val target = attributes.target
       if (attributes.positional.size > 1) {
         val name = """{"""" + attributes.positional.head + """"}"""
         s"\\href{$target}{$name}"
       }
       else s"\\url{$target}"
-    case Macro("footnote", attributes) =>
+    case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
     case im @ Macro(command, attributes) =>

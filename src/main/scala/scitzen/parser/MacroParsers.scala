@@ -9,8 +9,8 @@ object MacroParsers {
   def detectStart[_: P]: P[Unit] = P(identifier.? ~ "[")
   def start[_: P]: P[String] = P(":" ~ identifier.?.! ~ &("["))
 
-  def full[_: P]: P[Macro] = P(start ~ AttributesParser.list).map {
-    case (name, attributes) => Macro(name, Attributes.fromAttributeSeq(attributes))
+  def full[_: P]: P[Macro] = P(InlineParsers.withProv(start ~ AttributesParser.list)).map {
+    case ((name, attributes), prov) => Macro(MacroCommand.parse(name), Attributes.l(attributes, prov))
   }
 
 }
