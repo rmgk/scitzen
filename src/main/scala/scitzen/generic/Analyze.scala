@@ -37,7 +37,7 @@ object SastAnalyzes {
 
   def analyzeRSast(input: Sast, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
     case Slist(children) => children.foldLeft(acc) { (cacc, sli) =>
-      analyzeAllSast(sli.content, scope, acc)
+      analyzeAllSast(sli.content, scope, cacc)
     }
 
     case sec @ Section(title, content)   =>
