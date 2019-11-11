@@ -7,6 +7,8 @@ import cats.data.NonEmptyList
 import scitzen.generic.Sast.TLBlock
 import scitzen.parser.Prov
 
+import scala.util.control.NonFatal
+
 
 case class DocumentDiscovery(sourcePaths: List[File]) {
 
@@ -44,8 +46,14 @@ object ParsedDocument {
       if (res >= 0) findNL(res, res :: found)
       else found.toArray.reverse
     }
-    val sast = SastConverter().documentString(content, Prov(0, content.length))
-    val sdoc = Sdoc(sast)
-    ParsedDocument(file, content, sast, sdoc, findNL(-1, Nil))
+    try {
+      val sast = SastConverter().documentString(content, Prov(0, content.length))
+      val sdoc = Sdoc(sast)
+      ParsedDocument(file, content, sast, sdoc, findNL(-1, Nil))
+    } catch {
+      case NonFatal(e) =>
+        scribe.error(s"error while parsing $file")
+        throw e
+    }
   }
 }
