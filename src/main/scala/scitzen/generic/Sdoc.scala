@@ -5,7 +5,8 @@ import cats.implicits._
 import scitzen.generic.Sast.{Section, TLBlock}
 import scitzen.generic.SastAnalyzes.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
-import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
+import scitzen.parser.MacroCommand.Other
+import scitzen.parser.{Attribute, Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
 
 import scala.util.control.NonFatal
 
@@ -13,7 +14,12 @@ case class Sdoc(blocks: Seq[TLBlock], analyzes: SastAnalyzes) {
 
   lazy val analyzeResult: AnalyzeResult = analyzes.analyze(this)
 
-  lazy val named: Map[String, String] = Attributes.l(analyzeResult.attributes, Prov()).named
+  lazy val named: Map[String, String] = {
+    val macroattrs = analyzeResult.macros.filter(_.command == Other("def"))
+                                  .flatMap(m => m.attributes.named.toSeq)
+                                  .map{case (k, v) => Attribute(k,v)}
+    Attributes.l(analyzeResult.attributes ++ macroattrs, Prov()).named
+  }
 
   lazy val language: Option[String] = named.get("language").map(_.trim)
 

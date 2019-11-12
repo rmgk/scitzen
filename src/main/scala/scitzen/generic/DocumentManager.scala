@@ -24,6 +24,8 @@ class DocumentManager(_documents: List[ParsedDocument]) {
     byPath.get(root / path).filter(d => root.isParentOf(d.file))
   }
 
+  lazy val attributes: Map[String, String] = documents.flatMap(_.sdoc.named).toMap
+
 }
 
 object DocumentManager {

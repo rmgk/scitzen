@@ -20,7 +20,7 @@ object AttributesParser {
                                          .map(v => Attribute("", v))
   def listElement  [_:P]: P[Attribute] = P(listDef | listValue)
   def list         [_:P]: P[Seq[Attribute]] =
-    P(open ~ anySpaces ~ listElement.rep(sep = ";") ~ close)
+    P(open ~ anySpaces ~ listElement.rep(sep = ";") ~ ";".? ~ anySpaces ~ close)
   def line         [_:P]: P[Seq[Attribute]] = P(list ~ spaceLine)
 
   def attrQuotes[_: P]: P[String] = {

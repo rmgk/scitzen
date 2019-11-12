@@ -16,7 +16,8 @@ class Scope(val level: Int) extends AnyVal {
 class SastToTexConverter(documents: DocumentManager,
                          root: File,
                          numbered: Boolean = true,
-                         imageResolver: ImageResolver) {
+                         imageResolver: ImageResolver,
+                        ) {
 
   def convert(mainSast: List[TLBlock]): Seq[String] = mainSast match {
     case List(TLBlock(_, Section(title, content))) =>
@@ -149,7 +150,7 @@ class SastToTexConverter(documents: DocumentManager,
         case '_' => s"\\emph{$inner}"
         case '*' => s"\\textbf{$inner}"
         case '`' => s"\\texttt{$inner}"
-        case '$' => s"$$$inner$$"
+        case '$' => s"$$${inner2.target}$$"
       }
     case Macro(Comment, attributes) => ""
     case Macro(Ref, attributes)      => s"\\ref{${latexencode(attributes.target)}}"
@@ -162,6 +163,8 @@ class SastToTexConverter(documents: DocumentManager,
         s"\\href{$target}{$name}"
       }
       else s"\\url{$target}"
+    case Macro(Other("n"), attributes) if documents.attributes.contains(attributes.target) =>
+      documents.attributes(attributes.target)
     case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
