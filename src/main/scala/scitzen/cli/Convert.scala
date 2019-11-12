@@ -36,19 +36,31 @@ object Convert {
 
 
 
-  val command: Command[Unit] = Command(name = "convert",
-                                       header = "Convert Scim to HTML/PDF.") {
+  val commandhtml: Command[Unit] = Command(name = "html",
+                                       header = "Convert Scim to HTML.") {
     (optSource, optSyncFile, optSyncPos).mapN {
       (sourcedirRel, syncFileRelOption, syncPos) =>
 
-        //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+        val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
 
         Project.fromSource(File(sourcedirRel)).foreach { project =>
           scribe.info(project.toString)
-          convertToPdf(project)
+          convertToHtml(project, sync)
         }
     }
   }
+
+  val commandpdf: Command[Unit] = Command(name = "pdf",
+                                          header = "Convert Scim to HTML.") {
+    optSource.map { sourcedirRel =>
+      //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+      Project.fromSource(File(sourcedirRel)).foreach { project =>
+        scribe.info(project.toString)
+        convertToPdf(project)
+      }
+    }
+  }
+
 
 
   def convertToPdf(project: Project): Unit = {
