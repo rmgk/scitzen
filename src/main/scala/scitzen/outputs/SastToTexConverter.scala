@@ -3,7 +3,7 @@ package scitzen.outputs
 import better.files.File
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast}
-import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Label, Link, Other, Quote}
+import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
 class Scope(val level: Int) extends AnyVal {
@@ -140,7 +140,7 @@ class SastToTexConverter(documents: DocumentManager,
     val sec = secs.lift(nesting.level).getOrElse("paragraph")
     if (numbered) sec else sec + "*"
   }
-  def inlineValuesToTex(inners: Seq[Inline]): String = inners.map {
+  def inlineValuesToTex(inners: Seq[Inline]): String = inners.map[String, Seq[String]] {
     case InlineText(str) => latexencode(str)
     case Macro(Quote(q), inner2) =>
       val inner = latexencode(inner2.target)
@@ -152,7 +152,7 @@ class SastToTexConverter(documents: DocumentManager,
         case '$' => s"$$$inner$$"
       }
     case Macro(Comment, attributes) => ""
-    case Macro(Other("ref"), attributes)      => s"\\ref{${latexencode(attributes.target)}}"
+    case Macro(Ref, attributes)      => s"\\ref{${latexencode(attributes.target)}}"
     case Macro(Cite, attributes)              =>
       s"\\cite{${attributes.target}}"
     case Macro(Link, attributes)              =>
@@ -165,7 +165,7 @@ class SastToTexConverter(documents: DocumentManager,
     case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
-    case Macro(Label, attributes)             => List(s"\\label{${attributes.target}}")
+    case Macro(Label, attributes)             => s"\\label{${attributes.target}}"
     case im @ Macro(command, attributes)      =>
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.all.mkString(",")}]"
