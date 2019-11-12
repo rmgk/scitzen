@@ -58,9 +58,6 @@ class SastToTexConverter(documents: DocumentManager,
   def sastToTex(b: Seq[Sast])(implicit scope: Scope): Seq[String] = {
     b.flatMap {
 
-      case AttributeDef(_) => Nil
-
-
       case Section(title, contents) =>
         val sec = sectioning(scope)
         s"\\$sec{${inlineValuesToTex(title.inline)}}" +:

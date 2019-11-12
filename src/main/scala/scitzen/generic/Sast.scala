@@ -27,7 +27,6 @@ object Sast {
   object TLBlock{
     def synt(content: Sast) = TLBlock(Attributes(Nil, Prov()), content)
   }
-  case class AttributeDef(attribute: Attribute) extends Sast
 }
 
 
@@ -97,8 +96,6 @@ final case class SastConverter() {
         throw new IllegalStateException("sections should be out already …")
 
       case ListBlock(items) => ListConverter.listtoSast(items)
-
-      case AttributeBlock(attribute) => AttributeDef(attribute)
 
       case m: Macro => MacroBlock(m)
 

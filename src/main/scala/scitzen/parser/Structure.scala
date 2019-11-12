@@ -26,7 +26,6 @@ object NormalBlock {
   def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, cp._1, cp._2)
 }
 case class ListBlock(items: Seq[ListItem]) extends BlockContent
-case class AttributeBlock(attribute: Attribute) extends BlockContent
 case class SectionTitle(level: Int, title: String) extends BlockContent
 
 
@@ -47,6 +46,7 @@ object MacroCommand {
       "include" -> Include,
       "link" -> Link,
       "comment" -> Comment,
+      "def" -> Def,
       )
     (seq.toMap, seq.map(p => p._2 -> p._1).toMap)
   }
@@ -65,6 +65,7 @@ object MacroCommand {
   object Include extends MacroCommand
   object Link extends MacroCommand
   object Comment extends MacroCommand
+  object Def extends MacroCommand
   case class Other(str: String) extends MacroCommand
 
   implicit val codecQ: upickle.default.ReadWriter[Quote] = upickle.default.macroRW

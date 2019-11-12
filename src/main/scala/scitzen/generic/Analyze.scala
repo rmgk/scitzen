@@ -6,12 +6,10 @@ import scitzen.parser._
 
 object SastAnalyzes {
   case class Target(id: String, resolution: Sast)
-  case class AnalyzeResult(attributes: List[Attribute],
-                           macros: List[Macro],
+  case class AnalyzeResult(macros: List[Macro],
                            targets: List[Target],
                            blocks: List[TLBlock]) {
     def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
-    def +(m: Attribute): AnalyzeResult = copy(attributes = m :: attributes)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
     def +(m: TLBlock): AnalyzeResult = copy(blocks = m :: blocks)
   }
@@ -23,8 +21,8 @@ class SastAnalyzes(macroReporter: Reporter) {
 
   def analyze(sdoc: Sdoc): AnalyzeResult = {
     val input: Seq[TLBlock] = sdoc.blocks
-    val AnalyzeResult(a, m, t, b) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
-    AnalyzeResult(a.reverse, m.reverse, t.reverse, b.reverse)
+    val AnalyzeResult(m, t, b) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil))
+    AnalyzeResult(m.reverse, t.reverse, b.reverse)
   }
 
   def analyzeAll(inputs: Seq[TLBlock], scope: Option[Target], acc: AnalyzeResult): AnalyzeResult =
@@ -49,7 +47,6 @@ class SastAnalyzes(macroReporter: Reporter) {
     case sec @ Section(title, content)   =>
       val target = Target(title.str, sec)
       analyzeAll(content, Some(target), acc + target)
-    case AttributeDef(attribute) => acc + attribute
     case MacroBlock(imacro)      =>
       val iacc =
         if (imacro.command == Label) {

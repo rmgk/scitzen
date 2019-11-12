@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
-import scitzen.parser.MacroCommand.{Comment, Other, Quote}
+import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 
 
@@ -22,26 +22,27 @@ case class SastToScimConverter() {
     }
   }
 
-  def attributesToScim(attributes: Seq[Attribute]): String = attributes.map {
-    case Attribute("", v) => encodeValue(v)
-    case Attribute(k, v)  => s"""$k=${encodeValue(v)}"""
-  }.mkString("[", "; ", "]")
+  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean = false): String = {
+    val keylen = (0 +: attributes.map(_.id.length)).max
+    val pairs = attributes.map {
+      case Attribute("", v) => encodeValue(v)
+      case Attribute(k, v)  =>
+        val spaces = " " * math.max(keylen - k .length, 0)
+        if (spacy) s"""$k$spaces = ${encodeValue(v)}"""
+        else s"""$k=${encodeValue(v)}"""
+    }
+    if (!spacy) pairs.mkString("[", "; ", "]")
+    else pairs.mkString("[\n\t", ";\n\t", ";\n]")
+  }
 
   def toScim(blocks: Seq[TLBlock])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     blocks.flatMap { bwa =>
-      bwa.attr.raw.map(attributesToScim) ++ toScimS(List(bwa.content))
+      bwa.attr.raw.map(attributesToScim(_)) ++ toScimS(List(bwa.content))
     }
   }
 
     def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     b.flatMap[String, Seq[String]] {
-
-      case AttributeDef(a) => List(s":${a.id}:${a.value}")
-
-      //case Sections(secContent, secChildren) =>
-      //  def rec(block: Seq[Sast]): Seq[String] = block.flatMap(toScim(_))
-      //  rec(secContent) ++ rec(secChildren)
-
 
       case Section(title, sc) =>
         ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
@@ -54,6 +55,7 @@ case class SastToScimConverter() {
           marker +: toScimS(inner)
       }
 
+      case MacroBlock(m @ Macro(Def, attributes)) => List(macroToScimRaw(m, spacy = true))
       case MacroBlock(mcro) => List(macroToScim(mcro))
 
       case Paragraph(content) => List(inlineToScim(content.inline))
@@ -80,8 +82,8 @@ case class SastToScimConverter() {
   }
 
 
-  def macroToScimRaw(mcro: Macro): String = {
-    s":${MacroCommand.print(mcro.command)}${attributesToScim(mcro.attributes.all)}"
+  def macroToScimRaw(mcro: Macro, spacy: Boolean = false): String = {
+    s":${MacroCommand.print(mcro.command)}${attributesToScim(mcro.attributes.all, spacy)}"
   }
 
   def inlineToScim(inners: Seq[Inline]): String = inners.map {

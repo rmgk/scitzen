@@ -113,8 +113,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   def sastToHtml(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
     b.flatMap[Frag, Seq[Frag]] {
 
-      case AttributeDef(_) => Nil
-
       case sec@Section(title, subsections) =>
         val inner = (if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
                      cBlocks(subsections)(nestingLevel.inc)

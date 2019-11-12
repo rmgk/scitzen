@@ -5,9 +5,9 @@ import java.nio.file.Path
 
 import better.files.File
 import com.monovore.decline.{Command, Opts}
-import scitzen.parser.{Attribute, AttributeBlock, Attributes, Block, BlockContent, Inline, InlineText, ListBlock, ListItem, Macro, NormalBlock, Prov, SectionTitle, WhitespaceBlock}
+import scitzen.parser.{Attribute, Attributes, Block, BlockContent, Inline, InlineText, ListBlock, ListItem, Macro, NormalBlock, Prov, SectionTitle, WhitespaceBlock}
 import scitzen.generic.{Sast, SastConverter}
-import scitzen.generic.Sast.{AttributeDef, MacroBlock, Paragraph, ParsedBlock, RawBlock, Section, Slist, SlistItem, TLBlock, Text}
+import scitzen.generic.Sast.{MacroBlock, Paragraph, ParsedBlock, RawBlock, Section, Slist, SlistItem, TLBlock, Text}
 import upickle.default.macroW
 import upickle.default.Writer
 
@@ -19,7 +19,6 @@ object JsonSast {
   implicit val ProvEncoder           : Writer[Prov]            = macroW
   implicit val MacroEncoder          : Writer[Macro]           = macroW
   implicit val InlineTextEncoder     : Writer[InlineText]      = macroW
-  implicit val AttributeBlockEncoder : Writer[AttributeBlock]  = macroW
   implicit val ListBlockEncoder      : Writer[ListBlock]       = macroW
   implicit val NormalBlockEncoder    : Writer[NormalBlock]     = macroW
   implicit val SectionTitleEncoder   : Writer[SectionTitle]    = macroW
@@ -38,7 +37,6 @@ object JsonSast {
   implicit val ParsedBlockEncoder    : Writer[ParsedBlock]     = macroW
   implicit val ParagraphEncoder      : Writer[Paragraph]       = macroW
   implicit val AttributedBlockEncoder: Writer[TLBlock]         = macroW
-  implicit val AttributeDefEncoder   : Writer[AttributeDef]    = macroW
   implicit val SastEncoder           : Writer[Sast]            = macroW
 
 

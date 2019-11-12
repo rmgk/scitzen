@@ -15,10 +15,6 @@ object SastToTextConverter {
   def convertSast(b: Seq[Sast]): Seq[String] = {
     b.flatMap[String, Seq[String]] {
 
-      case AttributeDef(a) => Nil
-
-
-
       case Section(title, sc) =>
         convertInline(title.inline) +:
         convert(sc)

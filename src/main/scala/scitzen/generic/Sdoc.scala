@@ -18,7 +18,7 @@ case class Sdoc(blocks: Seq[TLBlock], analyzes: SastAnalyzes) {
     val macroattrs = analyzeResult.macros.filter(_.command == Other("def"))
                                   .flatMap(m => m.attributes.named.toSeq)
                                   .map{case (k, v) => Attribute(k,v)}
-    Attributes.l(analyzeResult.attributes ++ macroattrs, Prov()).named
+    Attributes.l(macroattrs, Prov()).named
   }
 
   lazy val language: Option[String] = named.get("language").map(_.trim)
