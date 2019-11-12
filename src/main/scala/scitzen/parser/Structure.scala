@@ -42,6 +42,7 @@ object MacroCommand {
     val seq = List(
       "cite" -> Cite,
       "label" -> Label,
+      "ref" -> Ref,
       "image" -> Image,
       "include" -> Include,
       "link" -> Link,
@@ -59,6 +60,7 @@ object MacroCommand {
   case class Quote(q: String) extends MacroCommand
   object Cite extends MacroCommand
   object Label extends MacroCommand
+  object Ref extends MacroCommand
   object Image extends MacroCommand
   object Include extends MacroCommand
   object Link extends MacroCommand

@@ -3,7 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.MacroCommand.{Cite, Label, Other, Quote}
+import scitzen.parser.MacroCommand.{Cite, Other, Quote}
 
 object MacroParsers {
   // ensure consistency between detect start and start
@@ -20,11 +20,9 @@ object MacroParsers {
                                         case "sysname" => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
                                         case "fsysname" => Macro(Other("n"), Attributes.a(Attribute("", "fsysname"), p))
                                         case "basesysname" => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
-                                        case "cite" => Macro(Cite, Attributes.a(Attribute("", c), p))
                                         case "citet" => Macro(Cite, Attributes.l(List(Attribute("style", "name"), Attribute("", c)), p))
-                                        case "label" => Macro(Label, Attributes.a(Attribute("", c), p))
-                                        case arg@("subparagraph"|"todo"|"ref"|"caption"|"textsf"|"textsc"|"creation"|"footnote") =>
-                                          Macro(Other(arg), Attributes.a(Attribute("", c), p))
+                                        case arg@("ref"|"label"| "cite"| "subparagraph"|"todo"|"ref"|"caption"|"textsf"|"textsc"|"creation"|"footnote") =>
+                                          Macro(MacroCommand.parse(arg), Attributes.a(Attribute("", c), p))
                                         case "textit" => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
                                         case "emph" => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
                                         case "code" => Macro(Quote("`"), Attributes.a(Attribute("", c), p))
