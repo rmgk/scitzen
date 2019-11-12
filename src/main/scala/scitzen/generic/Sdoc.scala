@@ -1,14 +1,17 @@
 package scitzen.generic
 
+import better.files.File
 import scitzen.generic.Sast.{Section, TLBlock}
 import scitzen.generic.SastAnalyzes.AnalyzeResult
-import scitzen.outputs.SastToTextConverter
-import scitzen.parser.{Attributes, DateParsingHelper, Prov, ScitzenDateTime}
+import scitzen.outputs.{SastToScimConverter, SastToTextConverter}
+import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
 import cats.implicits._
+
+import scala.util.control.NonFatal
 
 case class Sdoc(blocks: Seq[TLBlock]) {
 
-  lazy val analyzeResult: AnalyzeResult = SastAnalyzes.analyze(blocks)
+  lazy val analyzeResult: AnalyzeResult = new SastAnalyzes(this).analyze()
 
   lazy val named: Map[String, String] = Attributes.l(analyzeResult.attributes, Prov()).named
 
@@ -36,4 +39,50 @@ case class Sdoc(blocks: Seq[TLBlock]) {
 
   def targets = analyzeResult.targets
 
+}
+
+final case class ParsedDocument(file: File, content: String, sdoc: Sdoc) {
+
+  lazy val newLines: Seq[Int] = {
+    def findNL(idx: Int, found: List[Int]): Array[Int] = {
+      val res = content.indexOf('\n', idx + 1)
+      if (res >= 0) findNL(res, res :: found)
+      else found.toArray.reverse
+    }
+    findNL(-1, Nil)
+  }
+
+  def indexToPosition(idx: Int): (Int, Int) = {
+    val ip = scala.collection.Searching.search(newLines).search(idx).insertionPoint
+    val offset = if(ip == 0) 0 else newLines(ip - 1)
+    (ip + 1, idx - offset)
+  }
+
+  def unknownMacroOutput(im: Macro): String = {
+    val str = SastToScimConverter().macroToScim(im)
+    scribe.warn(s"unknown macro “$str” " + positionString(im.attributes.prov))
+    str
+  }
+
+  def positionString(prov: Prov): String = {
+    val pos = indexToPosition(prov.start)
+    s"(at »${File.currentWorkingDirectory.relativize(file)}:" +
+    s"${pos._1}:${pos._2}«)"
+  }
+
+}
+
+object ParsedDocument {
+  def apply(file: File): ParsedDocument = {
+    val content = file.contentAsString
+    try {
+      val sast = SastConverter().documentString(content, Prov(0, content.length))
+      val sdoc = Sdoc(sast)
+      ParsedDocument(file, content, sdoc)
+    } catch {
+      case NonFatal(e) =>
+        scribe.error(s"error while parsing $file")
+        throw e
+    }
+  }
 }

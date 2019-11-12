@@ -4,7 +4,6 @@ import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Label, Quote}
 import scitzen.parser._
 
-
 object SastAnalyzes {
   case class Target(id: String, resolution: Sast)
   case class AnalyzeResult(attributes: List[Attribute],
@@ -16,8 +15,14 @@ object SastAnalyzes {
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
     def +(m: TLBlock): AnalyzeResult = copy(blocks = m :: blocks)
   }
+}
 
-  def analyze(input: Seq[TLBlock]) = {
+class SastAnalyzes(sdoc: Sdoc) {
+  import scitzen.generic.SastAnalyzes._
+
+
+  def analyze(): AnalyzeResult = {
+    val input: Seq[TLBlock] = sdoc.blocks
     val AnalyzeResult(a, m, t, b) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
     AnalyzeResult(a.reverse, m.reverse, t.reverse, b.reverse)
   }

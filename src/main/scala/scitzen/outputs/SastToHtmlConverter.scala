@@ -25,12 +25,12 @@ object ImportPreproc {
       case Some(doc) =>
         val sast = if (attributes.named.get("format").contains("article")) {
           val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
-          val head = doc.blocks.head
+          val head = doc.sdoc.blocks.head
           val section = head.content.asInstanceOf[Section]
           val sast = head.copy(
             content = section.copy(title = Text(InlineText(date) +: section.title.inline)))
           List(sast)
-        } else doc.blocks
+        } else doc.sdoc.blocks
         Some(doc -> sast)
     }
     res
@@ -51,7 +51,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   import bundle.all._
   import bundle.tags2.{article, time}
 
-  val root = ownpath.parent
+  val root = project.root
 
   val syncPos = {
     if (sync.exists(_._1 == ownpath)) sync.get._2 else Int.MaxValue

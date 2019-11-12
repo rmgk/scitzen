@@ -7,16 +7,15 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
-import scitzen.extern.TexTikz.latexmk
 import scitzen.generic.{GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
-import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToTexConverter, TexPages}
+import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.parser.MacroCommand.Cite
 
 import scala.collection.mutable
 import scala.util.Try
 
 
-object Convert {
+object ConvertHtml {
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
@@ -36,7 +35,7 @@ object Convert {
 
 
 
-  val commandhtml: Command[Unit] = Command(name = "html",
+  val command: Command[Unit] = Command(name = "html",
                                        header = "Convert Scim to HTML.") {
     (optSource, optSyncFile, optSyncPos).mapN {
       (sourcedirRel, syncFileRelOption, syncPos) =>
@@ -50,58 +49,7 @@ object Convert {
     }
   }
 
-  val commandpdf: Command[Unit] = Command(name = "pdf",
-                                          header = "Convert Scim to HTML.") {
-    optSource.map { sourcedirRel =>
-      //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-      Project.fromSource(File(sourcedirRel)).foreach { project =>
-        scribe.info(project.toString)
-        convertToPdf(project)
-      }
-    }
-  }
 
-
-
-  def convertToPdf(project: Project): Unit = {
-
-    val documents: List[ParsedDocument] = project.documents
-
-    scribe.info(s"found ${documents.size} posts")
-
-    project.outputdir.createDirectories()
-
-    val singleFile = project.singleSource.isDefined
-
-    val dm = project.documentManager
-
-    val imageResolver = ImageResolver.fromDM(project.documentManager, project.cacheDir, keepName = true)
-
-    val content = new SastToTexConverter(project.documentManager,
-                                         numbered = singleFile,
-                                         root = project.root,
-                                         imageResolver = imageResolver).convert(
-      if (singleFile) dm.byPath(project.singleSource.get).blocks.toList else GenIndexPage.makeIndex(dm)
-    )
-
-    val cacheDir = project.cacheDir
-
-    cacheDir.createDirectories()
-    imageResolver.copyToTarget(cacheDir)
-
-    val targetfile = project.outputdir / "output.pdf"
-
-    val bibliography = dm.documents.collectFirstSome{ pd =>
-      pd.sdoc.named.get("bibliography").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
-    val authors = dm.documents.collectSomeFold(_.sdoc.named.get("authors"))
-
-    val jobname = targetfile.nameWithoutExtension(includeAll = false)
-    val temptexfile = cacheDir / (jobname + ".tex")
-    val temptexdir = cacheDir / "tex"
-    temptexfile.write(TexPages.wrap(content, authors,
-                                    if (singleFile) "thesis" else "memoir", bibliography))
-    latexmk(temptexdir, jobname, temptexfile).copyTo(targetfile, overwrite = true)
-  }
 
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {

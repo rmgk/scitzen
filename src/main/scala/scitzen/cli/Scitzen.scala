@@ -13,8 +13,8 @@ object Scitzen extends CommandApp(
     Logger.root.clearHandlers().withHandler(formatter = myFormatter,
                                             minimumLevel = Some(scribe.Level.Info)).replace()
 
-    Opts.subcommand(Convert.commandhtml)
-    Opts.subcommand(Convert.commandpdf)
+    Opts.subcommand(ConvertHtml.command)
+    Opts.subcommand(ConvertPdf.command)
     .orElse(Opts.subcommand(JsonSast.command))
     .orElse(Opts.subcommand(Format.command))
   }
