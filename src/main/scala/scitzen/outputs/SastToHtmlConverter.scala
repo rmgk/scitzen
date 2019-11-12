@@ -199,6 +199,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           // and no special syntax, but otherwise normally formatted.
           // This is great to represent copy&pasted posts or chat messages.
           case '.' => List(pre(text))
+          case other =>
+            scribe.warn(s"unknown block type “$delimiter”")
+            List(pre(code(text)))
         }
     }
   }
