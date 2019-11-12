@@ -187,7 +187,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
         }
 
       case RawBlock(delimiter, text) =>
-        if (delimiter.isEmpty || delimiter == "comment") Nil
+        if (delimiter.isEmpty || delimiter == "comment|space") Nil
         else delimiter.charAt(0) match {
           // Code listing
           // Use this for monospace, space preserving, line preserving text
