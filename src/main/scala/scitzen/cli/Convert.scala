@@ -8,7 +8,7 @@ import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{DocumentDiscovery, DocumentManager, GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
+import scitzen.generic.{GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToTexConverter, TexPages}
 import scitzen.parser.MacroCommand.Cite
 
@@ -41,41 +41,46 @@ object Convert {
     (optSource, optSyncFile, optSyncPos).mapN {
       (sourcedirRel, syncFileRelOption, syncPos) =>
 
-        val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+        //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
 
         Project.fromSource(File(sourcedirRel)).foreach { project =>
           scribe.info(project.toString)
-          convertToHtml(project, sync)
+          convertToPdf(project)
         }
     }
   }
 
 
-  def convertToPdf(sourcefile: File, targetfile: File, cacheDir: File): Unit = {
-    val dd = DocumentDiscovery(List(sourcefile))
+  def convertToPdf(project: Project): Unit = {
 
-    val documents: List[ParsedDocument] = dd.sourceFiles.map(ParsedDocument.apply)
+    val documents: List[ParsedDocument] = project.documents
 
     scribe.info(s"found ${documents.size} posts")
 
-    val dm = DocumentManager.resolveIncludes(new DocumentManager(documents))
-    val ir = ImageResolver.fromDM(dm, cacheDir, keepName = false)
+    project.outputdir.createDirectories()
 
-    val singleFile = sourcefile.isRegularFile
+    val singleFile = project.singleSource.isDefined
 
-    val content = new SastToTexConverter(dm,
+    val dm = project.documentManager
+
+    val imageResolver = ImageResolver.fromDM(project.documentManager, project.cacheDir, keepName = true)
+
+    val content = new SastToTexConverter(project.documentManager,
                                          numbered = singleFile,
-                                         root = if (singleFile) sourcefile.parent else sourcefile,
-                                         imageResolver = ir).convert(
-      if (singleFile) dm.byPath(sourcefile).blocks.toList else GenIndexPage.makeIndex(dm)
+                                         root = project.root,
+                                         imageResolver = imageResolver).convert(
+      if (singleFile) dm.byPath(project.singleSource.get).blocks.toList else GenIndexPage.makeIndex(dm)
     )
 
+    val cacheDir = project.cacheDir
 
     cacheDir.createDirectories()
-    ir.copyToTarget(cacheDir)
+    imageResolver.copyToTarget(cacheDir)
+
+    val targetfile = project.outputdir / "output.pdf"
 
     val bibliography = dm.documents.collectFirstSome{ pd =>
-      pd.sdoc.named.get("bib").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
+      pd.sdoc.named.get("bibliography").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
     val authors = dm.documents.collectSomeFold(_.sdoc.named.get("authors"))
 
     val jobname = targetfile.nameWithoutExtension(includeAll = false)

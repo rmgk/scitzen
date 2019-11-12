@@ -21,7 +21,7 @@ class SastToTexConverter(documents: DocumentManager,
   def convert(mainSast: List[TLBlock]): Seq[String] = mainSast match {
     case List(TLBlock(_, Section(title, content))) =>
       val secChildren = content.collect { case TLBlock(_, s: Section) => s }
-      s"\\title{${inlineValuesToHTML(title.inline)}}\\maketitle{}" +:
+      s"\\title{${inlineValuesToTex(title.inline)}}\\maketitle{}" +:
       (putAbstract(content.map(_.content)) ++ sastToTex(secChildren)(scope = new Scope(2)))
     case list                                         => cBlocks(list)(scope = new Scope(1))
   }
@@ -62,7 +62,7 @@ class SastToTexConverter(documents: DocumentManager,
 
       case Section(title, contents) =>
         val sec = sectioning(scope)
-        s"\\$sec{${inlineValuesToHTML(title.inline)}}" +:
+        s"\\$sec{${inlineValuesToTex(title.inline)}}" +:
         cBlocks(contents)(scope.inc)
 
       case Slist(children) =>
@@ -92,21 +92,18 @@ class SastToTexConverter(documents: DocumentManager,
           }
           else List(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n")
 
-        case Macro(Other("label"), attributes) => List(s"\\label{${attributes.target}}")
         case Macro(Include, attributes) =>
-          val docOpt = documents.find(root, attributes.target)
-          ImportPreproc.macroImportPreproc(docOpt, attributes) match {
+          ImportPreproc.macroImportPreproc(documents.find(root, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToTexConverter(documents, doc.file.parent, numbered, imageResolver)
               .cBlocks(sast)(new Scope(3))
             case None => Nil
           }
         case other                        =>
-          scribe.warn(s"not implemented: $other")
-          List(other.toString)
+          List(inlineValuesToTex(List(other)))
       }
 
-      case Paragraph(content) => List(inlineValuesToHTML(content.inline)) :+ ""
+      case Paragraph(content) => List(inlineValuesToTex(content.inline)) :+ ""
 
 
       case ParsedBlock(delimiter, blockContent) =>
@@ -121,7 +118,7 @@ class SastToTexConverter(documents: DocumentManager,
         }
 
       case RawBlock(delimiter, text) =>
-        if (delimiter.isEmpty) Nil
+        if (delimiter.isEmpty || delimiter == "comment|space") Nil
         else delimiter.charAt(0) match {
           case '`' =>
             List(s"\\begin{verbatim}", text, "\\end{verbatim}")
@@ -140,10 +137,10 @@ class SastToTexConverter(documents: DocumentManager,
 
   val sectioning:  Scope => String = nesting => {
     val secs = Array("book", "part", "chapter", "section", "subsection", "paragraph")
-    val sec = secs(nesting.level)
+    val sec = secs.lift(nesting.level).getOrElse("paragraph")
     if (numbered) sec else sec + "*"
   }
-  def inlineValuesToHTML(inners: Seq[Inline]): String = inners.map {
+  def inlineValuesToTex(inners: Seq[Inline]): String = inners.map {
     case InlineText(str) => latexencode(str)
     case Macro(Quote(q), inner2) =>
       val inner = latexencode(inner2.target)
@@ -157,7 +154,7 @@ class SastToTexConverter(documents: DocumentManager,
     case Macro(Comment, attributes) => ""
     case Macro(Other("ref"), attributes) => s"\\ref{${latexencode(attributes.target)}}"
     case Macro(Cite, attributes) =>
-      s"\\cite{${latexencode(attributes.target)}}"
+      s"\\cite{${attributes.target}}"
     case Macro(Link, attributes) =>
       val target = attributes.target
       if (attributes.positional.size > 1) {
@@ -168,6 +165,7 @@ class SastToTexConverter(documents: DocumentManager,
     case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
+    case Macro(Other("label"), attributes) => List(s"\\label{${attributes.target}}")
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.all.mkString(",")}]"

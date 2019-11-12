@@ -16,7 +16,7 @@ object Parse {
       case Success(value, index) => value.asRight
       case f: Failure            =>
         val traced = f.trace()
-        scribe.error(s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(0,80)}...")
+        scribe.error(s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(0,math.min(80, content.length))}...")
         ParsingAnnotation(content, traced).asLeft
     }
   }

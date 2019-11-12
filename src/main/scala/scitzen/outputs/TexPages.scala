@@ -62,6 +62,7 @@ object TexPages {
   }
 
   def memoirPackages: List[String] = {
+    List("\\PassOptionsToPackage{hyphens}{url}") ++
     usePackages("{microtype}", "{graphicx}", "[colorlinks]{hyperref}", "{verbatim}") ++
     List("\\nouppercaseheads")
   }
