@@ -3,7 +3,6 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.MacroCommand.Def
 
 object AttributesParser {
   val  open = "["
