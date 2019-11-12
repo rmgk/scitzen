@@ -17,11 +17,11 @@ object SastAnalyzes {
   }
 }
 
-class SastAnalyzes(sdoc: Sdoc) {
+class SastAnalyzes(macroReporter: Reporter) {
   import scitzen.generic.SastAnalyzes._
 
 
-  def analyze(): AnalyzeResult = {
+  def analyze(sdoc: Sdoc): AnalyzeResult = {
     val input: Seq[TLBlock] = sdoc.blocks
     val AnalyzeResult(a, m, t, b) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
     AnalyzeResult(a.reverse, m.reverse, t.reverse, b.reverse)
@@ -53,7 +53,7 @@ class SastAnalyzes(sdoc: Sdoc) {
     case MacroBlock(imacro)      =>
       val iacc =
         if (imacro.command == Label) {
-          if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}")
+          if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}" + macroReporter(imacro))
           acc + Target(imacro.attributes.target,
                        scope.get.resolution)
         }

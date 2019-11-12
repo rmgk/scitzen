@@ -7,7 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, Sdoc}
+import scitzen.generic.{GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, SastAnalyzes, Sdoc}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.parser.MacroCommand.Cite
 
@@ -105,15 +105,15 @@ object ConvertHtml {
         List(ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format) } ))
       }
 
-      val converter = new SastToHtmlConverter(scalatags.Text,
-                                              dm,
-                                              imageResolver,
-                                              biblio,
-                                              doc.sdoc,
-                                              doc.file,
-                                              katexMap,
-                                              sync,
-                                              project)
+      val converter = new SastToHtmlConverter(bundle = scalatags.Text,
+                                              documentManager = dm,
+                                              imageResolver = imageResolver,
+                                              bibliography = biblio,
+                                              sdoc = doc.sdoc,
+                                              document = Some(doc),
+                                              katexMap = katexMap,
+                                              sync = sync,
+                                              project = project)
       val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
       val cssrelpath = postoutputdir.relativize(cssfile).toString
       val res = HtmlPages(cssrelpath).wrapContentHtml(converter.convert() ++ citations,
@@ -140,16 +140,16 @@ object ConvertHtml {
         imageResolver.copyToTarget(postoutput)
         dm.documents.foreach {convertDoc(_, postoutput)}
 
-        val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp))
-        val converter = new SastToHtmlConverter(scalatags.Text,
-                                                dm,
-                                                imageResolver,
-                                                Map(),
-                                                sdoc,
-                                                project.root,
-                                                katexMap,
-                                                None,
-                                                project)
+        val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp), new SastAnalyzes(m => ""))
+        val converter = new SastToHtmlConverter(bundle = scalatags.Text,
+                                                documentManager = dm,
+                                                imageResolver = imageResolver,
+                                                bibliography = Map(),
+                                                sdoc = sdoc,
+                                                document = None,
+                                                katexMap = katexMap,
+                                                sync = None,
+                                                project = project)
         val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
 
         val res = HtmlPages(project.outputdir.relativize(cssfile).toString)

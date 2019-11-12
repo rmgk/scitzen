@@ -10,7 +10,7 @@ import scitzen.extern.Hashes
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, ParsedDocument, Project, Sast, Sdoc}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
-import scitzen.parser.{Attributes, Inline, InlineText, Macro, Prov, ScitzenDateTime}
+import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
 
@@ -43,7 +43,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                                                            imageResolver: ImageResolver,
                                                            bibliography: Map[String, String],
                                                            sdoc: Sdoc,
-                                                           ownpath: File,
+                                                           document: Option[ParsedDocument],
                                                            katexMap: mutable.Map[String, String],
                                                            sync: Option[(File, Int)],
                                                            project: Project) {
@@ -53,9 +53,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
   val root = project.root
 
-  val syncPos = {
-    if (sync.exists(_._1 == ownpath)) sync.get._2 else Int.MaxValue
-  }
+  val syncPos =
+    document.filter(doc => sync.exists(_._1 == doc.file))
+    .fold(Int.MaxValue){_ => sync.get._2}
 
   def convert() = cBlocks(sdoc.blocks)
 
@@ -160,7 +160,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           ImportPreproc.macroImportPreproc(documentManager.find(root, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToHtmlConverter(bundle, documentManager, imageResolver,
-                                      bibliography, doc.sdoc, doc.file, katexMap, sync, project)
+                                      bibliography, doc.sdoc, Some(doc), katexMap, sync, project)
               .cBlocks(sast)(new Scope(3))
             case None => Nil
           }
@@ -233,10 +233,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
               frag()
           }
         }
-      case Macro(Cite, attributes) =>
+      case mcro@Macro(Cite, attributes) =>
         val anchors = attributes.positional.flatMap{_.split(",")}.map{ bibid =>
           bibid -> bibliography.getOrElse(bibid.trim, {
-            scribe.error(s"bib key not found: $bibid " + positionString(attributes.prov))
+            scribe.error(s"bib key not found: $bibid " + reportPos(mcro))
             bibid
           })
         }.sortBy(_._2).map{case (bibid, bib) => a(href := s"#$bibid", bib)}
@@ -256,16 +256,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
   }
 
+  def reportPos(m: Macro): String = document.fold("")(_.reporter(m))
+
   def unknownMacroOutput(im: Macro): Tag = {
     val str = SastToScimConverter().macroToScim(im)
-    scribe.warn(s"unknown macro “$str” " + positionString(im.attributes.prov))
+    scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)
-  }
-
-  def positionString(prov: Prov) = {
-    val pos = documentManager.byPath(ownpath).indexToPosition(prov.start)
-    s"(at »${File.currentWorkingDirectory.relativize(ownpath)}:" +
-    s"${pos._1}:${pos._2}«)"
   }
 
   def linkTo(attributes: Attributes, linktarget: String) = {

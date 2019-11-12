@@ -1,17 +1,17 @@
 package scitzen.generic
 
 import better.files.File
+import cats.implicits._
 import scitzen.generic.Sast.{Section, TLBlock}
 import scitzen.generic.SastAnalyzes.AnalyzeResult
-import scitzen.outputs.{SastToScimConverter, SastToTextConverter}
+import scitzen.outputs.SastToTextConverter
 import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
-import cats.implicits._
 
 import scala.util.control.NonFatal
 
-case class Sdoc(blocks: Seq[TLBlock]) {
+case class Sdoc(blocks: Seq[TLBlock], analyzes: SastAnalyzes) {
 
-  lazy val analyzeResult: AnalyzeResult = new SastAnalyzes(this).analyze()
+  lazy val analyzeResult: AnalyzeResult = analyzes.analyze(this)
 
   lazy val named: Map[String, String] = Attributes.l(analyzeResult.attributes, Prov()).named
 
@@ -41,8 +41,29 @@ case class Sdoc(blocks: Seq[TLBlock]) {
 
 }
 
-final case class ParsedDocument(file: File, content: String, sdoc: Sdoc) {
+final case class ParsedDocument(file: File, content: String, sdoc: Sdoc, reporter: Reporter)
 
+object ParsedDocument {
+  def apply(file: File): ParsedDocument = {
+    val content = file.contentAsString
+    try {
+      val sast = SastConverter().documentString(content, Prov(0, content.length))
+      val reporter = new FileReporter(file, content)
+      val sdoc = Sdoc(sast, new SastAnalyzes(reporter))
+      ParsedDocument(file, content, sdoc, reporter)
+    } catch {
+      case NonFatal(e) =>
+        scribe.error(s"error while parsing $file")
+        throw e
+    }
+  }
+}
+
+trait Reporter {
+  def apply(im: Macro): String
+}
+
+final class FileReporter(file: File, content: String) extends Reporter {
   lazy val newLines: Seq[Int] = {
     def findNL(idx: Int, found: List[Int]): Array[Int] = {
       val res = content.indexOf('\n', idx + 1)
@@ -58,31 +79,10 @@ final case class ParsedDocument(file: File, content: String, sdoc: Sdoc) {
     (ip + 1, idx - offset)
   }
 
-  def unknownMacroOutput(im: Macro): String = {
-    val str = SastToScimConverter().macroToScim(im)
-    scribe.warn(s"unknown macro “$str” " + positionString(im.attributes.prov))
-    str
-  }
-
-  def positionString(prov: Prov): String = {
+  override def apply(im: Macro): String = {
+    val prov = im.attributes.prov
     val pos = indexToPosition(prov.start)
-    s"(at »${File.currentWorkingDirectory.relativize(file)}:" +
-    s"${pos._1}:${pos._2}«)"
-  }
-
-}
-
-object ParsedDocument {
-  def apply(file: File): ParsedDocument = {
-    val content = file.contentAsString
-    try {
-      val sast = SastConverter().documentString(content, Prov(0, content.length))
-      val sdoc = Sdoc(sast)
-      ParsedDocument(file, content, sdoc)
-    } catch {
-      case NonFatal(e) =>
-        scribe.error(s"error while parsing $file")
-        throw e
-    }
+    s" at »${File.currentWorkingDirectory.relativize(file)}:" +
+    s"${pos._1}:${pos._2}«"
   }
 }
