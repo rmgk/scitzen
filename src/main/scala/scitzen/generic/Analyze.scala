@@ -55,7 +55,7 @@ class SastAnalyzes(macroReporter: Reporter) {
         if (imacro.command == Label) {
           if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}" + macroReporter(imacro))
           acc + Target(imacro.attributes.target,
-                       scope.get.resolution)
+                       scope.fold(input)(_.resolution))
         }
         else acc
       iacc + imacro
