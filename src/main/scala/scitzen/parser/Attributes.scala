@@ -33,18 +33,3 @@ object AttributesParser {
   }
 
 }
-
-object AttributeBlockParser {
-  def itemMarker[_: P]: P[String] = P(":" ~ ("!".? ~ identifier.! ~ "!".?).! ~ ":")
-  def content[_: P]: P[String] = P((spaceLine ~ DelimitedBlockParsers.whitespaceLiteral).map(_.content) |
-                                   eol.map(_ => "") |
-                                   ((anySpaces ~ untilE(eol, min = 0)).! ~ eol))
-  def entry[_: P]: P[Macro] = P(withProv(itemMarker ~/ content)
-                                .map { case ((id, v), p) =>
-                                  Macro(Def, Attributes.a(Attribute(id, v.trim), p))
-                                })
-  def list[_: P]: P[Macro] = P(withProv(entry.rep(sep = anySpaces, min = 1))
-                               .map { case (sm, p) =>
-                                 Macro(Def, Attributes.l(sm.flatMap(_.attributes.all), p))
-                               })
-}

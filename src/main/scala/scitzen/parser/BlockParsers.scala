@@ -32,7 +32,6 @@ object BlockParsers {
                                                      .map(WhitespaceBlock.apply)
 
   def alternatives[_: P]: P[BlockContent] = P(extendedWhitespace |
-                                              AttributeBlockParser.list |
                                               horizontalRule |
                                               ListParsers.list |
                                               DelimitedBlockParsers.full |
