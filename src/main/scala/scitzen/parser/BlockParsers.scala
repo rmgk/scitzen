@@ -21,7 +21,7 @@ object BlockParsers {
   def horizontalRuleChars[_: P] = P(AnyChar("'\\-*"))
   def horizontalRule[_: P]: P[Macro] = P(Index ~ (verticalSpaces ~ horizontalRuleChars.!.flatMap { chr =>
     (verticalSpace ~ chr).rep(2) ~ spaceLine
-  }).! ~ Index).map{case (s, text, e) => Macro(Other("horizontal-rule"), Attributes(List(List(Attribute("", text.dropRight(1)))), Prov(s, e)))}
+  }).! ~ Index).map{case (s, text, e) => Macro(Other("horizontal-rule"), Attributes.a(Attribute("", text.dropRight(1)), Prov(s, e)))}
 
   def whitespaceBlock[_:P]: P[String] = P(significantSpaceLine.rep(1).!)
   def commentBlock[_:P]: P[String] =
@@ -39,7 +39,7 @@ object BlockParsers {
                                               MacroParsers.full ~ spaceLine |
                                               paragraph)
 
-  def fullBlock[_: P]: P[Block] = P(withProv(AttributesParser.line.rep ~ alternatives)).map {
-    case ((attrs, content), prov) => Block(attrs, prov, content)
+  def fullBlock[_: P]: P[Block] = P(withProv(AttributesParser.line.? ~ alternatives)).map {
+    case ((attrs, content), prov) => Block(attrs.getOrElse(Nil), prov, content)
   }
 }

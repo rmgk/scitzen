@@ -37,7 +37,7 @@ case class SastToScimConverter() {
 
   def toScim(blocks: Seq[TLBlock])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     blocks.flatMap { bwa =>
-      bwa.attr.raw.map(attributesToScim(_)) ++ toScimS(List(bwa.content))
+      attributesToScim(bwa.attr.raw) +: toScimS(List(bwa.content))
     }
   }
 
