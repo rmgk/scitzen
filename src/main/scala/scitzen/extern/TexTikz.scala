@@ -4,8 +4,6 @@ import java.nio.charset.StandardCharsets
 
 import better.files.File
 
-import scala.sys.process.Process
-
 
 object TexTikz {
 
@@ -26,15 +24,18 @@ object TexTikz {
 
   def latexmk(outputdir: File, jobname: String, sourceFile: File): File = {
     val start = System.nanoTime()
-    Process(List("latexmk",
-                 "-cd",
-                 "-f",
-                 "-xelatex",
-                 "-interaction=nonstopmode",
-                 //"-synctex=1",
-                 "--output-directory=" + outputdir,
-                 "--jobname=" + jobname,
-                 sourceFile.pathAsString)).!
+    outputdir.createDirectories()
+    new ProcessBuilder("latexmk",
+                       "-cd",
+                       "-f",
+                       "-xelatex",
+                       "-interaction=nonstopmode",
+                       //"-synctex=1",
+                       "--output-directory=" + outputdir,
+                       "--jobname=" + jobname,
+                       sourceFile.pathAsString).inheritIO()
+                                               .redirectOutput((outputdir / "latexmk.out").toJava)
+                                               .start().waitFor()
     scribe.info(s"tex compilation finished in ${(System.nanoTime() - start)/1000000}ms")
     outputdir / (jobname + ".pdf")
   }
