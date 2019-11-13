@@ -14,7 +14,7 @@ object Scitzen extends CommandApp(
                                             minimumLevel = Some(scribe.Level.Info)).replace()
 
     Opts.subcommand(ConvertHtml.command)
-    Opts.subcommand(ConvertPdf.command)
+    .orElse(Opts.subcommand(ConvertPdf.command))
     .orElse(Opts.subcommand(JsonSast.command))
     .orElse(Opts.subcommand(Format.command))
   }

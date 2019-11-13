@@ -16,7 +16,7 @@ object ConvertPdf {
 
 
   val command: Command[Unit] = Command(name = "pdf",
-                                          header = "Convert Scim to HTML.") {
+                                       header = "Convert Scim to PDF.") {
     optSource.map { sourcedirRel =>
       //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
       Project.fromSource(File(sourcedirRel)).foreach { project =>
