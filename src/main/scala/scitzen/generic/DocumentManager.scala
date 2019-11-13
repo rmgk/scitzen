@@ -32,15 +32,18 @@ object DocumentManager {
   @scala.annotation.tailrec
   def resolveIncludes(documentManager: DocumentManager): DocumentManager = {
     val includes = (for {
-      docs <- documentManager.documents
-      macrs <- docs.sdoc.analyzeResult.macros
-      if macrs.command == Include
-      file = docs.file.parent / macrs.attributes.target
-      if !documentManager.byPath.contains(file)
+      doc <- documentManager.documents
+      mcro <- doc.sdoc.analyzeResult.macros
+      if mcro.command == Include
+      file = doc.file.parent / mcro.attributes.target
+      exists = if (file.isRegularFile) true else {
+        scribe.warn(s"Included file »${File.currentWorkingDirectory.relativize(file)}« does not exist" + doc.reporter(mcro))
+        false
+      }
+      if exists & !documentManager.byPath.contains(file)
     } yield file).toSet
     if (includes.isEmpty) documentManager
     else {
-      scribe.info(s"found includes: $includes")
       val newPF = includes.iterator.map(ParsedDocument.apply) ++: documentManager.documents
       resolveIncludes(new DocumentManager(newPF))
     }
