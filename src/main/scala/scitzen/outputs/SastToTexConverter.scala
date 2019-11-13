@@ -3,7 +3,7 @@ package scitzen.outputs
 import better.files.File
 import scitzen.generic.Sast._
 import scitzen.generic.{DocumentManager, ImageResolver, Sast}
-import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Label, Link, Other, Quote, Ref}
+import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
 class Scope(val level: Int) extends AnyVal {
@@ -140,6 +140,7 @@ class SastToTexConverter(documents: DocumentManager,
   }
   def inlineValuesToTex(inners: Seq[Inline]): String = inners.map[String, Seq[String]] {
     case InlineText(str) => latexencode(str)
+    case Macro(Def, _) => ""
     case Macro(Quote(q), inner2) =>
       val inner = latexencode(inner2.target)
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
@@ -166,6 +167,8 @@ class SastToTexConverter(documents: DocumentManager,
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
     case Macro(Label, attributes)             => s"\\label{${attributes.target}}"
+    case Macro(Other("tableofcontents"), attributes) =>
+      List("\\clearpage", "\\tableofcontents*", "\\clearpage").mkString("\n")
     case im @ Macro(command, attributes)      =>
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.all.mkString(",")}]"

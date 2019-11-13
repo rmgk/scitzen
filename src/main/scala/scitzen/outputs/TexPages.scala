@@ -99,7 +99,8 @@ object TexPages {
           ) ++ authorstrings ++ content ++ importBibACM :+
            s"\\end{document}"
       case _ =>
-        (memoirHeader +: sloppyStuff +: (xelatexPackages ++ memoirPackages) :+ s"\\begin{document}" :+ "\\sloppy") ++
+        (memoirHeader /*+: sloppyStuff*/ +: (xelatexPackages ++ memoirPackages) :+
+         s"\\begin{document}" /*:+ "\\sloppy"*/) ++
         content ++ importBibNatbib :+ s"\\end{document}"
 
     }).mkString("\n")
