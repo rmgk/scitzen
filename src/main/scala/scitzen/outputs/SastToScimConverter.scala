@@ -22,7 +22,7 @@ case class SastToScimConverter() {
     }
   }
 
-  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean): Seq[String] = {
+  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): Seq[String] = {
     if (!force && attributes.isEmpty) return Nil
     val keylen = (0 +: attributes.map(_.id.length)).max
     val pairs = attributes.map {
@@ -32,16 +32,21 @@ case class SastToScimConverter() {
         if (spacy) s"""$k $spaces= ${encodeValue(v)}"""
         else s"""$k=${encodeValue(v)}"""
     }
-    if (!(spacy && attributes.size > 1)) List(pairs.mkString("[", "; ", "]"))
-    else List(pairs.mkString("[\n\t", "\n\t", "\n]"))
+
+    if (!(spacy && attributes.size > 1)) List(
+      if (light) pairs.mkString("; ")
+      else pairs.mkString("[", "; ", "]"))
+    else List(
+      if (light) pairs.mkString("", "\n", "\n\n")
+      else pairs.mkString("[\n\t", "\n\t", "\n]"))
   }
 
   def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     b.flatMap[String, Seq[String]] {
 
       case Section(title, sc, attributes) =>
-        attributesToScim(attributes.raw, spacy = false, force = false) ++ (
         ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
+         (attributesToScim(attributes.raw, spacy = true, force = false, light = true) ++
         toScimS(sc)(nestingLevel.inc))
 
       case Slist(children) => children.flatMap {
