@@ -34,10 +34,10 @@ case class SastToScimConverter() {
     }
 
     if (!(spacy && attributes.size > 1)) List(
-      if (light) pairs.mkString("; ")
+      if (light) pairs.mkString("", "; ", "\n")
       else pairs.mkString("[", "; ", "]"))
     else List(
-      if (light) pairs.mkString("", "\n", "\n\n")
+      if (light) pairs.mkString("", "\n", "\n")
       else pairs.mkString("[\n\t", "\n\t", "\n]"))
   }
 
