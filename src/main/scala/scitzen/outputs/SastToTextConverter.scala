@@ -8,39 +8,39 @@ import scitzen.parser.{Inline, InlineText, Macro}
 
 object SastToTextConverter {
 
-  def convert(b: Seq[TLBlock]): Seq[String] = {
-    convertSast(b.map(_.content))
+  def convert(b: Seq[Sast]): Seq[String] = {
+    convertSast(b)
   }
 
   def convertSast(b: Seq[Sast]): Seq[String] = {
     b.flatMap[String, Seq[String]] {
 
-      case Section(title, sc) =>
+      case Section(title, sc, _) =>
         convertInline(title.inline) +:
         convert(sc)
 
       case Slist(children) => children.flatMap {
-        case SlistItem(marker, Seq(Paragraph(Text(inl)))) =>
+        case SlistItem(marker, Seq(TLBlock(_, Paragraph(Text(inl))))) =>
           List(convertInline(inl))
-        case SlistItem(marker, inner) =>
+        case SlistItem(marker, inner)                                 =>
           convertSast(inner)
       }
 
-      case MacroBlock(mcro) => Nil
+      case MacroBlock(_) => Nil
 
-      case Paragraph(content) => List(convertInline(content.inline))
+      case TLBlock(_, Paragraph(content)) => List(convertInline(content.inline))
 
 
-      case ParsedBlock(_, blockContent) => convert(blockContent)
+      case TLBlock(_, ParsedBlock(_, blockContent)) => convert(blockContent)
 
-      case RawBlock(_, text) => List(text)
+      case TLBlock(_, RawBlock(_, text)) => List(text)
     }
   }
 
 
   def convertInline(inners: Seq[Inline]): String = inners.map {
-    case InlineText(str)        => str
+    case InlineText(str)         => str
     case Macro(Quote(q), inner2) => inner2.target
-    case m: Macro               => ""
+    case m: Macro                => ""
   }.mkString("")
 }

@@ -10,7 +10,7 @@ import scitzen.parser.{Attribute, Attributes, DateParsingHelper, Macro, Prov, Sc
 
 import scala.util.control.NonFatal
 
-case class Sdoc(blocks: Seq[TLBlock], analyzes: SastAnalyzes) {
+case class Sdoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
 
   lazy val analyzeResult: AnalyzeResult = analyzes.analyze(this)
 

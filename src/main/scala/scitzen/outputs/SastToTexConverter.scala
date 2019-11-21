@@ -19,12 +19,12 @@ class SastToTexConverter(documents: DocumentManager,
                          imageResolver: ImageResolver,
                         ) {
 
-  def convert(mainSast: List[TLBlock]): Seq[String] = mainSast match {
-    case List(TLBlock(_, Section(title, content))) =>
+  def convert(mainSast: List[Sast]): Seq[String] = mainSast match {
+    case List(Section(title, content, _)) =>
       val secChildren = content.collect { case TLBlock(_, s: Section) => s }
       s"\\title{${inlineValuesToTex(title.inline)}}\\maketitle{}" +:
-      (putAbstract(content.map(_.content)) ++ sastToTex(secChildren)(scope = new Scope(2)))
-    case list                                         => cBlocks(list)(scope = new Scope(1))
+      (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(2)))
+    case list                                         => sastToTex(list)(scope = new Scope(1))
   }
 
   def latexencode(input: String): String = {
@@ -46,22 +46,19 @@ class SastToTexConverter(documents: DocumentManager,
       "\\end{abstract}"
   }
 
-  def cBlocks(b: Seq[TLBlock])(implicit scope: Scope): Seq[String] = {
-    b.flatMap { bwa: TLBlock =>
-      val positiontype = bwa.attr.positional.headOption
-      positiontype match {
-        case _ => sastToTex(List(bwa.content))
-      }
-    }
+  def cBlocks(bs: Seq[TLBlock])(implicit scope: Scope): Seq[String] = {
+    bs.flatMap {b =>  sblockToTex(b.content)}
   }
 
   def sastToTex(b: Seq[Sast])(implicit scope: Scope): Seq[String] = {
     b.flatMap {
 
-      case Section(title, contents) =>
+      case tlBlock: TLBlock => sblockToTex(tlBlock.content)
+
+      case Section(title, contents, _) =>
         val sec = sectioning(scope)
         s"\\$sec{${inlineValuesToTex(title.inline)}}" +:
-        cBlocks(contents)(scope.inc)
+        sastToTex(contents)(scope.inc)
 
       case Slist(children) =>
         children match {
@@ -94,25 +91,29 @@ class SastToTexConverter(documents: DocumentManager,
           ImportPreproc.macroImportPreproc(documents.find(root, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToTexConverter(documents, doc.file.parent, numbered, imageResolver)
-              .cBlocks(sast)(new Scope(3))
+              .sastToTex(sast)(new Scope(3))
             case None => Nil
           }
         case other                        =>
           List(inlineValuesToTex(List(other)))
       }
+    }
+  }
 
+
+  def sblockToTex(b: SBlockType)(implicit scope: Scope): Seq[String] = b match {
       case Paragraph(content) => List(inlineValuesToTex(content.inline)) :+ ""
 
 
       case ParsedBlock(delimiter, blockContent) =>
         delimiter.charAt(0) match {
-          case '=' => cBlocks(blockContent)
+          case '=' => sastToTex(blockContent)
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case ' ' => cBlocks(blockContent)
+          case ' ' => sastToTex(blockContent)
           // there is also '=' example, and '+' passthrough.
           // examples seems rather specific, and passthrough is not implemented.
-          case _   => cBlocks(blockContent)
+          case _   => sastToTex(blockContent)
         }
 
       case RawBlock(delimiter, text) =>
@@ -131,7 +132,6 @@ class SastToTexConverter(documents: DocumentManager,
 
 
     }
-  }
 
   val sectioning:  Scope => String = nesting => {
     val secs = Array("book", "part", "chapter", "section", "subsection", "paragraph")

@@ -17,7 +17,7 @@ import scala.collection.mutable
 
 object ImportPreproc {
   def macroImportPreproc(docOpt: Option[ParsedDocument], attributes: Attributes)
-  : Option[(ParsedDocument, Seq[TLBlock])] = {
+  : Option[(ParsedDocument, Seq[Sast])] = {
     val res = docOpt match {
       case None      =>
         scribe.warn(s"include unknown document ${attributes.target} omitting")
@@ -26,9 +26,8 @@ object ImportPreproc {
         val sast = if (attributes.named.get("format").contains("article")) {
           val date = doc.sdoc.date.fold("")(d => d.date.full + " ")
           val head = doc.sdoc.blocks.head
-          val section = head.content.asInstanceOf[Section]
-          val sast = head.copy(
-            content = section.copy(title = Text(InlineText(date) +: section.title.inline)))
+          val section = head.asInstanceOf[Section]
+          val sast = section.copy(title = Text(InlineText(date) +: section.title.inline))
           List(sast)
         } else doc.sdoc.blocks
         Some(doc -> sast)
@@ -60,7 +59,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
   def convert() = cBlocks(sdoc.blocks)
 
 
-  def listItemToHtml(child: SlistItem)(implicit nestingLevel: Scope) = {
+  def listItemToHtml(child: SlistItem)(implicit nestingLevel: Scope): Seq[Frag] = {
       sastToHtml(child.content)
   }
 
@@ -82,8 +81,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       )
   }
 
-  def cBlocks(blocks: Seq[TLBlock])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
-    blocks.flatMap { bwa: TLBlock =>
+  def cBlocks(blocks: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = sastToHtml(blocks)
+
+  def tlBlockToHtml(bwa: TLBlock)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
       val positiontype = bwa.attr.positional.headOption
       positiontype match {
         case Some("image") =>
@@ -91,7 +91,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
           val path = imageResolver.image(hash)
           List(img(src := path))
         case Some("quote") =>
-          val innerHtml = sastToHtml(List(bwa.content))
+          val innerHtml = sblockToHtml(bwa.content)
           // for blockquote layout, see example 12 (the twitter quote)
           // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
           val bq = blockquote(innerHtml)
@@ -101,19 +101,21 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
                else bq)
         case _             =>
           val prov = bwa.attr.prov
-          val html = sastToHtml(List(bwa.content))
+          val html = sblockToHtml(bwa.content)
           if (prov.start <= syncPos && syncPos <= prov.end) {
             scribe.info(s"highlighting $syncPos: $prov")
             div(id := "highlight") :: html.toList
           } else html
       }
-    }
   }
 
-  def sastToHtml(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
-    b.flatMap[Frag, Seq[Frag]] {
+  def sastToHtml(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag]  = b.flatMap(sastToHtmlI(_))
+  def sastToHtmlI(b: Sast)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
+    b match {
 
-      case sec@Section(title, subsections) =>
+      case tlblock: TLBlock => tlBlockToHtml(tlblock)
+
+      case sec@Section(title, subsections, _) =>
         val inner = (if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
                      cBlocks(subsections)(nestingLevel.inc)
         tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)) +:
@@ -167,7 +169,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
         case other=>
           inlineValuesToHTML(List(other))
+        }
       }
+    }
+
+    def sblockToHtml(sblockType: SBlockType)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = sblockType match {
 
       case Paragraph(text) => List(p(inlineValuesToHTML(text.inline)))
 
@@ -202,7 +208,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             List(pre(code(text)))
         }
     }
-  }
 
 
   def inlineValuesToHTML(inlines: Seq[Inline]): Seq[Frag] =
@@ -225,7 +230,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
       case Macro(Other("ref"), attributes) =>
         sdoc.targets.find(_.id == attributes.positional.head).map { target =>
           target.resolution match {
-            case Section(title, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
+            case Section(title, _, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
             case other =>
               scribe.error(s"can not refer to $other")
               frag()

@@ -6,8 +6,7 @@ import java.nio.file.Path
 import better.files.File
 import cats.data.NonEmptyList
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.Sast.TLBlock
-import scitzen.generic.{DocumentDiscovery, ParsedDocument, Sdoc}
+import scitzen.generic.{DocumentDiscovery, ParsedDocument, Sast, Sdoc}
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.DateParsingHelper
 import scitzen.parser.MacroCommand.Image
@@ -53,8 +52,8 @@ object Format {
     }
   }
 
-  def formatContent(file: File, originalContent: String, sast: Seq[TLBlock]): Unit = {
-    val result = SastToScimConverter().toScim(sast)
+  def formatContent(file: File, originalContent: String, sast: Seq[Sast]): Unit = {
+    val result = SastToScimConverter().toScimS(sast)
     val resultStr = result.mkString("", "\n", "\n")
     if (resultStr != originalContent) {
       scribe.info(s"formatting ${file.name}")

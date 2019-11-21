@@ -1,21 +1,21 @@
 package scitzen.generic
 
-import scitzen.generic.Sast.{MacroBlock, Section, TLBlock, Text}
+import scitzen.generic.Sast.{MacroBlock, Section, Text}
 import scitzen.parser.MacroCommand.Include
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
 object GenIndexPage {
 
 
-  def makeIndex(dm: DocumentManager, reverse: Boolean = false, nlp: Option[NLP] = None): List[TLBlock] = {
+  def makeIndex(dm: DocumentManager, reverse: Boolean = false, nlp: Option[NLP] = None): List[Section] = {
     def ordering[T: Ordering]:Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
     def sectionBy(pdocs: List[ParsedDocument])
                  (f: ParsedDocument => String)
-                 (cont: List[ParsedDocument] => List[TLBlock]) = {
+                 (cont: List[ParsedDocument] => List[Sast]) = {
       val years = pdocs.groupBy(f)
       years.toList.sortBy(_._1)(ordering).map { case (year, docs) =>
-        TLBlock.synt(Section(Text(List(InlineText(year))), cont(docs)))
+        Section(Text(List(InlineText(year))), cont(docs), Attributes.synt())
       }
     }
 
@@ -39,7 +39,6 @@ object GenIndexPage {
                //    case (word, prob) => InlineText(s"$word ")
                //  })))
                )
-          .map(TLBlock.synt)
         }
       }
     }

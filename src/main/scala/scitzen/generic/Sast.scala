@@ -18,15 +18,13 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, content: Seq[TLBlock]) extends Sast
+  case class Section(title: Text, content: Seq[Sast], attributes: Attributes) extends Sast
   case class MacroBlock(call: Macro) extends Sast
-  case class Paragraph(content: Text) extends Sast
-  case class RawBlock(delimiter: String, content: String) extends Sast
-  case class ParsedBlock(delimiter: String, content: Seq[TLBlock]) extends Sast
-  case class TLBlock(attr: Attributes, content: Sast)
-  object TLBlock{
-    def synt(content: Sast) = TLBlock(Attributes(Nil, Prov()), content)
-  }
+  sealed trait SBlockType
+  case class Paragraph(content: Text) extends SBlockType
+  case class RawBlock(delimiter: String, content: String) extends SBlockType
+  case class ParsedBlock(delimiter: String, content: Seq[Sast]) extends SBlockType
+  case class TLBlock(attr: Attributes, content: SBlockType) extends Sast
 }
 
 
@@ -51,7 +49,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
   private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
     val listItems = split.map { case (item, children) =>
-      val itemSast = blockContent(item.content, Prov())
+      val itemSast = blockContent(item.content, Prov(), Attributes.synt())
       val childSasts = if (children.isEmpty) Nil else List(listtoSast(children))
       SlistItem(item.marker, itemSast +: childSasts)
     }
@@ -64,7 +62,7 @@ final case class SastConverter() {
   private val ListConverter = new ListConverter(this)
 
   @scala.annotation.tailrec
-  def sectionize(blocks: Seq[Block], accumulator: List[TLBlock]): Seq[TLBlock] = {
+  def sectionize(blocks: Seq[Block], accumulator: List[Sast]): Seq[Sast] = {
     blocks.toList match {
       case Nil => accumulator.reverse
       case section :: rest =>
@@ -76,20 +74,19 @@ final case class SastConverter() {
             case _                    => true
           }
         }
-        sectionize(next, TLBlock(section.attributes,
-                                 Section(title, blockSequence(inner))) :: accumulator)
+        sectionize(next, Section(title, blockSequence(inner), section.attributes) :: accumulator)
     }
   }
 
 
 
-  def blockSequence(blocks: Seq[Block]): Seq[TLBlock] = {
+  def blockSequence(blocks: Seq[Block]): Seq[Sast] = {
     val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
     abstkt.map(block) ++ sectionize(sections, Nil)
   }
 
 
-  def blockContent(block: BlockContent, prov: Prov): Sast = {
+  def blockContent(block: BlockContent, prov: Prov, attributes: Attributes): Sast = {
     block match {
 
       case SectionTitle(level, title) =>
@@ -99,9 +96,9 @@ final case class SastConverter() {
 
       case m: Macro => MacroBlock(m)
 
-      case WhitespaceBlock(space) => RawBlock("comment|space", space)
+      case WhitespaceBlock(space) => TLBlock(attributes, RawBlock("comment|space", space))
 
-      case NormalBlock(delimiter, text, cprov) =>
+      case NormalBlock(delimiter, text, cprov) => TLBlock(attributes,
         if (delimiter == "") Paragraph(inlineString(text, cprov))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)
@@ -109,18 +106,15 @@ final case class SastConverter() {
           case other     =>
             scribe.warn(s"mismatched block $delimiter: $text")
             RawBlock(delimiter, text)
-        }
+        })
 
     }
   }
 
-  def block(bwa: Block): TLBlock = {
-    val inner = blockContent(bwa.content, bwa.prov)
-    TLBlock(bwa.attributes, inner)
-  }
+  def block(bwa: Block): Sast = blockContent(bwa.content, bwa.prov, bwa.attributes)
 
 
-  def documentString(blockContent: String, prov: Prov): Seq[TLBlock] = {
+  def documentString(blockContent: String, prov: Prov): Seq[Sast] = {
     blockSequence(Parse.document(blockContent, prov).right.get)
   }
 

@@ -6,8 +6,8 @@ import scalatags.Text.all._
 
 object HtmlToc {
 
-  def tableOfContents(document: Seq[TLBlock], tocDepth: Int): Option[Frag] = {
-    tableOfContentsS(document.map(_.content), tocDepth)
+  def tableOfContents(document: Seq[Sast], tocDepth: Int): Option[Frag] = {
+    tableOfContentsS(document, tocDepth)
   }
 
 
@@ -15,8 +15,7 @@ object HtmlToc {
     def findSections(cont: Seq[Sast]): Seq[Section] = {
       cont.flatMap {
         case s: Section              => List(s)
-        case tlb: TLBlock     => findSections(List(tlb.content))
-        case ParsedBlock(_, content) => findSections(content.map(_.content))
+        case TLBlock(_, ParsedBlock(_, content)) => findSections(content)
         case _                       => Nil
       }
     }
@@ -26,8 +25,8 @@ object HtmlToc {
         case Nil      => None
         case sections =>
           Some(ol(sections.map {
-            case Section(title, inner) =>
-              val sub = if (depth > 1) makeToc(inner.map(_.content), depth - 1) else None
+            case Section(title, inner, _) =>
+              val sub = if (depth > 1) makeToc(inner, depth - 1) else None
               li(a(href := s"#${title.str}", title.str))(sub)
           }))
       }
@@ -35,7 +34,7 @@ object HtmlToc {
 
 
     document match {
-      case Seq(Section(_, secCon)) => makeToc(secCon.map(_.content), tocDepth)
+      case Seq(Section(_, secCon, _)) => makeToc(secCon, tocDepth)
       case other                   => makeToc(other, tocDepth)
     }
   }

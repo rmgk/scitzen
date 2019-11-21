@@ -36,21 +36,16 @@ case class SastToScimConverter() {
     else List(pairs.mkString("{\n\t", "\n\t", "\n}"))
   }
 
-  def toScim(blocks: Seq[TLBlock])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
-    blocks.flatMap { bwa =>
-      attributesToScim(bwa.attr.raw) ++ toScimS(List(bwa.content))
-    }
-  }
-
-    def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
+  def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
     b.flatMap[String, Seq[String]] {
 
-      case Section(title, sc) =>
+      case Section(title, sc, attributes) =>
+        attributesToScim(attributes.raw) ++ (
         ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
-        toScim(sc)(nestingLevel.inc)
+        toScimS(sc)(nestingLevel.inc))
 
       case Slist(children) => children.flatMap {
-        case SlistItem(marker, Paragraph(Text(inl)) :: rest) =>
+        case SlistItem(marker, TLBlock(_, Paragraph(Text(inl))) :: rest) =>
           (s"$marker" + inlineToScim(inl)) +: toScimS(rest)
         case SlistItem(marker, inner) =>
           marker +: toScimS(inner)
@@ -59,14 +54,22 @@ case class SastToScimConverter() {
       case MacroBlock(m @ Macro(Def, attributes)) => List(macroToScimRaw(m, spacy = true))
       case MacroBlock(mcro) => List(macroToScim(mcro))
 
+      case TLBlock(attr, content) =>
+        attributesToScim(attr.raw) ++ sblockToScim(content)
+
+    }
+  }
+
+  def sblockToScim(sb: SBlockType)(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = sb match {
+
       case Paragraph(content) => List(inlineToScim(content.inline))
 
       case ParsedBlock(delimiter, blockContent) =>
         delimiter.charAt(0) match {
-          case '=' => delimiter +: toScim(blockContent) :+ delimiter
+          case '=' => delimiter +: toScimS(blockContent) :+ delimiter
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case ' ' | '\t' => toScim(blockContent).iterator
+          case ' ' | '\t' => toScimS(blockContent).iterator
                              .flatMap(line => line.split("\n", -1))
                              .map{
                                case line if line.forall(_.isWhitespace) => ""
@@ -78,8 +81,6 @@ case class SastToScimConverter() {
         text.stripLineEnd.split("\\n", -1).map(_.trim).toList
       }
       case RawBlock(delimiter, text) => List(delimiter, text, delimiter)
-
-    }
   }
 
 

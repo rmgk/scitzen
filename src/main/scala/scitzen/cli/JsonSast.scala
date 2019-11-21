@@ -7,7 +7,7 @@ import better.files.File
 import com.monovore.decline.{Command, Opts}
 import scitzen.parser.{Attribute, Attributes, Block, BlockContent, Inline, InlineText, ListBlock, ListItem, Macro, NormalBlock, Prov, SectionTitle, WhitespaceBlock}
 import scitzen.generic.{Sast, SastConverter}
-import scitzen.generic.Sast.{MacroBlock, Paragraph, ParsedBlock, RawBlock, Section, Slist, SlistItem, TLBlock, Text}
+import scitzen.generic.Sast.{MacroBlock, Paragraph, ParsedBlock, RawBlock, SBlockType, Section, Slist, SlistItem, TLBlock, Text}
 import upickle.default.macroW
 import upickle.default.Writer
 
@@ -36,6 +36,7 @@ object JsonSast {
   implicit val RawBlockEncoder       : Writer[RawBlock]        = macroW
   implicit val ParsedBlockEncoder    : Writer[ParsedBlock]     = macroW
   implicit val ParagraphEncoder      : Writer[Paragraph]       = macroW
+  implicit val SBlockTypeEncoder     : Writer[SBlockType]      = macroW
   implicit val AttributedBlockEncoder: Writer[TLBlock]         = macroW
   implicit val SastEncoder           : Writer[Sast]            = macroW
 

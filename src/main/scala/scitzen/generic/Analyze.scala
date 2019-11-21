@@ -20,8 +20,8 @@ class SastAnalyzes(macroReporter: Reporter) {
 
 
   def analyze(sdoc: Sdoc): AnalyzeResult = {
-    val input: Seq[TLBlock] = sdoc.blocks
-    val AnalyzeResult(m, t, b) = analyzeAll(input, None, AnalyzeResult(Nil, Nil, Nil))
+    val input = sdoc.blocks
+    val AnalyzeResult(m, t, b) = analyzeAllSast(input, None, AnalyzeResult(Nil, Nil, Nil))
     AnalyzeResult(m.reverse, t.reverse, b.reverse)
   }
 
@@ -32,7 +32,7 @@ class SastAnalyzes(macroReporter: Reporter) {
   def analyzeR(input: TLBlock, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
     input.content match {
       case rb :  RawBlock => acc + input
-      case other => analyzeRSast(other, scope, acc)
+      case other => analyzeSBlockType(other, scope, acc)
     }
   }
 
@@ -44,18 +44,22 @@ class SastAnalyzes(macroReporter: Reporter) {
       analyzeAllSast(sli.content, scope, cacc)
     }
 
-    case sec @ Section(title, content)   =>
+    case sec @ Section(title, content, attributes) =>
       val target = Target(title.str, sec)
-      analyzeAll(content, Some(target), acc + target)
-    case MacroBlock(imacro)      =>
+      analyzeAllSast(content, Some(target), acc + target)
+    case MacroBlock(imacro)                        =>
       val iacc =
         if (imacro.command == Label) {
-          if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}" + macroReporter(imacro))
+          if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}" + macroReporter(
+            imacro))
           acc + Target(imacro.attributes.target,
                        scope.fold(input)(_.resolution))
         }
         else acc
       iacc + imacro
+    case TLBlock(attr, content) => analyzeSBlockType(content, scope, acc)
+  }
+    def analyzeSBlockType(input: SBlockType, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
     case Paragraph(content) => content.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
         case Macro(_ : Quote, inner) => cacc
@@ -63,7 +67,7 @@ class SastAnalyzes(macroReporter: Reporter) {
         case InlineText(str)         => cacc
       }
     }
-    case ParsedBlock(delimiter, content) => analyzeAll(content, scope, acc)
+    case ParsedBlock(delimiter, content) => analyzeAllSast(content, scope, acc)
     case RawBlock(_, _)                  => acc
   }
 
