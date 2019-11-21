@@ -39,7 +39,7 @@ object BlockParsers {
                                               MacroParsers.full ~ spaceLine |
                                               paragraph)
 
-  def fullBlock[_: P]: P[Block] = P(withProv(AttributesParser.line.? ~ alternatives)).map {
+  def fullBlock[_: P]: P[Block] = P(withProv((AttributesParser.list ~ spaceLine).? ~ alternatives)).map {
     case ((attrs, content), prov) => Block(attrs.getOrElse(Nil), prov, content)
   }
 }
