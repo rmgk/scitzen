@@ -32,7 +32,7 @@ case class SastToScimConverter() {
         if (spacy) s"""$k$spaces = ${encodeValue(v)}"""
         else s"""$k=${encodeValue(v)}"""
     }
-    if (!spacy) List(pairs.mkString("[", "; ", "]"))
+    if (!(spacy && attributes.size > 1)) List(pairs.mkString("[", "; ", "]"))
     else List(pairs.mkString("[\n\t", ";\n\t", ";\n]"))
   }
 
