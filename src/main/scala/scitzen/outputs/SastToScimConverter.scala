@@ -8,7 +8,7 @@ import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 
 case class SastToScimConverter() {
 
-  val attributeEscapes = """[;}\]\n]|^[\s"\[]|\s$""".r
+  val attributeEscapes = """[;=\]\n]|^[\s"\[]|\s$""".r
   val countQuotes = """(]"*)""".r
 
   def encodeValue(v: String): String = {
@@ -29,11 +29,11 @@ case class SastToScimConverter() {
       case Attribute("", v) => encodeValue(v)
       case Attribute(k, v)  =>
         val spaces = " " * math.max(keylen - k .length, 0)
-        if (spacy) s"""$spaces$k: ${encodeValue(v)}"""
-        else s"""$k: ${encodeValue(v)}"""
+        if (spacy) s"""$k $spaces= ${encodeValue(v)}"""
+        else s"""$k=${encodeValue(v)}"""
     }
-    if (!(spacy && attributes.size > 1)) List(pairs.mkString("{", "; ", "}"))
-    else List(pairs.mkString("{\n\t", "\n\t", "\n}"))
+    if (!(spacy && attributes.size > 1)) List(pairs.mkString("[", "; ", "]"))
+    else List(pairs.mkString("[\n\t", "\n\t", "\n]"))
   }
 
   def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {

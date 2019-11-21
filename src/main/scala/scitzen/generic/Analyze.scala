@@ -1,8 +1,11 @@
 package scitzen.generic
 
 import scitzen.generic.Sast._
+import scitzen.outputs.SastToScimConverter
 import scitzen.parser.MacroCommand.{Label, Quote}
 import scitzen.parser._
+
+import scala.util.control.NonFatal
 
 object SastAnalyzes {
   case class Target(id: String, resolution: Sast)
@@ -17,6 +20,18 @@ object SastAnalyzes {
 
 class SastAnalyzes(macroReporter: Reporter) {
   import scitzen.generic.SastAnalyzes._
+
+  def reportTarget(mcr: Macro): String =
+    try {
+      mcr.attributes.target
+    }
+    catch {
+      case NonFatal(e) =>
+        scribe.error(s"${new SastToScimConverter().macroToScim(mcr)} had no target" + macroReporter(
+          mcr))
+        throw e
+    }
+
 
 
   def analyze(sdoc: Sdoc): AnalyzeResult = {
@@ -52,8 +67,7 @@ class SastAnalyzes(macroReporter: Reporter) {
         if (imacro.command == Label) {
           if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}" + macroReporter(
             imacro))
-          acc + Target(imacro.attributes.target,
-                       scope.fold(input)(_.resolution))
+            acc + Target(reportTarget(imacro), scope.fold(input)(_.resolution))
         }
         else acc
       iacc + imacro
