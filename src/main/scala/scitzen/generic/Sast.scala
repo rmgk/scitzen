@@ -101,7 +101,7 @@ final case class SastConverter() {
 
       case WhitespaceBlock(space) => TLBlock(attributes, RawBlock("comment|space", space))
 
-      case NormalBlock(delimiter, text, cprov) => TLBlock(attributes,
+      case NormalBlock(delimiter, text, cprov, attr) => TLBlock(attributes.append(attr),
         if (delimiter == "") Paragraph(inlineString(text, cprov))
         else delimiter.charAt(0) match {
           case '`' | '.' => RawBlock(delimiter, text)

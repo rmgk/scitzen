@@ -22,9 +22,9 @@ case class Block(rawAttributes: Seq[Attribute], prov: Prov, content: BlockConten
 
 sealed trait BlockContent
 case class WhitespaceBlock(content: String) extends BlockContent
-case class NormalBlock(delimiter: String, content: String, cprov: Prov) extends BlockContent
+case class NormalBlock(delimiter: String, content: String, cprov: Prov, rawAttributes: Seq[Attribute]) extends BlockContent
 object NormalBlock {
-  def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, cp._1, cp._2)
+  def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, cp._1, cp._2, Nil)
 }
 case class ListBlock(items: Seq[ListItem]) extends BlockContent
 case class SectionTitle(level: Int, title: String, rawAttributes: Seq[Attribute]) extends BlockContent
