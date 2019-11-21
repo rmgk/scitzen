@@ -6,6 +6,7 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
   lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
   lazy val target    : String              = positional.last
   lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value)}.toMap
+  def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other, prov)
 }
 
 object Attributes {

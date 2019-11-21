@@ -74,7 +74,10 @@ final case class SastConverter() {
             case _                    => true
           }
         }
-        sectionize(next, Section(title, blockSequence(inner), section.attributes) :: accumulator)
+        sectionize(next, Section(title,
+                                 blockSequence(inner),
+                                 section.attributes.append(currentSection.rawAttributes)
+                                 ) :: accumulator)
     }
   }
 
