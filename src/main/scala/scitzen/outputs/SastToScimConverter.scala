@@ -22,8 +22,8 @@ case class SastToScimConverter() {
     }
   }
 
-  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean = false): Seq[String] = {
-    if (attributes.isEmpty) return Nil
+  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean): Seq[String] = {
+    if (!force && attributes.isEmpty) return Nil
     val keylen = (0 +: attributes.map(_.id.length)).max
     val pairs = attributes.map {
       case Attribute("", v) => encodeValue(v)
@@ -40,7 +40,7 @@ case class SastToScimConverter() {
     b.flatMap[String, Seq[String]] {
 
       case Section(title, sc, attributes) =>
-        attributesToScim(attributes.raw) ++ (
+        attributesToScim(attributes.raw, spacy = false, force = false) ++ (
         ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
         toScimS(sc)(nestingLevel.inc))
 
@@ -55,7 +55,7 @@ case class SastToScimConverter() {
       case MacroBlock(mcro) => List(macroToScim(mcro))
 
       case TLBlock(attr, content) =>
-        attributesToScim(attr.raw) ++ sblockToScim(content)
+        attributesToScim(attr.raw, spacy = false, force = false) ++ sblockToScim(content)
 
     }
   }
@@ -85,7 +85,7 @@ case class SastToScimConverter() {
 
 
   def macroToScimRaw(mcro: Macro, spacy: Boolean = false): String = {
-    s":${MacroCommand.print(mcro.command)}${attributesToScim(mcro.attributes.all, spacy).mkString}"
+    s":${MacroCommand.print(mcro.command)}${attributesToScim(mcro.attributes.all, spacy, force = true).mkString}"
   }
 
   def inlineToScim(inners: Seq[Inline]): String = inners.map {
