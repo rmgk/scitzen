@@ -15,8 +15,9 @@ object BlockParsers {
 
   def sectionStart[_: P]: P[Int] = P("=".rep(1).! ~ " ").map(_.length)
 
-  def sectionTitle[_:P]: P[SectionTitle] = P(sectionStart ~ untilI(eol))
-                                           .map { case (level, str) => SectionTitle(level, str) }
+  def sectionTitle[_:P]: P[SectionTitle] =
+    P(sectionStart ~ untilI(eol) ~ AttributesParserOld.lightlist.?)
+    .map { case (level, str, ll) => SectionTitle(level, str, ll.getOrElse(Nil)) }
 
   def horizontalRuleChars[_: P] = P(AnyChar("'\\-*"))
   def horizontalRule[_: P]: P[Macro] = P(Index ~ (verticalSpaces ~ horizontalRuleChars.!.flatMap { chr =>

@@ -89,7 +89,7 @@ final case class SastConverter() {
   def blockContent(block: BlockContent, prov: Prov, attributes: Attributes): Sast = {
     block match {
 
-      case SectionTitle(level, title) =>
+      case SectionTitle(level, title, _) =>
         throw new IllegalStateException("sections should be out already …")
 
       case ListBlock(items) => ListConverter.listtoSast(items)

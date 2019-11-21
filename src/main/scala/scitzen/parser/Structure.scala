@@ -26,7 +26,7 @@ object NormalBlock {
   def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, cp._1, cp._2)
 }
 case class ListBlock(items: Seq[ListItem]) extends BlockContent
-case class SectionTitle(level: Int, title: String) extends BlockContent
+case class SectionTitle(level: Int, title: String, rawAttributes: Seq[Attribute]) extends BlockContent
 
 
 case class ListItem(marker: String, content: NormalBlock)
