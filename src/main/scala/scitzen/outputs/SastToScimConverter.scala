@@ -23,6 +23,7 @@ case class SastToScimConverter() {
   }
 
   def attributesToScim(attributes: Seq[Attribute], spacy: Boolean = false): String = {
+    if (attributes.isEmpty) return ""
     val keylen = (0 +: attributes.map(_.id.length)).max
     val pairs = attributes.map {
       case Attribute("", v) => encodeValue(v)
