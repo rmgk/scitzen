@@ -76,7 +76,6 @@ case class SastToScimConverter() {
   def tlBlockToScim(sb: TLBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
 
       case Paragraph(content) =>
-        //attributesToScim(sb.attr.raw, spacy = false, force = false) ++
         Chain(inlineToScim(content.inline))
 
       case ParsedBlock(delimiter, blockContent) =>
@@ -85,7 +84,7 @@ case class SastToScimConverter() {
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' | '\t' =>
-            attributesToScim(sb.attr.raw, spacy = false, force = false) ++ Chain.fromSeq(
+            Chain.fromSeq(
               toScimS(blockContent)
               .iterator
               .flatMap(line => line.split("\n", -1))
