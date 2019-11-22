@@ -4,6 +4,8 @@ import scitzen.generic.Sast
 import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
+import cats.data.Chain
+import cats.implicits._
 
 
 case class SastToScimConverter() {
@@ -22,8 +24,14 @@ case class SastToScimConverter() {
     }
   }
 
-  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): Seq[String] = {
-    if (!force && attributes.isEmpty) return Nil
+  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): Chain[String] = {
+        if (!force && attributes.isEmpty) Chain.nil
+    else Chain(attributesToScimF(attributes, spacy, force, light))
+  }
+
+
+  def attributesToScimF(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): String = {
+    if (!force && attributes.isEmpty) return ""
     val keylen = (0 +: attributes.map(_.id.length)).max
     val pairs = attributes.map {
       case Attribute("", v) => encodeValue(v)
@@ -33,64 +41,71 @@ case class SastToScimConverter() {
         else s"""$k=${encodeValue(v)}"""
     }
 
-    if (!(spacy && attributes.size > 1)) List(
+    if (!(spacy && attributes.size > 1)) {
       if (light) pairs.mkString("", "; ", "\n")
-      else pairs.mkString("[", "; ", "]"))
-    else List(
+      else pairs.mkString("[", "; ", "]")
+    } else {
       if (light) pairs.mkString("", "\n", "\n")
-      else pairs.mkString("[\n\t", "\n\t", "\n]"))
-  }
-
-  def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = {
-    b.flatMap[String, Seq[String]] {
-
-      case Section(title, sc, attributes) =>
-        ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
-         (attributesToScim(attributes.raw, spacy = true, force = false, light = true) ++
-        toScimS(sc)(nestingLevel.inc))
-
-      case Slist(children) => children.flatMap {
-        case SlistItem(marker, TLBlock(_, Paragraph(Text(inl))) :: rest) =>
-          (s"$marker" + inlineToScim(inl)) +: toScimS(rest)
-        case SlistItem(marker, inner) =>
-          marker +: toScimS(inner)
-      }
-
-      case MacroBlock(m @ Macro(Def, attributes)) => List(macroToScimRaw(m, spacy = true))
-      case MacroBlock(mcro) => List(macroToScim(mcro))
-
-      case TLBlock(attr, content) =>
-        attributesToScim(attr.raw, spacy = false, force = false) ++ sblockToScim(content)
-
+      else pairs.mkString("[\n\t", "\n\t", "\n]")
     }
   }
 
-  def sblockToScim(sb: SBlockType)(implicit nestingLevel: Scope = new Scope(1)): Seq[String] = sb match {
+  def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = {
+    Chain.fromSeq(b).flatMap(toScim(_))
+  }
 
-      case Paragraph(content) => List(inlineToScim(content.inline))
+  def toScim(sast: Sast)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sast match {
+    case Section(title, sc, attributes) =>
+      ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
+      (attributesToScim(attributes.raw, spacy = true, force = false, light = true) ++
+       toScimS(sc)(nestingLevel.inc))
+
+    case Slist(children) => Chain.fromSeq(children).flatMap {
+      case SlistItem(marker, TLBlock(_, Paragraph(Text(inl))) :: rest) =>
+        (s"$marker" + inlineToScim(inl)) +: toScimS(rest)
+      case SlistItem(marker, inner)                                    =>
+        marker +: toScimS(inner)
+    }
+
+    case MacroBlock(m @ Macro(Def, attributes)) => Chain(macroToScimRaw(m, spacy = true))
+    case MacroBlock(mcro)                       => Chain(macroToScim(mcro))
+
+    case tlb: TLBlock => tlBlockToScim(tlb)
+  }
+
+  def tlBlockToScim(sb: TLBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
+
+      case Paragraph(content) =>
+        //attributesToScim(sb.attr.raw, spacy = false, force = false) ++
+        Chain(inlineToScim(content.inline))
 
       case ParsedBlock(delimiter, blockContent) =>
         delimiter.charAt(0) match {
-          case '=' => delimiter +: toScimS(blockContent) :+ delimiter
+          case '=' => (delimiter + attributesToScimF(sb.attr.raw, force = false, spacy = false)) +: toScimS(blockContent) :+ delimiter
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case ' ' | '\t' => toScimS(blockContent).iterator
-                             .flatMap(line => line.split("\n", -1))
-                             .map{
-                               case line if line.forall(_.isWhitespace) => ""
-                               case line => s"$delimiter$line"
-                             }.toList
+          case ' ' | '\t' =>
+            attributesToScim(sb.attr.raw, spacy = false, force = false) ++ Chain.fromSeq(
+              toScimS(blockContent)
+              .iterator
+              .flatMap(line => line.split("\n", -1))
+              .map {
+                case line if line.forall(_.isWhitespace) => ""
+                case line                                => s"$delimiter$line"
+              }.toList)
         }
 
-      case RawBlock("comment|space", text) => {
-        text.stripLineEnd.split("\\n", -1).map(_.trim).toList
-      }
-      case RawBlock(delimiter, text) => List(delimiter, text, delimiter)
+      case RawBlock("comment|space", text) =>
+        Chain.fromSeq(text.stripLineEnd.split("\\n", -1).map(_.trim))
+      case RawBlock(delimiter, text) =>
+        Chain(delimiter + attributesToScimF(sb.attr.raw, spacy = false, force = false),
+              text,
+              delimiter)
   }
 
 
   def macroToScimRaw(mcro: Macro, spacy: Boolean = false): String = {
-    s":${MacroCommand.print(mcro.command)}${attributesToScim(mcro.attributes.all, spacy, force = true).mkString}"
+    s":${MacroCommand.print(mcro.command)}${attributesToScimF(mcro.attributes.all, spacy, force = true)}"
   }
 
   def inlineToScim(inners: Seq[Inline]): String = inners.map {
