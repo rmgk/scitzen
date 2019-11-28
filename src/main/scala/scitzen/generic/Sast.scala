@@ -118,7 +118,10 @@ final case class SastConverter() {
 
 
   def documentString(blockContent: String, prov: Prov): Seq[Sast] = {
-    blockSequence(Parse.document(blockContent, prov).right.get)
+    blockSequence(Parse.document(blockContent, prov) match {
+                    case Left(parsingAnnotation) =>throw parsingAnnotation
+                    case Right(res) => res
+                  })
   }
 
 

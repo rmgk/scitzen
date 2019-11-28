@@ -47,7 +47,7 @@ object Project {
 
   val fileEnding = "scim"
   def discoverSources(source: File): List[File] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     source match {
       case f if f.isRegularFile => List(f)
       case f if f.isDirectory   =>

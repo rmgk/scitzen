@@ -7,6 +7,8 @@ import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 import cats.data.Chain
 import cats.implicits._
 
+import scala.collection.compat.immutable
+
 
 case class SastToScimConverter() {
 
@@ -95,7 +97,8 @@ case class SastToScimConverter() {
         }
 
       case RawBlock("comment|space", text) =>
-        Chain.fromSeq(text.stripLineEnd.split("\\n", -1).map(_.trim))
+        Chain.fromSeq(immutable.ArraySeq.unsafeWrapArray(
+          text.stripLineEnd.split("\\n", -1).map(_.trim)))
       case RawBlock(delimiter, text) =>
         Chain(delimiter + attributesToScimF(sb.attr.raw, spacy = false, force = false),
               text,

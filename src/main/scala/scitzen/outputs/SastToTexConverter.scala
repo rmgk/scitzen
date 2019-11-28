@@ -138,7 +138,7 @@ class SastToTexConverter(documents: DocumentManager,
     val sec = secs.lift(nesting.level).getOrElse("paragraph")
     if (numbered) sec else sec + "*"
   }
-  def inlineValuesToTex(inners: Seq[Inline]): String = inners.map[String, Seq[String]] {
+  def inlineValuesToTex(inners: Seq[Inline]): String = inners.map {
     case InlineText(str) => latexencode(str)
     case Macro(Def, _) => ""
     case Macro(Quote(q), inner2) =>

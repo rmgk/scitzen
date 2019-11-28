@@ -9,7 +9,7 @@ lazy val scitzen = project.in(file("."))
                    .settings(
                      name := "scitzen",
                      organization := "de.rmgk",
-                     scalaVersion_212,
+                     scalaVersion_213,
                      Compile / resources ++= (Assets / SassKeys.sassify).value,
                      resolvers += Resolver.sonatypeRepo("public"),
                      libraryDependencies ++= Seq(

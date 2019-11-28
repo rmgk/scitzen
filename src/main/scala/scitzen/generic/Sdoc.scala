@@ -8,6 +8,7 @@ import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
 import scitzen.parser.{Attribute, Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
 
+import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
 case class Sdoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
@@ -76,11 +77,11 @@ final class FileReporter(file: File, content: String) extends Reporter {
       if (res >= 0) findNL(res, res :: found)
       else found.toArray.reverse
     }
-    findNL(-1, Nil)
+    ArraySeq.unsafeWrapArray(findNL(-1, Nil))
   }
 
   def indexToPosition(idx: Int): (Int, Int) = {
-    val ip = scala.collection.Searching.search(newLines).search(idx).insertionPoint
+    val ip = newLines.search(idx).insertionPoint
     val offset = if(ip == 0) 0 else newLines(ip - 1)
     (ip + 1, idx - offset)
   }

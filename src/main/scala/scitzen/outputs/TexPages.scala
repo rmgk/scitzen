@@ -69,7 +69,7 @@ object TexPages {
 
   def wrap(content: Seq[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
     val authors = {
-      Parse.paragraph(authorsStr, Prov()).right.get.collect{
+      Parse.paragraph(authorsStr, Prov()).toTry.get.collect{
         case Macro(Other("author"), attributes) => (attributes.positional.head, attributes.positional.tail)
       }
     }

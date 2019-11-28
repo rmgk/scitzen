@@ -212,7 +212,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
 
   def inlineValuesToHTML(inlines: Seq[Inline]): Seq[Frag] =
-    inlines.map[Frag, Seq[Frag]] {
+    inlines.map {
       case InlineText(str) => str
       case Macro(Quote(q), attrs) =>
         val inner = attrs.target

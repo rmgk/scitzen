@@ -13,7 +13,7 @@ object SastToTextConverter {
   }
 
   def convertSast(b: Seq[Sast]): Seq[String] = {
-    b.flatMap[String, Seq[String]] {
+    b.flatMap {
 
       case Section(title, sc, _) =>
         convertInline(title.inline) +:
