@@ -27,7 +27,6 @@ lazy val scitzen = project.in(file("."))
                      cats,
                      upickle,
                      scribe,
-                     kaleidoscope,
                      SassKeys.cssStyle := Maxified,
                      normalizecss,
                      graalVMNativeImageOptions += "--initialize-at-build-time"

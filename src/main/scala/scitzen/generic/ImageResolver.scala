@@ -5,8 +5,8 @@ import cats.implicits._
 import scitzen.extern.{Graphviz, ImageConvert, TexTikz}
 import scitzen.generic.Sast.{RawBlock, TLBlock}
 import scitzen.parser.Macro
-import kaleidoscope._
 import scitzen.parser.MacroCommand.Image
+import scitzen.generic.RegexContext.regexStringContext
 
 class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[String, File], cachedir: File) {
 
@@ -31,6 +31,7 @@ class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[Stri
 }
 
 object ImageResolver {
+
   def fromDM(documentManager: DocumentManager, cachedir: File, keepName: Boolean = false): ImageResolver = {
     val imageMacros = documentManager.documents.flatMap { pd =>
       pd.sdoc.analyzeResult.macros.collect {
@@ -54,7 +55,7 @@ object ImageResolver {
             val svg = ImageConvert.pdfToSvg(pdf)
             scribe.info(s"converting $hash to $svg")
             List(hash -> svg)
-          case Some(gr @ r"graphviz.*") =>
+          case Some(gr @ rex"graphviz.*") =>
             val (hash, svg) = Graphviz.convert(tlb.content.asInstanceOf[RawBlock].content,
                                                cachedir,
                                                gr.split("\\s+", 2)(1),

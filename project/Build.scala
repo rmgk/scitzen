@@ -17,7 +17,7 @@ object Settings {
     scalacOptions ++= tpolecatsScalacOptionsCommon ++ scalacOptions12plus ++ scalaOptions12minus
   )
   val scalaVersion_213 = Def.settings(
-    scalaVersion := "2.13.0",
+    scalaVersion := "2.13.1",
     scalacOptions ++= tpolecatsScalacOptionsCommon ++ scalacOptions12plus
     )
 

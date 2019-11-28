@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import kaleidoscope.RegexStringContext
 import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
@@ -13,6 +12,8 @@ import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, 
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
+
+import scitzen.generic.RegexContext.regexStringContext
 
 
 object ImportPreproc {
@@ -179,10 +180,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case ParsedBlock(delimiter, blockContent) =>
         delimiter match {
-          case r"=+" => List(figure(cBlocks(blockContent)))
+          case rex"=+" => List(figure(cBlocks(blockContent)))
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
-          case r"\s+" => cBlocks(blockContent)
+          case rex"\s+" => cBlocks(blockContent)
           // includes are also included as is
           case "include" => cBlocks(blockContent)
           // there is also '=' example, and '+' passthrough.
