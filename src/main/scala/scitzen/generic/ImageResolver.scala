@@ -45,7 +45,7 @@ object ImageResolver {
     }.toMap
 
     val imageBlocks = documentManager.documents.flatMap { pd =>
-      val imageBlocks = pd.sdoc.analyzeResult.blocks.collect({
+      val imageBlocks = pd.sdoc.analyzeResult.rawBlocks.collect({
         case tlb@TLBlock(attr, content) if attr.positional.headOption.contains("image") => tlb
       })
       imageBlocks.flatMap { tlb =>

@@ -21,10 +21,9 @@ class SastToTexConverter(documents: DocumentManager,
 
   def convert(mainSast: List[Sast]): Seq[String] = mainSast match {
     case List(Section(title, content, _)) =>
-      val secChildren = content.collect { case TLBlock(_, s: Section) => s }
       s"\\title{${inlineValuesToTex(title.inline)}}\\maketitle{}" +:
-      (putAbstract(content) ++ sastToTex(secChildren)(scope = new Scope(2)))
-    case list                                         => sastToTex(list)(scope = new Scope(1))
+      sastToTex(content)(scope = new Scope(2))
+    case list                             => sastToTex(list)(scope = new Scope(1))
   }
 
   def latexencode(input: String): String = {

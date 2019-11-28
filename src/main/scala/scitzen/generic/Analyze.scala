@@ -11,10 +11,12 @@ object SastAnalyzes {
   case class Target(id: String, resolution: Sast)
   case class AnalyzeResult(macros: List[Macro],
                            targets: List[Target],
-                           blocks: List[TLBlock]) {
+                           rawBlocks: List[TLBlock],
+                           sections: List[Section]) {
     def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
-    def +(m: TLBlock): AnalyzeResult = copy(blocks = m :: blocks)
+    def +(m: TLBlock): AnalyzeResult = copy(rawBlocks = m :: rawBlocks)
+    def +(m: Section): AnalyzeResult = copy(sections = m :: sections)
   }
 }
 
@@ -36,8 +38,8 @@ class SastAnalyzes(macroReporter: Reporter) {
 
   def analyze(sdoc: Sdoc): AnalyzeResult = {
     val input = sdoc.blocks
-    val AnalyzeResult(m, t, b) = analyzeAllSast(input, None, AnalyzeResult(Nil, Nil, Nil))
-    AnalyzeResult(m.reverse, t.reverse, b.reverse)
+    val AnalyzeResult(m, t, b, s) = analyzeAllSast(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
+    AnalyzeResult(m.reverse, t.reverse, b.reverse, s.reverse)
   }
 
   def analyzeAll(inputs: Seq[TLBlock], scope: Option[Target], acc: AnalyzeResult): AnalyzeResult =
@@ -61,7 +63,7 @@ class SastAnalyzes(macroReporter: Reporter) {
 
     case sec @ Section(title, content, attributes) =>
       val target = Target(title.str, sec)
-      analyzeAllSast(content, Some(target), acc + target)
+      analyzeAllSast(content, Some(target), acc + target + sec)
     case MacroBlock(imacro)                        =>
       val iacc =
         if (imacro.command == Label) {

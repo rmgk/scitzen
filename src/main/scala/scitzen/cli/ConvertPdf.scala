@@ -58,6 +58,7 @@ object ConvertPdf {
 
     val bibliography = dm.documents.collectFirstSome{ pd =>
       pd.sdoc.named.get("bibliography").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
+    scribe.info(s"bib is $bibliography")
     val authors = dm.documents.collectSomeFold(_.sdoc.named.get("authors"))
 
     val jobname = targetfile.nameWithoutExtension(includeAll = false)
