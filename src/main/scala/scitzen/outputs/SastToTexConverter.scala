@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import better.files.File
 import scitzen.generic.Sast._
-import scitzen.generic.{DocumentManager, ImageResolver, Sast}
+import scitzen.generic.{ExternalContentResolver, Project, RawBlockHandler, Sast}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
@@ -13,10 +13,11 @@ class Scope(val level: Int) extends AnyVal {
 }
 
 
-class SastToTexConverter(documents: DocumentManager,
-                         root: File,
+class SastToTexConverter(project: Project,
+                         currentFile: File,
                          numbered: Boolean = true,
-                         imageResolver: ImageResolver,
+                         imageResolver: ExternalContentResolver,
+                         rawBlockHandler: RawBlockHandler
                         ) {
 
   def convert(mainSast: List[Sast]): Seq[String] = mainSast match {
@@ -45,14 +46,10 @@ class SastToTexConverter(documents: DocumentManager,
       "\\end{abstract}"
   }
 
-  def cBlocks(bs: Seq[TLBlock])(implicit scope: Scope): Seq[String] = {
-    bs.flatMap {b =>  sblockToTex(b.content)}
-  }
-
   def sastToTex(b: Seq[Sast])(implicit scope: Scope): Seq[String] = {
     b.flatMap {
 
-      case tlBlock: TLBlock => sblockToTex(tlBlock.content)
+      case tlBlock: TLBlock => blockToTex(tlBlock)
 
       case Section(title, contents, _) =>
         val sec = sectioning(scope)
@@ -79,7 +76,7 @@ class SastToTexConverter(documents: DocumentManager,
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
           val target = attributes.target
-          val imagepath = imageResolver.image(root, target)
+          val imagepath = imageResolver.image(currentFile, target)
           if (imagepath.endsWith(".gif") || imagepath.endsWith(".webp")) {
             scribe.warn(s"tex output currently does not support '$imagepath', omitting")
             List()
@@ -87,9 +84,9 @@ class SastToTexConverter(documents: DocumentManager,
           else List(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n")
 
         case Macro(Include, attributes) =>
-          ImportPreproc.macroImportPreproc(documents.find(root, attributes.target), attributes) match {
+          ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
             case Some((doc, sast)) =>
-              new SastToTexConverter(documents, doc.file.parent, numbered, imageResolver)
+              new SastToTexConverter(project, doc.file.parent, numbered, imageResolver, rawBlockHandler)
               .sastToTex(sast)(new Scope(3))
             case None => Nil
           }
@@ -100,7 +97,7 @@ class SastToTexConverter(documents: DocumentManager,
   }
 
 
-  def sblockToTex(b: SBlockType)(implicit scope: Scope): Seq[String] = b match {
+  def blockToTex(tlblock: TLBlock)(implicit scope: Scope): Seq[String] = tlblock.content match {
       case Paragraph(content) => List(inlineValuesToTex(content.inline)) :+ ""
 
 
@@ -116,7 +113,9 @@ class SastToTexConverter(documents: DocumentManager,
         }
 
       case RawBlock(delimiter, text) =>
-        if (delimiter.isEmpty || delimiter == "comment|space") Nil
+        if (tlblock.attr.named.contains("converter"))
+          sastToTex(rawBlockHandler.convert(tlblock, "pdf"))
+        else if (delimiter.isEmpty || delimiter == "comment|space") Nil
         else delimiter.charAt(0) match {
           case '`' =>
             List(s"\\begin{verbatim}", text, "\\end{verbatim}")
@@ -160,8 +159,8 @@ class SastToTexConverter(documents: DocumentManager,
         s"\\href{$target}{$name}"
       }
       else s"\\url{$target}"
-    case Macro(Other("n"), attributes) if documents.attributes.contains(attributes.target) =>
-      documents.attributes(attributes.target)
+    case Macro(Other("n"), attributes) if project.documentManager.attributes.contains(attributes.target) =>
+      project.documentManager.attributes(attributes.target)
     case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"

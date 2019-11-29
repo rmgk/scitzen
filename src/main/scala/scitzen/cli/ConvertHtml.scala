@@ -7,7 +7,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{GenIndexPage, ImageResolver, NLP, ParsedDocument, Project, SastAnalyzes, Sdoc}
+import scitzen.generic.{GenIndexPage, ExternalContentResolver, NLP, ParsedDocument, Project, SastAnalyzes, Sdoc}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.parser.MacroCommand.Cite
 
@@ -65,7 +65,7 @@ object ConvertHtml {
     val cssfile = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
 
-    val imageResolver = ImageResolver.fromDM(dm, project.cacheDir, keepName = true)
+    val imageResolver = ExternalContentResolver.fromDM(dm, project.cacheDir, keepName = true)
 
     val scitzenconfdir = project.projectDir
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None

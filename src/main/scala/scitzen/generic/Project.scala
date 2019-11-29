@@ -1,8 +1,12 @@
 package scitzen.generic
 
+import java.nio.file.Paths
+
 import better.files.File
 
 case class Project(root: File, singleSource: Option[File] = None) {
+
+
   val projectDir: File = root / Project.scitzenfolder
   val cacheDir  : File = projectDir / "cache"
   lazy val sources        : List[File]           = singleSource match {
@@ -12,6 +16,15 @@ case class Project(root: File, singleSource: Option[File] = None) {
   lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
   lazy val documentManager: DocumentManager      = DocumentManager.resolveIncludes(new DocumentManager(documents))
   val outputdir: File = projectDir / "output"
+
+
+  def findDoc(anchor: File, pathString: String): Option[ParsedDocument] = {
+    val rawPath = Paths.get(pathString)
+    val path =
+      if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
+      else anchor / pathString
+    documentManager.byPath.get(path).filter(d => root.isParentOf(d.file))
+  }
 }
 
 object Project {

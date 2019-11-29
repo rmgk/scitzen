@@ -7,7 +7,7 @@ import better.files.File
 import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
-import scitzen.generic.{DocumentManager, ImageResolver, ParsedDocument, Project, Sast, Sdoc}
+import scitzen.generic.{DocumentManager, ExternalContentResolver, ParsedDocument, Project, Sast, Sdoc}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
@@ -38,20 +38,21 @@ object ImportPreproc {
 }
 
 
-class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Builder, Output, FragT],
-                                                           documentManager: DocumentManager,
-                                                           imageResolver: ImageResolver,
-                                                           bibliography: Map[String, String],
-                                                           sdoc: Sdoc,
-                                                           document: Option[ParsedDocument],
-                                                           katexMap: mutable.Map[String, String],
-                                                           sync: Option[(File, Int)],
-                                                           project: Project) {
+class SastToHtmlConverter[Builder, Output <: FragT, FragT]
+(val bundle: Bundle[Builder, Output, FragT],
+ documentManager: DocumentManager,
+ imageResolver: ExternalContentResolver,
+ bibliography: Map[String, String],
+ sdoc: Sdoc,
+ document: Option[ParsedDocument],
+ katexMap: mutable.Map[String, String],
+ sync: Option[(File, Int)],
+ project: Project) {
 
   import bundle.all._
   import bundle.tags2.{article, time}
 
-  val root = project.root
+  val currentFile: File = document.fold(project.root)(_.file)
 
   val syncPos =
     document.filter(doc => sync.exists(_._1 == doc.file))
@@ -134,11 +135,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
 
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
-          val target = imageResolver.image(root, attributes.positional.last)
+          val target = imageResolver.image(currentFile, attributes.positional.last)
           List(img(src := target))
         case Macro(Other("horizontal-rule"), attributes) => List(hr)
         case Macro(Include, attributes) if attributes.named.get("type").contains("article") =>
-          val post = documentManager.find(root, attributes.target).get
+          val post = project.findDoc(currentFile, attributes.target).get
 
           def timeShort(date: ScitzenDateTime) = {
             time(stringFrag(date.monthDayTime + " "))
@@ -148,7 +149,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             span(cls := "category")(post.sdoc.named.get("categories"), post.sdoc.named.get("people"))
           }
 
-         val aref = documentManager.relTargetPath(root, post)
+         val aref = documentManager.relTargetPath(currentFile, post)
 
           List(a(
             href := aref,
@@ -158,7 +159,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](val bundle: Bundle[Bu
             )))
 
         case Macro(Include, attributes) =>
-          ImportPreproc.macroImportPreproc(documentManager.find(root, attributes.target), attributes) match {
+          ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToHtmlConverter(bundle, documentManager, imageResolver,
                                       bibliography, doc.sdoc, Some(doc), katexMap, sync, project)

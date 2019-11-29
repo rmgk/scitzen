@@ -8,7 +8,7 @@ import scitzen.parser.Macro
 import scitzen.parser.MacroCommand.Image
 import scitzen.generic.RegexContext.regexStringContext
 
-class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[String, File], cachedir: File) {
+class ExternalContentResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[String, File], cachedir: File) {
 
   val generated = "generated-graphics/"
 
@@ -30,9 +30,9 @@ class ImageResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[Stri
   def image(hash: String): String = generated + blockSubsts(hash).name
 }
 
-object ImageResolver {
+object ExternalContentResolver {
 
-  def fromDM(documentManager: DocumentManager, cachedir: File, keepName: Boolean = false): ImageResolver = {
+  def fromDM(documentManager: DocumentManager, cachedir: File, keepName: Boolean = false): ExternalContentResolver = {
     val imageMacros = documentManager.documents.flatMap { pd =>
       pd.sdoc.analyzeResult.macros.collect {
         case Macro(Image, attributes) => pd.file.parent / attributes.target
@@ -70,6 +70,8 @@ object ImageResolver {
     }.toMap
 
 
-    new ImageResolver(imageMacros, imageBlocks, cachedir)
+    new ExternalContentResolver(imageMacros, imageBlocks, cachedir)
   }
 }
+
+

@@ -19,11 +19,6 @@ class DocumentManager(_documents: List[ParsedDocument]) {
   def documents: List[ParsedDocument] = _documents
   val byPath: Map[File, ParsedDocument] = _documents.map(pd => pd.file -> pd).toMap
 
-
-  def find(root: File, path: String): Option[ParsedDocument] = {
-    byPath.get(root / path).filter(d => root.isParentOf(d.file))
-  }
-
   lazy val attributes: Map[String, String] = documents.flatMap(_.sdoc.named).toMap
 
 }
