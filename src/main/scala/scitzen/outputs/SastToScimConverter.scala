@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scitzen.generic.Sast
+import scitzen.generic.{Sast, Scope}
 import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}

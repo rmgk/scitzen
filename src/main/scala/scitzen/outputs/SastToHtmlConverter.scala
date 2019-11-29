@@ -7,12 +7,11 @@ import better.files.File
 import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
-import scitzen.generic.{DocumentManager, ExternalContentResolver, ParsedDocument, Project, Sast, Sdoc}
+import scitzen.generic.{DocumentManager, ExternalContentResolver, ParsedDocument, Project, Sast, Scope, Sdoc}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
-
 import scitzen.generic.RegexContext.regexStringContext
 
 

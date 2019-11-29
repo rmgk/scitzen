@@ -1,5 +1,6 @@
 package scitzen.outputs
 
+import cats.data.Chain
 import scitzen.parser.MacroCommand.Other
 import scitzen.parser.{Macro, Parse, Prov}
 
@@ -67,8 +68,8 @@ object TexPages {
     List("\\nouppercaseheads")
   }
 
-  def wrap(content: Seq[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
-    val authors = {
+  def wrap(content: Chain[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
+    val authors = Chain.fromSeq{
       Parse.paragraph(authorsStr, Prov()).toTry.get.collect{
         case Macro(Other("author"), attributes) => (attributes.positional.head, attributes.positional.tail)
       }
@@ -78,13 +79,13 @@ object TexPages {
 \\affiliation{\\institution{$inst}}"""
     }
 
-    def importBibACM = {
+    def importBibACM = Chain.fromSeq {
       bibliography.fold(List.empty[String]) { bib =>
         List(s"\\bibliographystyle{ACM-Reference-Format}",
              s"\\bibliography{$bib}")
       }
     }
-    def importBibNatbib = {
+    def importBibNatbib = Chain.fromSeq {
       bibliography.fold(List.empty[String]) { bib =>
         List(s"\\bibliographystyle{plain}",
              s"\\bibliography{$bib}")
@@ -93,17 +94,17 @@ object TexPages {
 
     (layout match {
       case "acmconf" =>
-        List(
+        Chain(
           acmHeader,
           s"\\begin{document}"
           ) ++ authorstrings ++ content ++ importBibACM :+
            s"\\end{document}"
       case _ =>
-        (memoirHeader /*+: sloppyStuff*/ +: (xelatexPackages ++ memoirPackages) :+
+        Chain.fromSeq(memoirHeader /*+: sloppyStuff*/ +: (xelatexPackages ++ memoirPackages) :+
          s"\\begin{document}" /*:+ "\\sloppy"*/) ++
         content ++ importBibNatbib :+ s"\\end{document}"
 
-    }).mkString("\n")
+    }).iterator.mkString("\n")
 
   }
 

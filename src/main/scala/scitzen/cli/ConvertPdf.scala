@@ -4,10 +4,11 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
 
 import better.files._
+import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{GenIndexPage, ExternalContentResolver, ParsedDocument, Project, RawBlockHandler}
+import scitzen.generic.{ConversionContext, ExternalContentResolver, GenIndexPage, ParsedDocument, Project, RawBlockHandler}
 import scitzen.outputs.{SastToTexConverter, TexPages}
 
 object ConvertPdf {
@@ -52,7 +53,7 @@ object ConvertPdf {
                                          imageResolver = imageResolver,
                                          rawBlockHandler = new RawBlockHandler(cacheDir)).convert(
       if (singleFile) dm.byPath(project.singleSource.get).sdoc.blocks.toList else GenIndexPage.makeIndex(dm)
-      )
+      )(ConversionContext(Chain.empty[String])).data
 
 
     imageResolver.copyToTarget(cacheDir)
