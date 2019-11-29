@@ -2,13 +2,10 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.extern.{Graphviz, ImageConvert, TexTikz}
-import scitzen.generic.Sast.{RawBlock, TLBlock}
 import scitzen.parser.Macro
 import scitzen.parser.MacroCommand.Image
-import scitzen.generic.RegexContext.regexStringContext
 
-class ExternalContentResolver(val fileSubsts: Map[File, String], val blockSubsts: Map[String, File], cachedir: File) {
+case class ExternalContentResolver(fileSubsts: Map[File, String], blockSubsts: Map[String, File], cachedir: File) {
 
   val generated = "generated-graphics/"
 
@@ -28,6 +25,7 @@ class ExternalContentResolver(val fileSubsts: Map[File, String], val blockSubsts
 
   def image(root: File, target: String): String = fileSubsts(root / target)
   def image(hash: String): String = generated + blockSubsts(hash).name
+
 }
 
 object ExternalContentResolver {
@@ -44,34 +42,51 @@ object ExternalContentResolver {
          else s"images/$index${image.extension().getOrElse("")}")
     }.toMap
 
-    val imageBlocks = documentManager.documents.flatMap { pd =>
-      val imageBlocks = pd.sdoc.analyzeResult.rawBlocks.collect({
-        case tlb@TLBlock(attr, content) if attr.positional.headOption.contains("image") => tlb
-      })
-      imageBlocks.flatMap { tlb =>
-        tlb.attr.named.get("converter") match {
-          case Some("tikz")             =>
-            val (hash, pdf) = TexTikz.convert(tlb.content.asInstanceOf[RawBlock].content, cachedir)
-            val svg = ImageConvert.pdfToSvg(pdf)
-            scribe.info(s"converting $hash to $svg")
-            List(hash -> svg)
-          case Some(gr @ rex"graphviz.*") =>
-            val (hash, svg) = Graphviz.convert(tlb.content.asInstanceOf[RawBlock].content,
-                                               cachedir,
-                                               gr.split("\\s+", 2)(1),
-                                               "svg")
-            scribe.info(s"converting $hash to $svg")
-            List(hash -> svg)
-          case other                    =>
-            scribe.warn(s"unknown converter $tlb")
-            Nil
-        }
-      }
-    }.toMap
 
 
-    new ExternalContentResolver(imageMacros, imageBlocks, cachedir)
+    new ExternalContentResolver(imageMacros, Map(), cachedir)
   }
 }
 
 
+
+import better.files.File
+import scitzen.extern.{Graphviz, TexTikz}
+import scitzen.generic.RegexContext.regexStringContext
+import scitzen.generic.Sast.{MacroBlock, RawBlock, TLBlock}
+import scitzen.parser.{Attribute, Macro, MacroCommand}
+
+case class ExternalContentResolver2(project: Project, files: List[File]) {
+
+  def resolve(anchor: File, target: String): Option[(ExternalContentResolver2, String)] = {
+    val source = project.findFile(anchor, target)
+    val destination = project.relativize(source)
+    if (destination.isEmpty) None
+    else Some((copy(files = source :: files), destination.get.toString))
+  }
+
+  def convert(tlb: TLBlock, formatHint: String): List[Sast] = {
+
+    def makeImageMacro(file: File) =
+      List(MacroBlock(Macro(MacroCommand.Image,
+                            tlb.attr.append(List(Attribute("", file.toString()))))))
+
+    tlb.attr.named.get("converter") match {
+      case Some("tikz")               =>
+        val (hash, pdf) = TexTikz.convert(tlb.content.asInstanceOf[RawBlock].content, project.cacheDir)
+        scribe.info(s"converting $hash to $pdf")
+        makeImageMacro(pdf)
+      case Some(gr @ rex"graphviz.*") =>
+        val (hash, svg) = Graphviz.convert(tlb.content.asInstanceOf[RawBlock].content,
+                                           project.cacheDir,
+                                           gr.split("\\s+", 2)(1),
+                                           formatHint)
+        scribe.info(s"converting $hash to $svg")
+        makeImageMacro(svg)
+      case other                      =>
+        scribe.warn(s"unknown converter $other")
+        List(tlb.copy(attr = tlb.attr.copy(raw = tlb.attr.raw.filterNot(_.id == "converter"))))
+    }
+  }
+
+}

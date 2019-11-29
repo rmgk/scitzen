@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 import better.files.File
 
@@ -19,12 +19,19 @@ case class Project(root: File, singleSource: Option[File] = None) {
 
 
   def findDoc(anchor: File, pathString: String): Option[ParsedDocument] = {
-    val rawPath = Paths.get(pathString)
-    val path =
-      if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
-      else anchor / pathString
-    documentManager.byPath.get(path).filter(d => root.isParentOf(d.file))
+    val path: File = findFile(anchor, pathString)
+    documentManager.byPath.get(path)
   }
+
+  def findFile(anchor: File, pathString: String): File = {
+    val rawPath = Paths.get(pathString)
+    if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
+    else anchor / pathString
+  }
+
+  def relativize(file: File): Option[Path] =
+    if (root.isParentOf(file)) Some(root.relativize(file))
+    else None
 }
 
 object Project {

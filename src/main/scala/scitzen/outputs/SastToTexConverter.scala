@@ -3,7 +3,7 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, ExternalContentResolver, Project, RawBlockHandler, Sast, Scope}
+import scitzen.generic.{ConversionContext, Project, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
@@ -18,9 +18,7 @@ object TypeAliasses {
 
 class SastToTexConverter(project: Project,
                          currentFile: File,
-                         numbered: Boolean = true,
-                         imageResolver: ExternalContentResolver,
-                         rawBlockHandler: RawBlockHandler
+                         numbered: Boolean = true
                         ) {
 
 import scitzen.outputs.TypeAliasses._
@@ -81,22 +79,20 @@ import scitzen.outputs.TypeAliasses._
 
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
-          val target = attributes.target
-          val imagepath = imageResolver.image(currentFile, target)
-          if (imagepath.endsWith(".gif") || imagepath.endsWith(".webp")) {
-            scribe.warn(s"tex output currently does not support '$imagepath', omitting")
-            ctx.empty
-          }
-          else ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n"))
+          val target    = attributes.target
+          val imagepath = ctx.image(currentFile, target)
+          ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n"))
 
         case Macro(Include, attributes) =>
           ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
             case Some((doc, sast)) =>
-              new SastToTexConverter(project, doc.file.parent, numbered, imageResolver, rawBlockHandler)
+              new SastToTexConverter(project, doc.file.parent, numbered)
               .sastSeqToTex(sast)(ctx.copy(scope = new Scope(3)))
+
             case None => ctx.empty
           }
-        case other                        =>
+
+        case other =>
           inlineValuesToTex(List(other)).single
       }
   }
@@ -119,7 +115,7 @@ import scitzen.outputs.TypeAliasses._
 
       case RawBlock(delimiter, text) =>
         if (tlblock.attr.named.contains("converter"))
-          sastSeqToTex(rawBlockHandler.convert(tlblock, "pdf"))
+          sastSeqToTex(ctx.convert(tlblock, "pdf"))
         else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
         else delimiter.charAt(0) match {
           case '`' =>
