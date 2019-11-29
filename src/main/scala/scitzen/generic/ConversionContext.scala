@@ -29,6 +29,15 @@ case class ConversionContext[T](data: T, scope: Scope = new Scope(1), externalCo
     externalContentResolver.convert(tlblock, value)
   }
 
+  def fold[U, V](seq: Seq[U])
+                (f: (ConversionContext[Chain[String]], U) => ConversionContext[Chain[String]])
+  : ConversionContext[Chain[String]] =
+        seq.foldLeft(ret(Chain.empty[String])) { (ctx, elem) =>
+          val nctx = f(ctx, elem)
+          nctx.map(data => ctx.data ++ data)
+        }
+
+
 
 }
 

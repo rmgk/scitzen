@@ -25,8 +25,9 @@ import scitzen.outputs.TypeAliasses._
 
   def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = mainSast match {
     case List(Section(title, content, _)) =>
-      s"\\title{${inlineValuesToTex(title.inline)}}\\maketitle{}" +:
-      sastSeqToTex(content)(ctx.copy(scope = new Scope(2)))
+      val ilc = inlineValuesToTex(title.inline)
+      s"\\title{${ilc.data}}\\maketitle{}" +:
+      sastSeqToTex(content)(ilc.copy(scope = new Scope(2)))
 
     case list => sastSeqToTex(list)(ctx.copy(scope = new Scope(1)))
   }
@@ -44,8 +45,7 @@ import scitzen.outputs.TypeAliasses._
   }
 
   def sastSeqToTex(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
-    b.foldLeft(ctx.ret(Chain.empty[String])) {
-      (ctx, sast) => sastToTex(sast)(ctx)}
+    ctx.fold(b) { (ctx, sast) => sastToTex(sast)(ctx) }
   }
 
   def sastToTex(sast: Sast)(implicit ctx: Cta): CtxCS = sast match {
@@ -54,15 +54,16 @@ import scitzen.outputs.TypeAliasses._
 
       case Section(title, contents, _) =>
         val sec = sectioning(ctx.scope)
-        s"\\$sec{${inlineValuesToTex(title.inline)}}" +:
-        sastSeqToTex(contents)(ctx.copy(scope = ctx.scope.inc))
+        val ilc = inlineValuesToTex(title.inline)
+        s"\\$sec{${ilc.data}}" +:
+        sastSeqToTex(contents)(ilc.copy(scope = ctx.scope.inc))
 
       case Slist(children) =>
         children match {
           case Nil => ctx.ret(Chain.nil)
 
           case SlistItem(m, _) :: _ if m.contains(":") =>
-            children.foldLeft(ctx.empty) { (ctx, child) =>
+            ctx.fold(children) { (ctx, child) =>
               s"\\item[${child.marker.replaceAllLiterally(":", "")}]" +:
               sastSeqToTex(child.content)(ctx)
             }.map { content =>
@@ -71,7 +72,7 @@ import scitzen.outputs.TypeAliasses._
 
           case other =>
             "\\begin{itemize}" +:
-            children.foldLeft(ctx.empty) { (ctx, child) =>
+            ctx.fold(children) { (ctx, child) =>
               s"\\item" +: sastSeqToTex(child.content)(ctx)
             } :+
             "\\end{itemize}"
