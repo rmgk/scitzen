@@ -29,9 +29,10 @@ case class Project(root: File, singleSource: Option[File] = None) {
     else anchor / pathString
   }
 
-  def relativize(file: File): Option[Path] =
-    if (root.isParentOf(file)) Some(root.relativize(file))
+  def relativize(anchor: File, file: File): Option[Path] = {
+    if (root.isParentOf(file)) Some(anchor.relativize(file))
     else None
+  }
 }
 
 object Project {

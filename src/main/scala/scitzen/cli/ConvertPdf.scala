@@ -21,7 +21,6 @@ object ConvertPdf {
     optSource.map { sourcedirRel =>
       //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
       Project.fromSource(File(sourcedirRel)).foreach { project =>
-        scribe.info(project.toString)
         convertToPdf(project)
       }
     }
@@ -51,7 +50,7 @@ object ConvertPdf {
 
     val resultContext = new SastToTexConverter(project,
                                          numbered = singleFile,
-                                         currentFile = project.root).convert(
+                                         currentFile = project.singleSource.get).convert(
       if (singleFile) dm.byPath(project.singleSource.get).sdoc.blocks.toList else GenIndexPage.makeIndex(dm)
       )(preConversionContext)
 

@@ -82,10 +82,16 @@ import scitzen.outputs.TypeAliasses._
         case Macro(Image, attributes) =>
           val target    = attributes.target
           val imagepath = ctx.image(currentFile, target)
-          ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$imagepath}\n"))
+          if (imagepath.data.isEmpty) {
+            scribe.error(s"Not relative path: $mcro")
+            ctx.empty
+          }
+          else {
+            ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{${imagepath.data.get}}\n"))
+          }
 
         case Macro(Include, attributes) =>
-          ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
+          ImportPreproc.macroImportPreproc(project.findDoc(currentFile.parent, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToTexConverter(project, doc.file.parent, numbered)
               .sastSeqToTex(sast)(ctx.copy(scope = new Scope(3)))

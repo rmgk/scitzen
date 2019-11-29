@@ -60,16 +60,20 @@ case class ExternalContentResolver2(project: Project, files: List[File]) {
 
   def resolve(anchor: File, target: String): Option[(ExternalContentResolver2, String)] = {
     val source = project.findFile(anchor, target)
-    val destination = project.relativize(source)
+    val destination = project.relativize(anchor, source)
+        scribe.info("=" * 20)
+    scribe.info(s"resolve $source to $destination given $anchor and $target")
     if (destination.isEmpty) None
     else Some((copy(files = source :: files), destination.get.toString))
   }
 
   def convert(tlb: TLBlock, formatHint: String): List[Sast] = {
 
-    def makeImageMacro(file: File) =
+    def makeImageMacro(file: File) = {
+      val relTarget = project.root.relativize(file)
       List(MacroBlock(Macro(MacroCommand.Image,
-                            tlb.attr.append(List(Attribute("", file.toString()))))))
+                            tlb.attr.append(List(Attribute("", s"/$relTarget"))))))
+    }
 
     tlb.attr.named.get("converter") match {
       case Some("tikz")               =>
