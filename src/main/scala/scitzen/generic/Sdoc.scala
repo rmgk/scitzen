@@ -2,7 +2,7 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.generic.Sast.{Section, TLBlock}
+import scitzen.generic.Sast.Section
 import scitzen.generic.SastAnalyzes.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
@@ -29,7 +29,7 @@ case class Sdoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
   lazy val modified: Option[ScitzenDateTime] = named.get("modified")
                                                .map(m => DateParsingHelper.parseDate(m.trim))
 
-  lazy val title: Option[String] = blocks.headOption.collect { case TLBlock(_, s: Section) => s }.map(_.title.str)
+  lazy val title: Option[String] = blocks.headOption.collect { case s: Section => s }.map(_.title.str)
 
   lazy val words: List[String] = SastToTextConverter.convert(blocks)
                                  .flatMap(_.split("[^\\p{L}]+")).toList
