@@ -29,7 +29,7 @@ object DocumentManager {
     val includes = (for {
       doc <- documentManager.documents
       mcro <- doc.sdoc.analyzeResult.macros
-      if mcro.command == Include
+      if mcro.command == Include && mcro.attributes.positional.size > 1 && mcro.attributes.positional.head != "code"
       file = doc.file.parent / mcro.attributes.target
       exists = if (file.isRegularFile) true else {
         scribe.warn(s"Included file »${File.currentWorkingDirectory.relativize(file)}« does not exist" + doc.reporter(mcro))

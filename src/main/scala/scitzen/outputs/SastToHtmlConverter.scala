@@ -87,7 +87,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   def sastToHtmlI(b: Sast)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
     b match {
 
-      case tlblock: TLBlock => tlBlockToHtml(tlblock)
 
       case sec @ Section(title, subsections, _) =>
         val inner = (if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
@@ -143,34 +142,35 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case other =>
           inlineValuesToHTML(List(other))
       }
+
+      case tLBlock: TLBlock =>
+        val positiontype = tLBlock.attr.positional.headOption
+        positiontype match {
+          case Some("image") =>
+            val hash = Hashes.sha1hex(tLBlock.content.asInstanceOf[RawBlock].content)
+            val path = imageResolver.image(hash)
+            List(img(src := path))
+          case Some("quote") =>
+            val innerHtml = sblockToHtml(tLBlock.content)
+            // for blockquote layout, see example 12 (the twitter quote)
+            // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
+            val bq        = blockquote(innerHtml)
+            // first argument is "quote" we concat the rest and treat them as a single entity
+            val title     = tLBlock.attr.positional.drop(1)
+            List(if (title.nonEmpty) bq(cite(title))
+                 else bq)
+          case _             =>
+            val prov = tLBlock.attr.prov
+            val html = sblockToHtml(tLBlock.content)
+            if (prov.start <= syncPos && syncPos <= prov.end) {
+              scribe.info(s"highlighting $syncPos: $prov")
+              div(id := "highlight") :: html.toList
+            } else html
+        }
+
     }
   }
 
-  def tlBlockToHtml(bwa: TLBlock)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
-    val positiontype = bwa.attr.positional.headOption
-    positiontype match {
-      case Some("image") =>
-        val hash = Hashes.sha1hex(bwa.content.asInstanceOf[RawBlock].content)
-        val path = imageResolver.image(hash)
-        List(img(src := path))
-      case Some("quote") =>
-        val innerHtml = sblockToHtml(bwa.content)
-        // for blockquote layout, see example 12 (the twitter quote)
-        // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
-        val bq        = blockquote(innerHtml)
-        // first argument is "quote" we concat the rest and treat them as a single entity
-        val title     = bwa.attr.positional.drop(1)
-        List(if (title.nonEmpty) bq(cite(title))
-             else bq)
-      case _             =>
-        val prov = bwa.attr.prov
-        val html = sblockToHtml(bwa.content)
-        if (prov.start <= syncPos && syncPos <= prov.end) {
-          scribe.info(s"highlighting $syncPos: $prov")
-          div(id := "highlight") :: html.toList
-        } else html
-    }
-  }
 
 
   def sblockToHtml(sblockType: SBlockType)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = sblockType match {
