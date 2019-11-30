@@ -4,16 +4,16 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
 import better.files.File
+import cats.data.Chain
 import scalatags.generic.Bundle
 import scitzen.extern.Hashes
 import scitzen.generic.Sast._
-import scitzen.generic.{DocumentManager, ExternalContentResolver, ParsedDocument, Project, Sast, Scope, Sdoc}
+import scitzen.generic.{ConversionContext, DocumentManager, ExternalContentResolver, ParsedDocument, Project, Sast, Scope, Sdoc}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.collection.mutable
 import scitzen.generic.RegexContext.regexStringContext
-
 
 object ImportPreproc {
   def macroImportPreproc(docOpt: Option[ParsedDocument], attributes: Attributes)
@@ -48,8 +48,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
  sync: Option[(File, Int)],
  project: Project) {
 
+
   import bundle.all._
   import bundle.tags2.{article, time}
+
+
+  type CtxCF = ConversionContext[Chain[Frag]]
+  type Ctx[T] = ConversionContext[T]
+  type Cta = Ctx[_]
 
   val currentFile: File = document.fold(project.root)(_.file)
 
@@ -57,10 +63,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     document.filter(doc => sync.exists(_._1 == doc.file))
             .fold(Int.MaxValue) { _ => sync.get._2 }
 
-  def convert() = sastToHtml(sdoc.blocks)
+  def convert()(implicit ctx: Cta) = sastToHtml(sdoc.blocks)
 
 
-  def listItemToHtml(child: SlistItem)(implicit nestingLevel: Scope): Seq[Frag] = {
+  def listItemToHtml(child: SlistItem)(implicit ctx: Cta): CtxCF = {
     sastToHtml(child.content)
   }
 
@@ -83,32 +89,42 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   }
 
 
-  def sastToHtml(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = b.flatMap(sastToHtmlI(_))
-  def sastToHtmlI(b: Sast)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = {
+  def sastToHtml(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => sastToHtmlI(sast)(ctx))
+  def sastToHtmlI(b: Sast)(implicit ctx: Cta): CtxCF = {
     b match {
 
 
       case sec @ Section(title, subsections, _) =>
-        val inner = (if (nestingLevel.level == 1) List(tMeta()) else Nil) ++
-                    sastToHtml(subsections)(nestingLevel.inc)
-        tag("h" + nestingLevel.level)(id := title.str, inlineValuesToHTML(title.inline)) +:
-        inner
+        val inner = (if (ctx.scope.level == 1) Chain(tMeta()) else Chain.nil) ++:[Frag]
+                    sastToHtml(subsections)(ctx.copy(scope = ctx.scope.inc))
+        inlineValuesToHTML(title.inline)(inner).map { innerFrags =>
+          tag("h" + ctx.scope.level)(id := title.str, innerFrags.toList) +: inner.data
+        }
 
-      case Slist(Nil)      => Nil
-      case Slist(children) => List(
+      case Slist(Nil)      => ctx.empty
+      case Slist(children) =>
         if (children.head.marker.contains(":")) {
-          dl(children.flatMap(c => List(dt(strong(c.marker.replaceAllLiterally(":", ""))), dd(listItemToHtml(c)))))
+          ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
+            listItemToHtml(c)(ctx).map { innerFrags =>
+              Chain(dt(strong(c.marker.replaceAllLiterally(":", ""))), dd(innerFrags.toList))
+            }
+          }.map(i => Chain(dl(i.toList)))
         }
         else {
           val listTag = if (children.head.marker.contains(".")) ol else ul
-          listTag(children.map(c => li(listItemToHtml(c))))
-        })
+          ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
+            listItemToHtml(c)(ctx).map(i => Chain(li(i.toList)))
+          }.map(i => Chain(listTag(i.toList)))
+        }
 
       case MacroBlock(mcro) => mcro match {
-        case Macro(Image, attributes)                                                       =>
+        case Macro(Image, attributes) =>
           val target = imageResolver.image(currentFile, attributes.positional.last)
-          List(img(src := target))
-        case Macro(Other("horizontal-rule"), attributes)                                    => List(hr)
+          ctx.ret(Chain(img(src := target)))
+
+        case Macro(Other("horizontal-rule"), attributes) =>
+          ctx.ret(Chain(hr))
+
         case Macro(Include, attributes) if attributes.named.get("type").contains("article") =>
           val post = project.findDoc(currentFile, attributes.target).get
 
@@ -122,22 +138,21 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
           val aref = documentManager.relTargetPath(currentFile, post)
 
-          List(a(
+          ctx.ret(Chain(a(
             href := aref,
             article(timeShort(post.sdoc.date.get),
                     span(cls := "title", post.sdoc.title),
                     categoriesSpan()
-                    )))
+                    ))))
 
         case Macro(Include, attributes) =>
           ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               new SastToHtmlConverter(bundle, documentManager, imageResolver,
                                       bibliography, doc.sdoc, Some(doc), katexMap, sync, project)
-              .sastToHtml(sast)(new Scope(3))
-            case None              => Nil
+              .sastToHtml(sast)(ctx.copy(scope = new Scope(3)))
+            case None              => ctx.empty
           }
-
 
         case other =>
           inlineValuesToHTML(List(other))
@@ -149,37 +164,37 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           case Some("image") =>
             val hash = Hashes.sha1hex(tLBlock.content.asInstanceOf[RawBlock].content)
             val path = imageResolver.image(hash)
-            List(img(src := path))
+            ctx.ret(Chain(img(src := path)))
           case Some("quote") =>
-            val innerHtml = sblockToHtml(tLBlock.content)
-            // for blockquote layout, see example 12 (the twitter quote)
-            // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
-            val bq        = blockquote(innerHtml)
-            // first argument is "quote" we concat the rest and treat them as a single entity
-            val title     = tLBlock.attr.positional.drop(1)
-            List(if (title.nonEmpty) bq(cite(title))
-                 else bq)
+            sblockToHtml(tLBlock.content).map { innerHtml =>
+              // for blockquote layout, see example 12 (the twitter quote)
+              // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
+              val bq    = blockquote(innerHtml.toList)
+              // first argument is "quote" we concat the rest and treat them as a single entity
+              val title = tLBlock.attr.positional.drop(1)
+              Chain(if (title.nonEmpty) bq(cite(title)) else bq)
+            }
           case _             =>
             val prov = tLBlock.attr.prov
-            val html = sblockToHtml(tLBlock.content)
-            if (prov.start <= syncPos && syncPos <= prov.end) {
-              scribe.info(s"highlighting $syncPos: $prov")
-              div(id := "highlight") :: html.toList
-            } else html
+            sblockToHtml(tLBlock.content).map { html =>
+              if (prov.start <= syncPos && syncPos <= prov.end) {
+                scribe.info(s"highlighting $syncPos: $prov")
+                div(id := "highlight") +: html
+              } else html
+            }
         }
 
     }
   }
 
 
+  def sblockToHtml(sblockType: SBlockType)(implicit ctx: Cta): CtxCF = sblockType match {
 
-  def sblockToHtml(sblockType: SBlockType)(implicit nestingLevel: Scope = new Scope(1)): Seq[Frag] = sblockType match {
-
-    case Paragraph(text) => List(p(inlineValuesToHTML(text.inline)))
+    case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
 
     case ParsedBlock(delimiter, blockContent) =>
       delimiter match {
-        case rex"=+" => List(figure(sastToHtml(blockContent)))
+        case rex"=+" => sastToHtml(blockContent).map(cf => Chain(figure(cf.toList)))
         // space indented blocks are currently only used for description lists
         // they are parsed and inserted as if the indentation was not present
         case rex"\s+" => sastToHtml(blockContent)
@@ -187,77 +202,93 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case "include" => sastToHtml(blockContent)
         // there is also '=' example, and '+' passthrough.
         // examples seems rather specific, and passthrough is not implemented.
-        case _ => List(div(delimiter, br, sastToHtml(blockContent), br, delimiter))
+        case _ => sastToHtml(blockContent).map { inner =>
+          Chain(div(delimiter, br, inner.toList, br, delimiter))
+        }
       }
 
     case RawBlock(delimiter, text) =>
-      if (delimiter.isEmpty || delimiter == "comment|space") Nil
+      if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
       else delimiter.charAt(0) match {
         // Code listing
         // Use this for monospace, space preserving, line preserving text
         // It may wrap to fit the screen content
-        case '`' => List(pre(code(text)))
+        case '`' => ctx.retc(pre(code(text)))
         // Literal block
         // This seems to be supposed to work similar to code? But whats the point then?
         // We interpret this as text with predetermined line wrappings
         // and no special syntax, but otherwise normally formatted.
         // This is great to represent copy&pasted posts or chat messages.
-        case '.'   => List(pre(text))
+        case '.'   => ctx.retc(pre(text))
         case other =>
           scribe.warn(s"unknown block type “$delimiter”")
-          List(pre(code(text)))
+          ctx.retc(pre(code(text)))
       }
   }
 
 
-  def inlineValuesToHTML(inlines: Seq[Inline]): Seq[Frag] =
-    inlines.map {
-      case InlineText(str)                                                                    => str
-      case Macro(Quote(q), attrs)                                                             =>
-        val inner = attrs.target
-        //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
-        q.head match {
-          case '_' => em(inner)
-          case '*' => strong(inner)
-          case '`' => code(inner)
-          case '$' =>
-            val mathml = katexMap.getOrElseUpdate(inner, {
-              (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
-            })
-            span(raw(mathml))
-        }
-      case Macro(Comment, attributes)                                                         => frag()
-      case Macro(Other("ref"), attributes)                                                    =>
-        sdoc.targets.find(_.id == attributes.positional.head).map { target =>
-          target.resolution match {
-            case Section(title, _, _) => a(href := s"#${title.str}", inlineValuesToHTML(title.inline))
-            case other                =>
-              scribe.error(s"can not refer to $other")
-              frag()
-          }
-        }
-      case mcro @ Macro(Cite, attributes)                                                     =>
-        val anchors = attributes.positional.flatMap {_.split(",")}.map { bibid =>
-          bibid -> bibliography.getOrElse(bibid.trim, {
-            scribe.error(s"bib key not found: $bibid " + reportPos(mcro))
-            bibid
-          })
-        }.sortBy(_._2).map { case (bibid, bib) => a(href := s"#$bibid", bib) }
-        frag("\u00A0", anchors)
-      case Macro(Other(tagname @ ("ins" | "del")), attributes)                                =>
-        tag(tagname)(attributes.positional.mkString(", "))
-      case Macro(Other(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto")), attributes) =>
-        val linktarget = s"$protocol:${attributes.target}"
-        linkTo(attributes, linktarget)
-      case Macro(Link, attributes)                                                            =>
-        val target = attributes.target
-        linkTo(attributes, target)
-      case Macro(Other("footnote"), attributes)                                               =>
-        val target = attributes.target
-        a(title := target, "※")
-      case im @ Macro(command, attributes)                                                    => unknownMacroOutput(im)
+  def inlineValuesToHTML(inlines: Seq[Inline])(implicit ctx: Cta): CtxCF =
+    ctx.fold(inlines) { (ctx, inline) => inlineToHTML(inline)(ctx) }
 
+  def inlineToHTML(inline: Inline)(implicit ctx: Cta): CtxCF = inline match {
+    case InlineText(str) => ctx.retc(stringFrag(str))
+
+    case Macro(Quote(q), attrs) => ctx.retc {
+      val inner = attrs.target
+      //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
+      q.head match {
+        case '_' => em(inner)
+        case '*' => strong(inner)
+        case '`' => code(inner)
+        case '$' =>
+          val mathml = katexMap.getOrElseUpdate(inner, {
+            (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
+          })
+          span(raw(mathml))
+      }
     }
+
+    case Macro(Comment, attributes) => ctx.empty
+
+    case Macro(Other("ref"), attributes) =>
+      sdoc.targets.find(_.id == attributes.positional.head).map[CtxCF] { target =>
+        target.resolution match {
+          case Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
+            Chain(a(href := s"#${title.str}", inner.toList))
+          }
+          case other                =>
+            scribe.error(s"can not refer to $other")
+            ctx.empty
+        }
+      }.getOrElse(ctx.empty)
+
+    case mcro @ Macro(Cite, attributes) =>
+      val anchors = attributes.positional.flatMap {_.split(",")}.map { bibid =>
+        bibid -> bibliography.getOrElse(bibid.trim, {
+          scribe.error(s"bib key not found: $bibid " + reportPos(mcro))
+          bibid
+        })
+      }.sortBy(_._2).map { case (bibid, bib) => a(href := s"#$bibid", bib) }
+      ctx.retc(frag("\u00A0", anchors))
+
+    case Macro(Other(tagname @ ("ins" | "del")), attributes) =>
+      ctx.retc(tag(tagname)(attributes.positional.mkString(", ")))
+
+    case Macro(Other(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto")), attributes) =>
+      val linktarget = s"$protocol:${attributes.target}"
+      ctx.retc(linkTo(attributes, linktarget))
+
+    case Macro(Link, attributes) =>
+      val target = attributes.target
+      ctx.retc(linkTo(attributes, target))
+
+    case Macro(Other("footnote"), attributes) =>
+      val target = attributes.target
+      ctx.retc(a(title := target, "※"))
+
+    case im @ Macro(command, attributes) => ctx.retc(unknownMacroOutput(im))
+
+  }
 
   def reportPos(m: Macro): String = document.fold("")(_.reporter(m))
 

@@ -8,12 +8,6 @@ import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, L
 import scitzen.parser.{Inline, InlineText, Macro}
 
 
-object TypeAliasses {
-    type CtxCS = ConversionContext[Chain[String]]
-  type Ctx[T] = ConversionContext[T]
-  type CS = Chain[String]
-  type Cta = Ctx[_]
-}
 
 
 class SastToTexConverter(project: Project,
@@ -21,7 +15,9 @@ class SastToTexConverter(project: Project,
                          numbered: Boolean = true
                         ) {
 
-import scitzen.outputs.TypeAliasses._
+  type CtxCS = ConversionContext[Chain[String]]
+  type Ctx[T] = ConversionContext[T]
+  type Cta = Ctx[_]
 
   def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = mainSast match {
     case List(Section(title, content, _)) =>
@@ -63,7 +59,7 @@ import scitzen.outputs.TypeAliasses._
           case Nil => ctx.ret(Chain.nil)
 
           case SlistItem(m, _) :: _ if m.contains(":") =>
-            ctx.fold(children) { (ctx, child) =>
+            ctx.fold[SlistItem, String](children) { (ctx, child) =>
               s"\\item[${child.marker.replaceAllLiterally(":", "")}]" +:
               sastSeqToTex(child.content)(ctx)
             }.map { content =>
@@ -72,7 +68,7 @@ import scitzen.outputs.TypeAliasses._
 
           case other =>
             "\\begin{itemize}" +:
-            ctx.fold(children) { (ctx, child) =>
+            ctx.fold[SlistItem, String](children) { (ctx, child) =>
               s"\\item" +: sastSeqToTex(child.content)(ctx)
             } :+
             "\\end{itemize}"

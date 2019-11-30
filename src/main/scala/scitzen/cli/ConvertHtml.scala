@@ -4,10 +4,11 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
 
 import better.files._
+import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{GenIndexPage, ExternalContentResolver, NLP, ParsedDocument, Project, SastAnalyzes, Sdoc}
+import scitzen.generic.{ConversionContext, ExternalContentResolver, ExternalContentResolver2, GenIndexPage, NLP, ParsedDocument, Project, SastAnalyzes, Sdoc}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.parser.MacroCommand.Cite
 
@@ -105,6 +106,8 @@ object ConvertHtml {
         List(ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format) } ))
       }
 
+      val preConversionContext = ConversionContext(Chain.empty[String], externalContentResolver = new ExternalContentResolver2(project, Nil))
+
       val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                               documentManager = dm,
                                               imageResolver = imageResolver,
@@ -116,7 +119,8 @@ object ConvertHtml {
                                               project = project)
       val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
       val cssrelpath = postoutputdir.relativize(cssfile).toString
-      val res = HtmlPages(cssrelpath).wrapContentHtml(converter.convert() ++ citations,
+      val converted = converter.convert()(preConversionContext)
+      val res = HtmlPages(cssrelpath).wrapContentHtml(converted.data.toList ++ citations,
                                                       "fullpost",
                                                       toc,
                                                       doc.sdoc.language
@@ -140,6 +144,8 @@ object ConvertHtml {
         imageResolver.copyToTarget(postoutput)
         dm.documents.foreach {convertDoc(_, postoutput)}
 
+              val preConversionContext = ConversionContext(Chain.empty[String], externalContentResolver = new ExternalContentResolver2(project, Nil))
+
         val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp), new SastAnalyzes(m => ""))
         val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                                 documentManager = dm,
@@ -152,8 +158,11 @@ object ConvertHtml {
                                                 project = project)
         val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
 
+              val converted = converter.convert()(preConversionContext)
+
+
         val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
-                  .wrapContentHtml(converter.convert(),
+                  .wrapContentHtml(converted.data.toList,
                                    "index",
                                    toc,
                                    sdoc.language.getOrElse(""))
