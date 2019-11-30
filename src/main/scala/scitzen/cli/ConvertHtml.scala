@@ -12,7 +12,6 @@ import scitzen.generic.{ConversionContext, ExternalContentResolver, ExternalCont
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.parser.MacroCommand.Cite
 
-import scala.collection.mutable
 import scala.util.Try
 
 
@@ -91,14 +90,14 @@ object ConvertHtml {
 
 
     val katexmapfile = project.cacheDir / "katexmap.json"
-    val katexMap = Try {
-      upickle.default.read[mutable.Map[String, String]](katexmapfile.path)
-    }.getOrElse(mutable.Map())
+    val initialKatexMap = Try {
+      upickle.default.read[Map[String, String]](katexmapfile.path)
+    }.getOrElse(Map())
 
 
 
 
-    def convertDoc(doc: ParsedDocument, postoutputdir: File): Unit = {
+    def convertDoc(doc: ParsedDocument, postoutputdir: File, ctx: ConversionContext[_]): ConversionContext[_] = {
 
       val citations = if (bibEntries.isEmpty) Nil else {
         import scalatags.Text.all.{id, li, ol}
@@ -106,20 +105,16 @@ object ConvertHtml {
         List(ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format) } ))
       }
 
-      val preConversionContext = ConversionContext(Chain.empty[String], externalContentResolver = new ExternalContentResolver2(project, Nil))
-
       val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                               documentManager = dm,
-                                              imageResolver = imageResolver,
                                               bibliography = biblio,
                                               sdoc = doc.sdoc,
                                               document = Some(doc),
-                                              katexMap = katexMap,
                                               sync = sync,
                                               project = project)
       val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
       val cssrelpath = postoutputdir.relativize(cssfile).toString
-      val converted = converter.convert()(preConversionContext)
+      val converted = converter.convert()(ctx)
       val res = HtmlPages(cssrelpath).wrapContentHtml(converted.data.toList ++ citations,
                                                       "fullpost",
                                                       toc,
@@ -129,49 +124,58 @@ object ConvertHtml {
       val target = postoutputdir./(doc.file.nameWithoutExtension(false) + ".html")
 
       target.write(res)
+      converted
     }
 
+    val preConversionContext =
+      ConversionContext(Chain.empty[String],
+                        externalContentResolver = new ExternalContentResolver2(project, Nil),
+                        katexMap = initialKatexMap
+                        )
 
-    project.singleSource match {
+    val resultContext = project.singleSource match {
       case Some(sourcefile) =>
         val postoutput = project.outputdir
         postoutput.createDirectories()
         imageResolver.copyToTarget(postoutput)
-        convertDoc(dm.byPath(sourcefile), postoutput)
+        convertDoc(dm.byPath(sourcefile), postoutput, preConversionContext)
       case None =>
         val postoutput = project.outputdir / "posts"
         postoutput.createDirectories()
         imageResolver.copyToTarget(postoutput)
-        dm.documents.foreach {convertDoc(_, postoutput)}
 
-              val preConversionContext = ConversionContext(Chain.empty[String], externalContentResolver = new ExternalContentResolver2(project, Nil))
 
-        val sdoc = Sdoc(GenIndexPage.makeIndex(dm, reverse = true, nlp = nlp), new SastAnalyzes(m => ""))
+
+        val docsCtx = dm.documents.foldLeft(preConversionContext){(ctx, doc) =>
+          convertDoc(doc, postoutput, ctx).empty
+        }
+
+
+        val sdoc = Sdoc(GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp), new SastAnalyzes(m => ""))
         val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                                 documentManager = dm,
-                                                imageResolver = imageResolver,
                                                 bibliography = Map(),
                                                 sdoc = sdoc,
                                                 document = None,
-                                                katexMap = katexMap,
                                                 sync = None,
                                                 project = project)
         val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
 
-              val converted = converter.convert()(preConversionContext)
+        val convertedCtx = converter.convert()(docsCtx)
 
 
         val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
-                  .wrapContentHtml(converted.data.toList,
+                  .wrapContentHtml(convertedCtx.data.toList,
                                    "index",
                                    toc,
                                    sdoc.language.getOrElse(""))
         project.outputdir./("index.html").write(res)
+        convertedCtx
     }
 
-    if (katexMap.nonEmpty) {
+    if (resultContext.katexMap.nonEmpty) {
       katexmapfile.parent.createDirectories()
-      katexmapfile.write(upickle.default.write[mutable.Map[String, String]](katexMap, indent = 2))
+      katexmapfile.write(upickle.default.write[Map[String, String]](resultContext.katexMap, indent = 2))
     }
 
   }

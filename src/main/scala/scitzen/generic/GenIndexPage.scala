@@ -7,7 +7,7 @@ import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 object GenIndexPage {
 
 
-  def makeIndex(dm: DocumentManager, reverse: Boolean = false, nlp: Option[NLP] = None): List[Section] = {
+  def makeIndex(dm: DocumentManager, project: Project, reverse: Boolean = false, nlp: Option[NLP] = None): List[Section] = {
     def ordering[T: Ordering]:Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
     def sectionBy(pdocs: List[ParsedDocument])
@@ -32,7 +32,7 @@ object GenIndexPage {
         idocs.sortBy(_.sdoc.date)(ordering).flatMap { doc =>
           List(MacroBlock(Macro(Include,
                            Attributes.synt(
-                             Attribute("", doc.file.pathAsString),
+                             Attribute("", project.root.relativize(doc.file).toString),
                              Attribute("type", "article")))),
                //Paragraph(Text(
                //  nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{

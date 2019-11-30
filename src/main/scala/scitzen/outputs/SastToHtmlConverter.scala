@@ -6,14 +6,11 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import cats.data.Chain
 import scalatags.generic.Bundle
-import scitzen.extern.Hashes
+import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, DocumentManager, ExternalContentResolver, ParsedDocument, Project, Sast, Scope, Sdoc}
+import scitzen.generic.{ConversionContext, DocumentManager, ParsedDocument, Project, Sast, Scope, Sdoc}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
-
-import scala.collection.mutable
-import scitzen.generic.RegexContext.regexStringContext
 
 object ImportPreproc {
   def macroImportPreproc(docOpt: Option[ParsedDocument], attributes: Attributes)
@@ -40,11 +37,9 @@ object ImportPreproc {
 class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 (val bundle: Bundle[Builder, Output, FragT],
  documentManager: DocumentManager,
- imageResolver: ExternalContentResolver,
  bibliography: Map[String, String],
  sdoc: Sdoc,
  document: Option[ParsedDocument],
- katexMap: mutable.Map[String, String],
  sync: Option[(File, Int)],
  project: Project) {
 
@@ -119,8 +114,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
-          val target = imageResolver.image(currentFile, attributes.positional.last)
-          ctx.ret(Chain(img(src := target)))
+          ctx.image(currentFile, attributes.target).map { target =>
+            Chain.fromSeq(target.map(s => img(src := s)).toSeq)
+          }
 
         case Macro(Other("horizontal-rule"), attributes) =>
           ctx.ret(Chain(hr))
@@ -148,8 +144,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case Macro(Include, attributes) =>
           ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
             case Some((doc, sast)) =>
-              new SastToHtmlConverter(bundle, documentManager, imageResolver,
-                                      bibliography, doc.sdoc, Some(doc), katexMap, sync, project)
+              new SastToHtmlConverter(bundle, documentManager,
+                                      bibliography, doc.sdoc, Some(doc), sync, project)
               .sastToHtml(sast)(ctx.copy(scope = new Scope(3)))
             case None              => ctx.empty
           }
@@ -161,10 +157,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       case tLBlock: TLBlock =>
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
-          case Some("image") =>
-            val hash = Hashes.sha1hex(tLBlock.content.asInstanceOf[RawBlock].content)
-            val path = imageResolver.image(hash)
-            ctx.ret(Chain(img(src := path)))
+          case _ if tLBlock.attr.named.contains("converter") =>
+            sastToHtml(ctx.convert(tLBlock, "pdf"))
           case Some("quote") =>
             sblockToHtml(tLBlock.content).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
@@ -233,18 +227,18 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   def inlineToHTML(inline: Inline)(implicit ctx: Cta): CtxCF = inline match {
     case InlineText(str) => ctx.retc(stringFrag(str))
 
-    case Macro(Quote(q), attrs) => ctx.retc {
-      val inner = attrs.target
+    case Macro(Quote(q), attrs) => {
+      val inner =attrs.target
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
       q.head match {
-        case '_' => em(inner)
-        case '*' => strong(inner)
-        case '`' => code(inner)
+        case '_' => ctx.retc(em(inner))
+        case '*' => ctx.retc(strong(inner))
+        case '`' => ctx.retc(code(inner))
         case '$' =>
-          val mathml = katexMap.getOrElseUpdate(inner, {
+          val (mathml, ictx) = ctx.katex(inner, {
             (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
           })
-          span(raw(mathml))
+          ictx.retc(span(raw(mathml)))
       }
     }
 

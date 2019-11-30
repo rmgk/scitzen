@@ -61,7 +61,6 @@ case class ExternalContentResolver2(project: Project, files: List[File]) {
   def resolve(anchor: File, target: String): Option[(ExternalContentResolver2, String)] = {
     val source = project.findFile(anchor, target)
     val destination = project.relativize(anchor, source)
-        scribe.info("=" * 20)
     if (destination.isEmpty) None
     else Some((copy(files = source :: files), destination.get.toString))
   }

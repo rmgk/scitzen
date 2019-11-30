@@ -4,7 +4,11 @@ import better.files.File
 import cats.data.Chain
 
 /** The conversion context, used to keep state of in the conversion. */
-case class ConversionContext[T](data: T, scope: Scope = new Scope(1), externalContentResolver: ExternalContentResolver2) {
+case class ConversionContext[T]
+(data: T,
+ externalContentResolver: ExternalContentResolver2,
+ scope: Scope = new Scope(1),
+ katexMap: Map[String, String] = Map.empty) {
 
 
   def ret[U](d: U): ConversionContext[U] = copy(data = d)
@@ -38,6 +42,16 @@ case class ConversionContext[T](data: T, scope: Scope = new Scope(1), externalCo
       val nctx = f(ctx, elem)
       nctx.map(data => ctx.data ++ data)
     }
+
+    def katex(key: String, default: => String): (String, ConversionContext[T]) = {
+      katexMap.get(key) match {
+        case None =>
+          val computed = default
+          (computed, copy(katexMap = katexMap.updated(key, computed)))
+        case Some(value) => (value, this)
+      }
+    }
+
 
 
 }
