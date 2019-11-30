@@ -35,6 +35,11 @@ case class ConversionContext[T]
     externalContentResolver.convert(tlblock, value)
   }
 
+  def withScope[U](scope: Scope)(f: ConversionContext[T] => ConversionContext[U]): ConversionContext[U] =
+    f(copy(scope = scope)).copy(scope = this.scope)
+  def incScope[U](f: ConversionContext[T] => ConversionContext[U]): ConversionContext[U] =
+    withScope(scope.inc)(f)
+
   def fold[U, V](seq: Seq[U])
                 (f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])
   : ConversionContext[Chain[V]] =

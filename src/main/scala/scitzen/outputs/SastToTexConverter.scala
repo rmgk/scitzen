@@ -23,9 +23,9 @@ class SastToTexConverter(project: Project,
     case List(Section(title, content, _)) =>
       val ilc = inlineValuesToTex(title.inline)
       s"\\title{${ilc.data}}\\maketitle{}" +:
-      sastSeqToTex(content)(ilc.copy(scope = new Scope(2)))
+      ilc.withScope(new Scope(2))(sastSeqToTex(content)(_))
 
-    case list => sastSeqToTex(list)(ctx.copy(scope = new Scope(1)))
+    case list => ctx.withScope(new Scope(1))(sastSeqToTex(list)(_))
   }
 
   def latexencode(input: String): String = {
@@ -52,7 +52,7 @@ class SastToTexConverter(project: Project,
         val sec = sectioning(ctx.scope)
         val ilc = inlineValuesToTex(title.inline)
         s"\\$sec{${ilc.data}}" +:
-        sastSeqToTex(contents)(ilc.copy(scope = ctx.scope.inc))
+        ilc.incScope(sastSeqToTex(contents)(_))
 
       case Slist(children) =>
         children match {
@@ -89,8 +89,9 @@ class SastToTexConverter(project: Project,
         case Macro(Include, attributes) =>
           ImportPreproc.macroImportPreproc(project.findDoc(currentFile.parent, attributes.target), attributes) match {
             case Some((doc, sast)) =>
+              ctx.withScope(new Scope(3))(
               new SastToTexConverter(project, doc.file.parent, numbered)
-              .sastSeqToTex(sast)(ctx.copy(scope = new Scope(3)))
+              .sastSeqToTex(sast)(_))
 
             case None => ctx.empty
           }

@@ -58,7 +58,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     document.filter(doc => sync.exists(_._1 == doc.file))
             .fold(Int.MaxValue) { _ => sync.get._2 }
 
-  def convert()(implicit ctx: Cta) = sastToHtml(sdoc.blocks)
+  def convert()(implicit ctx: Cta) = sastToHtml(sdoc.blocks)(ctx.copy(scope = new Scope(level = 1)))
 
 
   def listItemToHtml(child: SlistItem)(implicit ctx: Cta): CtxCF = {
@@ -91,7 +91,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
       case sec @ Section(title, subsections, _) =>
         val inner = (if (ctx.scope.level == 1) Chain(tMeta()) else Chain.nil) ++:[Frag]
-                    sastToHtml(subsections)(ctx.copy(scope = ctx.scope.inc))
+                    ctx.incScope(sastToHtml(subsections)(_))
         inlineValuesToHTML(title.inline)(inner).map { innerFrags =>
           tag("h" + ctx.scope.level)(id := title.str, innerFrags.toList) +: inner.data
         }
@@ -144,9 +144,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case Macro(Include, attributes) =>
           ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
             case Some((doc, sast)) =>
-              new SastToHtmlConverter(bundle, documentManager,
-                                      bibliography, doc.sdoc, Some(doc), sync, project)
-              .sastToHtml(sast)(ctx.copy(scope = new Scope(3)))
+              ctx.withScope(new Scope(3)) {
+                new SastToHtmlConverter(bundle, documentManager,
+                                        bibliography, doc.sdoc, Some(doc), sync, project)
+                .sastToHtml(sast)(_)
+              }
             case None              => ctx.empty
           }
 
