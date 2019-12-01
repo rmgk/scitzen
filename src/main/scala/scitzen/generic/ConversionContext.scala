@@ -6,7 +6,7 @@ import cats.data.Chain
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T]
 (data: T,
- externalContentResolver: ExternalContentResolver2,
+ images: ImageResolver,
  scope: Scope = new Scope(1),
  katexMap: Map[String, String] = Map.empty) {
 
@@ -25,14 +25,14 @@ case class ConversionContext[T]
   def empty[U]: ConversionContext[Chain[U]] = ret(Chain.empty[U])
   def single: ConversionContext[Chain[T]] = ret(Chain.one(data))
 
-  def image(currentFile: File, target: String): ConversionContext[Option[String]] =
-    externalContentResolver.resolve(currentFile, target) match {
+  def image(cwd: File, target: String): ConversionContext[Option[File]] =
+    images.resolve(cwd: File, target) match {
       case None              => ret(None)
-      case Some((ecr, path)) => copy(externalContentResolver = ecr, data = Some(path))
+      case Some((ecr, path)) => copy(images = ecr, data = Some(path))
     }
 
   def convert(tlblock: Sast.TLBlock, value: "pdf"): Seq[Sast] = {
-    externalContentResolver.convert(tlblock, value)
+    images.convert(tlblock, value)
   }
 
   def withScope[U](scope: Scope)(f: ConversionContext[T] => ConversionContext[U]): ConversionContext[U] =

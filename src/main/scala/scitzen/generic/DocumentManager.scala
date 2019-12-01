@@ -8,16 +8,9 @@ object Months {
                  "July", "August", "September", "October", "November", "December")
 }
 
-class DocumentManager(_documents: List[ParsedDocument]) {
+class DocumentManager(val documents: List[ParsedDocument]) {
 
-
-  def relTargetPath(root: File, post: ParsedDocument) = {
-    "posts/" + post.file.name.toString.replace(".scim", ".html")
-  }
-
-
-  def documents: List[ParsedDocument] = _documents
-  val byPath: Map[File, ParsedDocument] = _documents.map(pd => pd.file -> pd).toMap
+  val byPath: Map[File, ParsedDocument] = documents.map(pd => pd.file -> pd).toMap
 
   lazy val attributes: Map[String, String] = documents.flatMap(_.sdoc.named).toMap
 

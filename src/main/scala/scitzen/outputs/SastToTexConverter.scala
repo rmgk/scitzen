@@ -11,7 +11,7 @@ import scitzen.parser.{Inline, InlineText, Macro}
 
 
 class SastToTexConverter(project: Project,
-                         currentFile: File,
+                         cwd: File,
                          numbered: Boolean = true
                         ) {
 
@@ -77,7 +77,7 @@ class SastToTexConverter(project: Project,
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
           val target    = attributes.target
-          val imagepath = ctx.image(currentFile, target)
+          val imagepath = ctx.image(cwd, target)
           if (imagepath.data.isEmpty) {
             scribe.error(s"Not relative path: $mcro")
             ctx.empty
@@ -87,10 +87,10 @@ class SastToTexConverter(project: Project,
           }
 
         case Macro(Include, attributes) =>
-          ImportPreproc.macroImportPreproc(project.findDoc(currentFile.parent, attributes.target), attributes) match {
+          ImportPreproc.macroImportPreproc(project.findDoc(cwd, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               ctx.withScope(new Scope(3))(
-              new SastToTexConverter(project, doc.file.parent, numbered)
+              new SastToTexConverter(project,doc.file.parent, numbered)
               .sastSeqToTex(sast)(_))
 
             case None => ctx.empty

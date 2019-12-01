@@ -8,18 +8,18 @@ import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{main, nav, aside}
 
 object HtmlPages {
-  def apply(relative: String = ""): HtmlPages = new HtmlPages(relative)
+  def apply(cssPath: String): HtmlPages = new HtmlPages(cssPath)
 }
 
-class HtmlPages(path_css: String) {
+class HtmlPages(cssPath: String) {
 
   val tHead = {
     head(
       title := "Scitzen",
-      link(href := path_css, rel := "stylesheet", `type` := "text/css"),
+      link(href := cssPath, rel := "stylesheet", `type` := "text/css"),
       meta(name := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
       meta(charset := "UTF-8")
-    )
+      )
   }
 
 

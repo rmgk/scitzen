@@ -1,16 +1,15 @@
 package scitzen.generic
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Paths
 
 import better.files.File
 
 case class Project(root: File, singleSource: Option[File] = None) {
 
-
   val projectDir: File = root / Project.scitzenfolder
   val cacheDir  : File = projectDir / "cache"
   lazy val sources        : List[File]           = singleSource match {
-    case None => Project.discoverSources(root)
+    case None         => Project.discoverSources(root)
     case Some(source) => List(source)
   }
   lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
@@ -18,21 +17,21 @@ case class Project(root: File, singleSource: Option[File] = None) {
   val outputdir: File = projectDir / "output"
 
 
-  def findDoc(anchor: File, pathString: String): Option[ParsedDocument] = {
-    val path: File = findFile(anchor, pathString)
-    documentManager.byPath.get(path)
+  def findDoc(currentWorkingDirectory: File, pathString: String): Option[ParsedDocument] = {
+    resolve(currentWorkingDirectory, pathString)
+    .flatMap(documentManager.byPath.get)
   }
 
-  def findFile(anchor: File, pathString: String): File = {
+  def resolve(currentWorkingDirectory: File, pathString: String): Option[File] = {
     val rawPath = Paths.get(pathString)
-    if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
-    else anchor / pathString
+    val res     =
+      if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
+      else currentWorkingDirectory / pathString
+    scribe.info(s"lookup of $pathString in $currentWorkingDirectory was $res")
+    Some(res).filter(p => root.isParentOf(p) && p.isRegularFile)
   }
 
-  def relativize(anchor: File, file: File): Option[Path] = {
-    if (root.isParentOf(file)) Some(anchor.relativize(file))
-    else None
-  }
+
 }
 
 object Project {

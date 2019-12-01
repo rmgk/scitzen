@@ -8,7 +8,7 @@ import cats.data.Chain
 import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, DocumentManager, ParsedDocument, Project, Sast, Scope, Sdoc}
+import scitzen.generic.{ConversionContext, HtmlPathManager, ParsedDocument, Sast, Scope, Sdoc}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
@@ -36,12 +36,11 @@ object ImportPreproc {
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 (val bundle: Bundle[Builder, Output, FragT],
- documentManager: DocumentManager,
+ pathManager: HtmlPathManager,
  bibliography: Map[String, String],
  sdoc: Sdoc,
  document: Option[ParsedDocument],
- sync: Option[(File, Int)],
- project: Project) {
+ sync: Option[(File, Int)]) {
 
 
   import bundle.all._
@@ -51,8 +50,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   type CtxCF = ConversionContext[Chain[Frag]]
   type Ctx[T] = ConversionContext[T]
   type Cta = Ctx[_]
-
-  val currentFile: File = document.fold(project.root)(_.file)
 
   val syncPos =
     document.filter(doc => sync.exists(_._1 == doc.file))
@@ -114,15 +111,21 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
-          ctx.image(currentFile, attributes.target).map { target =>
-            Chain.fromSeq(target.map(s => img(src := s)).toSeq)
+          ctx.image(pathManager.cwd, attributes.target).map {
+            case Some(target) =>
+              val path = pathManager.relativizeImage(target).toString
+              Chain(img(src := path))
+            case None =>
+              scribe.warn(s"could not find path ${attributes.target} in ${pathManager.cwd} and ${document.get.file}")
+              Chain.nil
           }
 
         case Macro(Other("horizontal-rule"), attributes) =>
           ctx.ret(Chain(hr))
 
         case Macro(Include, attributes) if attributes.named.get("type").contains("article") =>
-          val post = project.findDoc(currentFile, attributes.target).get
+          val foundDoc = pathManager.findDoc(attributes.target)
+          val post = foundDoc.get
 
           def timeShort(date: ScitzenDateTime) = {
             time(stringFrag(date.monthDayTime + " "))
@@ -132,7 +135,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             span(cls := "category")(post.sdoc.named.get("categories"), post.sdoc.named.get("people"))
           }
 
-          val aref = documentManager.relTargetPath(currentFile, post)
+          val aref = pathManager.relativizePost(post.file).toString
 
           ctx.ret(Chain(a(
             href := aref,
@@ -142,11 +145,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                     ))))
 
         case Macro(Include, attributes) =>
-          ImportPreproc.macroImportPreproc(project.findDoc(currentFile, attributes.target), attributes) match {
+          ImportPreproc.macroImportPreproc(pathManager.findDoc(attributes.target), attributes) match {
             case Some((doc, sast)) =>
               ctx.withScope(new Scope(3)) {
-                new SastToHtmlConverter(bundle, documentManager,
-                                        bibliography, doc.sdoc, Some(doc), sync, project)
+                new SastToHtmlConverter(bundle, pathManager.changeWorkingFile(doc.file),
+                                        bibliography, doc.sdoc, Some(doc), sync)
                 .sastToHtml(sast)(_)
               }
             case None              => ctx.empty

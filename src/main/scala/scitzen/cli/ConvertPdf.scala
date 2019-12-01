@@ -8,7 +8,7 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, ExternalContentResolver, ExternalContentResolver2, GenIndexPage, ParsedDocument, Project}
+import scitzen.generic.{ConversionContext, GenIndexPage, ImageResolver, ParsedDocument, Project}
 import scitzen.outputs.{SastToTexConverter, TexPages}
 
 object ConvertPdf {
@@ -40,24 +40,22 @@ object ConvertPdf {
 
     val dm = project.documentManager
 
-    val imageResolver = ExternalContentResolver.fromDM(project.documentManager, project.cacheDir, keepName = true)
-
     val cacheDir = project.cacheDir
 
     cacheDir.createDirectories()
 
-    val preConversionContext = ConversionContext(Chain.empty[String], externalContentResolver = new ExternalContentResolver2(project, Nil))
+    val preConversionContext = ConversionContext(
+      Chain.empty[String], images = new ImageResolver(project, project.outputdir))
 
-    val resultContext = new SastToTexConverter(project,
-                                         numbered = singleFile,
-                                         currentFile = project.singleSource.get).convert(
+    val resultContext = new SastToTexConverter(
+      project,
+      project.singleSource.fold(project.root)(_.parent),
+      numbered = singleFile).convert(
       if (singleFile) dm.byPath(project.singleSource.get).sdoc.blocks.toList else GenIndexPage.makeIndex(dm, project)
       )(preConversionContext)
 
     val content = resultContext.data
 
-
-    imageResolver.copyToTarget(cacheDir)
 
     val targetfile = project.outputdir / "output.pdf"
 
