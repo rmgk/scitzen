@@ -8,8 +8,11 @@ case class HtmlPathManager(val cwf: File, project: Project, outputDir: File) {
 
   val cwd = if(cwf.isDirectory) cwf else cwf.parent
 
+  val currentTargetDir = translatePost(cwf).parent
+
   def translatePost(post: File): File = {
-    outputDir / post.name.toString.replace(".scim", ".html")
+    if (post.isDirectory) project.outputdir / "index.html"
+    else outputDir / post.name.toString.replace(".scim", ".html")
   }
   def translateImage(image: File): File = {
     (project.outputdir / "images").path.resolve(project.root.relativize(image))
@@ -17,12 +20,11 @@ case class HtmlPathManager(val cwf: File, project: Project, outputDir: File) {
 
 
   def relativizeImage(targetFile: File): Path = {
-    outputDir.relativize(translateImage(targetFile))
+    currentTargetDir.relativize(translateImage(targetFile))
   }
 
   def relativizePost(targetPost: File): Path = {
-    if (cwf.isSamePathAs(project.root)) project.outputdir.relativize(translatePost(targetPost))
-    else outputDir.relativize(translatePost(targetPost))
+    currentTargetDir.relativize(translatePost(targetPost))
   }
 
   def findDoc(pathString: String): Option[ParsedDocument] =
