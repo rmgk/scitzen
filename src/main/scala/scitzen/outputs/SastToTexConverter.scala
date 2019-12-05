@@ -174,7 +174,9 @@ class SastToTexConverter(project: Project,
   }
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
     case InlineText(str) => latexencode(str)
+
     case Macro(Def, _) => ""
+
     case Macro(Quote(q), inner2) =>
       val inner = latexencode(inner2.target)
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
@@ -185,9 +187,12 @@ class SastToTexConverter(project: Project,
         case '$' => s"$$${inner2.target}$$"
       }
     case Macro(Comment, attributes) => ""
+
     case Macro(Ref, attributes)      => s"\\ref{${latexencode(attributes.target)}}"
+
     case Macro(Cite, attributes)              =>
       s"\\cite{${attributes.target}}"
+
     case Macro(Link, attributes)              =>
       val target = attributes.target
       if (attributes.positional.size > 1) {
@@ -195,14 +200,22 @@ class SastToTexConverter(project: Project,
         s"\\href{$target}{$name}"
       }
       else s"\\url{$target}"
+
     case Macro(Other("n"), attributes) if project.documentManager.attributes.contains(attributes.target) =>
       project.documentManager.attributes(attributes.target)
+
     case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
+
     case Macro(Label, attributes)             => s"\\label{${attributes.target}}"
+
     case Macro(Other("tableofcontents"), attributes) =>
       List("\\clearpage", "\\tableofcontents*", "\\clearpage").mkString("\n")
+
+    case Macro(Other("subparagraph"), attributes) =>
+      s"\\subparagraph{${attributes.target}}"
+
     case im @ Macro(command, attributes)      =>
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.all.mkString(",")}]"
