@@ -42,6 +42,42 @@ object TexPages {
 \sloppybottom
 """
 
+  def lstlistings: String = """
+% colors and definition for scalastyle
+\u005Cusepackage{listings}
+\u005Cusepackage{xcolor}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstdefinestyle{scitzenCodestyle}{
+  morestring=[b]" ,
+  keywords={},
+  comment=[l]{//},
+  otherkeywords={},
+  morekeywords=[2]{},
+  frame=none,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  %columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=left,
+  xleftmargin=1.9em,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\bfseries,
+  keywordstyle=[2]\bfseries,
+  commentstyle=\color{gray},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=2,
+  escapechar=§,
+  backgroundcolor=\color{white},
+  numberblanklines=true,
+  firstnumber=last
+}
+\lstset{style=scitzenCodestyle}"""
+
   def memoirHeader: String = {
 """\documentclass[a4paper, oneside]{memoir}"""
   }
@@ -64,8 +100,8 @@ object TexPages {
 
   def memoirPackages: List[String] = {
     List("\\PassOptionsToPackage{hyphens}{url}") ++
-    usePackages("{microtype}", "{graphicx}", "[colorlinks]{hyperref}", "{verbatim}") ++
-    List("\\nouppercaseheads")
+    usePackages("{microtype}", "{graphicx}", "[colorlinks]{hyperref}") ++
+    List(lstlistings, "\\nouppercaseheads")
   }
 
   def wrap(content: Chain[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {

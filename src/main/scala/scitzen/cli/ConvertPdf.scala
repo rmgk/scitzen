@@ -50,6 +50,7 @@ object ConvertPdf {
     val resultContext = new SastToTexConverter(
       project,
       project.singleSource.fold(project.root)(_.parent),
+      if (singleFile) Some(dm.byPath(project.singleSource.get)) else None,
       numbered = singleFile).convert(
       if (singleFile) dm.byPath(project.singleSource.get).sdoc.blocks.toList else GenIndexPage.makeIndex(dm, project)
       )(preConversionContext)

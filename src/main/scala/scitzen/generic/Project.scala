@@ -6,7 +6,7 @@ import better.files.File
 
 case class Project(root: File, singleSource: Option[File] = None) {
 
-  val projectDir: File = root / Project.scitzenfolder
+  val projectDir: File = root / Project.scitzendir
   val cacheDir  : File = projectDir / "cache"
   lazy val sources        : List[File]           = singleSource match {
     case None         => Project.discoverSources(root)
@@ -35,15 +35,16 @@ case class Project(root: File, singleSource: Option[File] = None) {
 }
 
 object Project {
-  val scitzenfolder: String = "scitzen"
+  val scitzendir: String = "scitzen"
+  val scitzenconfig: String = "scitzen.toml"
   def findRoot(source: File): Option[File] = {
-    if (( source / scitzenfolder).isDirectory) Some(source)
+    if (( source / scitzenconfig).isRegularFile) Some(source)
     else source.parentOption.flatMap(findRoot)
   }
   def fromSource(file: File): Option[Project] = {
     findRoot(file) match {
       case None       => scribe.info(
-        s"""could not find project root containing the directory `$scitzenfolder`""")
+        s"""could not find project root containing a config `$scitzenconfig`""")
         None
       case Some(root) =>
         scribe.info(s"found root at $root")

@@ -22,6 +22,9 @@ case class ConversionContext[T]
   def ++:[I](value: Chain[I])(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => value ++ data)
 
+  def :++[I](value: Chain[I])(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
+    map(data => data ++ value)
+
   def empty[U]: ConversionContext[Chain[U]] = ret(Chain.empty[U])
   def single: ConversionContext[Chain[T]] = ret(Chain.one(data))
 
@@ -48,15 +51,14 @@ case class ConversionContext[T]
       nctx.map(data => ctx.data ++ data)
     }
 
-    def katex(key: String, default: => String): (String, ConversionContext[T]) = {
-      katexMap.get(key) match {
-        case None =>
-          val computed = default
-          (computed, copy(katexMap = katexMap.updated(key, computed)))
-        case Some(value) => (value, this)
-      }
+  def katex(key: String, default: => String): (String, ConversionContext[T]) = {
+    katexMap.get(key) match {
+      case None        =>
+        val computed = default
+        (computed, copy(katexMap = katexMap.updated(key, computed)))
+      case Some(value) => (value, this)
     }
-
+  }
 
 
 }

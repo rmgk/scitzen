@@ -3,7 +3,7 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, Project, Sast, Scope}
+import scitzen.generic.{ConversionContext, ParsedDocument, Project, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
@@ -12,6 +12,7 @@ import scitzen.parser.{Inline, InlineText, Macro}
 
 class SastToTexConverter(project: Project,
                          cwd: File,
+                         document: Option[ParsedDocument],
                          numbered: Boolean = true
                         ) {
 
@@ -90,7 +91,7 @@ class SastToTexConverter(project: Project,
           ImportPreproc.macroImportPreproc(project.findDoc(cwd, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               ctx.withScope(new Scope(3))(
-              new SastToTexConverter(project,doc.file.parent, numbered)
+              new SastToTexConverter(project,doc.file.parent, Some(doc), numbered)
               .sastSeqToTex(sast)(_))
 
             case None => ctx.empty
@@ -108,7 +109,31 @@ class SastToTexConverter(project: Project,
 
       case ParsedBlock(delimiter, blockContent) =>
         delimiter.charAt(0) match {
-          case '=' => sastSeqToTex(blockContent)
+          case '=' =>
+            if (tlblock.attr.positional.contains("figure")) {
+              val (figContent, caption) = {
+                blockContent.lastOption match {
+                  case Some(inner@TLBlock(_, Paragraph(content))) =>
+                    val captionstr = inlineValuesToTex(content.inline).single.data.iterator.mkString("\n")
+                    (blockContent.init,
+                    s"\\caption{$captionstr}")
+                  case other =>
+                  scribe.warn(s"figure has no caption")
+                    (blockContent, "")
+                }
+              }
+              "\\begin{figure}" +:
+              sastSeqToTex(figContent) :++
+              Chain(
+                caption,
+                tlblock.attr.named.get("label").fold("")(l => s"\\label{$l}"),
+                "\\end{figure}"
+                )
+
+            }
+            else {
+              sastSeqToTex(blockContent)
+            }
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' => sastSeqToTex(blockContent)
@@ -123,7 +148,13 @@ class SastToTexConverter(project: Project,
         else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
         else delimiter.charAt(0) match {
           case '`' =>
-            ctx.ret(Chain(s"\\begin{verbatim}", text, "\\end{verbatim}"))
+            val restext = tlblock.attr.named.get("label") match {
+              case None => text
+              case Some(label) =>
+                scribe.info(s"labeled block! ")
+                text.replaceAll(""":§([^§]*?)§""", s"""§\\\\label{$label$$1}§""")
+            }
+            ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}"))
           case '.' =>
             val latexenc = latexencode(text).trim
                            .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
@@ -176,4 +207,7 @@ class SastToTexConverter(project: Project,
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.all.mkString(",")}]"
   }.mkString(""))
+
+  def reportPos(m: Macro): String = document.fold("")(_.reporter(m))
+
 }
