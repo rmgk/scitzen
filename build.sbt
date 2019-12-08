@@ -32,3 +32,7 @@ lazy val scitzen = project.in(file("."))
                      graalVMNativeImageOptions += "--initialize-at-build-time",
                      toml
                      )
+
+lazy val nativeImage = taskKey[File]("calls graalvm native image")
+
+nativeImage := (scitzen / GraalVMNativeImage / packageBin).value
