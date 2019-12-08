@@ -65,7 +65,7 @@ object ConvertHtml {
     val cssfile = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
 
-    val scitzenconfdir = project.projectDir
+    val scitzenconfdir = project.nlpdir
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
 

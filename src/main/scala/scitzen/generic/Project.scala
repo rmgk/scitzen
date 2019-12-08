@@ -3,18 +3,22 @@ package scitzen.generic
 import java.nio.file.Paths
 
 import better.files.File
+import scitzen.generic.Project.ProjectConfig
+import toml.Codecs._
 
-case class Project(root: File, singleSource: Option[File] = None) {
+case class Project(root: File, config: ProjectConfig, singleSource: Option[File] = None) {
 
-  val projectDir: File = root / Project.scitzendir
-  val cacheDir  : File = projectDir / "cache"
+
+  val cacheDir  : File = root / config.cache
   lazy val sources        : List[File]           = singleSource match {
     case None         => Project.discoverSources(root)
     case Some(source) => List(source)
   }
   lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
   lazy val documentManager: DocumentManager      = DocumentManager.resolveIncludes(new DocumentManager(documents))
-  val outputdir: File = projectDir / "output"
+  val outputdir: File = root / config.output
+  val nlpdir   : File = root / config.stopwords
+
 
 
   def findDoc(currentWorkingDirectory: File, pathString: String): Option[ParsedDocument] = {
@@ -35,6 +39,12 @@ case class Project(root: File, singleSource: Option[File] = None) {
 }
 
 object Project {
+
+  case class ProjectConfig
+  (output: String = "output",
+   cache: String = "cache",
+   stopwords: String = "scitzen")
+
   val scitzendir: String = "scitzen"
   val scitzenconfig: String = "scitzen.toml"
   def findRoot(source: File): Option[File] = {
@@ -47,6 +57,14 @@ object Project {
         s"""could not find project root containing a config `$scitzenconfig`""")
         None
       case Some(root) =>
+        val config =
+          toml.Toml.parseAs[ProjectConfig]((root / scitzenconfig).contentAsString) match {
+            case Right(value) => value
+            case Left((addr, mesg)) =>
+              val errormessage = s"could not parse config:\n$mesg\nat $addr"
+              scribe.error(errormessage)
+              throw new IllegalArgumentException(errormessage)
+          }
         scribe.info(s"found root at $root")
         val source = {
           if (isScim(file) && root.listRecursively.contains(file)) Some(file)
@@ -58,7 +76,7 @@ object Project {
           }
         }
 
-        Some(Project(root, source))
+        Some(Project(root, config, source))
     }
   }
 
