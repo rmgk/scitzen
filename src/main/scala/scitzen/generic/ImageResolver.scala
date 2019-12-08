@@ -28,10 +28,17 @@ case class ImageResolver(project: Project, postOutputDir: File, files: List[File
     }
 
     tlb.attr.named.get("converter") match {
-      case Some("tikz")               =>
-        val (hash, pdf) = TexTikz.convert(tlb.content.asInstanceOf[RawBlock].content, project.cacheDir)
-        scribe.info(s"converting $hash to $pdf")
+      case Some("tex") =>
+        val header =
+          tlb.attr.named.get("header")
+             .flatMap(p => project.resolve(project.root, p))
+             .map(_.contentAsString).getOrElse("")
+        val (hash, pdf) = TexTikz.convert(header + tlb.content.asInstanceOf[RawBlock].content, project.cacheDir)
         makeImageMacro(pdf)
+      case Some("tikz") =>
+        val (hash, pdf) = TexTikz.convertTikz(tlb.content.asInstanceOf[RawBlock].content, project.cacheDir)
+        makeImageMacro(pdf)
+
       case Some(gr @ rex"graphviz.*") =>
         val (hash, svg) = Graphviz.convert(tlb.content.asInstanceOf[RawBlock].content,
                                            project.cacheDir,

@@ -29,7 +29,7 @@ case class ConversionContext[T]
   def single: ConversionContext[Chain[T]] = ret(Chain.one(data))
 
   def image(cwd: File, target: String): ConversionContext[Option[File]] =
-    images.resolve(cwd: File, target) match {
+    images.resolve(cwd, target) match {
       case None              => ret(None)
       case Some((ecr, path)) => copy(images = ecr, data = Some(path))
     }

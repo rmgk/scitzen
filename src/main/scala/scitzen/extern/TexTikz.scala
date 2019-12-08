@@ -3,22 +3,20 @@ package scitzen.extern
 import java.nio.charset.StandardCharsets
 
 import better.files.File
+import scitzen.outputs.TexPages
 
 
 object TexTikz {
 
-  val header = """
+  val header: String = """
     |\documentclass{standalone}
     |\u005Cusepackage{tikz}
     |\u005Cusetikzlibrary{shapes,backgrounds,calc,positioning}
-    |
-    |\u005Cusepackage{fontspec}
-    |\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
-    |\setmainfont{Liberation Serif}
+    """.stripMargin + TexPages.xelatexFont.mkString("\n") + """
     |
     |\begin{document}
     |""".stripMargin
-  val footer = """
+  val footer: String = """
     |\end{document}
     |""".stripMargin
 
@@ -40,21 +38,28 @@ object TexTikz {
     outputdir / (jobname + ".pdf")
   }
 
+  def pdfcrop(input: File, output: File): Unit = {
+    new ProcessBuilder("pdfcrop", input.toString(), output.toString()).inheritIO().start().waitFor()
+  }
+
   def convert(content: String, working: File): (String, File) = {
     val hash = Hashes.sha1hex(content)
     val dir = working / hash
     val target = dir / (hash + ".pdf")
     if (target.exists) return hash -> target
-
-    val texstring = header + content + footer
-    val texbytes = texstring.getBytes(StandardCharsets.UTF_8)
-
-
+    scribe.info(s"converting inline file to $target")
+    val texbytes = content.getBytes(StandardCharsets.UTF_8)
     dir.createDirectories()
     val texfile = dir / (hash + ".tex")
     texfile.writeByteArray(texbytes)
     latexmk(dir, hash, texfile)
+    //pdfcrop(res, target)
     hash -> target
+
+  }
+
+  def convertTikz(content: String, working: File): (String, File) = {
+    convert(header + content + footer, working)
   }
 
 

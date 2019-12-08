@@ -78,27 +78,39 @@ object TexPages {
 }
 \lstset{style=scitzenCodestyle}"""
 
-  def memoirHeader: String = {
+  val memoirHeader: String = {
 """\documentclass[a4paper, oneside]{memoir}"""
   }
 
   def usePackages(list: String*) : List[String] = list.map(p => s"\\usepackage$p").toList
 
-  def luatexPackages: List[String] = {
+  val luatexPackages: List[String] = {
     usePackages("{luatextra}", "[ngerman, english]{babel}") :+
     "\\defaultfontfeatures{Ligatures=TeX}"
   }
 
-  def xelatexPackages: List[String] = {
+  val xelatexPackages: List[String] = {
     usePackages("{polyglossia}")++
     List("\\setmainlanguage{english}", "\\setotherlanguage{german}")
   }
 
-  def pdflatexPackages: List[String] = {
+  // so, XeTeX does support unicode, but the default font (Computer Modern)
+  // does not contain that many symbols.
+  // using fontspec should load Latin Modern, which should contain more symbols
+  // but seemingly still not enough
+  val xelatexFont: List[String] = {
+    usePackages("{fontspec}") :+
+    "\\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}" :+
+    "\\setmainfont{Linux Libertine O}" :+
+    "\\setsansfont{Linux Biolinum O}" :+
+    "\\setmonofont{Linux Libertine Mono O}"
+  }
+
+  val pdflatexPackages: List[String] = {
     usePackages("[T1]{fontenc}", "[utf8x]{inputenc}", "[ngerman, english]{babel}")
   }
 
-  def memoirPackages: List[String] = {
+  val memoirPackages: List[String] = {
     List("\\PassOptionsToPackage{hyphens}{url}") ++
     usePackages("{microtype}", "{graphicx}", "[colorlinks]{hyperref}") ++
     List(lstlistings, "\\nouppercaseheads")
@@ -136,7 +148,8 @@ object TexPages {
           ) ++ authorstrings ++ content ++ importBibACM :+
            s"\\end{document}"
       case _ =>
-        Chain.fromSeq(memoirHeader /*+: sloppyStuff*/ +: (xelatexPackages ++ memoirPackages) :+
+        Chain.fromSeq(memoirHeader /*+: sloppyStuff*/ +:
+                      (xelatexPackages ++ xelatexFont ++ memoirPackages) :+
          s"\\begin{document}" /*:+ "\\sloppy"*/) ++
         content ++ importBibNatbib :+ s"\\end{document}"
 
