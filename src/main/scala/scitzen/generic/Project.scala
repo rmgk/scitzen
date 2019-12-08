@@ -31,7 +31,7 @@ case class Project(root: File, config: ProjectConfig, singleSource: Option[File]
     val res     =
       if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
       else currentWorkingDirectory / pathString
-    scribe.info(s"lookup of $pathString in $currentWorkingDirectory was $res")
+    scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
     Some(res).filter(p => root.isParentOf(p) && p.isRegularFile)
   }
 

@@ -113,7 +113,30 @@ object TexPages {
   val memoirPackages: List[String] = {
     List("\\PassOptionsToPackage{hyphens}{url}") ++
     usePackages("{microtype}", "{graphicx}", "[colorlinks]{hyperref}") ++
-    List(lstlistings, "\\nouppercaseheads")
+    List(lstlistings,
+         "\\nouppercaseheads",
+         "\\counterwithin{figure}{section}")
+  }
+
+  val proofboxes: List[String] = {
+    usePackages("[framemethod=tikz]{mdframed}") :+ """
+      |\newmdenv [ %
+      |%innertopmargin = -1,%
+      |%skipabove = 5,%
+      |%skipbelow = 2,%
+      |]{proofbox}""".stripMargin
+  }
+
+  val theorems: List[String] = {
+    usePackages("{amsthm}") ++ List(
+      "\\newtheorem{theorem}[figure]{Theorem}[section]",
+      "\\newtheorem{conjecture}[figure]{Conjecture}",
+      "\\newtheorem{proposition}[figure]{Proposition}",
+      "\\newtheorem{lemma}[figure]{Lemma}",
+      "\\newtheorem{corollary}[figure]{Corollary}",
+      "\\newtheorem{example}[figure]{Example}",
+      "\\newtheorem{definition}[figure]{Definition}",
+      )
   }
 
   def wrap(content: Chain[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
@@ -149,7 +172,9 @@ object TexPages {
            s"\\end{document}"
       case _ =>
         Chain.fromSeq(memoirHeader /*+: sloppyStuff*/ +:
-                      (xelatexPackages ++ xelatexFont ++ memoirPackages) :+
+                      (xelatexPackages ++ xelatexFont ++
+                       memoirPackages++ proofboxes ++
+                      theorems) :+
          s"\\begin{document}" /*:+ "\\sloppy"*/) ++
         content ++ importBibNatbib :+ s"\\end{document}"
 

@@ -30,7 +30,8 @@ class SastToTexConverter(project: Project,
   }
 
   def latexencode(input: String): String = {
-    val nobs = input.replaceAllLiterally("\\", "\\textbackslash{}")
+    val dummyForBSreplace = "»§ dummy to replace later ℓ«"
+    val nobs = input.replaceAllLiterally("\\", dummyForBSreplace)
     val nosimple = "&%$#_{}".toList.map(_.toString).foldLeft(nobs) { (acc, char) =>
       acc.replaceAllLiterally(char, s"\\$char")
     }
@@ -41,7 +42,7 @@ class SastToTexConverter(project: Project,
     .foldLeft(nosimple) { case (acc, (char, rep)) =>
       acc.replaceAllLiterally(char, rep)
     }
-    nomuch
+    nomuch.replaceAllLiterally(dummyForBSreplace, "\\textbackslash{}")
   }
 
   def sastSeqToTex(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
@@ -105,6 +106,12 @@ class SastToTexConverter(project: Project,
       }
   }
 
+  def texbox(name: String, args: Seq[String], content: Seq[Sast])(implicit ctx: Cta): CtxCS = {
+    val optionals = if (args.isEmpty) "" else args.mkString("[", "; ", "]")
+    s"\\begin{$name}$optionals" +:
+    sastSeqToTex(content) :+
+    s"\\end{$name}"
+  }
 
   def blockToTex(tlblock: TLBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
       case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
@@ -113,30 +120,42 @@ class SastToTexConverter(project: Project,
       case ParsedBlock(delimiter, blockContent) =>
         delimiter.charAt(0) match {
           case '=' =>
-            if (tlblock.attr.positional.contains("figure")) {
-              val (figContent, caption) = {
-                blockContent.lastOption match {
-                  case Some(inner@TLBlock(_, Paragraph(content))) =>
-                    val captionstr = inlineValuesToTex(content.inline).single.data.iterator.mkString("\n")
-                    (blockContent.init,
-                    s"\\caption{$captionstr}")
-                  case other =>
-                  scribe.warn(s"figure has no caption")
-                    (blockContent, "")
-                }
-              }
-              "\\begin{figure}" +:
-              sastSeqToTex(figContent) :++
-              Chain(
-                caption,
-                tlblock.attr.named.get("label").fold("")(l => s"\\label{$l}"),
-                "\\end{figure}"
-                )
+            tlblock.attr.positional.headOption match {
+              case Some(blockname) =>
+                blockname match {
+                  case "figure" =>
+                    val (figContent, caption) = {
+                      blockContent.lastOption match {
+                        case Some(inner @ TLBlock(_, Paragraph(content))) =>
+                          val captionstr = inlineValuesToTex(content.inline).single.data.iterator.mkString("\n")
+                          (blockContent.init,
+                          s"\\caption{$captionstr}")
+                        case other                                        =>
+                          scribe.warn(s"figure has no caption")
+                          (blockContent, "")
+                      }
+                    }
+                    "\\begin{figure}" +:
+                    sastSeqToTex(figContent) :++
+                    Chain(
+                      caption,
+                      tlblock.attr.named.get("label").fold("")(l => s"\\label{$l}"),
+                      "\\end{figure}"
+                      )
 
+                  case name@ ("theorem"|"definition"|"proofbox"|"proof"|"lemma"|"example") =>
+
+                    texbox(name, tlblock.attr.positional.tail, blockContent)
+
+
+                  case other =>
+                    sastSeqToTex(blockContent)
+                }
+
+              case None =>
+                sastSeqToTex(blockContent)
             }
-            else {
-              sastSeqToTex(blockContent)
-            }
+
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' => sastSeqToTex(blockContent)
@@ -154,7 +173,6 @@ class SastToTexConverter(project: Project,
             val restext = tlblock.attr.named.get("label") match {
               case None => text
               case Some(label) =>
-                scribe.info(s"labeled block! ")
                 text.replaceAll(""":§([^§]*?)§""", s"""§\\\\label{$label$$1}§""")
             }
             ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}"))
@@ -218,6 +236,9 @@ class SastToTexConverter(project: Project,
 
     case Macro(Other("subparagraph"), attributes) =>
       s"\\subparagraph{${attributes.target}}"
+
+    case Macro(Other("textsc"), attributes) =>
+      s"\\textsc{${attributes.target}}"
 
     case im @ Macro(command, attributes)      =>
       scribe.warn(s"inline macro “$command[$attributes]”")
