@@ -173,7 +173,7 @@ class SastToTexConverter(project: Project,
             val restext = tlblock.attr.named.get("label") match {
               case None => text
               case Some(label) =>
-                text.replaceAll(""":§([^§]*?)§""", s"""§\\\\label{$label$$1}§""")
+                text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
             }
             ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}"))
           case '.' =>
