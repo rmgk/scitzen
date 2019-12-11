@@ -209,7 +209,7 @@ class SastToTexConverter(project: Project,
       }
     case Macro(Comment, attributes) => ""
 
-    case Macro(Ref, attributes)      => s"\\ref{${latexencode(attributes.target)}}"
+    case Macro(Ref, attributes)      => s"\\ref{${attributes.target}}"
 
     case Macro(Cite, attributes)              =>
       s"\\cite{${attributes.target}}"
