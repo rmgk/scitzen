@@ -129,6 +129,7 @@ object TexPages {
 
   val theorems: List[String] = {
     usePackages("{amsthm}") ++ List(
+      // "\\newtheorem{theorem}{Theorem}[section]",
       "\\newtheorem{theorem}[figure]{Theorem}[section]",
       "\\newtheorem{conjecture}[figure]{Conjecture}",
       "\\newtheorem{proposition}[figure]{Proposition}",
