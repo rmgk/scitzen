@@ -103,7 +103,7 @@ object TexPages {
     "\\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}" :+
     "\\setmainfont{Linux Libertine O}" :+
     "\\setsansfont{Linux Biolinum O}" :+
-    "\\setmonofont{Linux Libertine Mono O}"
+    "\\setmonofont{Hack}"
   }
 
   val pdflatexPackages: List[String] = {
@@ -129,8 +129,9 @@ object TexPages {
 
   val theorems: List[String] = {
     usePackages("{amsthm}") ++ List(
+      "\\theoremstyle{definition}",
       // "\\newtheorem{theorem}{Theorem}[section]",
-      "\\newtheorem{theorem}[figure]{Theorem}[section]",
+      "\\newtheorem{theorem}[figure]{Theorem}",
       "\\newtheorem{conjecture}[figure]{Conjecture}",
       "\\newtheorem{proposition}[figure]{Proposition}",
       "\\newtheorem{lemma}[figure]{Lemma}",
