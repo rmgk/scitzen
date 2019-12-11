@@ -72,7 +72,7 @@ object TexPages {
   breakatwhitespace=true,
   tabsize=2,
   %escapechar=§,
-  escapeinside={(*@}{@*)}
+  escapeinside={(*@}{@*)},
   %backgroundcolor=\color{white},
   numberblanklines=true,
   firstnumber=last
