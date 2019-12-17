@@ -7,6 +7,7 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
   lazy val target    : String              = positional.last
   lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value)}.toMap
   def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other, prov)
+  def remove(key: String): Attributes = Attributes(raw.filterNot(_.id == key), prov)
 }
 
 object Attributes {

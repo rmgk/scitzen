@@ -82,14 +82,21 @@ class SastToTexConverter(project: Project,
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
           val target    = attributes.target
-          val imagepath = ctx.image(cwd, target)
-          if (imagepath.data.isEmpty) {
-            scribe.error(s"Not relative path: $mcro")
-            ctx.empty
-          }
-          else {
-            ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{${imagepath.data.get}}\n"))
-          }
+          attributes.named.get("converter") match {
+            case Some(converter) =>
+              sastSeqToTex(ctx.convert(cwd, mcro, "pdf"))
+
+            case None =>
+              val imagepath = ctx.image(cwd, target)
+              if (imagepath.data.isEmpty) {
+                scribe.error(s"Not relative path: $mcro")
+                ctx.empty
+              }
+              else {
+                ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{${imagepath.data.get}}\n"))
+              }
+            }
+
 
         case Macro(Include, attributes) =>
           ImportPreproc.macroImportPreproc(project.findDoc(cwd, attributes.target), attributes) match {

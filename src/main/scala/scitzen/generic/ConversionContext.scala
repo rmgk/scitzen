@@ -2,6 +2,7 @@ package scitzen.generic
 
 import better.files.File
 import cats.data.Chain
+import scitzen.parser.Macro
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T]
@@ -34,8 +35,12 @@ case class ConversionContext[T]
       case Some((ecr, path)) => copy(images = ecr, data = Some(path))
     }
 
-  def convert(tlblock: Sast.TLBlock, value: "pdf"): Seq[Sast] = {
-    images.convert(tlblock, value)
+  def convert(cwd: File, tlblock: Macro, formatHint: String): Seq[Sast] = {
+    images.convert(cwd: File, tlblock, formatHint)
+  }
+
+  def convert(tlblock: Sast.TLBlock, formatHint: String): Seq[Sast] = {
+    images.convert(tlblock, formatHint)
   }
 
   def withScope[U](scope: Scope)(f: ConversionContext[T] => ConversionContext[U]): ConversionContext[U] =

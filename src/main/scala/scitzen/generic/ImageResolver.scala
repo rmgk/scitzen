@@ -6,7 +6,7 @@ import better.files.File
 import scitzen.extern.{Graphviz, TexTikz}
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast.{MacroBlock, RawBlock, TLBlock}
-import scitzen.parser.{Attribute, Macro, MacroCommand}
+import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
 
 case class ImageResolver(project: Project, postOutputDir: File, files: List[File] = Nil) {
 
@@ -18,38 +18,74 @@ case class ImageResolver(project: Project, postOutputDir: File, files: List[File
 
   def relativize(source: File): Path = postOutputDir.relativize(source)
 
+  def convert(cwd: File, mcro: Macro, formatHint: String): List[Sast] = {
+    mcro.attributes.named.get("converter") match {
+      case Some(converter) =>
+        val res = project.resolve(cwd, mcro.attributes.target) match {
+          case None       => Nil
+          case Some(file) =>
+            val content = file.contentAsString
+            doConversion(converter, mcro.attributes, content, formatHint)
+        }
+        if (res.isEmpty) {
+          List(MacroBlock(mcro.copy(attributes = mcro.attributes.copy(raw = mcro.attributes.raw.filterNot(
+            _.id == "converter")))))
+        }
+        else res
+
+      case None =>
+        scribe.error(s"no converter for conversion?")
+        Nil
+    }
+  }
+
 
   def convert(tlb: TLBlock, formatHint: String): List[Sast] = {
+    tlb.attr.named.get("converter") match {
+      case Some(converter) =>
+        val content = tlb.content.asInstanceOf[RawBlock].content
+        val res     = doConversion(converter, tlb.attr, content, formatHint)
+        if (res.isEmpty) {
+          List(tlb.copy(attr = tlb.attr.remove("converter")))
+        }
+        else res
+      case None            =>
+        scribe.error(s"no converter for conversion?")
+        Nil
+    }
+  }
+
+  def doConversion(converter: String, attributes: Attributes, content: String, formatHint: String) = {
+
 
     def makeImageMacro(file: File) = {
       val relTarget = project.root.relativize(file)
       List(MacroBlock(Macro(MacroCommand.Image,
-                            tlb.attr.append(List(Attribute("", s"/$relTarget"))))))
+                            attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))))
     }
 
-    tlb.attr.named.get("converter") match {
-      case Some("tex") =>
-        val header =
-          tlb.attr.named.get("header")
-             .flatMap(p => project.resolve(project.root, p))
-             .map(_.contentAsString).getOrElse("")
-        val (hash, pdf) = TexTikz.convert(header + tlb.content.asInstanceOf[RawBlock].content, project.cacheDir)
+    converter match {
+      case "tex"  =>
+        val header      =
+          attributes.named.get("header")
+                    .flatMap(p => project.resolve(project.root, p))
+                    .map(_.contentAsString).getOrElse("")
+        val (hash, pdf) = TexTikz.convert(header + content, project.cacheDir)
         makeImageMacro(pdf)
-      case Some("tikz") =>
-        val (hash, pdf) = TexTikz.convertTikz(tlb.content.asInstanceOf[RawBlock].content, project.cacheDir)
+      case "tikz" =>
+        val (hash, pdf) = TexTikz.convertTikz(content, project.cacheDir)
         makeImageMacro(pdf)
 
-      case Some(gr @ rex"graphviz.*") =>
-        val (hash, svg) = Graphviz.convert(tlb.content.asInstanceOf[RawBlock].content,
+      case gr @ rex"graphviz.*" =>
+        val (hash, svg) = Graphviz.convert(content,
                                            project.cacheDir,
                                            gr.split("\\s+", 2)(1),
                                            formatHint)
         scribe.info(s"converting $hash to $svg")
         makeImageMacro(svg)
-      case other                      =>
+      case other                =>
         scribe.warn(s"unknown converter $other")
-        List(tlb.copy(attr = tlb.attr.copy(raw = tlb.attr.raw.filterNot(_.id == "converter"))))
+        Nil
     }
   }
-
 }
