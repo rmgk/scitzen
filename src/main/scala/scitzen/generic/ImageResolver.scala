@@ -1,22 +1,12 @@
 package scitzen.generic
 
-import java.nio.file.Path
-
 import better.files.File
 import scitzen.extern.{Graphviz, TexTikz}
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast.{MacroBlock, RawBlock, TLBlock}
 import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
 
-case class ImageResolver(project: Project, postOutputDir: File, files: List[File] = Nil) {
-
-  def resolve(cwd: File, target: String): Option[(ImageResolver, File)] = {
-    project.resolve(cwd, target).map { source =>
-      (copy(files = source :: files), source)
-    }
-  }
-
-  def relativize(source: File): Path = postOutputDir.relativize(source)
+case class ImageResolver(project: Project, postOutputDir: File) {
 
   def convert(cwd: File, mcro: Macro, formatHint: String): List[Sast] = {
     mcro.attributes.named.get("converter") match {

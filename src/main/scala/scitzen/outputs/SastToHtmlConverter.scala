@@ -111,13 +111,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
-          ctx.image(pathManager.cwd, attributes.target).map {
+          ctx.project.resolve(pathManager.cwd, attributes.target) match {
             case Some(target) =>
               val path = pathManager.relativizeImage(target).toString
-              Chain(img(src := path))
+              ctx.retc(img(src := path))
             case None =>
               scribe.warn(s"could not find path ${attributes.target} in ${pathManager.cwd} and ${document.get.file}")
-              Chain.nil
+              ctx.empty
           }
 
         case Macro(Other("horizontal-rule"), attributes) =>
@@ -163,7 +163,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
           case _ if tLBlock.attr.named.contains("converter") =>
-            sastToHtml(ctx.convert(tLBlock, "svg"))
+            sastToHtml(ctx.images.convert(tLBlock, "svg"))
           case Some("quote") =>
             sblockToHtml(tLBlock.content).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)

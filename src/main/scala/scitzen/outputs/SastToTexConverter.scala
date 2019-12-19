@@ -84,16 +84,16 @@ class SastToTexConverter(project: Project,
           val target    = attributes.target
           attributes.named.get("converter") match {
             case Some(converter) =>
-              sastSeqToTex(ctx.convert(cwd, mcro, "pdf"))
+              sastSeqToTex(ctx.images.convert(cwd, mcro, "pdf"))
 
             case None =>
-              val imagepath = ctx.image(cwd, target)
-              if (imagepath.data.isEmpty) {
+              val imageCtx = ctx.resolve(cwd, target)
+              if (imageCtx.data.isEmpty) {
                 scribe.error(s"Not relative path: $mcro")
-                ctx.empty
+                imageCtx.empty
               }
               else {
-                ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{${imagepath.data.get}}\n"))
+                imageCtx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{${imageCtx.data.get}}\n"))
               }
             }
 
@@ -173,7 +173,7 @@ class SastToTexConverter(project: Project,
 
       case RawBlock(delimiter, text) =>
         if (tlblock.attr.named.contains("converter"))
-          sastSeqToTex(ctx.convert(tlblock, "pdf"))
+          sastSeqToTex(ctx.images.convert(tlblock, "pdf"))
         else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
         else delimiter.charAt(0) match {
           case '`' =>

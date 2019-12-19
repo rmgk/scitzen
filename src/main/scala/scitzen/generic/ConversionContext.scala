@@ -2,14 +2,22 @@ package scitzen.generic
 
 import better.files.File
 import cats.data.Chain
-import scitzen.parser.Macro
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T]
 (data: T,
  images: ImageResolver,
  scope: Scope = new Scope(1),
- katexMap: Map[String, String] = Map.empty) {
+ katexMap: Map[String, String] = Map.empty,
+ imageFiles: List[File] = Nil
+) {
+
+
+  def resolve(cwd: File, target: String): ConversionContext[Option[File]] = {
+    project.resolve(cwd, target).fold(ret[Option[File]](None)) { source =>
+      copy(imageFiles = source :: imageFiles, data = Some(source))
+    }
+  }
 
   def project: Project = images.project
 
@@ -30,20 +38,6 @@ case class ConversionContext[T]
 
   def empty[U]: ConversionContext[Chain[U]] = ret(Chain.empty[U])
   def single: ConversionContext[Chain[T]] = ret(Chain.one(data))
-
-  def image(cwd: File, target: String): ConversionContext[Option[File]] =
-    images.resolve(cwd, target) match {
-      case None              => ret(None)
-      case Some((ecr, path)) => copy(images = ecr, data = Some(path))
-    }
-
-  def convert(cwd: File, tlblock: Macro, formatHint: String): Seq[Sast] = {
-    images.convert(cwd: File, tlblock, formatHint)
-  }
-
-  def convert(tlblock: Sast.TLBlock, formatHint: String): Seq[Sast] = {
-    images.convert(tlblock, formatHint)
-  }
 
   def withScope[U](scope: Scope)(f: ConversionContext[T] => ConversionContext[U]): ConversionContext[U] =
     f(copy(scope = scope)).copy(scope = this.scope)
