@@ -9,10 +9,14 @@ import toml.Codecs._
 case class Project(root: File, config: ProjectConfig, singleSource: Option[File] = None) {
 
 
+
   val cacheDir  : File = root / config.cache
-  lazy val sources        : List[File]           = singleSource match {
-    case None         => Project.discoverSources(root)
-    case Some(source) => List(source)
+  lazy val sources        : List[File]           = {
+    if (config.main.isEmpty) singleSource match {
+      case None         => Project.discoverSources(root)
+      case Some(source) => List(source)
+    }
+    else (List(root / config.main))
   }
   lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
   lazy val documentManager: DocumentManager      = DocumentManager.resolveIncludes(new DocumentManager(documents))
@@ -43,7 +47,8 @@ object Project {
   case class ProjectConfig
   (output: String = "output",
    cache: String = "cache",
-   stopwords: String = "scitzen")
+   stopwords: String = "scitzen",
+   main: String = "")
 
   val scitzendir: String = "scitzen"
   val scitzenconfig: String = "scitzen.toml"

@@ -129,8 +129,8 @@ object ConvertHtml {
                         katexMap = initialKatexMap
                         )
 
-    val resultContext = project.singleSource match {
-      case Some(sourcefile) =>
+    val resultContext = project.sources match {
+      case List(sourcefile) =>
         val postoutput = project.outputdir
         postoutput.createDirectories()
         val doc         = dm.byPath(sourcefile)
@@ -140,7 +140,7 @@ object ConvertHtml {
         val resctx      = convertDoc(doc, pathManager, preConversionContext)
         pathManager.copyImages(resctx.images.files)
         resctx
-      case None             =>
+      case _             =>
         val postoutput = project.outputdir / "posts"
         postoutput.createDirectories()
 
