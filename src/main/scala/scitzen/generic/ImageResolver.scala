@@ -55,13 +55,31 @@ case class ImageResolver(project: Project, postOutputDir: File, files: List[File
     }
   }
 
+  def pdftosvg(file: File): File = {
+    val targetfile = file.parent / (file.nameWithoutExtension + ".svg")
+    if (targetfile.exists) targetfile
+    else {
+      new ProcessBuilder("pdftocairo", "-svg", file.toString(), targetfile.toString()).inheritIO().start().waitFor()
+      targetfile
+    }
+
+  }
+
   def doConversion(converter: String, attributes: Attributes, content: String, formatHint: String) = {
 
 
     def makeImageMacro(file: File) = {
       val relTarget = project.root.relativize(file)
       List(MacroBlock(Macro(MacroCommand.Image,
-                            attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))))
+                            attributes.remove("converter").append(List(Attribute("",
+                                                                                 s"/$relTarget"))))))
+    }
+
+    def applyConversion(pdf: File) = {
+      val result =
+        if (formatHint == "svg") pdftosvg(pdf)
+        else pdf
+      makeImageMacro(result)
     }
 
     converter match {
@@ -71,10 +89,10 @@ case class ImageResolver(project: Project, postOutputDir: File, files: List[File
                     .flatMap(p => project.resolve(project.root, p))
                     .map(_.contentAsString).getOrElse("")
         val (hash, pdf) = TexTikz.convert(header + content, project.cacheDir)
-        makeImageMacro(pdf)
+        applyConversion(pdf)
       case "tikz" =>
         val (hash, pdf) = TexTikz.convertTikz(content, project.cacheDir)
-        makeImageMacro(pdf)
+        applyConversion(pdf)
 
       case gr @ rex"graphviz.*" =>
         val (hash, svg) = Graphviz.convert(content,

@@ -11,6 +11,8 @@ case class ConversionContext[T]
  scope: Scope = new Scope(1),
  katexMap: Map[String, String] = Map.empty) {
 
+  def project: Project = images.project
+
 
   def ret[U](d: U): ConversionContext[U] = copy(data = d)
   def retc[U](d: U): ConversionContext[Chain[U]] = copy(data = Chain(d))

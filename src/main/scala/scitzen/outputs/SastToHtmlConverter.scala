@@ -163,7 +163,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
           case _ if tLBlock.attr.named.contains("converter") =>
-            sastToHtml(ctx.convert(tLBlock, "pdf"))
+            sastToHtml(ctx.convert(tLBlock, "svg"))
           case Some("quote") =>
             sblockToHtml(tLBlock.content).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
@@ -240,8 +240,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case '*' => ctx.retc(strong(inner))
         case '`' => ctx.retc(code(inner))
         case '$' =>
+          val katexdefs = ctx.project.resolve(pathManager.cwd, "/templates/katex.tex").map(_.contentAsString).getOrElse("")
           val (mathml, ictx) = ctx.katex(inner, {
-            (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream(inner.getBytes(StandardCharsets.UTF_8))).!!
+            (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream((katexdefs + inner).getBytes(StandardCharsets.UTF_8))).!!
           })
           ictx.retc(span(raw(mathml)))
       }
