@@ -6,7 +6,7 @@ import better.files._
 
 case class HtmlPathManager(val cwf: File, project: Project, outputDir: File) {
 
-  val cwd = if(cwf.isDirectory) cwf else cwf.parent
+  val cwd = if (cwf.isDirectory) cwf else cwf.parent
 
   val currentTargetDir = translatePost(cwf).parent
 
@@ -32,12 +32,12 @@ case class HtmlPathManager(val cwf: File, project: Project, outputDir: File) {
 
   def changeWorkingFile(parent: File): HtmlPathManager = copy(cwf = parent)
 
-  def copyImages(images: List[File]) = images.foreach { img =>
-
-    val target = translateImage(img)
-    scribe.info(s"copy $img to $target")
-    target.parent.createDirectoryIfNotExists()
-    img.copyTo(target, overwrite = true)
-  }
+  def copyResources(resources: Map[File, Path]) =
+    resources.foreach { case (img, path) =>
+      val target = File(project.outputdir.path.resolve(path))
+      scribe.info(s"copy $img to $target")
+      target.parent.createDirectoryIfNotExists()
+      img.copyTo(target, overwrite = true)
+    }
 
 }

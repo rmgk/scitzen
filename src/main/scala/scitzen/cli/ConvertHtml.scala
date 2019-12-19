@@ -138,7 +138,7 @@ object ConvertHtml {
                                           project,
                                           postoutput)
         val resctx      = convertDoc(doc, pathManager, preConversionContext)
-        pathManager.copyImages(resctx.imageFiles)
+        pathManager.copyResources(resctx.resourceMap)
         resctx
       case _             =>
         val postoutput = project.outputdir / "posts"
@@ -166,7 +166,7 @@ object ConvertHtml {
 
         val convertedCtx = converter.convert()(docsCtx)
 
-        pathManager.copyImages(convertedCtx.imageFiles)
+        pathManager.copyResources(convertedCtx.resourceMap)
 
         val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
                   .wrapContentHtml(convertedCtx.data.toList,

@@ -113,9 +113,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case Macro(Image, attributes) =>
           ctx.project.resolve(pathManager.cwd, attributes.target) match {
             case Some(target) =>
-              val path = pathManager.relativizeImage(target).toString
-              ctx.retc(img(src := path))
-            case None =>
+              val res  =
+                if (target.extension.contains(".pdf")) {
+                  ctx.images.pdftosvg(target)
+                }
+                else target
+              val path = pathManager.relativizeImage(res)
+              ctx.requireInOutput(res, path).retc(img(src := path.toString))
+            case None         =>
               scribe.warn(s"could not find path ${attributes.target} in ${pathManager.cwd} and ${document.get.file}")
               ctx.empty
           }

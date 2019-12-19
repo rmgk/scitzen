@@ -1,5 +1,7 @@
 package scitzen.generic
 
+import java.nio.file.Path
+
 import better.files.File
 import cats.data.Chain
 
@@ -9,14 +11,18 @@ case class ConversionContext[T]
  images: ImageResolver,
  scope: Scope = new Scope(1),
  katexMap: Map[String, String] = Map.empty,
- imageFiles: List[File] = Nil
+ resourceMap: Map[File, Path] = Map.empty
 ) {
 
 
   def resolve(cwd: File, target: String): ConversionContext[Option[File]] = {
     project.resolve(cwd, target).fold(ret[Option[File]](None)) { source =>
-      copy(imageFiles = source :: imageFiles, data = Some(source))
+      copy(resourceMap = resourceMap.updated(source, source.path), data = Some(source))
     }
+  }
+
+  def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
+    copy(resourceMap = resourceMap.updated(source, relative))
   }
 
   def project: Project = images.project
