@@ -14,13 +14,6 @@ case class ConversionContext[T]
  resourceMap: Map[File, Path] = Map.empty
 ) {
 
-
-  def resolve(cwd: File, target: String): ConversionContext[Option[File]] = {
-    project.resolve(cwd, target).fold(ret[Option[File]](None)) { source =>
-      copy(resourceMap = resourceMap.updated(source, source.path), data = Some(source))
-    }
-  }
-
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
     copy(resourceMap = resourceMap.updated(source, relative))
   }

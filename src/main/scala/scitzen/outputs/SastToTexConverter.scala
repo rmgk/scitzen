@@ -87,15 +87,14 @@ class SastToTexConverter(project: Project,
               sastSeqToTex(ctx.images.convert(cwd, mcro, "pdf"))
 
             case None =>
-              val imageCtx = ctx.resolve(cwd, target)
-              if (imageCtx.data.isEmpty) {
-                scribe.error(s"Not relative path: $mcro")
-                imageCtx.empty
+              ctx.project.resolve(cwd, target) match {
+                case None       =>
+                  scribe.error(s"Not relative path: $mcro")
+                  ctx.empty
+                case Some(data) =>
+                  ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
               }
-              else {
-                imageCtx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{${imageCtx.data.get}}\n"))
-              }
-            }
+          }
 
 
         case Macro(Include, attributes) =>

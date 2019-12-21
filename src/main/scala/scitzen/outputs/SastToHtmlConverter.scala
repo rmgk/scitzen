@@ -245,7 +245,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case '*' => ctx.retc(strong(inner))
         case '`' => ctx.retc(code(inner))
         case '$' =>
-          val katexdefs = ctx.project.resolve(pathManager.cwd, "/templates/katex.tex").map(_.contentAsString).getOrElse("")
+
+          val katexdefs = sdoc.named.get("katexTemplate")
+                              .flatMap(path => ctx.project.resolve(pathManager.cwd, path))
+                              .map(_.contentAsString).getOrElse("")
           val (mathml, ictx) = ctx.katex(inner, {
             (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream((katexdefs + inner).getBytes(StandardCharsets.UTF_8))).!!
           })

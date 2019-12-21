@@ -46,7 +46,8 @@ case class ImageResolver(project: Project, postOutputDir: File) {
   }
 
   def pdftosvg(file: File): File = {
-    val targetfile = file.parent / (file.nameWithoutExtension + ".svg")
+    val relative = project.root.relativize(file.parent)
+    val targetfile = (project.cacheDir / "svgs").path.resolve() (file.nameWithoutExtension + ".svg")
     if (targetfile.exists) targetfile
     else {
       new ProcessBuilder("pdftocairo", "-svg", file.toString(), targetfile.toString()).inheritIO().start().waitFor()
