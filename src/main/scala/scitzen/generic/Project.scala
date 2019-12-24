@@ -17,7 +17,7 @@ case class Project(root: File, config: ProjectConfig) {
     }
   }
   lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
-  lazy val documentManager: DocumentManager      = DocumentManager.resolveIncludes(new DocumentManager(documents))
+  lazy val documentManager: DocumentManager      = DocumentManager.recursive(documents)
   val outputdir: File = root / config.output
   val nlpdir   : File = root / config.stopwords
 

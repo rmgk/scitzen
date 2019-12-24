@@ -19,19 +19,16 @@ object ConvertGeneric {
     optSource.map { sourcePath =>
       //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
       Project.fromSource(File(sourcePath)).foreach { project =>
-        convertToPdf(project)
+        convert(project)
       }
     }
   }
 
 
 
-  def convertToPdf(project: Project): Unit = {
+  def convert(project: Project): Unit = {
 
     scribe.info(s"project: $project")
-
-
-    project.outputdir.createDirectories()
 
     val dm = project.documentManager
 

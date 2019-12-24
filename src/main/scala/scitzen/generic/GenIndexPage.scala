@@ -6,6 +6,9 @@ import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
 object GenIndexPage {
 
+  val months = Array("January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November", "December")
+
 
   def makeIndex(dm: DocumentManager, project: Project, reverse: Boolean = false, nlp: Option[NLP] = None): List[Section] = {
     def ordering[T: Ordering]:Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
@@ -23,7 +26,7 @@ object GenIndexPage {
     def secmon(fd: FullDoc): String = {
       fd.analyzed.date.fold("(???)"){ date =>
         val m = date.date.month
-        m +" " + Months.en(m.toInt - 1)
+        m +" " + months(m.toInt - 1)
       }
     }
 

@@ -3,14 +3,11 @@ package scitzen.generic
 import better.files.File
 import scitzen.parser.MacroCommand.Include
 
-object Months {
-  val en = Array("January", "February", "March", "April", "May", "June",
-                 "July", "August", "September", "October", "November", "December")
-}
+
 
 case class FullDoc(parsed: ParsedDocument, analyzed: AnalyzedDoc)
 
-class DocumentManager(val documents: List[ParsedDocument]) {
+class DocumentManager private (val documents: List[ParsedDocument]) {
 
   lazy val byPath: Map[File, FullDoc] =
     fulldocs.map(fd => fd.parsed.file -> fd).toMap
@@ -26,6 +23,10 @@ class DocumentManager(val documents: List[ParsedDocument]) {
 }
 
 object DocumentManager {
+
+  def recursive(documents: List[ParsedDocument]): DocumentManager =
+    resolveIncludes(new DocumentManager(documents))
+
   @scala.annotation.tailrec
   def resolveIncludes(documentManager: DocumentManager): DocumentManager = {
     val includes = (for {
