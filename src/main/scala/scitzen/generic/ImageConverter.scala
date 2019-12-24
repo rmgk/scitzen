@@ -6,7 +6,7 @@ import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast.{MacroBlock, RawBlock, TLBlock}
 import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
 
-case class ImageResolver(project: Project, postOutputDir: File) {
+class ImageConverter(val project: Project) {
 
   def convert(cwd: File, mcro: Macro, formatHint: String): List[Sast] = {
     mcro.attributes.named.get("converter") match {

@@ -8,7 +8,7 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, GenIndexPage, ImageResolver, PDReporter, ParsedDocument, Project}
+import scitzen.generic.{ConversionContext, GenIndexPage, ImageConverter, PDReporter, ParsedDocument, Project}
 import scitzen.outputs.{SastToTexConverter, TexPages}
 
 object ConvertPdf {
@@ -18,9 +18,9 @@ object ConvertPdf {
 
   val command: Command[Unit] = Command(name = "pdf",
                                        header = "Convert Scim to PDF.") {
-    optSource.map { sourcedirRel =>
+    optSource.map { sourcePath =>
       //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-      Project.fromSource(File(sourcedirRel)).foreach { project =>
+      Project.fromSource(File(sourcePath)).foreach { project =>
         convertToPdf(project)
       }
     }
@@ -43,14 +43,14 @@ object ConvertPdf {
     cacheDir.createDirectories()
 
     val preConversionContext = ConversionContext(
-      Chain.empty[String], images = new ImageResolver(project, project.outputdir))
+      Chain.empty[String], converter = new ImageConverter(project))
 
     val resultContext = new SastToTexConverter(
       project,
       project.root,
-      new PDReporter(dm.byPath(project.main).parsed)
+      new PDReporter(dm.byPath(project.main.get).parsed)
       ).convert(
-      if (project.sources.size <= 1) dm.byPath(project.main).parsed.sast else GenIndexPage.makeIndex(dm, project)
+      if (project.sources.size <= 1) dm.byPath(project.main.get).parsed.sast else GenIndexPage.makeIndex(dm, project)
       )(preConversionContext)
 
     val content = resultContext.data

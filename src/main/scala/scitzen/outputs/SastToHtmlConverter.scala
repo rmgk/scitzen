@@ -117,7 +117,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             case Some(target) =>
               val res  =
                 if (target.extension.contains(".pdf")) {
-                  ctx.images.pdftosvg(target)
+                  ctx.converter.pdftosvg(target)
                 }
                 else target
               val path = pathManager.relativizeImage(res)
@@ -171,7 +171,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
           case _ if tLBlock.attr.named.contains("converter") =>
-            sastToHtml(ctx.images.convert(tLBlock, "svg"))
+            sastToHtml(ctx.converter.convert(tLBlock, "svg"))
           case Some("quote") =>
             sblockToHtml(tLBlock.content).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
