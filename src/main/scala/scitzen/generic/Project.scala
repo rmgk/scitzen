@@ -97,7 +97,7 @@ object Project {
       case f if f.isDirectory   =>
         f.collectChildren{ c =>
           isScim(c) &&
-          !f.relativize(c).iterator().asScala.exists {_.toString.startsWith("_") }
+          !f.relativize(c).iterator().asScala.exists {_.toString.startsWith(".") }
         }.toList
     }
   }
