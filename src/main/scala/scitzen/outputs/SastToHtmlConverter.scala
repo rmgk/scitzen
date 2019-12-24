@@ -144,7 +144,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
           ctx.ret(Chain(a(
             href := aref,
-            article(timeShort(post.sdoc.date.get),
+            article(timeShort(post.sdoc.date.getOrElse(throw new NoSuchElementException(s"Article has no date: ${post.file}"))),
                     span(cls := "title", post.sdoc.title),
                     categoriesSpan()
                     ))))
