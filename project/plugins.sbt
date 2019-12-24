@@ -2,7 +2,7 @@
   * and may contain unused dependencies */
 
 // scalajs
-addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.15.0") // https://github.com/scalacenter/scalajs-bundler
+addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.15.0-0.6") // https://github.com/scalacenter/scalajs-bundler
 addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.13")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.31")
