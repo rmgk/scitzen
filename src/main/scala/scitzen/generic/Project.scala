@@ -6,26 +6,27 @@ import better.files.File
 import scitzen.generic.Project.ProjectConfig
 import toml.Codecs._
 
-case class Project(root: File, config: ProjectConfig, singleSource: Option[File] = None) {
-
+case class Project(root: File, config: ProjectConfig) {
 
 
   val cacheDir  : File = root / config.cache
-  lazy val sources        : List[File]           = {
-    if (config.main.isEmpty) singleSource match {
+  lazy val sources: List[File] = {
+    config.main match {
       case None         => Project.discoverSources(root)
-      case Some(source) => List(source)
+      case Some(source) => List(root / source)
     }
-    else (List(root / config.main))
   }
   lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
   lazy val documentManager: DocumentManager      = DocumentManager.resolveIncludes(new DocumentManager(documents))
   val outputdir: File = root / config.output
   val nlpdir   : File = root / config.stopwords
 
+  val main: File = sources.head
 
 
-  def findDoc(currentWorkingDirectory: File, pathString: String): Option[ParsedDocument] = {
+
+
+  def findDoc(currentWorkingDirectory: File, pathString: String): Option[FullDoc] = {
     resolve(currentWorkingDirectory, pathString)
     .flatMap(documentManager.byPath.get)
   }
@@ -48,15 +49,23 @@ object Project {
   (output: String = "output",
    cache: String = "cache",
    stopwords: String = "scitzen",
-   main: String = "")
+   main: Option[String] = None)
 
-  val scitzendir: String = "scitzen"
   val scitzenconfig: String = "scitzen.toml"
+
   def findRoot(source: File): Option[File] = {
     if (( source / scitzenconfig).isRegularFile) Some(source)
     else source.parentOption.flatMap(findRoot)
   }
+
   def fromSource(file: File): Option[Project] = {
+    //if (isScim(file)) {
+    //  findRoot(file) match {
+    //    case None =>
+    //      val project = Project(file.parent, ProjectConfig(), Some(file))
+    //      scribe.info(s"using ad hoc project")
+    //  }
+    //}
     findRoot(file) match {
       case None       => scribe.info(
         s"""could not find project root containing a config `$scitzenconfig`""")
@@ -70,18 +79,19 @@ object Project {
               scribe.error(errormessage)
               throw new IllegalArgumentException(errormessage)
           }
-        scribe.info(s"found root at $root")
-        val source = {
-          if (isScim(file) && root.listRecursively.contains(file)) Some(file)
-          else {
-            root.collectChildren(isScim, 1).toList match {
-              case List(single) => Some(single)
-              case other        => None
-            }
-          }
-        }
 
-        Some(Project(root, config, source))
+        scribe.info(s"found root at $root")
+        //val source = {
+        //  if (isScim(file) && root.listRecursively.contains(file)) Some(file)
+        //  else {
+        //    root.collectChildren(isScim, 1).toList match {
+        //      case List(single) => Some(single)
+        //      case other        => None
+        //    }
+        //  }
+        //}
+
+        Some(Project(root, config))
     }
   }
 

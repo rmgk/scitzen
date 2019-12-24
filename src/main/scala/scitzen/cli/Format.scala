@@ -6,7 +6,7 @@ import java.nio.file.Path
 import better.files.File
 import cats.data.NonEmptyList
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{DocumentDiscovery, ParsedDocument, Sast, Sdoc}
+import scitzen.generic.{DocumentDiscovery, ParsedDocument, Sast, AnalyzedDoc}
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.DateParsingHelper
 import scitzen.parser.MacroCommand.Image
@@ -31,16 +31,16 @@ object Format {
       val dd = DocumentDiscovery(paths)
       dd.sourceFiles.foreach { file =>
         val pd = ParsedDocument(file)
-        val sdoc = pd.sdoc
+        val sdoc = AnalyzedDoc(pd)
         checkReferences(file, sdoc)
-        formatContent(file, pd.content, sdoc.blocks)
+        formatContent(file, pd.content, pd.sast)
         if (renamePossible(sdoc)) renameFileFromHeader(file, sdoc)
       }
     }
   }
 
 
-  def checkReferences(file: File, sdoc: Sdoc): Unit = {
+  def checkReferences(file: File, sdoc: AnalyzedDoc): Unit = {
     sdoc.analyzeResult.macros.foreach { mcro =>
       mcro.command match {
         case Image =>
@@ -62,7 +62,7 @@ object Format {
   }
 
 
-  def renameFileFromHeader(f: File, sdoc: Sdoc): Unit = {
+  def renameFileFromHeader(f: File, sdoc: AnalyzedDoc): Unit = {
     val newName: String = nameFromHeader(sdoc)
 
     if (newName != f.name) {
@@ -71,9 +71,9 @@ object Format {
     }
   }
 
-  def renamePossible(header: Sdoc): Boolean = header.title.isDefined && header.named.contains("revdate")
+  def renamePossible(header: AnalyzedDoc): Boolean = header.title.isDefined && header.named.contains("revdate")
 
-  def nameFromHeader(header: Sdoc): String = {
+  def nameFromHeader(header: AnalyzedDoc): String = {
     val date = DateParsingHelper.parseDate(header.named("revdate").trim)
     val title = sluggify(header.title.get) + ".scim"
     date.date.full + " " + title

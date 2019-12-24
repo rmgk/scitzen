@@ -8,9 +8,8 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{ConversionContext, GenIndexPage, HtmlPathManager, ImageResolver, NLP, ParsedDocument, Project, SastAnalyzes, Sdoc}
+import scitzen.generic.{AnalyzedDoc, ConversionContext, FullDoc, GenIndexPage, HtmlPathManager, ImageResolver, NLP, PDReporter, ParsedDocument, Project, SastAnalyzes}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
-import scitzen.parser.MacroCommand.Cite
 
 import scala.util.Try
 
@@ -69,22 +68,23 @@ object ConvertHtml {
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
 
-    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = project.singleSource match {
-      case None             => (Nil, Map[String, String]())
-      case Some(sourcefile) =>
-        val doc = dm.byPath(sourcefile)
-        val bibPath = doc.sdoc.named.get("bibliography").map { p =>
-          doc.file.parent./(p.trim)
-        }
-        val bib = bibPath.toList.flatMap(Bibliography.parse(project.cacheDir))
-        val cited = dm.documents.flatMap {
-          _.sdoc.analyzeResult.macros.filter(_.command == Cite)
-           .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))
-        }.toSet
-        val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
-        val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
-        bibEntries -> biblio
-    }
+    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = (Nil, Map[String, String]())
+    // project.singleSource match {
+    //  case None             => (Nil, Map[String, String]())
+    //  case Some(sourcefile) =>
+    //    val doc = dm.byPath(sourcefile)
+    //    val bibPath = doc.sdoc.named.get("bibliography").map { p =>
+    //      doc.file.parent./(p.trim)
+    //    }
+    //    val bib = bibPath.toList.flatMap(Bibliography.parse(project.cacheDir))
+    //    val cited = dm.documents.flatMap {
+    //      _.sdoc.analyzeResult.macros.filter(_.command == Cite)
+    //       .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))
+    //    }.toSet
+    //    val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+    //    val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
+    //    bibEntries -> biblio
+    //}
 
 
     val katexmapfile = project.cacheDir / "katexmap.json"
@@ -95,7 +95,7 @@ object ConvertHtml {
 
 
 
-    def convertDoc(doc: ParsedDocument, pathManager: HtmlPathManager, ctx: ConversionContext[_]): ConversionContext[_] = {
+    def convertDoc(doc: FullDoc, pathManager: HtmlPathManager, ctx: ConversionContext[_]): ConversionContext[_] = {
 
       val citations = if (bibEntries.isEmpty) Nil else {
         import scalatags.Text.all.{id, li, ol}
@@ -103,22 +103,25 @@ object ConvertHtml {
         List(ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format) } ))
       }
 
+      val analyzedDoc = doc.analyzed
+
       val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                               pathManager = pathManager,
                                               bibliography = biblio,
-                                              sdoc = doc.sdoc,
-                                              document = Some(doc),
-                                              sync = sync)
-      val toc = HtmlToc.tableOfContents(doc.sdoc.blocks, 2)
+                                              sdoc = analyzedDoc,
+                                              document = Some(doc.parsed),
+                                              sync = sync,
+                                              reporter = new PDReporter(doc.parsed))
+      val toc = HtmlToc.tableOfContents(analyzedDoc.blocks, 2)
       val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
       val converted = converter.convert()(ctx)
       val res = HtmlPages(cssrelpath).wrapContentHtml(converted.data.toList ++ citations,
                                                       "fullpost",
                                                       toc,
-                                                      doc.sdoc.language
-                                                      .orElse(nlp.map(_.language(doc.sdoc)))
+                                                      analyzedDoc.language
+                                                      .orElse(nlp.map(_.language(analyzedDoc)))
                                                       .getOrElse(""))
-      val target = pathManager.translatePost(doc.file)
+      val target = pathManager.translatePost(doc.parsed.file)
       target.write(res)
       converted
     }
@@ -134,7 +137,7 @@ object ConvertHtml {
         val postoutput = project.outputdir
         postoutput.createDirectories()
         val doc         = dm.byPath(sourcefile)
-        val pathManager = HtmlPathManager(doc.file,
+        val pathManager = HtmlPathManager(doc.parsed.file,
                                           project,
                                           postoutput)
         val resctx      = convertDoc(doc, pathManager, preConversionContext)
@@ -150,18 +153,19 @@ object ConvertHtml {
                                   project,
                                   postoutput)
 
-        val docsCtx = dm.documents.foldLeft(outputCtx) { (ctx, doc) =>
-          convertDoc(doc, pathManager.changeWorkingFile(doc.file), ctx).empty
+        val docsCtx = dm.fulldocs.foldLeft(outputCtx) { (ctx, doc) =>
+          convertDoc(doc, pathManager.changeWorkingFile(doc.parsed.file), ctx).empty
         }
 
 
-        val sdoc = Sdoc(GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp), new SastAnalyzes(m => ""))
+        val sdoc = AnalyzedDoc(GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp), new SastAnalyzes(m => ""))
         val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                                 pathManager = pathManager,
                                                 bibliography = Map(),
                                                 sdoc = sdoc,
                                                 document = None,
-                                                sync = None)
+                                                sync = None,
+                                                reporter = m => "")
         val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
 
         val convertedCtx = converter.convert()(docsCtx)

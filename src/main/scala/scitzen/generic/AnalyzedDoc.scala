@@ -11,7 +11,7 @@ import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTi
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-case class Sdoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
+case class AnalyzedDoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
 
   lazy val analyzeResult: AnalyzeResult = analyzes.analyze(this)
 
@@ -47,17 +47,21 @@ case class Sdoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
   def targets = analyzeResult.targets
 
 }
+object AnalyzedDoc {
+  def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {
+    AnalyzedDoc(parsedDocument.sast,
+                new SastAnalyzes(new PDReporter(parsedDocument)))
+  }
+}
 
-final case class ParsedDocument(file: File, content: String, sdoc: Sdoc, reporter: Reporter)
+final case class ParsedDocument(file: File, content: String, sast: List[Sast])
 
 object ParsedDocument {
   def apply(file: File): ParsedDocument = {
     val content = file.contentAsString
     try {
       val sast = SastConverter().documentString(content, Prov(0, content.length))
-      val reporter = new FileReporter(file, content)
-      val sdoc = Sdoc(sast, new SastAnalyzes(reporter))
-      ParsedDocument(file, content, sdoc, reporter)
+      ParsedDocument(file, content, sast.toList)
     } catch {
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")
@@ -67,10 +71,13 @@ object ParsedDocument {
 }
 
 trait Reporter {
-  def apply(im: Macro): String
+  def apply(im: Macro): String = apply(im.attributes.prov)
+  def apply(prov: Prov) :String
 }
 
-final class FileReporter(file: File, content: String) extends Reporter {
+final class PDReporter(parsedDocument: ParsedDocument) extends Reporter {
+  def file: File = parsedDocument.file
+  def content: String = parsedDocument.content
   lazy val newLines: Seq[Int] = {
     def findNL(idx: Int, found: List[Int]): Array[Int] = {
       val res = content.indexOf('\n', idx + 1)
@@ -86,8 +93,7 @@ final class FileReporter(file: File, content: String) extends Reporter {
     (ip + 1, idx - offset)
   }
 
-  override def apply(im: Macro): String = {
-    val prov = im.attributes.prov
+  override def apply(prov: Prov): String = {
     val pos = indexToPosition(prov.start)
     s" at »${File.currentWorkingDirectory.relativize(file)}:" +
     s"${pos._1}:${pos._2}«"

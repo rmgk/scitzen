@@ -20,7 +20,7 @@ object SastAnalyzes {
   }
 }
 
-class SastAnalyzes(macroReporter: Reporter) {
+class SastAnalyzes(val macroReporter: Reporter) {
   import scitzen.generic.SastAnalyzes._
 
   def reportTarget(mcr: Macro): String =
@@ -36,7 +36,7 @@ class SastAnalyzes(macroReporter: Reporter) {
 
 
 
-  def analyze(sdoc: Sdoc): AnalyzeResult = {
+  def analyze(sdoc: AnalyzedDoc): AnalyzeResult = {
     val input = sdoc.blocks
     val AnalyzeResult(m, t, b, s) = analyzeAllSast(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
     AnalyzeResult(m.reverse, t.reverse, b.reverse, s.reverse)

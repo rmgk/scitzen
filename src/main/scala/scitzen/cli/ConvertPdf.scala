@@ -8,7 +8,7 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, GenIndexPage, ImageResolver, ParsedDocument, Project}
+import scitzen.generic.{ConversionContext, GenIndexPage, ImageResolver, PDReporter, ParsedDocument, Project}
 import scitzen.outputs.{SastToTexConverter, TexPages}
 
 object ConvertPdf {
@@ -36,8 +36,6 @@ object ConvertPdf {
 
     project.outputdir.createDirectories()
 
-    val singleFile = project.singleSource.isDefined
-
     val dm = project.documentManager
 
     val cacheDir = project.cacheDir
@@ -49,10 +47,10 @@ object ConvertPdf {
 
     val resultContext = new SastToTexConverter(
       project,
-      project.singleSource.fold(project.root)(_.parent),
-      if (singleFile) Some(dm.byPath(project.singleSource.get)) else None,
-      numbered = singleFile).convert(
-      if (singleFile) dm.byPath(project.singleSource.get).sdoc.blocks.toList else GenIndexPage.makeIndex(dm, project)
+      project.root,
+      new PDReporter(dm.byPath(project.main).parsed)
+      ).convert(
+      if (project.sources.size <= 1) dm.byPath(project.main).parsed.sast else GenIndexPage.makeIndex(dm, project)
       )(preConversionContext)
 
     val content = resultContext.data
@@ -60,16 +58,19 @@ object ConvertPdf {
 
     val targetfile = project.outputdir / "output.pdf"
 
-    val bibliography = dm.documents.collectFirstSome{ pd =>
-      pd.sdoc.named.get("bibliography").map(s => pd.file.parent/s.trim)}.map(_.pathAsString)
+
+
+    val bibliography = None
+    //  dm.analyzed.collectFirstSome { pd =>
+    //  pd.named.get("bibliography").map(s => pd.file.parent / s.trim)
+    //}.map(_.pathAsString)
     scribe.info(s"bib is $bibliography")
-    val authors = dm.documents.collectSomeFold(_.sdoc.named.get("authors"))
+    val authors = dm.analyzed.collectSomeFold(_.named.get("authors"))
 
     val jobname = targetfile.nameWithoutExtension(includeAll = false)
     val temptexfile = cacheDir / (jobname + ".tex")
     val temptexdir = cacheDir / "tex"
-    temptexfile.write(TexPages.wrap(content, authors,
-                                    if (singleFile) "thesis" else "memoir", bibliography))
+    temptexfile.write(TexPages.wrap(content, authors, "memoir", bibliography))
     latexmk(temptexdir, jobname, temptexfile).copyTo(targetfile, overwrite = true)
   }
 

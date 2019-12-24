@@ -62,7 +62,7 @@ final case class SastConverter() {
   private val ListConverter = new ListConverter(this)
 
   @scala.annotation.tailrec
-  def sectionize(blocks: Seq[Block], accumulator: List[Sast]): Seq[Sast] = {
+  def sectionize(blocks: Seq[Block], accumulator: List[Sast]): List[Sast] = {
     blocks.toList match {
       case Nil => accumulator.reverse
       case section :: rest =>
@@ -83,7 +83,7 @@ final case class SastConverter() {
 
 
 
-  def blockSequence(blocks: Seq[Block]): Seq[Sast] = {
+  def blockSequence(blocks: List[Block]): List[Sast] = {
     val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
     abstkt.map(block) ++ sectionize(sections, Nil)
   }
@@ -120,7 +120,7 @@ final case class SastConverter() {
   def documentString(blockContent: String, prov: Prov): Seq[Sast] = {
     blockSequence(Parse.document(blockContent, prov) match {
                     case Left(parsingAnnotation) =>throw parsingAnnotation
-                    case Right(res) => res
+                    case Right(res) => res.toList
                   })
   }
 

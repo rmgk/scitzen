@@ -8,26 +8,27 @@ import cats.data.Chain
 import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, HtmlPathManager, ParsedDocument, Sast, Scope, Sdoc}
+import scitzen.generic.{AnalyzedDoc, ConversionContext, FullDoc, HtmlPathManager, PDReporter, ParsedDocument, Reporter, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 object ImportPreproc {
-  def macroImportPreproc(docOpt: Option[ParsedDocument], attributes: Attributes)
-  : Option[(ParsedDocument, Seq[Sast])] = {
+  def macroImportPreproc(docOpt: Option[FullDoc], attributes: Attributes)
+  : Option[(FullDoc, Seq[Sast])] = {
     val res = docOpt match {
       case None      =>
         scribe.warn(s"include unknown document ${attributes.target} omitting")
         None
-      case Some(doc) =>
+      case Some(fdoc) =>
+        val analyzed = fdoc.analyzed
         val sast = if (attributes.named.get("format").contains("article")) {
-          val date    = doc.sdoc.date.fold("")(d => d.date.full + " ")
-          val head    = doc.sdoc.blocks.head
+          val date    = analyzed.date.fold("")(d => d.date.full + " ")
+          val head    = analyzed.blocks.head
           val section = head.asInstanceOf[Section]
           val sast    = section.copy(title = Text(InlineText(date) +: section.title.inline))
           List(sast)
-        } else doc.sdoc.blocks
-        Some(doc -> sast)
+        } else analyzed.blocks
+        Some(fdoc -> sast)
     }
     res
   }
@@ -38,9 +39,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 (val bundle: Bundle[Builder, Output, FragT],
  pathManager: HtmlPathManager,
  bibliography: Map[String, String],
- sdoc: Sdoc,
+ sdoc: AnalyzedDoc,
  document: Option[ParsedDocument],
- sync: Option[(File, Int)]) {
+ sync: Option[(File, Int)],
+ reporter: Reporter) {
 
 
   import bundle.all._
@@ -137,15 +139,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           }
 
           def categoriesSpan() = {
-            span(cls := "category")(post.sdoc.named.get("categories"), post.sdoc.named.get("people"))
+            span(cls := "category")(post.analyzed.named.get("categories"), post.analyzed.named.get("people"))
           }
 
-          val aref = pathManager.relativizePost(post.file).toString
+          val aref = pathManager.relativizePost(post.parsed.file).toString
 
           ctx.ret(Chain(a(
             href := aref,
-            article(timeShort(post.sdoc.date.getOrElse(throw new NoSuchElementException(s"Article has no date: ${post.file}"))),
-                    span(cls := "title", post.sdoc.title),
+            article(timeShort(post.analyzed.date.getOrElse(throw new NoSuchElementException(s"Article has no date: ${post.parsed.file}"))),
+                    span(cls := "title", post.analyzed.title),
                     categoriesSpan()
                     ))))
 
@@ -153,8 +155,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           ImportPreproc.macroImportPreproc(pathManager.findDoc(attributes.target), attributes) match {
             case Some((doc, sast)) =>
               ctx.withScope(new Scope(3)) {
-                new SastToHtmlConverter(bundle, pathManager.changeWorkingFile(doc.file),
-                                        bibliography, doc.sdoc, Some(doc), sync)
+                new SastToHtmlConverter(bundle, pathManager.changeWorkingFile(doc.parsed.file),
+                                        bibliography, doc.analyzed, Some(doc.parsed), sync,
+                                        new PDReporter(doc.parsed))
                 .sastToHtml(sast)(_)
               }
             case None              => ctx.empty
@@ -298,7 +301,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
   }
 
-  def reportPos(m: Macro): String = document.fold("")(_.reporter(m))
+  def reportPos(m: Macro): String = reporter(m)
 
   def unknownMacroOutput(im: Macro): Tag = {
     val str = SastToScimConverter().macroToScim(im)

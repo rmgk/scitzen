@@ -10,8 +10,8 @@ case class NLP(stopwords: Map[String, Set[String]], dm: DocumentManager) {
 
   val totalDocuments = dm.documents.size.toDouble
 
-  lazy val idf = dm.documents.map { doc =>
-    doc.sdoc.words.map(_.toLowerCase()).distinct.foldMap(w => Map(w -> 1))
+  lazy val idf = dm.analyzed.map { doc =>
+    doc.words.map(_.toLowerCase()).distinct.foldMap(w => Map(w -> 1))
   }.foldMap(identity).view.mapValues(docWithTerm => Math.log(totalDocuments / docWithTerm))
 
   def tfidf(words: List[String]) = {
@@ -20,7 +20,7 @@ case class NLP(stopwords: Map[String, Set[String]], dm: DocumentManager) {
       .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
   }
 
-  def language(sdoc: Sdoc) = {
+  def language(sdoc: AnalyzedDoc) = {
     val candidates =
     stopwords.view.mapValues {
       _.toList.foldMap(sdoc.wordcount.getOrElse(_, 0))

@@ -3,7 +3,7 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, ParsedDocument, Project, Sast, Scope}
+import scitzen.generic.{ConversionContext, PDReporter, Project, Reporter, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
@@ -12,8 +12,7 @@ import scitzen.parser.{Inline, InlineText, Macro}
 
 class SastToTexConverter(project: Project,
                          cwd: File,
-                         document: Option[ParsedDocument],
-                         numbered: Boolean = true
+                         reporter: Reporter
                         ) {
 
   type CtxCS = ConversionContext[Chain[String]]
@@ -101,7 +100,7 @@ class SastToTexConverter(project: Project,
           ImportPreproc.macroImportPreproc(project.findDoc(cwd, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               ctx.withScope(new Scope(3))(
-              new SastToTexConverter(project,doc.file.parent, Some(doc), numbered)
+              new SastToTexConverter(project,doc.parsed.file.parent, new PDReporter(doc.parsed))
               .sastSeqToTex(sast)(_))
 
             case None => ctx.empty
@@ -197,7 +196,7 @@ class SastToTexConverter(project: Project,
   val sectioning:  Scope => String = nesting => {
     val secs = Array("book", "part", "chapter", "section", "subsection", "paragraph")
     val sec = secs.lift(nesting.level).getOrElse("paragraph")
-    if (numbered) sec else sec + "*"
+    sec
   }
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
     case InlineText(str) => latexencode(str)
@@ -251,6 +250,6 @@ class SastToTexConverter(project: Project,
       s"$command[${attributes.all.mkString(",")}]"
   }.mkString(""))
 
-  def reportPos(m: Macro): String = document.fold("")(_.reporter(m))
+  def reportPos(m: Macro): String = reporter(m)
 
 }
