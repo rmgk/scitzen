@@ -83,7 +83,7 @@ class SastToTexConverter(project: Project,
           val target    = attributes.target
           attributes.named.get("converter") match {
             case Some(converter) =>
-              sastSeqToTex(ctx.converter.convert(cwd, mcro, "pdf"))
+              sastSeqToTex(ctx.converter.convert(cwd, mcro))
 
             case None =>
               ctx.project.resolve(cwd, target) match {
@@ -171,7 +171,7 @@ class SastToTexConverter(project: Project,
 
       case RawBlock(delimiter, text) =>
         if (tlblock.attr.named.contains("converter"))
-          sastSeqToTex(ctx.converter.convert(tlblock, "pdf"))
+          sastSeqToTex(ctx.converter.convert(tlblock))
         else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
         else delimiter.charAt(0) match {
           case '`' =>

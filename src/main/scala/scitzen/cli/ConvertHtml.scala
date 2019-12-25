@@ -128,7 +128,7 @@ object ConvertHtml {
 
     val preConversionContext =
       ConversionContext(Chain.empty[String],
-                        converter = new ImageConverter(project),
+                        converter = new ImageConverter(project, "svg"),
                         katexMap = initialKatexMap
                         )
 

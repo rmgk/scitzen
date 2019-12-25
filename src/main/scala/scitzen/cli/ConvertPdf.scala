@@ -43,7 +43,7 @@ object ConvertPdf {
     cacheDir.createDirectories()
 
     val preConversionContext = ConversionContext(
-      Chain.empty[String], converter = new ImageConverter(project))
+      Chain.empty[String], converter = new ImageConverter(project, "pdf"))
 
     val resultContext = new SastToTexConverter(
       project,

@@ -6,16 +6,16 @@ import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast.{MacroBlock, RawBlock, TLBlock}
 import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
 
-class ImageConverter(val project: Project) {
+class ImageConverter(val project: Project, formatHint: String) {
 
-  def convert(cwd: File, mcro: Macro, formatHint: String): List[Sast] = {
+  def convert(cwd: File, mcro: Macro): List[Sast] = {
     mcro.attributes.named.get("converter") match {
       case Some(converter) =>
         val res = project.resolve(cwd, mcro.attributes.target) match {
           case None       => Nil
           case Some(file) =>
             val content = file.contentAsString
-            doConversion(converter, mcro.attributes, content, formatHint)
+            doConversion(converter, mcro.attributes, content)
         }
         if (res.isEmpty) {
           List(MacroBlock(mcro.copy(attributes = mcro.attributes.copy(raw = mcro.attributes.raw.filterNot(
@@ -30,11 +30,11 @@ class ImageConverter(val project: Project) {
   }
 
 
-  def convert(tlb: TLBlock, formatHint: String): List[Sast] = {
+  def convert(tlb: TLBlock): List[Sast] = {
     tlb.attr.named.get("converter") match {
       case Some(converter) =>
         val content = tlb.content.asInstanceOf[RawBlock].content
-        val res     = doConversion(converter, tlb.attr, content, formatHint)
+        val res     = doConversion(converter, tlb.attr, content)
         if (res.isEmpty) {
           List(tlb.copy(attr = tlb.attr.remove("converter")))
         }
@@ -57,7 +57,7 @@ class ImageConverter(val project: Project) {
 
   }
 
-  def doConversion(converter: String, attributes: Attributes, content: String, formatHint: String) = {
+  def doConversion(converter: String, attributes: Attributes, content: String) = {
 
 
     def makeImageMacro(file: File) = {

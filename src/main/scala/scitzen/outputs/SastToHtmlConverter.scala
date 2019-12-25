@@ -171,7 +171,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
           case _ if tLBlock.attr.named.contains("converter") =>
-            sastToHtml(ctx.converter.convert(tLBlock, "svg"))
+            sastToHtml(ctx.converter.convert(tLBlock))
           case Some("quote") =>
             sblockToHtml(tLBlock.content).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)

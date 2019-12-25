@@ -37,7 +37,7 @@ object ConvertGeneric {
     cacheDir.createDirectories()
 
     val preConversionContext = ConversionContext(
-      Chain.empty[String], converter = new ImageConverter(project))
+      Chain.empty[String], converter = new ImageConverter(project, "svg"))
 
     new SastToTexConverter(
       project,
