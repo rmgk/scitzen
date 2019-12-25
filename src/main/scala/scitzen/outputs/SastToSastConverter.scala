@@ -4,7 +4,7 @@ import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
 import scitzen.generic.{ConversionContext, ImageConverter, PDReporter, Project, Reporter, Sast}
-import scitzen.parser.MacroCommand.Include
+import scitzen.parser.MacroCommand.{Image, Include}
 import scitzen.parser.{Inline, InlineText, Macro}
 
 
@@ -42,6 +42,11 @@ class SastToSastConverter(project: Project,
       }
 
     case MacroBlock(mcro) => mcro match {
+      case Macro(Image, attributes) if attributes.named.contains("converter") =>
+        val resctx = converter.convert(cwd, mcro).schedule(ctx)
+        convertSingle(resctx.data)(resctx)
+
+
       case Macro(Include, attributes) =>
         val included = project.findDoc(cwd, attributes.target)
         ImportPreproc.macroImportPreproc(included, attributes) match {
