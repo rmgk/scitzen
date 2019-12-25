@@ -3,14 +3,15 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, PDReporter, Project, Reporter, Sast}
-import scitzen.parser.MacroCommand.{Image, Include}
+import scitzen.generic.{ConversionContext, ImageConverter, PDReporter, Project, Reporter, Sast}
+import scitzen.parser.MacroCommand.Include
 import scitzen.parser.{Inline, InlineText, Macro}
 
 
 class SastToSastConverter(project: Project,
                           cwd: File,
-                          reporter: Reporter
+                          reporter: Reporter,
+                          converter: ImageConverter
                          ) {
 
   type CtxCS = ConversionContext[Chain[Sast]]
@@ -41,15 +42,11 @@ class SastToSastConverter(project: Project,
       }
 
     case MacroBlock(mcro) => mcro match {
-      case Macro(Image, attributes) if attributes.named.contains("converter") =>
-        convertSeq(ctx.converter.convert(cwd, mcro))
-
-
       case Macro(Include, attributes) =>
         val included = project.findDoc(cwd, attributes.target)
         ImportPreproc.macroImportPreproc(included, attributes) match {
           case Some((doc, sast)) =>
-            new SastToSastConverter(project, doc.parsed.file.parent, new PDReporter(doc.parsed))
+            new SastToSastConverter(project, doc.parsed.file.parent, new PDReporter(doc.parsed), converter)
             .convertSeq(sast)
 
           case None => ctx.empty
@@ -71,7 +68,7 @@ class SastToSastConverter(project: Project,
 
     case RawBlock(delimiter, text) =>
       if (tlblock.attr.named.contains("converter"))
-        convertSeq(ctx.converter.convert(tlblock))
+        convertSeq(converter.convert(tlblock))
       else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
       else {
         ctx.retc(TLBlock(tlblock.attr, RawBlock(delimiter, text)))

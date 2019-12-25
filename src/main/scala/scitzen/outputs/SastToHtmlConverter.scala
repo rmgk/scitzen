@@ -113,15 +113,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
-          ctx.project.resolve(pathManager.cwd, attributes.target) match {
+          pathManager.project.resolve(pathManager.cwd, attributes.target) match {
             case Some(target) =>
-              val res  =
-                if (target.extension.contains(".pdf")) {
-                  ctx.converter.pdftosvg(target)
-                }
-                else target
-              val path = pathManager.relativizeImage(res)
-              ctx.requireInOutput(res, path).retc(img(src := path.toString))
+              val path = pathManager.relativizeImage(target)
+              ctx.requireInOutput(target, path).retc(img(src := path.toString))
             case None         =>
               scribe.warn(s"could not find path ${attributes.target} in ${pathManager.cwd} and ${document.get.file}")
               ctx.empty
@@ -170,8 +165,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       case tLBlock: TLBlock =>
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
-          case _ if tLBlock.attr.named.contains("converter") =>
-            sastToHtml(ctx.converter.convert(tLBlock))
           case Some("quote") =>
             sblockToHtml(tLBlock.content).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
@@ -250,7 +243,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case '$' =>
 
           val katexdefs = sdoc.named.get("katexTemplate")
-                              .flatMap(path => ctx.project.resolve(pathManager.cwd, path))
+                              .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
                               .map(_.contentAsString).getOrElse("")
           val (mathml, ictx) = ctx.katex(inner, {
             (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream((katexdefs + inner).getBytes(StandardCharsets.UTF_8))).!!

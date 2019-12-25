@@ -8,7 +8,7 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, GenIndexPage, ImageConverter, PDReporter, ParsedDocument, Project}
+import scitzen.generic.{ConversionContext, GenIndexPage, PDReporter, ParsedDocument, Project}
 import scitzen.outputs.{SastToTexConverter, TexPages}
 
 object ConvertPdf {
@@ -43,7 +43,7 @@ object ConvertPdf {
     cacheDir.createDirectories()
 
     val preConversionContext = ConversionContext(
-      Chain.empty[String], converter = new ImageConverter(project, "pdf"))
+      Chain.empty[String])
 
     val resultContext = new SastToTexConverter(
       project,

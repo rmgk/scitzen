@@ -8,7 +8,7 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{AnalyzedDoc, ConversionContext, FullDoc, GenIndexPage, HtmlPathManager, ImageConverter, NLP, PDReporter, ParsedDocument, Project, SastAnalyzes}
+import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 
 import scala.util.Try
@@ -128,7 +128,6 @@ object ConvertHtml {
 
     val preConversionContext =
       ConversionContext(Chain.empty[String],
-                        converter = new ImageConverter(project, "svg"),
                         katexMap = initialKatexMap
                         )
 

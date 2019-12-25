@@ -7,7 +7,7 @@ import better.files._
 import cats.data.Chain
 import com.monovore.decline.{Command, Opts}
 import scitzen.generic.{ConversionContext, GenIndexPage, ImageConverter, PDReporter, Project}
-import scitzen.outputs.SastToTexConverter
+import scitzen.outputs.SastToSastConverter
 
 object ConvertGeneric {
   implicit val charset: Charset = StandardCharsets.UTF_8
@@ -37,13 +37,14 @@ object ConvertGeneric {
     cacheDir.createDirectories()
 
     val preConversionContext = ConversionContext(
-      Chain.empty[String], converter = new ImageConverter(project, "svg"))
+      Chain.empty[String])
 
-    new SastToTexConverter(
+    new SastToSastConverter(
       project,
       project.root,
-      new PDReporter(dm.byPath(project.main.get).parsed)
-      ).convert(
+      new PDReporter(dm.byPath(project.main.get).parsed),
+      new ImageConverter(project, "svg")
+      ).convertSeq(
       if (project.sources.size <= 1) dm.byPath(project.main.get).parsed.sast else GenIndexPage.makeIndex(dm, project)
       )(preConversionContext)
 

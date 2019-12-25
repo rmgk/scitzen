@@ -81,18 +81,13 @@ class SastToTexConverter(project: Project,
       case MacroBlock(mcro) => mcro match {
         case Macro(Image, attributes) =>
           val target    = attributes.target
-          attributes.named.get("converter") match {
-            case Some(converter) =>
-              sastSeqToTex(ctx.converter.convert(cwd, mcro))
 
-            case None =>
-              ctx.project.resolve(cwd, target) match {
-                case None       =>
-                  scribe.error(s"Not relative path: $mcro")
-                  ctx.empty
-                case Some(data) =>
-                  ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
-              }
+          project.resolve(cwd, target) match {
+            case None       =>
+              scribe.error(s"Not relative path: $mcro")
+              ctx.empty
+            case Some(data) =>
+              ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
           }
 
 
@@ -170,9 +165,7 @@ class SastToTexConverter(project: Project,
         }
 
       case RawBlock(delimiter, text) =>
-        if (tlblock.attr.named.contains("converter"))
-          sastSeqToTex(ctx.converter.convert(tlblock))
-        else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
+        if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
         else delimiter.charAt(0) match {
           case '`' =>
             val restext = tlblock.attr.named.get("label") match {

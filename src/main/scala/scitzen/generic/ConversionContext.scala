@@ -8,7 +8,6 @@ import cats.data.Chain
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T]
 (data: T,
- converter: ImageConverter,
  scope: Scope = new Scope(1),
  katexMap: Map[String, String] = Map.empty,
  resourceMap: Map[File, Path] = Map.empty
@@ -17,8 +16,6 @@ case class ConversionContext[T]
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
     copy(resourceMap = resourceMap.updated(source, relative))
   }
-
-  def project: Project = converter.project
 
 
   def ret[U](d: U): ConversionContext[U] = copy(data = d)
