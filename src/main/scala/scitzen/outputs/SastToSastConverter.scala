@@ -5,7 +5,7 @@ import cats.data.Chain
 import scitzen.generic.Sast._
 import scitzen.generic.{ConversionContext, ImageConverter, PDReporter, Project, Reporter, Sast}
 import scitzen.parser.MacroCommand.{Image, Include}
-import scitzen.parser.{Inline, InlineText, Macro}
+import scitzen.parser.{Attribute, Inline, InlineText, Macro}
 
 
 class SastToSastConverter(project: Project,
@@ -42,11 +42,6 @@ class SastToSastConverter(project: Project,
       }
 
     case MacroBlock(mcro) => mcro match {
-      case Macro(Image, attributes) if attributes.named.contains("converter") =>
-        val resctx = converter.convert(cwd, mcro).schedule(ctx)
-        convertSingle(resctx.data)(resctx)
-
-
       case Macro(Include, attributes) =>
         val included = project.findDoc(cwd, attributes.target)
         ImportPreproc.macroImportPreproc(included, attributes) match {
@@ -92,6 +87,20 @@ class SastToSastConverter(project: Project,
       }
     }
 
-  def convertMacro(inners: Macro)(implicit ctx: Cta): Ctx[Macro] = ctx.ret(inners)
+  def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] = mcro match {
+    case Macro(Image, attributes) if attributes.named.contains("converter") =>
+      val resctx = converter.convert(cwd, mcro).schedule(ctx)
+      convertMacro(resctx.data)(resctx)
+
+    case pmcro @ Macro(Image, attributes) if attributes.target.endsWith("pdf") && converter.formatHint == "svg" =>
+      project.resolve(cwd, attributes.target).fold(ctx.ret(pmcro)) { file =>
+        val resctx = converter.pdftosvg(file).schedule(ctx)
+        convertMacro(Macro(Image, attributes.copy(
+          raw = attributes.raw.init :+ Attribute("", resctx.data.toString()))))(resctx)
+      }
+
+    case other => ctx.ret(other)
+
+  }
 
 }

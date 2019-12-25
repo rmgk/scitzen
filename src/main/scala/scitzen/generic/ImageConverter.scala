@@ -20,17 +20,17 @@ class ConvertSchedulable[T](data: T, task: Option[ConvertTask]) {
   }
 }
 
-class ImageConverter(project: Project, formatHint: String) {
+class ImageConverter(project: Project, val formatHint: String) {
 
-  def convert(cwd: File, mcro: Macro): ConvertSchedulable[MacroBlock] = {
+  def convert(cwd: File, mcro: Macro): ConvertSchedulable[Macro] = {
     val converter = mcro.attributes.named("converter")
     project.resolve(cwd, mcro.attributes.target) flatMap { file =>
       val content = file.contentAsString
       doConversion(converter, mcro.attributes, content)
     } match {
       case None      =>
-        new ConvertSchedulable(MacroBlock(mcro.copy(attributes = mcro.attributes.copy(raw = mcro.attributes.raw.filterNot(
-          _.id == "converter")))), None)
+        new ConvertSchedulable(mcro.copy(attributes = mcro.attributes.copy(raw = mcro.attributes.raw.filterNot(
+          _.id == "converter"))), None)
       case Some(res) => res
     }
   }
@@ -42,12 +42,17 @@ class ImageConverter(project: Project, formatHint: String) {
     doConversion(converter, tlb.attr, content) match {
       case None      =>
         new ConvertSchedulable(tlb.copy(attr = tlb.attr.remove("converter")), None)
-      case Some(res) => res.map(identity)
+      case Some(res) => res.map(MacroBlock)
 
     }
   }
 
-  def pdftosvg(file: File): (File, Option[ConvertTask]) = {
+  def pdftosvg(file: File): ConvertSchedulable[File] = {
+    val (svgfile, tasko) =  pdftosvg_(file)
+    new ConvertSchedulable[File](svgfile, tasko)
+  }
+
+  private def pdftosvg_(file: File): (File, Option[ConvertTask]) = {
     val relative   = project.root.relativize(file.parent)
     val targetfile = File((project.cacheDir / "svgs").path.resolve(relative).resolve(file.nameWithoutExtension + ".svg"))
     (targetfile,
@@ -56,6 +61,7 @@ class ImageConverter(project: Project, formatHint: String) {
       Some(new ConvertTask {
         override def run(): Unit = {
           targetfile.parent.createDirectories()
+          scribe.debug(s"converting $file to $targetfile")
           new ProcessBuilder("pdftocairo", "-svg", file.toString(), targetfile.toString()).inheritIO().start().waitFor()
         }
       })
@@ -63,19 +69,19 @@ class ImageConverter(project: Project, formatHint: String) {
 
   }
 
-  def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[MacroBlock]] = {
+  def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {
 
 
-    def makeImageMacro(file: File): MacroBlock = {
+    def makeImageMacro(file: File) = {
       val relTarget = project.root.relativize(file)
-      MacroBlock(Macro(MacroCommand.Image,
-                       attributes.remove("converter").append(List(Attribute("", s"/$relTarget")))))
+      Macro(MacroCommand.Image,
+                       attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
     }
 
     def applyConversion(data: (String, File, Option[ConvertTask])) = {
       val (hash, pdf, convertTaskO) = data
 
-      val (resfile, task2) = if (formatHint == "svg") pdftosvg(data._2)
+      val (resfile, task2) = if (formatHint == "svg") pdftosvg_(data._2)
                              else (data._2, None)
       val combinedTask     = (convertTaskO, task2) match {
         case (Some(l), Some(r)) => Some(new ConvertTask {
