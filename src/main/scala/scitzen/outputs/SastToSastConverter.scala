@@ -68,7 +68,7 @@ class SastToSastConverter(project: Project,
 
     case RawBlock(delimiter, text) =>
       if (tlblock.attr.named.contains("converter"))
-        convertSeq(converter.convert(tlblock))
+        convertSingle(converter.convert(tlblock))
       else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
       else {
         ctx.retc(TLBlock(tlblock.attr, RawBlock(delimiter, text)))

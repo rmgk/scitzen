@@ -6,42 +6,29 @@ import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast.{MacroBlock, RawBlock, TLBlock}
 import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
 
-class ImageConverter(val project: Project, formatHint: String) {
+class ImageConverter(project: Project, formatHint: String) {
 
-  def convert(cwd: File, mcro: Macro): List[Sast] = {
-    mcro.attributes.named.get("converter") match {
-      case Some(converter) =>
-        val res = project.resolve(cwd, mcro.attributes.target) match {
-          case None       => Nil
-          case Some(file) =>
-            val content = file.contentAsString
-            doConversion(converter, mcro.attributes, content)
-        }
-        if (res.isEmpty) {
-          List(MacroBlock(mcro.copy(attributes = mcro.attributes.copy(raw = mcro.attributes.raw.filterNot(
-            _.id == "converter")))))
-        }
-        else res
-
-      case None =>
-        scribe.error(s"no converter for conversion?")
-        Nil
+  def convert(cwd: File, mcro: Macro): MacroBlock = {
+    val converter = mcro.attributes.named("converter")
+    project.resolve(cwd, mcro.attributes.target) flatMap { file =>
+      val content = file.contentAsString
+      doConversion(converter, mcro.attributes, content)
+    } match {
+      case None      => MacroBlock(mcro.copy(attributes = mcro.attributes.copy(raw = mcro.attributes.raw.filterNot(
+        _.id == "converter"))))
+      case Some(res) => res
     }
   }
 
 
-  def convert(tlb: TLBlock): List[Sast] = {
-    tlb.attr.named.get("converter") match {
-      case Some(converter) =>
-        val content = tlb.content.asInstanceOf[RawBlock].content
-        val res     = doConversion(converter, tlb.attr, content)
-        if (res.isEmpty) {
-          List(tlb.copy(attr = tlb.attr.remove("converter")))
-        }
-        else res
-      case None            =>
-        scribe.error(s"no converter for conversion?")
-        Nil
+  def convert(tlb: TLBlock): Sast = {
+    val converter = tlb.attr.named("converter")
+    val content   = tlb.content.asInstanceOf[RawBlock].content
+    doConversion(converter, tlb.attr, content) match {
+      case None      =>
+        tlb.copy(attr = tlb.attr.remove("converter"))
+      case Some(res) => res
+
     }
   }
 
@@ -57,12 +44,12 @@ class ImageConverter(val project: Project, formatHint: String) {
 
   }
 
-  def doConversion(converter: String, attributes: Attributes, content: String) = {
+  def doConversion(converter: String, attributes: Attributes, content: String): Option[MacroBlock] = {
 
 
     def makeImageMacro(file: File) = {
       val relTarget = project.root.relativize(file)
-      List(MacroBlock(Macro(MacroCommand.Image,
+      Some(MacroBlock(Macro(MacroCommand.Image,
                             attributes.remove("converter").append(List(Attribute("",
                                                                                  s"/$relTarget"))))))
     }
@@ -95,7 +82,7 @@ class ImageConverter(val project: Project, formatHint: String) {
         makeImageMacro(svg)
       case other                =>
         scribe.warn(s"unknown converter $other")
-        Nil
+        None
     }
   }
 }
