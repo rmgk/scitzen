@@ -10,7 +10,8 @@ case class ConversionContext[T]
 (data: T,
  scope: Scope = new Scope(1),
  katexMap: Map[String, String] = Map.empty,
- resourceMap: Map[File, Path] = Map.empty
+ resourceMap: Map[File, Path] = Map.empty,
+ tasks: List[ConvertTask] = Nil
 ) {
 
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {

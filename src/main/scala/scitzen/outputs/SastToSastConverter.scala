@@ -67,8 +67,10 @@ class SastToSastConverter(project: Project,
       convertSeq(blockContent).map(bc => TLBlock(tlblock.attr, ParsedBlock(delimiter, bc.toList)): Sast).single
 
     case RawBlock(delimiter, text) =>
-      if (tlblock.attr.named.contains("converter"))
-        convertSingle(converter.convert(tlblock))
+      if (tlblock.attr.named.contains("converter")) {
+        val resctx = converter.convert(tlblock).schedule(ctx)
+        convertSingle(resctx.data)(resctx)
+      }
       else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
       else {
         ctx.retc(TLBlock(tlblock.attr, RawBlock(delimiter, text)))
