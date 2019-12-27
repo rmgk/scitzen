@@ -1,14 +1,10 @@
 package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Path
 
 import better.files.File
-import cats.data.NonEmptyList
-import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{DocumentDiscovery, ParsedDocument, Sast, AnalyzedDoc}
+import scitzen.generic.{AnalyzedDoc, Project, Sast}
 import scitzen.outputs.SastToScimConverter
-import scitzen.parser.DateParsingHelper
 import scitzen.parser.MacroCommand.Image
 
 
@@ -22,22 +18,20 @@ object Format {
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
 
-  val pathsOpt: Opts[NonEmptyList[Path]] = Opts.arguments[Path](metavar = "paths")
+  def formatContents(project: Project): Unit = {
 
-  val command: Command[Unit] = Command(name = "format",
-                                       header = "Convert Scim to Scim") {
-
-    pathsOpt.map { paths =>
-      val dd = DocumentDiscovery(paths)
-      dd.sourceFiles.foreach { file =>
-        val pd = ParsedDocument(file)
-        val sdoc = AnalyzedDoc(pd)
-        checkReferences(file, sdoc)
-        formatContent(file, pd.content, pd.sast)
-        if (renamePossible(sdoc)) renameFileFromHeader(file, sdoc)
-      }
+    project.documentManager.documents.foreach { pd =>
+      formatContent(pd.file, pd.content, pd.sast)
     }
   }
+
+    def formatRename(project: Project): Unit = {
+    project.documentManager.fulldocs.foreach { fd =>
+      if (renamePossible(fd.analyzed)) renameFileFromHeader(fd.parsed.file, fd.analyzed)
+    }
+  }
+
+
 
 
   def checkReferences(file: File, sdoc: AnalyzedDoc): Unit = {
@@ -71,12 +65,11 @@ object Format {
     }
   }
 
-  def renamePossible(header: AnalyzedDoc): Boolean = header.title.isDefined && header.named.contains("revdate")
+  def renamePossible(header: AnalyzedDoc): Boolean = header.title.isDefined && header.date.isDefined
 
   def nameFromHeader(header: AnalyzedDoc): String = {
-    val date = DateParsingHelper.parseDate(header.named("revdate").trim)
     val title = sluggify(header.title.get) + ".scim"
-    date.date.full + " " + title
+    header.date.get.date.full + " " + title
   }
 
   def sluggify(str: String): String =

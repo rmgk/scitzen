@@ -76,7 +76,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
     div(cls := "metadata",
         sdoc.date.map(timeFull).getOrElse(""),
-        frag(sdoc.modified.map(timeFull).toList: _*),
         categoriesSpan(),
         frag(sdoc.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
         )

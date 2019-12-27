@@ -43,7 +43,10 @@ object Project {
   (output: String = "output",
    cache: String = "cache",
    stopwords: String = "scitzen",
-   main: Option[String] = None)
+   main: Option[String] = None,
+   format: List[String] = Nil,
+   outputType: List[String] = Nil
+  )
 
   val scitzenconfig: String = "scitzen.toml"
 

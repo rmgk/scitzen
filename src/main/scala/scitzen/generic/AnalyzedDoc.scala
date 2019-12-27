@@ -24,10 +24,8 @@ case class AnalyzedDoc(blocks: Seq[Sast], analyzer: SastAnalyzer) {
 
   lazy val language: Option[String] = named.get("language").map(_.trim)
 
-  lazy val date    : Option[ScitzenDateTime] = named.get("revdate")
+  lazy val date    : Option[ScitzenDateTime] = named.get("date")
                                                .map(v => DateParsingHelper.parseDate(v.trim))
-  lazy val modified: Option[ScitzenDateTime] = named.get("modified")
-                                               .map(m => DateParsingHelper.parseDate(m.trim))
 
   lazy val title: Option[String] = blocks.headOption.collect { case s: Section => s }.map(_.title.str)
 

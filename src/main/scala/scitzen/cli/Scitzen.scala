@@ -1,6 +1,6 @@
 package scitzen.cli
 
-import com.monovore.decline.{CommandApp, Opts}
+import com.monovore.decline.CommandApp
 import scribe.Logger
 
 object Scitzen extends CommandApp(
@@ -17,6 +17,6 @@ object Scitzen extends CommandApp(
     //.orElse(Opts.subcommand(ConvertPdf.command))
     //.orElse(Opts.subcommand(JsonSast.command))
     //.orElse(Opts.subcommand(Format.command))
-    Opts.subcommand(ConvertGeneric.command)
+    ConvertProject.command.options
   }
   )
