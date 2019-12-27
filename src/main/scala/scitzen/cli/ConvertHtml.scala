@@ -10,6 +10,7 @@ import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, Opts}
 import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.parser.MacroCommand.Cite
 
 import scala.util.Try
 
@@ -68,23 +69,20 @@ object ConvertHtml {
     val nlp = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
 
-    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = (Nil, Map[String, String]())
-    // project.singleSource match {
-    //  case None             => (Nil, Map[String, String]())
-    //  case Some(sourcefile) =>
-    //    val doc = dm.byPath(sourcefile)
-    //    val bibPath = doc.sdoc.named.get("bibliography").map { p =>
-    //      doc.file.parent./(p.trim)
-    //    }
-    //    val bib = bibPath.toList.flatMap(Bibliography.parse(project.cacheDir))
-    //    val cited = dm.documents.flatMap {
-    //      _.sdoc.analyzeResult.macros.filter(_.command == Cite)
-    //       .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))
-    //    }.toSet
-    //    val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
-    //    val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
-    //    bibEntries -> biblio
-    //}
+    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = {
+        val doc = dm.fulldocs.find(_.analyzed.named.contains("bibliography"))
+        val bibPath = doc.flatMap(doc => doc.analyzed.named.get("bibliography").map { p =>
+          doc.parsed.file.parent./(p.trim)
+        })
+        val bib = bibPath.toList.flatMap(Bibliography.parse(project.cacheDir))
+        val cited = dm.analyzed.flatMap {
+          _.analyzeResult.macros.filter(_.command == Cite)
+           .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))
+        }.toSet
+        val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.family))
+        val biblio = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
+        bibEntries -> biblio
+    }
 
 
     val katexmapfile = project.cacheDir / "katexmap.json"
