@@ -8,7 +8,7 @@ import cats.data.Chain
 import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
-import scitzen.generic.{AnalyzedDoc, ConversionContext, FullDoc, HtmlPathManager, PDReporter, ParsedDocument, Reporter, Sast, Scope}
+import scitzen.generic.{AnalyzedDoc, ConversionContext, FullDoc, HtmlPathManager, ParsedDocument, Reporter, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
@@ -150,9 +150,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           ImportPreproc.macroImportPreproc(pathManager.findDoc(attributes.target), attributes) match {
             case Some((doc, sast)) =>
               ctx.withScope(new Scope(3)) {
-                new SastToHtmlConverter(bundle, pathManager.changeWorkingFile(doc.parsed.file),
-                                        bibliography, doc.analyzed, Some(doc.parsed), sync,
-                                        new PDReporter(doc.parsed))
+                new SastToHtmlConverter(bundle,
+                                        pathManager.changeWorkingFile(doc.parsed.file),
+                                        bibliography,
+                                        doc.analyzed,
+                                        Some(doc.parsed),
+                                        sync,
+                                        doc.parsed.reporter)
                 .sastToHtml(sast)(_)
               }
             case None              => ctx.empty

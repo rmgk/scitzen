@@ -7,7 +7,7 @@ import scitzen.parser._
 
 import scala.util.control.NonFatal
 
-object SastAnalyzes {
+object SastAnalyzer {
   case class Target(id: String, resolution: Sast)
   case class AnalyzeResult(macros: List[Macro],
                            targets: List[Target],
@@ -20,8 +20,8 @@ object SastAnalyzes {
   }
 }
 
-class SastAnalyzes(val macroReporter: Reporter) {
-  import scitzen.generic.SastAnalyzes._
+class SastAnalyzer(val macroReporter: Reporter) {
+  import scitzen.generic.SastAnalyzer._
 
   def reportTarget(mcr: Macro): String =
     try {
@@ -36,8 +36,7 @@ class SastAnalyzes(val macroReporter: Reporter) {
 
 
 
-  def analyze(sdoc: AnalyzedDoc): AnalyzeResult = {
-    val input = sdoc.blocks
+  def analyze(input: Seq[Sast]): AnalyzeResult = {
     val AnalyzeResult(m, t, b, s) = analyzeAllSast(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
     AnalyzeResult(m.reverse, t.reverse, b.reverse, s.reverse)
   }

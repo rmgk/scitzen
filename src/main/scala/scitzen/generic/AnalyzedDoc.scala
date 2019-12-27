@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import cats.implicits._
 import scitzen.generic.Sast.Section
-import scitzen.generic.SastAnalyzes.AnalyzeResult
+import scitzen.generic.SastAnalyzer.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
 import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
@@ -11,9 +11,9 @@ import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTi
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-case class AnalyzedDoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
+case class AnalyzedDoc(blocks: Seq[Sast], analyzer: SastAnalyzer) {
 
-  lazy val analyzeResult: AnalyzeResult = analyzes.analyze(this)
+  lazy val analyzeResult: AnalyzeResult = analyzer.analyze(blocks)
 
   lazy val named: Map[String, String] = {
     val sectionattrs = analyzeResult.sections.flatMap(_.attributes.raw)
@@ -50,11 +50,13 @@ case class AnalyzedDoc(blocks: Seq[Sast], analyzes: SastAnalyzes) {
 object AnalyzedDoc {
   def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {
     AnalyzedDoc(parsedDocument.sast,
-                new SastAnalyzes(new PDReporter(parsedDocument)))
+                new SastAnalyzer(parsedDocument.reporter))
   }
 }
 
-final case class ParsedDocument(file: File, content: String, sast: List[Sast])
+final case class ParsedDocument(file: File, content: String, sast: List[Sast]) {
+  lazy val reporter: Reporter = new FileReporter(file, content)
+}
 
 object ParsedDocument {
   def apply(file: File): ParsedDocument = {
@@ -75,9 +77,7 @@ trait Reporter {
   def apply(prov: Prov) :String
 }
 
-final class PDReporter(parsedDocument: ParsedDocument) extends Reporter {
-  def file: File = parsedDocument.file
-  def content: String = parsedDocument.content
+final class FileReporter(file: File, content: String) extends Reporter {
   lazy val newLines: Seq[Int] = {
     def findNL(idx: Int, found: List[Int]): Array[Int] = {
       val res = content.indexOf('\n', idx + 1)

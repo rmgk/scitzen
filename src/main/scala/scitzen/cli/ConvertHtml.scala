@@ -53,7 +53,7 @@ object ConvertHtml {
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
 
-    val documents: List[ParsedDocument] = project.documents
+    val documents: List[ParsedDocument] = project.documentManager.documents
 
     scribe.info(s"found ${documents.size} posts")
 
@@ -111,7 +111,7 @@ object ConvertHtml {
                                               sdoc = analyzedDoc,
                                               document = Some(doc.parsed),
                                               sync = sync,
-                                              reporter = new PDReporter(doc.parsed))
+                                              reporter = doc.parsed.reporter)
       val toc = HtmlToc.tableOfContents(analyzedDoc.blocks, 2)
       val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
       val converted = converter.convert()(ctx)
@@ -131,7 +131,7 @@ object ConvertHtml {
                         katexMap = initialKatexMap
                         )
 
-    val resultContext = project.sources match {
+    val resultContext = project.documentManager.sources match {
       case List(sourcefile) =>
         val postoutput = project.outputdir
         postoutput.createDirectories()
@@ -157,7 +157,7 @@ object ConvertHtml {
         }
 
 
-        val sdoc = AnalyzedDoc(GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp), new SastAnalyzes(m => ""))
+        val sdoc = AnalyzedDoc(GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp), new SastAnalyzer(m => ""))
         val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                                 pathManager = pathManager,
                                                 bibliography = Map(),

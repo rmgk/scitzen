@@ -3,7 +3,7 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, PDReporter, Project, Reporter, Sast, Scope}
+import scitzen.generic.{ConversionContext, Project, Reporter, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
@@ -95,7 +95,7 @@ class SastToTexConverter(project: Project,
           ImportPreproc.macroImportPreproc(project.findDoc(cwd, attributes.target), attributes) match {
             case Some((doc, sast)) =>
               ctx.withScope(new Scope(3))(
-              new SastToTexConverter(project,doc.parsed.file.parent, new PDReporter(doc.parsed))
+              new SastToTexConverter(project,doc.parsed.file.parent, doc.parsed.reporter)
               .sastSeqToTex(sast)(_))
 
             case None => ctx.empty

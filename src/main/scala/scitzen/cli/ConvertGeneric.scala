@@ -6,13 +6,14 @@ import java.nio.file.Path
 import better.files._
 import cats.data.Chain
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{ConversionContext, GenIndexPage, ImageConverter, PDReporter, Project}
+import scitzen.generic.{ConversionContext, ImageConverter, Project}
 import scitzen.outputs.SastToSastConverter
+
 import scala.jdk.CollectionConverters._
 
 object ConvertGeneric {
   implicit val charset: Charset = StandardCharsets.UTF_8
-  val optSource  : Opts[Path]         = Opts.argument[Path](metavar = "path")
+  val optSource: Opts[Path] = Opts.argument[Path](metavar = "path")
 
 
   val command: Command[Unit] = Command(name = "gen",
@@ -26,12 +27,9 @@ object ConvertGeneric {
   }
 
 
-
   def convert(project: Project): Unit = {
 
     scribe.info(s"project: $project")
-
-    val dm = project.documentManager
 
     val cacheDir = project.cacheDir
 
@@ -40,18 +38,18 @@ object ConvertGeneric {
     val preConversionContext = ConversionContext(
       Chain.empty[String])
 
-    val resctx = new SastToSastConverter(
-      project,
-      project.root,
-      new PDReporter(dm.byPath(project.main.get).parsed),
-      new ImageConverter(project, "svg")
-      ).convertSeq(
-      if (project.sources.size <= 1) dm.byPath(project.main.get).parsed.sast else GenIndexPage.makeIndex(dm, project)
-      )(preConversionContext)
+    val converted = project.documentManager.documents.map { doc =>
+      new SastToSastConverter(
+        project,
+        doc.file.parent,
+        doc.reporter,
+        new ImageConverter(project, "svg")
+        ).convertSeq(doc.sast)(preConversionContext)
+    }
 
-    resctx.tasks.asJava.parallelStream().forEach({ ct =>
+    converted.flatMap(_.tasks).asJava.parallelStream().forEach { ct =>
       ct.run()
-    })
+    }
 
   }
 

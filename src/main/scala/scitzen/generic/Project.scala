@@ -9,17 +9,11 @@ import toml.Codecs._
 case class Project(root: File, config: ProjectConfig) {
 
 
-  val cacheDir  : File = root / config.cache
-  lazy val sources: List[File] = {
-    config.main match {
-      case None         => Project.discoverSources(root)
-      case Some(source) => List(root / source)
-    }
-  }
-  lazy val documents      : List[ParsedDocument] = sources.map(ParsedDocument.apply)
-  lazy val documentManager: DocumentManager      = DocumentManager.recursive(documents)
+  val cacheDir: File = root / config.cache
+  lazy val documentManager: DocumentManager = new DocumentManager(root)
   val outputdir: File = root / config.output
   val nlpdir   : File = root / config.stopwords
+
 
   val main: Option[File] = config.main.map(root / _).filter(Project.isScim)
 

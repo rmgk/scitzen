@@ -8,7 +8,7 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, GenIndexPage, PDReporter, ParsedDocument, Project}
+import scitzen.generic.{ConversionContext, ParsedDocument, Project}
 import scitzen.outputs.{SastToTexConverter, TexPages}
 
 object ConvertPdf {
@@ -30,13 +30,14 @@ object ConvertPdf {
 
   def convertToPdf(project: Project): Unit = {
 
-    val documents: List[ParsedDocument] = project.documents
+    val documents: List[ParsedDocument] = project.documentManager.documents
 
     scribe.info(s"found ${documents.size} posts")
 
     project.outputdir.createDirectories()
 
     val dm = project.documentManager
+    val main = dm.byPath(project.main.get)
 
     val cacheDir = project.cacheDir
 
@@ -47,10 +48,10 @@ object ConvertPdf {
 
     val resultContext = new SastToTexConverter(
       project,
-      project.root,
-      new PDReporter(dm.byPath(project.main.get).parsed)
+      main.parsed.file.parent,
+      main.parsed.reporter
       ).convert(
-      if (project.sources.size <= 1) dm.byPath(project.main.get).parsed.sast else GenIndexPage.makeIndex(dm, project)
+      main.parsed.sast
       )(preConversionContext)
 
     val content = resultContext.data

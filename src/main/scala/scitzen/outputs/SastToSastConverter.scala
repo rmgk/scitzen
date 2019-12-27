@@ -3,8 +3,8 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, ImageConverter, PDReporter, Project, Reporter, Sast}
-import scitzen.parser.MacroCommand.{Image, Include}
+import scitzen.generic.{ConversionContext, ImageConverter, Project, Reporter, Sast}
+import scitzen.parser.MacroCommand.Image
 import scitzen.parser.{Attribute, Inline, InlineText, Macro}
 
 
@@ -41,20 +41,8 @@ class SastToSastConverter(project: Project,
         Chain(Slist(cs.iterator.toSeq))
       }
 
-    case MacroBlock(mcro) => mcro match {
-      case Macro(Include, attributes) =>
-        val included = project.findDoc(cwd, attributes.target)
-        ImportPreproc.macroImportPreproc(included, attributes) match {
-          case Some((doc, sast)) =>
-            new SastToSastConverter(project, doc.parsed.file.parent, new PDReporter(doc.parsed), converter)
-            .convertSeq(sast)
-
-          case None => ctx.empty
-        }
-
-      case other =>
-        convertMacro(other).map(MacroBlock(_): Sast).single
-    }
+    case MacroBlock(mcro) =>
+      convertMacro(mcro).map(MacroBlock(_): Sast).single
   }
 
   def convertBlock(tlblock: TLBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
