@@ -41,7 +41,9 @@ a {
 
 .metadata {
   display: flex;
-  justify-content: center;
+  // safe causes the metadata to always be visible,
+  // even if things become so small that they need to be scrolled
+  justify-content: safe center;
   > * {
     margin-right: 0.5em;
   }
@@ -111,7 +113,9 @@ main > figure, main > img {
   border-radius: 5px;
 
   // justify instead of margins to center elements in grid
-  justify-self: center;
+  // unsafe causes the image to stay centered even if things get small,
+  // causing the box and shadow of the image to hit the border of the window
+  justify-self: unsafe center;
   margin-left: 0;
   margin-right: 0;
 }
