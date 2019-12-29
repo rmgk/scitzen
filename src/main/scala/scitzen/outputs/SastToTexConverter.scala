@@ -92,13 +92,15 @@ class SastToTexConverter(project: Project,
 
 
         case Macro(Include, attributes) =>
-          ImportPreproc.macroImportPreproc(project.findDoc(cwd, attributes.target), attributes) match {
-            case Some((doc, sast)) =>
+          project.findDoc(cwd, attributes.target) match {
+            case Some(doc) =>
               ctx.withScope(new Scope(3))(
-              new SastToTexConverter(project,doc.parsed.file.parent, doc.parsed.reporter)
-              .sastSeqToTex(sast)(_))
+                new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter)
+                .sastSeqToTex(doc.sast)(_))
 
-            case None => ctx.empty
+            case None =>
+              scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
+              ctx.empty
           }
 
         case other =>

@@ -8,31 +8,9 @@ import cats.data.Chain
 import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
-import scitzen.generic.{AnalyzedDoc, ConversionContext, FullDoc, HtmlPathManager, ParsedDocument, Reporter, Sast, Scope}
+import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, ParsedDocument, Reporter, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
-
-object ImportPreproc {
-  def macroImportPreproc(docOpt: Option[FullDoc], attributes: Attributes)
-  : Option[(FullDoc, Seq[Sast])] = {
-    val res = docOpt match {
-      case None      =>
-        scribe.warn(s"include unknown document ${attributes.target} omitting")
-        None
-      case Some(fdoc) =>
-        val analyzed = fdoc.analyzed
-        val sast = if (attributes.named.get("format").contains("article")) {
-          val date    = analyzed.date.fold("")(d => d.date.full + " ")
-          val head    = analyzed.blocks.head
-          val section = head.asInstanceOf[Section]
-          val sast    = section.copy(title = Text(InlineText(date) +: section.title.inline))
-          List(sast)
-        } else analyzed.blocks
-        Some(fdoc -> sast)
-    }
-    res
-  }
-}
 
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT]
@@ -126,7 +104,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
         case Macro(Include, attributes) if attributes.named.get("type").contains("article") =>
           val foundDoc = pathManager.findDoc(attributes.target)
-          val post = foundDoc.get
+          val post     = foundDoc.get
 
           def timeShort(date: ScitzenDateTime) = {
             time(stringFrag(date.monthDayTime + " "))
@@ -146,8 +124,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                     ))))
 
         case Macro(Include, attributes) =>
-          ImportPreproc.macroImportPreproc(pathManager.findDoc(attributes.target), attributes) match {
-            case Some((doc, sast)) =>
+          pathManager.findDoc(attributes.target) match {
+            case Some(doc) =>
               ctx.withScope(new Scope(3)) {
                 new SastToHtmlConverter(bundle,
                                         pathManager.changeWorkingFile(doc.parsed.file),
@@ -156,9 +134,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                                         Some(doc.parsed),
                                         sync,
                                         doc.parsed.reporter)
-                .sastToHtml(sast)(_)
+                .sastToHtml(doc.parsed.sast)(_)
               }
-            case None              => ctx.empty
+            case None              =>
+              scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
+              ctx.empty
           }
 
         case other =>
@@ -237,7 +217,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     case InlineText(str) => ctx.retc(stringFrag(str))
 
     case Macro(Quote(q), attrs) => {
-      val inner =attrs.target
+      val inner = attrs.target
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
       q.head match {
         case '_' => ctx.retc(em(inner))
@@ -245,9 +225,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case '`' => ctx.retc(code(inner))
         case '$' =>
 
-          val katexdefs = sdoc.named.get("katexTemplate")
-                              .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
-                              .map(_.contentAsString).getOrElse("")
+          val katexdefs      = sdoc.named.get("katexTemplate")
+                                   .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
+                                   .map(_.contentAsString).getOrElse("")
           val (mathml, ictx) = ctx.katex(inner, {
             (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream((katexdefs + inner).getBytes(StandardCharsets.UTF_8))).!!
           })
