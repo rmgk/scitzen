@@ -21,16 +21,20 @@ case class Project(root: File, config: ProjectConfig) {
 
 
   def findDoc(currentWorkingDirectory: File, pathString: String): Option[FullDoc] = {
-    resolve(currentWorkingDirectory, pathString)
-    .flatMap(documentManager.byPath.get)
+    documentManager.byPath.get(resolveUnchecked(currentWorkingDirectory, pathString))
   }
 
-  def resolve(currentWorkingDirectory: File, pathString: String): Option[File] = {
+  def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File = {
     val rawPath = Paths.get(pathString)
     val res     =
       if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
       else currentWorkingDirectory / pathString
     scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
+    res
+  }
+
+  def resolve(currentWorkingDirectory: File, pathString: String): Option[File] = {
+    val res = resolveUnchecked(currentWorkingDirectory, pathString)
     Some(res).filter(p => root.isParentOf(p) && p.isRegularFile)
   }
 
