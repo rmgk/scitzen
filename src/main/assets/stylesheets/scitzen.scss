@@ -269,11 +269,17 @@ body {
     // and tries to grow as soon as possible
     flex: 0 100 max-content;
 
-    //input label pair to allow hiding the sidebar content (nav)
+    // input label pair to allow hiding the sidebar content (nav)
     & > input {
       display: none;
     }
     & > label {
+      // the label is marked as hidden in the HTML,
+      // because it makes no sense to show it if the stylesheet is not present
+      // we use this high specificity selector to override the hidden attribute
+      &[hidden] {
+        display: initial;
+      }
       position: fixed;
       top: 0;
       cursor: pointer;

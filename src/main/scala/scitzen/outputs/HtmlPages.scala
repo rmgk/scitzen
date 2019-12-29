@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import scalatags.Text.Frag
 import scalatags.Text.all.{SeqFrag, frag}
-import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, name, rel, title}
+import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, name, rel, title, hidden}
 import scalatags.Text.implicits.{Tag, raw, stringAttr}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{main, nav, aside}
@@ -27,8 +27,8 @@ class HtmlPages(cssPath: String) {
 
   val sidebarContainer: Tag =
     aside(
-      input(`type` := "checkbox", id := "sidebar-switch"),
-      label(`for` := "sidebar-switch", raw("""
+      input(`type` := "checkbox", id := "sidebar-switch", hidden),
+      label(`for` := "sidebar-switch", hidden, raw("""
               |<svg viewBox="0 0 48 48" width="48px" height="48px">
               |  <g stroke="black" stroke-width="4" stroke-linecap="round">
               |  <path d="M 6 12 H 42" />
