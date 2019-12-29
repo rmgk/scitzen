@@ -41,13 +41,14 @@ object MacroCommand {
   val (parseMap, printMap) = {
     val seq = List(
       "cite" -> Cite,
-      "label" -> Label,
-      "ref" -> Ref,
-      "image" -> Image,
-      "include" -> Include,
-      "link" -> Link,
       "comment" -> Comment,
       "def" -> Def,
+      "fence" -> Fence,
+      "image" -> Image,
+      "include" -> Include,
+      "label" -> Label,
+      "link" -> Link,
+      "ref" -> Ref,
       )
     (seq.toMap, seq.map(p => p._2 -> p._1).toMap)
   }
@@ -60,13 +61,14 @@ object MacroCommand {
 
   case class Quote(q: String) extends MacroCommand
   object Cite extends MacroCommand
-  object Label extends MacroCommand
-  object Ref extends MacroCommand
-  object Image extends MacroCommand
-  object Include extends MacroCommand
-  object Link extends MacroCommand
   object Comment extends MacroCommand
   object Def extends MacroCommand
+  object Fence extends MacroCommand
+  object Image extends MacroCommand
+  object Include extends MacroCommand
+  object Label extends MacroCommand
+  object Link extends MacroCommand
+  object Ref extends MacroCommand
   case class Other(str: String) extends MacroCommand
 
   implicit val codecQ: upickle.default.ReadWriter[Quote] = upickle.default.macroRW

@@ -9,7 +9,7 @@ import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, ParsedDocument, Reporter, Sast, Scope}
-import scitzen.parser.MacroCommand.{Cite, Comment, Image, Include, Link, Other, Quote}
+import scitzen.parser.MacroCommand.{Cite, Comment, Fence, Image, Include, Link, Other, Quote}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 
@@ -136,6 +136,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             case None              =>
               scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
               ctx.empty
+          }
+
+        case Macro(Fence, attributes) =>
+          pathManager.project.resolve(pathManager.cwd, attributes.target) match {
+            case None => inlineValuesToHTML(List(mcro))
+            case Some(file) =>
+              convertSingle(TLBlock(attributes, RawBlock("```", file.contentAsString)))
           }
 
         case other =>
