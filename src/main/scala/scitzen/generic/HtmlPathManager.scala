@@ -35,9 +35,11 @@ case class HtmlPathManager(val cwf: File, project: Project, outputDir: File) {
   def copyResources(resources: Map[File, Path]) =
     resources.foreach { case (img, path) =>
       val target = File(outputDir.path.resolve(path))
-      scribe.info(s"copy $img to $target")
-      target.parent.createDirectoryIfNotExists()
-      img.copyTo(target, overwrite = true)
+      if (!target.exists) {
+        scribe.info(s"copy $img to $target")
+        target.parent.createDirectoryIfNotExists()
+        img.linkTo(target, symbolic = false)
+      }
     }
 
 }
