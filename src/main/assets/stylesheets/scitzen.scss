@@ -128,7 +128,12 @@ p, pre {
   // restrict max width also when nested inside something else
   max-width: var(--main-content-width);
   font-family: inherit;
+}
 
+main > figure > pre {
+  // undo max width of pres when top level in figure
+  // to profit from oversize figures
+  max-width: 100%;
 }
 
 pre {
