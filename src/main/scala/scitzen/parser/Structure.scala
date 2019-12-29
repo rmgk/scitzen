@@ -12,7 +12,6 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
 
 object Attributes {
   def a(attrs: Attribute, prov: Prov): Attributes = Attributes(List(attrs), prov)
-  def l(attrs: Seq[Attribute], prov: Prov): Attributes = Attributes(attrs, prov)
   def synt(attr: Attribute*) = Attributes(attr, Prov())
 }
 

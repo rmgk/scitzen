@@ -35,11 +35,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     document.filter(doc => sync.exists(_._1 == doc.file))
             .fold(Int.MaxValue) { _ => sync.get._2 }
 
-  def convert()(implicit ctx: Cta) = sastToHtml(sdoc.blocks)(ctx.copy(scope = new Scope(level = 1)))
-
-
   def listItemToHtml(child: SlistItem)(implicit ctx: Cta): CtxCF = {
-    sastToHtml(child.content)
+    convertSeq(child.content)
   }
 
   def tMeta() = {
@@ -60,14 +57,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   }
 
 
-  def sastToHtml(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => sastToHtmlI(sast)(ctx))
-  def sastToHtmlI(b: Sast)(implicit ctx: Cta): CtxCF = {
+  def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
+  def convertSingle(b: Sast)(implicit ctx: Cta): CtxCF = {
     b match {
 
 
       case sec @ Section(title, subsections, _) =>
         val inner = (if (ctx.scope.level == 1) Chain(tMeta()) else Chain.nil) ++:[Frag]
-                    ctx.incScope(sastToHtml(subsections)(_))
+                    ctx.incScope(convertSeq(subsections)(_))
         inlineValuesToHTML(title.inline)(inner).map { innerFrags =>
           tag("h" + ctx.scope.level)(id := title.str, innerFrags.toList) +: inner.data
         }
@@ -134,7 +131,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                                         Some(doc.parsed),
                                         sync,
                                         doc.parsed.reporter)
-                .sastToHtml(doc.parsed.sast)(_)
+                .convertSeq(doc.parsed.sast)(_)
               }
             case None              =>
               scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
@@ -177,15 +174,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
     case ParsedBlock(delimiter, blockContent) =>
       delimiter match {
-        case rex"=+" => sastToHtml(blockContent).map(cf => Chain(figure(cf.toList)))
+        case rex"=+" => convertSeq(blockContent).map(cf => Chain(figure(cf.toList)))
         // space indented blocks are currently only used for description lists
         // they are parsed and inserted as if the indentation was not present
-        case rex"\s+" => sastToHtml(blockContent)
+        case rex"\s+" => convertSeq(blockContent)
         // includes are also included as is
-        case "include" => sastToHtml(blockContent)
+        case "include" => convertSeq(blockContent)
         // there is also '=' example, and '+' passthrough.
         // examples seems rather specific, and passthrough is not implemented.
-        case _ => sastToHtml(blockContent).map { inner =>
+        case _ => convertSeq(blockContent).map { inner =>
           Chain(div(delimiter, br, inner.toList, br, delimiter))
         }
       }

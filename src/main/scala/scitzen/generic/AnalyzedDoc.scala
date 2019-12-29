@@ -1,25 +1,29 @@
 package scitzen.generic
 
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+
 import better.files.File
 import cats.implicits._
 import scitzen.generic.Sast.Section
 import scitzen.generic.SastAnalyzer.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
-import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
+import scitzen.parser.{Attribute, Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-case class AnalyzedDoc(blocks: Seq[Sast], analyzer: SastAnalyzer) {
+case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 
-  lazy val analyzeResult: AnalyzeResult = analyzer.analyze(blocks)
+  lazy val analyzeResult: AnalyzeResult = analyzer.analyze(sast)
 
   lazy val named: Map[String, String] = {
     val sectionattrs = analyzeResult.sections.flatMap(_.attributes.raw)
     val macroattrs = analyzeResult.macros.filter(_.command == Def)
                                   .flatMap(m => m.attributes.raw)
-    Attributes.l(sectionattrs ++ macroattrs, Prov()).named
+    Attributes(macroattrs ++ sectionattrs, Prov()).named
   }
 
   lazy val language: Option[String] = named.get("language").map(_.trim)
@@ -27,9 +31,9 @@ case class AnalyzedDoc(blocks: Seq[Sast], analyzer: SastAnalyzer) {
   lazy val date    : Option[ScitzenDateTime] = named.get("date")
                                                .map(v => DateParsingHelper.parseDate(v.trim))
 
-  lazy val title: Option[String] = blocks.headOption.collect { case s: Section => s }.map(_.title.str)
+  lazy val title: Option[String] = sast.headOption.collect { case s: Section => s }.map(_.title.str)
 
-  lazy val words: List[String] = SastToTextConverter.convert(blocks)
+  lazy val words: List[String] = SastToTextConverter.convert(sast)
                                  .flatMap(_.split("[^\\p{L}]+")).toList
 
   lazy val wordcount: Map[String, Int] =
@@ -47,7 +51,16 @@ case class AnalyzedDoc(blocks: Seq[Sast], analyzer: SastAnalyzer) {
 }
 object AnalyzedDoc {
   def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {
-    AnalyzedDoc(parsedDocument.sast,
+    val sast = parsedDocument.sast match {
+      case (section: Section) :: tail if !section.attributes.named.contains("date") =>
+        val moddate       = parsedDocument.file.lastModifiedTime.truncatedTo(ChronoUnit.SECONDS)
+        val formattedDate = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault()).format(moddate)
+        section.copy(attributes = section.attributes.append(List(Attribute("date", formattedDate)))) :: tail
+
+      case other => other
+    }
+
+    new AnalyzedDoc(sast,
                 new SastAnalyzer(parsedDocument.reporter))
   }
 }

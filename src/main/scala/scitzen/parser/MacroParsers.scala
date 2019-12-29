@@ -11,7 +11,7 @@ object MacroParsers {
   def start[_: P]: P[String] = P(":" ~ identifier.?.! ~ &(AttributesParser.start))
 
   def full[_: P]: P[Macro] = P(withProv(start ~ AttributesParser.list)).map {
-    case ((name, attributes), prov) => Macro(MacroCommand.parse(name), Attributes.l(attributes, prov))
+    case ((name, attributes), prov) => Macro(MacroCommand.parse(name), Attributes(attributes, prov))
   }
 
   def texHack[_: P]: P[Inline] =
@@ -21,7 +21,7 @@ object MacroParsers {
           case "sysname" => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
           case "fsysname" => Macro(Other("n"), Attributes.a(Attribute("", "fsysname"), p))
           case "basesysname" => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
-          case "citet" => Macro(Cite, Attributes.l(List(Attribute("style", "name"), Attribute("", c)), p))
+          case "citet" => Macro(Cite, Attributes(List(Attribute("style", "name"), Attribute("", c)), p))
           case arg@("ref"|"label"| "cite"| "subparagraph"|"todo"|"ref"|"caption"|"textsf"|"textsc"|"creation"|"footnote") =>
             Macro(MacroCommand.parse(arg), Attributes.a(Attribute("", c), p))
           case "textit" => Macro(Quote("_"), Attributes.a(Attribute("", c), p))

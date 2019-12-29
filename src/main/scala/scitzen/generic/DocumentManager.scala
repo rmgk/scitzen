@@ -4,7 +4,7 @@ import better.files.File
 
 
 case class FullDoc(parsed: ParsedDocument, analyzed: AnalyzedDoc) {
-  def sast: List[Sast] = parsed.sast
+  def sast: List[Sast] = analyzed.sast
 
 }
 

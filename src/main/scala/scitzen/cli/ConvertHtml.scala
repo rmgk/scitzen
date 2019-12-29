@@ -110,9 +110,9 @@ object ConvertHtml {
                                               document = Some(doc.parsed),
                                               sync = sync,
                                               reporter = doc.parsed.reporter)
-      val toc = HtmlToc.tableOfContents(analyzedDoc.blocks, 2)
+      val toc = HtmlToc.tableOfContents(doc.sast, 2)
       val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
-      val converted = converter.convert()(ctx)
+      val converted = converter.convertSeq(doc.sast)(ctx)
       val res = HtmlPages(cssrelpath).wrapContentHtml(converted.data.toList ++ citations,
                                                       "fullpost",
                                                       toc,
@@ -154,8 +154,8 @@ object ConvertHtml {
           convertDoc(doc, pathManager.changeWorkingFile(doc.parsed.file), ctx).empty
         }
 
-
-        val sdoc = AnalyzedDoc(GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp), new SastAnalyzer(m => ""))
+        val generatedIndex = GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp)
+        val sdoc = new AnalyzedDoc(generatedIndex, new SastAnalyzer(m => ""))
         val converter = new SastToHtmlConverter(bundle = scalatags.Text,
                                                 pathManager = pathManager,
                                                 bibliography = Map(),
@@ -163,9 +163,9 @@ object ConvertHtml {
                                                 document = None,
                                                 sync = None,
                                                 reporter = m => "")
-        val toc = HtmlToc.tableOfContents(sdoc.blocks, 2)
+        val toc = HtmlToc.tableOfContents(generatedIndex, 2)
 
-        val convertedCtx = converter.convert()(docsCtx)
+        val convertedCtx = converter.convertSeq(generatedIndex)(docsCtx)
 
         pathManager.copyResources(convertedCtx.resourceMap)
 

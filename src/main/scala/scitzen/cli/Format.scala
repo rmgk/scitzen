@@ -20,14 +20,15 @@ object Format {
 
   def formatContents(project: Project): Unit = {
 
-    project.documentManager.documents.foreach { pd =>
-      formatContent(pd.file, pd.content, pd.sast)
+    project.documentManager.fulldocs.foreach { pd =>
+      formatContent(pd.parsed.file, pd.parsed.content, pd.sast)
     }
   }
 
     def formatRename(project: Project): Unit = {
     project.documentManager.fulldocs.foreach { fd =>
       if (renamePossible(fd.analyzed)) renameFileFromHeader(fd.parsed.file, fd.analyzed)
+      else scribe.info(s"could not format ${fd.parsed.file}, header was ${fd.analyzed.title}, date was ${fd.analyzed.date}")
     }
   }
 
@@ -57,7 +58,7 @@ object Format {
 
 
   def renameFileFromHeader(f: File, sdoc: AnalyzedDoc): Unit = {
-    val newName: String = nameFromHeader(sdoc)
+    val newName: String = canonicalName(sdoc)
 
     if (newName != f.name) {
       scribe.info(s"rename ${f.name} to $newName")
@@ -67,7 +68,7 @@ object Format {
 
   def renamePossible(header: AnalyzedDoc): Boolean = header.title.isDefined && header.date.isDefined
 
-  def nameFromHeader(header: AnalyzedDoc): String = {
+  def canonicalName(header: AnalyzedDoc): String = {
     val title = sluggify(header.title.get) + ".scim"
     header.date.get.date.full + " " + title
   }
