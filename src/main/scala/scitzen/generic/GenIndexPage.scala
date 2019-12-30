@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.generic.Sast.{MacroBlock, Section, Text}
+import scitzen.generic.Sast.{SMacro, Section, Text}
 import scitzen.parser.MacroCommand.Include
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
@@ -34,7 +34,7 @@ object GenIndexPage {
     sectionBy(dm.fulldocs)(_.analyzed.date.fold("(???)")(_.year)) { docs =>
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
-          List(MacroBlock(Macro(Include,
+          List(SMacro(Macro(Include,
                            Attributes.synt(
                              Attribute("", project.root.relativize(doc.parsed.file).toString),
                              Attribute("type", "article")))),

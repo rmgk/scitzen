@@ -50,7 +50,7 @@ class SastToTexConverter(project: Project,
 
   def sastToTex(sast: Sast)(implicit ctx: Cta): CtxCS = sast match {
 
-      case tlBlock: TLBlock => blockToTex(tlBlock)
+      case tlBlock: SBlock => blockToTex(tlBlock)
 
       case Section(title, contents, _) =>
         val sec = sectioning(ctx.scope)
@@ -78,7 +78,7 @@ class SastToTexConverter(project: Project,
             "\\end{itemize}"
         }
 
-      case MacroBlock(mcro) => mcro match {
+      case SMacro(mcro) => mcro match {
         case Macro(Image, attributes) =>
           val target    = attributes.target
 
@@ -115,7 +115,7 @@ class SastToTexConverter(project: Project,
     s"\\end{$name}"
   }
 
-  def blockToTex(tlblock: TLBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
+  def blockToTex(tlblock: SBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
       case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
 
 
@@ -128,11 +128,11 @@ class SastToTexConverter(project: Project,
                   case "figure" =>
                     val (figContent, caption) = {
                       blockContent.lastOption match {
-                        case Some(inner @ TLBlock(_, Paragraph(content))) =>
+                        case Some(inner @ SBlock(_, Paragraph(content))) =>
                           val captionstr = inlineValuesToTex(content.inline).single.data.iterator.mkString("\n")
                           (blockContent.init,
                           s"\\caption{$captionstr}")
-                        case other                                        =>
+                        case other                                       =>
                           scribe.warn(s"figure has no caption")
                           (blockContent, "")
                       }
@@ -161,8 +161,6 @@ class SastToTexConverter(project: Project,
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' => sastSeqToTex(blockContent)
-          // there is also '=' example, and '+' passthrough.
-          // examples seems rather specific, and passthrough is not implemented.
           case _   => sastSeqToTex(blockContent)
         }
 

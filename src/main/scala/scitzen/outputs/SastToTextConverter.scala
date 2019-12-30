@@ -20,20 +20,20 @@ object SastToTextConverter {
         convert(sc)
 
       case Slist(children) => children.flatMap {
-        case SlistItem(marker, Seq(TLBlock(_, Paragraph(Text(inl))))) =>
+        case SlistItem(marker, Seq(SBlock(_, Paragraph(Text(inl))))) =>
           List(convertInline(inl))
-        case SlistItem(marker, inner)                                 =>
+        case SlistItem(marker, inner)                                =>
           convertSast(inner)
       }
 
-      case MacroBlock(_) => Nil
+      case SMacro(_) => Nil
 
-      case TLBlock(_, Paragraph(content)) => List(convertInline(content.inline))
+      case SBlock(_, Paragraph(content)) => List(convertInline(content.inline))
 
 
-      case TLBlock(_, ParsedBlock(_, blockContent)) => convert(blockContent)
+      case SBlock(_, ParsedBlock(_, blockContent)) => convert(blockContent)
 
-      case TLBlock(_, RawBlock(_, text)) => List(text)
+      case SBlock(_, RawBlock(_, text)) => List(text)
     }
   }
 

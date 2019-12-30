@@ -85,7 +85,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           }.map(i => Chain(listTag(i.toList)))
         }
 
-      case MacroBlock(mcro) => mcro match {
+      case SMacro(mcro) => mcro match {
         case Macro(Image, attributes) =>
           pathManager.project.resolve(pathManager.cwd, attributes.target) match {
             case Some(target) =>
@@ -142,14 +142,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           pathManager.project.resolve(pathManager.cwd, attributes.target) match {
             case None => inlineValuesToHTML(List(mcro))
             case Some(file) =>
-              convertSingle(TLBlock(attributes, RawBlock("```", file.contentAsString)))
+              convertSingle(SBlock(attributes, RawBlock("```", file.contentAsString)))
           }
 
         case other =>
           inlineValuesToHTML(List(other))
       }
 
-      case tLBlock: TLBlock =>
+      case tLBlock: SBlock =>
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
           case Some("quote") =>
@@ -175,7 +175,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   }
 
 
-  def sblockToHtml(sblockType: SBlockType)(implicit ctx: Cta): CtxCF = sblockType match {
+  def sblockToHtml(sblockType: BlockType)(implicit ctx: Cta): CtxCF = sblockType match {
 
     case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
 

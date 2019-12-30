@@ -11,11 +11,11 @@ object SastAnalyzer {
   case class Target(id: String, resolution: Sast)
   case class AnalyzeResult(macros: List[Macro],
                            targets: List[Target],
-                           rawBlocks: List[TLBlock],
+                           rawBlocks: List[SBlock],
                            sections: List[Section]) {
     def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
     def +(m: Target): AnalyzeResult = copy(targets = m :: targets)
-    def +(m: TLBlock): AnalyzeResult = copy(rawBlocks = m :: rawBlocks)
+    def +(m: SBlock): AnalyzeResult = copy(rawBlocks = m :: rawBlocks)
     def +(m: Section): AnalyzeResult = copy(sections = m :: sections)
   }
 }
@@ -41,11 +41,11 @@ class SastAnalyzer(val macroReporter: Reporter) {
     AnalyzeResult(m.reverse, t.reverse, b.reverse, s.reverse)
   }
 
-  def analyzeAll(inputs: Seq[TLBlock], scope: Option[Target], acc: AnalyzeResult): AnalyzeResult =
+  def analyzeAll(inputs: Seq[SBlock], scope: Option[Target], acc: AnalyzeResult): AnalyzeResult =
     inputs.foldLeft(acc)((cacc, sast) => analyzeR(sast, scope, cacc))
 
 
-  def analyzeR(input: TLBlock, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
+  def analyzeR(input: SBlock, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
     input.content match {
       case rb :  RawBlock => acc + input
       case other => analyzeSBlockType(other, scope, acc)
@@ -63,7 +63,7 @@ class SastAnalyzer(val macroReporter: Reporter) {
     case sec @ Section(title, content, attributes) =>
       val target = Target(title.str, sec)
       analyzeAllSast(content, Some(target), acc + target + sec)
-    case MacroBlock(imacro)                        =>
+    case SMacro(imacro)                            =>
       val iacc =
         if (imacro.command == Label) {
           if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}" + macroReporter(
@@ -72,9 +72,9 @@ class SastAnalyzer(val macroReporter: Reporter) {
         }
         else acc
       iacc + imacro
-    case TLBlock(attr, content) => analyzeSBlockType(content, scope, acc)
+    case SBlock(attr, content)                     => analyzeSBlockType(content, scope, acc)
   }
-    def analyzeSBlockType(input: SBlockType, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
+    def analyzeSBlockType(input: BlockType, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
     case Paragraph(content) => content.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
         case Macro(_ : Quote, inner) => cacc

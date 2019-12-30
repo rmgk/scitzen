@@ -25,7 +25,7 @@ class SastToSastConverter(project: Project,
 
   def convertSingle(sast: Sast)(implicit ctx: Cta): CtxCS = sast match {
 
-    case tlBlock: TLBlock => convertBlock(tlBlock)
+    case tlBlock: SBlock => convertBlock(tlBlock)
 
     case Section(title, contents, attr) =>
       val conCtx = convertSeq(contents)(ctx)
@@ -41,18 +41,18 @@ class SastToSastConverter(project: Project,
         Chain(Slist(cs.iterator.toSeq))
       }
 
-    case MacroBlock(mcro) =>
-      convertMacro(mcro).map(MacroBlock(_): Sast).single
+    case SMacro(mcro) =>
+      convertMacro(mcro).map(SMacro(_): Sast).single
   }
 
-  def convertBlock(tlblock: TLBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
+  def convertBlock(tlblock: SBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
     case Paragraph(content) =>
       convertInlines(content.inline)
-      .map(il => TLBlock(tlblock.attr, Paragraph(Text(il.toList))): Sast).single
+      .map(il => SBlock(tlblock.attr, Paragraph(Text(il.toList))): Sast).single
 
 
     case ParsedBlock(delimiter, blockContent) =>
-      convertSeq(blockContent).map(bc => TLBlock(tlblock.attr, ParsedBlock(delimiter, bc.toList)): Sast).single
+      convertSeq(blockContent).map(bc => SBlock(tlblock.attr, ParsedBlock(delimiter, bc.toList)): Sast).single
 
     case RawBlock(delimiter, text) =>
       if (tlblock.attr.named.contains("converter")) {
@@ -61,7 +61,7 @@ class SastToSastConverter(project: Project,
       }
       else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
       else {
-        ctx.retc(TLBlock(tlblock.attr, RawBlock(delimiter, text)))
+        ctx.retc(SBlock(tlblock.attr, RawBlock(delimiter, text)))
       }
 
 

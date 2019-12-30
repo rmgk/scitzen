@@ -63,19 +63,19 @@ case class SastToScimConverter() {
        toScimS(sc)(nestingLevel.inc))
 
     case Slist(children) => Chain.fromSeq(children).flatMap {
-      case SlistItem(marker, TLBlock(_, Paragraph(Text(inl))) :: rest) =>
+      case SlistItem(marker, SBlock(_, Paragraph(Text(inl))) :: rest) =>
         (s"$marker" + inlineToScim(inl)) +: toScimS(rest)
-      case SlistItem(marker, inner)                                    =>
+      case SlistItem(marker, inner)                                   =>
         marker +: toScimS(inner)
     }
 
-    case MacroBlock(m @ Macro(Def, attributes)) => Chain(macroToScimRaw(m, spacy = true))
-    case MacroBlock(mcro)                       => Chain(macroToScim(mcro))
+    case SMacro(m @ Macro(Def, attributes)) => Chain(macroToScimRaw(m, spacy = true))
+    case SMacro(mcro)                       => Chain(macroToScim(mcro))
 
-    case tlb: TLBlock => tlBlockToScim(tlb)
+    case tlb: SBlock => tlBlockToScim(tlb)
   }
 
-  def tlBlockToScim(sb: TLBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
+  def tlBlockToScim(sb: SBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
 
       case Paragraph(content) =>
         Chain(inlineToScim(content.inline))

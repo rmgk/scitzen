@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import scitzen.extern.{Graphviz, TexTikz}
 import scitzen.generic.RegexContext.regexStringContext
-import scitzen.generic.Sast.{MacroBlock, RawBlock, TLBlock}
+import scitzen.generic.Sast.{SMacro, RawBlock, SBlock}
 import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
 
 
@@ -36,13 +36,13 @@ class ImageConverter(project: Project, val formatHint: String) {
   }
 
 
-  def convert(tlb: TLBlock): ConvertSchedulable[Sast] = {
+  def convert(tlb: SBlock): ConvertSchedulable[Sast] = {
     val converter = tlb.attr.named("converter")
     val content   = tlb.content.asInstanceOf[RawBlock].content
     doConversion(converter, tlb.attr, content) match {
       case None      =>
         new ConvertSchedulable(tlb.copy(attr = tlb.attr.remove("converter")), None)
-      case Some(res) => res.map(MacroBlock)
+      case Some(res) => res.map(SMacro)
 
     }
   }
