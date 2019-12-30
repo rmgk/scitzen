@@ -1,7 +1,7 @@
 package scitzen.cli
 
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import better.files._
 import cats.implicits._
@@ -11,6 +11,8 @@ import scitzen.generic.Project
 
 object ConvertProject {
   val optSource: Opts[Path] = Opts.argument[Path](metavar = "path")
+                                  .withDefault(Paths.get(""))
+
 
   val optSyncFile: Opts[Option[Path]] = Opts.option[Path]("sync-file", metavar = "file",
                                                           visibility = Partial,
@@ -28,18 +30,18 @@ object ConvertProject {
         Project.fromSource(File(sourcedirRel)).foreach { project =>
           scribe.info(s"$project")
           if (project.config.format.contains("content")) {
-          scribe.info(s"format contents")
-          Format.formatContents(project)
+            scribe.info(s"format contents")
+            Format.formatContents(project)
+          }
+          if (project.config.format.contains("filename")) {
+            scribe.info(s"format filenames")
+            Format.formatRename(project)
+          }
+          if (project.config.outputType.contains("html")) {
+            val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+            ConvertHtml.convertToHtml(project, sync)
+          }
         }
-        if (project.config.format.contains("filename")) {
-          scribe.info(s"format filenames")
-          Format.formatRename(project)
-        }
-        if (project.config.outputType.contains("html")) {
-          val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-          ConvertHtml.convertToHtml(project, sync)
-        }
-      }
     }
   }
 }
