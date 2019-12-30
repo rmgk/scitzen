@@ -33,6 +33,8 @@ lazy val scitzen = project.in(file("."))
                      toml
                      )
 
+bloopExportJarClassifiers in Global := Some(Set("sources"))
+
 lazy val nativeImage = taskKey[File]("calls graalvm native image")
 
 nativeImage := (scitzen / GraalVMNativeImage / packageBin).value
