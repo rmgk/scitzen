@@ -5,7 +5,7 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
   def all = raw
   lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
   lazy val target    : String              = positional.last
-  lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value)}.toMap
+  lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
   def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other, prov)
   def remove(key: String): Attributes = Attributes(raw.filterNot(_.id == key), prov)
 }
@@ -55,8 +55,8 @@ object MacroCommand {
   def parse(str: String): MacroCommand = parseMap.getOrElse(str, Other(str))
   def print(m: MacroCommand): String = m match {
     case Other(str) => str
-    case Quote(q) => q
-    case o => printMap(o)
+    case Quote(q)   => q
+    case o          => printMap(o)
   }
 
   case class Quote(q: String) extends MacroCommand
@@ -71,9 +71,9 @@ object MacroCommand {
   object Ref extends MacroCommand
   case class Other(str: String) extends MacroCommand
 
-  implicit val codecQ: upickle.default.ReadWriter[Quote] = upickle.default.macroRW
-  implicit val codecO: upickle.default.ReadWriter[Other] = upickle.default.macroRW
-  implicit val codec: upickle.default.ReadWriter[MacroCommand] = upickle.default.macroRW
+  implicit val codecQ: upickle.default.ReadWriter[Quote]        = upickle.default.macroRW
+  implicit val codecO: upickle.default.ReadWriter[Other]        = upickle.default.macroRW
+  implicit val codec : upickle.default.ReadWriter[MacroCommand] = upickle.default.macroRW
 }
 
 sealed trait Inline

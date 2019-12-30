@@ -133,14 +133,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                                         doc.parsed.reporter)
                 .convertSeq(doc.parsed.sast)(_)
               }
-            case None              =>
+            case None      =>
               scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
               ctx.empty
           }
 
         case Macro(Fence, attributes) =>
           pathManager.project.resolve(pathManager.cwd, attributes.target) match {
-            case None => inlineValuesToHTML(List(mcro))
+            case None       => inlineValuesToHTML(List(mcro))
             case Some(file) =>
               convertSingle(SBlock(attributes, RawBlock("```", file.contentAsString)))
           }

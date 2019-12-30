@@ -43,12 +43,12 @@ object Bibliography {
     val jsonStr = {
       val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
       cacheDir.createDirectories()
-      val cachefile = cacheDir/(hash + ".json")
-      if (cachefile.exists) { cachefile.contentAsString }
+      val cachefile = cacheDir / (hash + ".json")
+      if (cachefile.exists) {cachefile.contentAsString}
       else {
         val res = scala.sys.process.Process(Seq("pandoc-citeproc",
-                                      "--bib2json",
-                                      source.pathAsString)).!!
+                                                "--bib2json",
+                                                source.pathAsString)).!!
         cachefile.write(res)
         res
       }

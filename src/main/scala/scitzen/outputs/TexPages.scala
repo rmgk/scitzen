@@ -8,12 +8,12 @@ object TexPages {
 
 
   def acmHeader: String = {
-"""% !TEX jobname = report
-% !TEX output_directory = output
-\documentclass[sigconf,screen=true,authorversion=false]{acmart}
-\settopmatter{printfolios=true}
-\setcopyright{rightsretained}
-"""
+    """% !TEX jobname = report
+    % !TEX output_directory = output
+    \documentclass[sigconf,screen=true,authorversion=false]{acmart}
+    \settopmatter{printfolios=true}
+    \setcopyright{rightsretained}
+    """
   }
 
   def sloppyStuff: String = """
@@ -80,10 +80,10 @@ object TexPages {
 \lstset{style=scitzenCodestyle}"""
 
   val memoirHeader: String = {
-"""\documentclass[a4paper, oneside]{memoir}"""
+    """\documentclass[a4paper, oneside]{memoir}"""
   }
 
-  def usePackages(list: String*) : List[String] = list.map(p => s"\\usepackage$p").toList
+  def usePackages(list: String*): List[String] = list.map(p => s"\\usepackage$p").toList
 
   val luatexPackages: List[String] = {
     usePackages("{luatextra}", "[ngerman, english]{babel}") :+
@@ -91,7 +91,7 @@ object TexPages {
   }
 
   val xelatexPackages: List[String] = {
-    usePackages("{polyglossia}")++
+    usePackages("{polyglossia}") ++
     List("\\setmainlanguage{english}", "\\setotherlanguage{german}")
   }
 
@@ -143,12 +143,12 @@ object TexPages {
   }
 
   def wrap(content: Chain[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
-    val authors = Chain.fromSeq{
-      Parse.paragraph(authorsStr, Prov()).toTry.get.collect{
+    val authors       = Chain.fromSeq {
+      Parse.paragraph(authorsStr, Prov()).toTry.get.collect {
         case Macro(Other("author"), attributes) => (attributes.positional.head, attributes.positional.tail)
       }
     }
-    val authorstrings = authors.map{ case (name, inst) =>
+    val authorstrings = authors.map { case (name, inst) =>
       s"""\\author{$name}
 \\affiliation{\\institution{$inst}}"""
     }
@@ -159,6 +159,7 @@ object TexPages {
              s"\\bibliography{$bib}")
       }
     }
+
     def importBibNatbib = Chain.fromSeq {
       bibliography.fold(List.empty[String]) { bib =>
         List(s"\\bibliographystyle{plain}",
@@ -172,13 +173,13 @@ object TexPages {
           acmHeader,
           s"\\begin{document}"
           ) ++ authorstrings ++ content ++ importBibACM :+
-           s"\\end{document}"
-      case _ =>
+        s"\\end{document}"
+      case _         =>
         Chain.fromSeq(memoirHeader /*+: sloppyStuff*/ +:
                       (xelatexPackages ++ xelatexFont ++
-                       memoirPackages++ proofboxes ++
-                      theorems) :+
-         s"\\begin{document}" /*:+ "\\sloppy"*/) ++
+                       memoirPackages ++ proofboxes ++
+                       theorems) :+
+                      s"\\begin{document}" /*:+ "\\sloppy"*/) ++
         content ++ importBibNatbib :+ s"\\end{document}"
 
     }).iterator.mkString("\n")

@@ -13,7 +13,7 @@ import scitzen.outputs.{SastToTexConverter, TexPages}
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
-  val optSource  : Opts[Path]         = Opts.argument[Path](metavar = "path")
+  val optSource: Opts[Path] = Opts.argument[Path](metavar = "path")
 
 
   val command: Command[Unit] = Command(name = "pdf",
@@ -27,7 +27,6 @@ object ConvertPdf {
   }
 
 
-
   def convertToPdf(project: Project): Unit = {
 
     val documents: List[ParsedDocument] = project.documentManager.documents
@@ -36,7 +35,7 @@ object ConvertPdf {
 
     project.outputdir.createDirectories()
 
-    val dm = project.documentManager
+    val dm   = project.documentManager
     val main = dm.byPath(project.main.get)
 
     val cacheDir = project.cacheDir
@@ -60,7 +59,6 @@ object ConvertPdf {
     val targetfile = project.outputdir / "output.pdf"
 
 
-
     val bibliography = None
     //  dm.analyzed.collectFirstSome { pd =>
     //  pd.named.get("bibliography").map(s => pd.file.parent / s.trim)
@@ -68,9 +66,9 @@ object ConvertPdf {
     scribe.info(s"bib is $bibliography")
     val authors = dm.analyzed.collectSomeFold(_.named.get("authors"))
 
-    val jobname = targetfile.nameWithoutExtension(includeAll = false)
+    val jobname     = targetfile.nameWithoutExtension(includeAll = false)
     val temptexfile = cacheDir / (jobname + ".tex")
-    val temptexdir = cacheDir / "tex"
+    val temptexdir  = cacheDir / "tex"
     temptexfile.write(TexPages.wrap(content, authors, "memoir", bibliography))
     latexmk(temptexdir, jobname, temptexfile).copyTo(targetfile, overwrite = true)
   }

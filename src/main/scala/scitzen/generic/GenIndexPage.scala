@@ -11,7 +11,7 @@ object GenIndexPage {
 
 
   def makeIndex(dm: DocumentManager, project: Project, reverse: Boolean = false, nlp: Option[NLP] = None): List[Section] = {
-    def ordering[T: Ordering]:Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
+    def ordering[T: Ordering]: Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
     def sectionBy(pdocs: List[FullDoc])
                  (f: FullDoc => String)
@@ -24,9 +24,9 @@ object GenIndexPage {
     }
 
     def secmon(fd: FullDoc): String = {
-      fd.analyzed.date.fold("(???)"){ date =>
+      fd.analyzed.date.fold("(???)") { date =>
         val m = date.date.month
-        m +" " + months(m.toInt - 1)
+        m + " " + months(m.toInt - 1)
       }
     }
 
@@ -35,9 +35,9 @@ object GenIndexPage {
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
           List(SMacro(Macro(Include,
-                           Attributes.synt(
-                             Attribute("", project.root.relativize(doc.parsed.file).toString),
-                             Attribute("type", "article")))),
+                            Attributes.synt(
+                              Attribute("", project.root.relativize(doc.parsed.file).toString),
+                              Attribute("type", "article")))),
                //Paragraph(Text(
                //  nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
                //    case (word, prob) => InlineText(s"$word ")

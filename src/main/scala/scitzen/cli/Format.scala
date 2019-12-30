@@ -8,11 +8,6 @@ import scitzen.outputs.SastToScimConverter
 import scitzen.parser.MacroCommand.Image
 
 
-
-
-
-
-
 object Format {
 
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
@@ -25,14 +20,12 @@ object Format {
     }
   }
 
-    def formatRename(project: Project): Unit = {
+  def formatRename(project: Project): Unit = {
     project.documentManager.fulldocs.foreach { fd =>
       if (renamePossible(fd.analyzed)) renameFileFromHeader(fd.parsed.file, fd.analyzed)
       else scribe.info(s"could not format ${fd.parsed.file}, header was ${fd.analyzed.title}, date was ${fd.analyzed.date}")
     }
   }
-
-
 
 
   def checkReferences(file: File, sdoc: AnalyzedDoc): Unit = {
@@ -42,13 +35,13 @@ object Format {
           val path = file.parent./(mcro.attributes.target.trim)
           if (!path.isRegularFile) scribe.warn(s"${file} references nonexisting $path")
           if (!file.parent.isParentOf(path)) scribe.warn(s"${file} is not a parent of referenced $path")
-        case other   => ()
+        case other => ()
       }
     }
   }
 
   def formatContent(file: File, originalContent: String, sast: Seq[Sast]): Unit = {
-    val result = SastToScimConverter().toScimS(sast)
+    val result    = SastToScimConverter().toScimS(sast)
     val resultStr = result.iterator.mkString("", "\n", "\n")
     if (resultStr != originalContent) {
       scribe.info(s"formatting ${file.name}")

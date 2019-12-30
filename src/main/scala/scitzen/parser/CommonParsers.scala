@@ -34,8 +34,8 @@ object CommonParsers {
 
   object Identifier {
     def startIdentifier[_: P]: P[Unit] = P(CharPred(Character.isLetter)).opaque("<start identifier>")
-    def inIdentifier[_: P]: P[Unit]    = P(CharsWhile(Character.isJavaIdentifierPart, 0)).opaque("<in identifier>")
-    def identifier[_: P]: P[Unit]    = P(startIdentifier ~ inIdentifier).opaque("<identifier>")
+    def inIdentifier[_: P]: P[Unit] = P(CharsWhile(Character.isJavaIdentifierPart, 0)).opaque("<in identifier>")
+    def identifier[_: P]: P[Unit] = P(startIdentifier ~ inIdentifier).opaque("<identifier>")
   }
 
   def identifier[_: P]: P[Unit] = Identifier.identifier
@@ -43,10 +43,10 @@ object CommonParsers {
   def line[_: P]: P[String] = P(untilE(eol, min = 0)).opaque("<line>")
 
   def withProv[T, _: P](parser: => P[T]): P[(T, Prov)] =
-    P(Index ~ parser ~ Index).map {case (s, r, e) => r -> withOffset(s, e)}
+    P(Index ~ parser ~ Index).map { case (s, r, e) => r -> withOffset(s, e) }
 
   def withOffset(s: Int, e: Int)(implicit p: P[_]) = {
-    val prov = p.misc.getOrElse("provenanceOffset", Prov(0,0)).asInstanceOf[Prov]
+    val prov = p.misc.getOrElse("provenanceOffset", Prov(0, 0)).asInstanceOf[Prov]
     Prov(prov.start + s, prov.start + e)
   }
 }

@@ -20,8 +20,8 @@ object InlineParsers {
   def specialChars[_: P]: P[Unit] = CharIn("_*`$%")
 
 
-  def syntaxStart[_: P]: P[Unit] = P(":" ~ ( specialChars | MacroParsers.detectStart) )
-  def texStart[_: P]: P[Unit] = P("\\" ~ ( identifier ~ "{") )
+  def syntaxStart[_: P]: P[Unit] = P(":" ~ (specialChars | MacroParsers.detectStart))
+  def texStart[_: P]: P[Unit] = P("\\" ~ (identifier ~ "{"))
 
   // grab everything until a unconstrained position followed by a syntax starter
   // include the unconstrained position
@@ -34,13 +34,13 @@ object InlineParsers {
   }
 
   def comment[_: P]: P[Macro] = P(Index ~ commentStart ~ untilI(eol, 0) ~ Index)
-                                .map{case (s, text, e) => Macro(Comment, Attributes.a(Attribute("", text), Prov(s, e)))}
+  .map { case (s, text, e) => Macro(Comment, Attributes.a(Attribute("", text), Prov(s, e))) }
 
   def fullParagraph[_: P]: P[Seq[Inline]] =
     P(inlineSequence.? ~ End)
     .map(_.getOrElse(Nil))
 
-  def texDollar[_: P]: P[Macro] = P(withProv("$" ~ untilI("$", 0))).map{
+  def texDollar[_: P]: P[Macro] = P(withProv("$" ~ untilI("$", 0))).map {
     case (q, p) => Macro(Quote("$"), Attributes.a(Attribute("", q), p))
   }
 
@@ -60,6 +60,6 @@ object InlineParsers {
         (!(delimiter | anySpace) ~ untilE(delimiter))
         .! ~ delimiter.!
       }
-    }.map{case ((v, delimiter), prov) => Macro(Quote(delimiter), Attributes.a(Attribute("", v), prov))}
+    }.map { case ((v, delimiter), prov) => Macro(Quote(delimiter), Attributes.a(Attribute("", v), prov)) }
   }
 }

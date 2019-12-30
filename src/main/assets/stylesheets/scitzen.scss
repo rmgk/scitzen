@@ -44,6 +44,7 @@ a {
   // safe causes the metadata to always be visible,
   // even if things become so small that they need to be scrolled
   justify-content: safe center;
+
   > * {
     margin-right: 0.5em;
   }
@@ -80,10 +81,7 @@ main {
   // the content has a fixed minimum width to force a scrollbar on the content at some point
   // note that everything breaks if --main-content-width is smaller than the minimum here,
   // which is why the minimum is not min-content
-  grid-template-columns: [image-start] minmax(0, 1fr)
-  [content-start] minmax(10em, var(--main-content-width))
-  [content-end] minmax(0, 1fr)
-  [image-end];
+  grid-template-columns: [image-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [image-end];
 }
 
 main {
@@ -121,10 +119,7 @@ main > figure, main > img {
 }
 
 
-
-
 // general styling of elements follow, these should not affect overall layout
-
 
 
 p, pre {
@@ -155,10 +150,11 @@ p > code {
 
 // quote links and code in paragraphs to clarify their borders
 p > a, p > code {
-  &:before{
+  &:before {
     // ⸢ ⸣ ⸤ ⸥
     content: "⸢";
   }
+
   &:after {
     content: "⸥";
   }
@@ -189,6 +185,7 @@ figure, blockquote, dd {
   & > :first-child {
     margin-top: 0;
   }
+
   & > :last-child {
     margin-bottom: 0;
   }
@@ -200,7 +197,7 @@ cite::before {
 
 ins {
   text-decoration: none;
-  color:darkgreen;
+  color: darkgreen;
 }
 
 del {
@@ -208,11 +205,7 @@ del {
 }
 
 
-
-
-
 // index page styling
-
 
 
 a > article {
@@ -273,6 +266,7 @@ body {
     & > input {
       display: none;
     }
+
     & > label {
       // the label is marked as hidden in the HTML,
       // because it makes no sense to show it if the stylesheet is not present
@@ -280,6 +274,7 @@ body {
       &[hidden] {
         display: initial;
       }
+
       position: fixed;
       top: 0;
       cursor: pointer;

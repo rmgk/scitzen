@@ -18,8 +18,6 @@ case class Project(root: File, config: ProjectConfig) {
   val main: Option[File] = config.main.map(root / _).filter(Project.isScim)
 
 
-
-
   def findDoc(currentWorkingDirectory: File, pathString: String): Option[FullDoc] = {
     documentManager.byPath.get(resolveUnchecked(currentWorkingDirectory, pathString))
   }
@@ -55,14 +53,14 @@ object Project {
   val scitzenconfig: String = "scitzen.toml"
 
   def findRoot(source: File): Option[File] = {
-    if (( source / scitzenconfig).isRegularFile) Some(source)
+    if ((source / scitzenconfig).isRegularFile) Some(source)
     else source.parentOption.flatMap(findRoot)
   }
 
   def fromSource(file: File): Option[Project] = {
     if (isScim(file)) {
       findRoot(file) match {
-        case None => Some(Project(file.parent, ProjectConfig(main = Some(file.name))))
+        case None       => Some(Project(file.parent, ProjectConfig(main = Some(file.name))))
         case Some(file) => fromConfig(file)
       }
     }
@@ -94,9 +92,9 @@ object Project {
     source match {
       case f if f.isRegularFile => List(f)
       case f if f.isDirectory   =>
-        f.collectChildren{ c =>
+        f.collectChildren { c =>
           isScim(c) &&
-          !f.relativize(c).iterator().asScala.exists {_.toString.startsWith(".") }
+          !f.relativize(c).iterator().asScala.exists {_.toString.startsWith(".")}
         }.toList
     }
   }

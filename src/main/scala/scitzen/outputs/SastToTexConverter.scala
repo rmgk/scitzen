@@ -8,8 +8,6 @@ import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, L
 import scitzen.parser.{Inline, InlineText, Macro}
 
 
-
-
 class SastToTexConverter(project: Project,
                          cwd: File,
                          reporter: Reporter
@@ -30,11 +28,11 @@ class SastToTexConverter(project: Project,
 
   def latexencode(input: String): String = {
     val dummyForBSreplace = "»§ dummy to replace later ℓ«"
-    val nobs = input.replaceAllLiterally("\\", dummyForBSreplace)
-    val nosimple = "&%$#_{}".toList.map(_.toString).foldLeft(nobs) { (acc, char) =>
+    val nobs              = input.replaceAllLiterally("\\", dummyForBSreplace)
+    val nosimple          = "&%$#_{}".toList.map(_.toString).foldLeft(nobs) { (acc, char) =>
       acc.replaceAllLiterally(char, s"\\$char")
     }
-    val nomuch = List(
+    val nomuch            = List(
       "~" -> "\\textasciitilde{}",
       "^" -> "\\textasciicircum{}",
       "`" -> "\\textasciigrave{}")
@@ -50,62 +48,62 @@ class SastToTexConverter(project: Project,
 
   def sastToTex(sast: Sast)(implicit ctx: Cta): CtxCS = sast match {
 
-      case tlBlock: SBlock => blockToTex(tlBlock)
+    case tlBlock: SBlock => blockToTex(tlBlock)
 
-      case Section(title, contents, _) =>
-        val sec = sectioning(ctx.scope)
-        val ilc = inlineValuesToTex(title.inline)
-        s"\\$sec{${ilc.data}}" +:
-        ilc.incScope(sastSeqToTex(contents)(_))
+    case Section(title, contents, _) =>
+      val sec = sectioning(ctx.scope)
+      val ilc = inlineValuesToTex(title.inline)
+      s"\\$sec{${ilc.data}}" +:
+      ilc.incScope(sastSeqToTex(contents)(_))
 
-      case Slist(children) =>
-        children match {
-          case Nil => ctx.ret(Chain.nil)
+    case Slist(children) =>
+      children match {
+        case Nil => ctx.ret(Chain.nil)
 
-          case SlistItem(m, _) :: _ if m.contains(":") =>
-            ctx.fold[SlistItem, String](children) { (ctx, child) =>
-              s"\\item[${child.marker.replaceAllLiterally(":", "")}]" +:
-              sastSeqToTex(child.content)(ctx)
-            }.map { content =>
-              "\\begin{description}" +: content :+ "\\end{description}"
-            }
-
-          case other =>
-            "\\begin{itemize}" +:
-            ctx.fold[SlistItem, String](children) { (ctx, child) =>
-              s"\\item" +: sastSeqToTex(child.content)(ctx)
-            } :+
-            "\\end{itemize}"
-        }
-
-      case SMacro(mcro) => mcro match {
-        case Macro(Image, attributes) =>
-          val target    = attributes.target
-
-          project.resolve(cwd, target) match {
-            case None       =>
-              scribe.error(s"Not relative path: $mcro")
-              ctx.empty
-            case Some(data) =>
-              ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
-          }
-
-
-        case Macro(Include, attributes) =>
-          project.findDoc(cwd, attributes.target) match {
-            case Some(doc) =>
-              ctx.withScope(new Scope(3))(
-                new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter)
-                .sastSeqToTex(doc.sast)(_))
-
-            case None =>
-              scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
-              ctx.empty
+        case SlistItem(m, _) :: _ if m.contains(":") =>
+          ctx.fold[SlistItem, String](children) { (ctx, child) =>
+            s"\\item[${child.marker.replaceAllLiterally(":", "")}]" +:
+            sastSeqToTex(child.content)(ctx)
+          }.map { content =>
+            "\\begin{description}" +: content :+ "\\end{description}"
           }
 
         case other =>
-          inlineValuesToTex(List(other)).single
+          "\\begin{itemize}" +:
+          ctx.fold[SlistItem, String](children) { (ctx, child) =>
+            s"\\item" +: sastSeqToTex(child.content)(ctx)
+          } :+
+          "\\end{itemize}"
       }
+
+    case SMacro(mcro) => mcro match {
+      case Macro(Image, attributes) =>
+        val target = attributes.target
+
+        project.resolve(cwd, target) match {
+          case None       =>
+            scribe.error(s"Not relative path: $mcro")
+            ctx.empty
+          case Some(data) =>
+            ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
+        }
+
+
+      case Macro(Include, attributes) =>
+        project.findDoc(cwd, attributes.target) match {
+          case Some(doc) =>
+            ctx.withScope(new Scope(3))(
+              new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter)
+              .sastSeqToTex(doc.sast)(_))
+
+          case None =>
+            scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
+            ctx.empty
+        }
+
+      case other =>
+        inlineValuesToTex(List(other)).single
+    }
   }
 
   def texbox(name: String, args: Seq[String], content: Seq[Sast])(implicit ctx: Cta): CtxCS = {
@@ -116,79 +114,77 @@ class SastToTexConverter(project: Project,
   }
 
   def blockToTex(tlblock: SBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
-      case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
+    case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
 
 
-      case ParsedBlock(delimiter, blockContent) =>
-        delimiter.charAt(0) match {
-          case '=' =>
-            tlblock.attr.positional.headOption match {
-              case Some(blockname) =>
-                blockname match {
-                  case "figure" =>
-                    val (figContent, caption) = {
-                      blockContent.lastOption match {
-                        case Some(inner @ SBlock(_, Paragraph(content))) =>
-                          val captionstr = inlineValuesToTex(content.inline).single.data.iterator.mkString("\n")
-                          (blockContent.init,
-                          s"\\caption{$captionstr}")
-                        case other                                       =>
-                          scribe.warn(s"figure has no caption")
-                          (blockContent, "")
-                      }
+    case ParsedBlock(delimiter, blockContent) =>
+      delimiter.charAt(0) match {
+        case '=' =>
+          tlblock.attr.positional.headOption match {
+            case Some(blockname) =>
+              blockname match {
+                case "figure" =>
+                  val (figContent, caption) = {
+                    blockContent.lastOption match {
+                      case Some(inner @ SBlock(_, Paragraph(content))) =>
+                        val captionstr = inlineValuesToTex(content.inline).single.data.iterator.mkString("\n")
+                        (blockContent.init,
+                        s"\\caption{$captionstr}")
+                      case other                                       =>
+                        scribe.warn(s"figure has no caption")
+                        (blockContent, "")
                     }
-                    "\\begin{figure}" +:
-                    sastSeqToTex(figContent) :++
-                    Chain(
-                      caption,
-                      tlblock.attr.named.get("label").fold("")(l => s"\\label{$l}"),
-                      "\\end{figure}"
-                      )
+                  }
+                  "\\begin{figure}" +:
+                  sastSeqToTex(figContent) :++
+                  Chain(
+                    caption,
+                    tlblock.attr.named.get("label").fold("")(l => s"\\label{$l}"),
+                    "\\end{figure}"
+                    )
 
-                  case name@ ("theorem"|"definition"|"proofbox"|"proof"|"lemma"|"example") =>
+                case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
 
-                    texbox(name, tlblock.attr.positional.tail, blockContent)
-
-
-                  case other =>
-                    sastSeqToTex(blockContent)
-                }
-
-              case None =>
-                sastSeqToTex(blockContent)
-            }
-
-          // space indented blocks are currently only used for description lists
-          // they are parsed and inserted as if the indentation was not present
-          case ' ' => sastSeqToTex(blockContent)
-          case _   => sastSeqToTex(blockContent)
-        }
-
-      case RawBlock(delimiter, text) =>
-        if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
-        else delimiter.charAt(0) match {
-          case '`' =>
-            val restext = tlblock.attr.named.get("label") match {
-              case None => text
-              case Some(label) =>
-                text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
-            }
-            ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}"))
-          case '.' =>
-            val latexenc = latexencode(text).trim
-                           .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
-                            .replaceAllLiterally("\n", "\\newline{}\n")
-            ctx.ret(Chain("\\noindent",latexenc))
-        }
+                  texbox(name, tlblock.attr.positional.tail, blockContent)
 
 
+                case other =>
+                  sastSeqToTex(blockContent)
+              }
+
+            case None =>
+              sastSeqToTex(blockContent)
+          }
+
+        // space indented blocks are currently only used for description lists
+        // they are parsed and inserted as if the indentation was not present
+        case ' ' => sastSeqToTex(blockContent)
+        case _   => sastSeqToTex(blockContent)
+      }
+
+    case RawBlock(delimiter, text) =>
+      if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
+      else delimiter.charAt(0) match {
+        case '`' =>
+          val restext = tlblock.attr.named.get("label") match {
+            case None        => text
+            case Some(label) =>
+              text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
+          }
+          ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}"))
+        case '.' =>
+          val latexenc = latexencode(text).trim
+                                          .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
+                                          .replaceAllLiterally("\n", "\\newline{}\n")
+          ctx.ret(Chain("\\noindent", latexenc))
+      }
 
 
-    }
+  }
 
-  val sectioning:  Scope => String = nesting => {
+  val sectioning: Scope => String = nesting => {
     val secs = Array("book", "part", "chapter", "section", "subsection", "paragraph")
-    val sec = secs.lift(nesting.level).getOrElse("paragraph")
+    val sec  = secs.lift(nesting.level).getOrElse("paragraph")
     sec
   }
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
@@ -196,7 +192,7 @@ class SastToTexConverter(project: Project,
 
     case Macro(Def, _) => ""
 
-    case Macro(Quote(q), inner2) =>
+    case Macro(Quote(q), inner2)    =>
       val inner = latexencode(inner2.target)
       //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
       q.head match {
@@ -207,12 +203,12 @@ class SastToTexConverter(project: Project,
       }
     case Macro(Comment, attributes) => ""
 
-    case Macro(Ref, attributes)      => s"\\ref{${attributes.target}}"
+    case Macro(Ref, attributes) => s"\\ref{${attributes.target}}"
 
-    case Macro(Cite, attributes)              =>
+    case Macro(Cite, attributes) =>
       s"\\cite{${attributes.target}}"
 
-    case Macro(Link, attributes)              =>
+    case Macro(Link, attributes) =>
       val target = attributes.target
       if (attributes.positional.size > 1) {
         val name = """{"""" + attributes.positional.head + """"}"""
@@ -227,7 +223,7 @@ class SastToTexConverter(project: Project,
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
 
-    case Macro(Label, attributes)             => s"\\label{${attributes.target}}"
+    case Macro(Label, attributes) => s"\\label{${attributes.target}}"
 
     case Macro(Other("tableofcontents"), attributes) =>
       List("\\clearpage", "\\tableofcontents*", "\\clearpage").mkString("\n")
@@ -238,7 +234,7 @@ class SastToTexConverter(project: Project,
     case Macro(Other("textsc"), attributes) =>
       s"\\textsc{${attributes.target}}"
 
-    case im @ Macro(command, attributes)      =>
+    case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.all.mkString(",")}]"
   }.mkString(""))

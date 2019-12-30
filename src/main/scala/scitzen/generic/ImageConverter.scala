@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import scitzen.extern.{Graphviz, TexTikz}
 import scitzen.generic.RegexContext.regexStringContext
-import scitzen.generic.Sast.{SMacro, RawBlock, SBlock}
+import scitzen.generic.Sast.{RawBlock, SBlock, SMacro}
 import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
 
 
@@ -48,7 +48,7 @@ class ImageConverter(project: Project, val formatHint: String) {
   }
 
   def pdftosvg(file: File): ConvertSchedulable[File] = {
-    val (svgfile, tasko) =  pdftosvg_(file)
+    val (svgfile, tasko) = pdftosvg_(file)
     new ConvertSchedulable[File](svgfile, tasko)
   }
 
@@ -75,7 +75,7 @@ class ImageConverter(project: Project, val formatHint: String) {
     def makeImageMacro(file: File) = {
       val relTarget = project.root.relativize(file)
       Macro(MacroCommand.Image,
-                       attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
+            attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
     }
 
     def applyConversion(data: (String, File, Option[ConvertTask])) = {
@@ -108,10 +108,10 @@ class ImageConverter(project: Project, val formatHint: String) {
 
       case gr @ rex"graphviz.*" =>
         Some(Graphviz.convert(content,
-                         project.cacheDir,
-                         gr.split("\\s+", 2)(1),
-                         formatHint)
-                .map(svg => makeImageMacro(svg)))
+                              project.cacheDir,
+                              gr.split("\\s+", 2)(1),
+                              formatHint)
+                     .map(svg => makeImageMacro(svg)))
       case other                =>
         scribe.warn(s"unknown converter $other")
         None

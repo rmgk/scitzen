@@ -21,28 +21,28 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 
   lazy val named: Map[String, String] = {
     val sectionattrs = analyzeResult.sections.flatMap(_.attributes.raw)
-    val macroattrs = analyzeResult.macros.filter(_.command == Def)
-                                  .flatMap(m => m.attributes.raw)
+    val macroattrs   = analyzeResult.macros.filter(_.command == Def)
+                                    .flatMap(m => m.attributes.raw)
     Attributes(macroattrs ++ sectionattrs, Prov()).named
   }
 
   lazy val language: Option[String] = named.get("language").map(_.trim)
 
-  lazy val date    : Option[ScitzenDateTime] = named.get("date")
-                                               .map(v => DateParsingHelper.parseDate(v.trim))
+  lazy val date: Option[ScitzenDateTime] = named.get("date")
+                                                .map(v => DateParsingHelper.parseDate(v.trim))
 
   lazy val title: Option[String] = sast.headOption.collect { case s: Section => s }.map(_.title.str)
 
   lazy val words: List[String] = SastToTextConverter.convert(sast)
-                                 .flatMap(_.split("[^\\p{L}]+")).toList
+                                                    .flatMap(_.split("[^\\p{L}]+")).toList
 
   lazy val wordcount: Map[String, Int] =
     words.foldMap(s => Map(s.toLowerCase() -> 1))
 
   lazy val bigrams: Map[(String, String), Int] = {
-    words.sliding(2, 1).toList.foldMap{
+    words.sliding(2, 1).toList.foldMap {
       case List(a, b) => Map((a.toLowerCase(), b.toLowerCase()) -> 1)
-      case _ => Map()
+      case _          => Map()
     }
   }
 
@@ -61,7 +61,7 @@ object AnalyzedDoc {
     }
 
     new AnalyzedDoc(sast,
-                new SastAnalyzer(parsedDocument.reporter))
+                    new SastAnalyzer(parsedDocument.reporter))
   }
 }
 
@@ -85,7 +85,7 @@ object ParsedDocument {
 
 trait Reporter {
   def apply(im: Macro): String = apply(im.attributes.prov)
-  def apply(prov: Prov) :String
+  def apply(prov: Prov): String
 }
 
 final class FileReporter(file: File, content: String) extends Reporter {
@@ -95,12 +95,13 @@ final class FileReporter(file: File, content: String) extends Reporter {
       if (res >= 0) findNL(res, res :: found)
       else found.toArray.reverse
     }
+
     ArraySeq.unsafeWrapArray(findNL(-1, Nil))
   }
 
   def indexToPosition(idx: Int): (Int, Int) = {
-    val ip = newLines.search(idx).insertionPoint
-    val offset = if(ip == 0) 0 else newLines(ip - 1)
+    val ip     = newLines.search(idx).insertionPoint
+    val offset = if (ip == 0) 0 else newLines(ip - 1)
     (ip + 1, idx - offset)
   }
 

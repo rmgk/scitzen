@@ -16,15 +16,15 @@ case class NLP(stopwords: Map[String, Set[String]], dm: DocumentManager) {
 
   def tfidf(words: List[String]) = {
     val size = words.size.toDouble
-      words.map(_.toLowerCase()).filter(noStop).foldMap(w => Map(w -> 1))
-      .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
+    words.map(_.toLowerCase()).filter(noStop).foldMap(w => Map(w -> 1))
+         .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
   }
 
   def language(sdoc: AnalyzedDoc) = {
     val candidates =
-    stopwords.view.mapValues {
-      _.toList.foldMap(sdoc.wordcount.getOrElse(_, 0))
-    }.iterator
+      stopwords.view.mapValues {
+        _.toList.foldMap(sdoc.wordcount.getOrElse(_, 0))
+      }.iterator
     (List("" -> 0).iterator ++ candidates).maxBy(_._2)._1
   }
 
@@ -33,7 +33,7 @@ case class NLP(stopwords: Map[String, Set[String]], dm: DocumentManager) {
 object NLP {
   def loadFrom(dir: File, dm: DocumentManager) = {
     val stopwords = dir.glob("stopwords.*").map { sw =>
-      val lang = sw.extension(includeDot = false).getOrElse("unknown")
+      val lang  = sw.extension(includeDot = false).getOrElse("unknown")
       val words = sw.lines.toSet
       lang -> words
     }.toMap

@@ -5,11 +5,10 @@ import java.nio.file.Path
 
 import better.files.File
 import com.monovore.decline.{Command, Opts}
-import scitzen.parser.{Attribute, Attributes, Block, BlockContent, Inline, InlineText, ListBlock, ListItem, Macro, NormalBlock, Prov, SectionTitle, WhitespaceBlock}
+import scitzen.generic.Sast._
 import scitzen.generic.{Sast, SastConverter}
-import scitzen.generic.Sast.{SMacro, Paragraph, ParsedBlock, RawBlock, BlockType, Section, Slist, SlistItem, SBlock, Text}
-import upickle.default.macroW
-import upickle.default.Writer
+import scitzen.parser._
+import upickle.default.{Writer, macroW}
 
 object JsonSast {
 
@@ -31,14 +30,14 @@ object JsonSast {
   implicit val SlistEncoder          : Writer[Slist]           = macroW
   implicit val SlistItemEncoder      : Writer[SlistItem]       = macroW
   implicit val TextEncoder           : Writer[Text]            = macroW
-  implicit val SectionEncoder        : Writer[Section]  = macroW
-  implicit val MacroBlockEncoder     : Writer[SMacro]   = macroW
-  implicit val RawBlockEncoder       : Writer[RawBlock] = macroW
+  implicit val SectionEncoder        : Writer[Section]         = macroW
+  implicit val MacroBlockEncoder     : Writer[SMacro]          = macroW
+  implicit val RawBlockEncoder       : Writer[RawBlock]        = macroW
   implicit val ParsedBlockEncoder    : Writer[ParsedBlock]     = macroW
-  implicit val ParagraphEncoder      : Writer[Paragraph] = macroW
-  implicit val SBlockTypeEncoder     : Writer[BlockType] = macroW
-  implicit val AttributedBlockEncoder: Writer[SBlock]    = macroW
-  implicit val SastEncoder           : Writer[Sast]       = macroW
+  implicit val ParagraphEncoder      : Writer[Paragraph]       = macroW
+  implicit val SBlockTypeEncoder     : Writer[BlockType]       = macroW
+  implicit val AttributedBlockEncoder: Writer[SBlock]          = macroW
+  implicit val SastEncoder           : Writer[Sast]            = macroW
 
 
   val command: Command[Unit] = Command(name = "json",

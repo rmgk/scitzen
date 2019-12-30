@@ -21,6 +21,7 @@ object SastAnalyzer {
 }
 
 class SastAnalyzer(val macroReporter: Reporter) {
+
   import scitzen.generic.SastAnalyzer._
 
   def reportTarget(mcr: Macro): String =
@@ -35,7 +36,6 @@ class SastAnalyzer(val macroReporter: Reporter) {
     }
 
 
-
   def analyze(input: Seq[Sast]): AnalyzeResult = {
     val AnalyzeResult(m, t, b, s) = analyzeAllSast(input, None, AnalyzeResult(Nil, Nil, Nil, Nil))
     AnalyzeResult(m.reverse, t.reverse, b.reverse, s.reverse)
@@ -47,8 +47,8 @@ class SastAnalyzer(val macroReporter: Reporter) {
 
   def analyzeR(input: SBlock, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
     input.content match {
-      case rb :  RawBlock => acc + input
-      case other => analyzeSBlockType(other, scope, acc)
+      case rb: RawBlock => acc + input
+      case other        => analyzeSBlockType(other, scope, acc)
     }
   }
 
@@ -68,18 +68,18 @@ class SastAnalyzer(val macroReporter: Reporter) {
         if (imacro.command == Label) {
           if (scope.isEmpty) scribe.error(s"unknown scope of label ${imacro.attributes.target}" + macroReporter(
             imacro))
-            acc + Target(reportTarget(imacro), scope.fold(input)(_.resolution))
+          acc + Target(reportTarget(imacro), scope.fold(input)(_.resolution))
         }
         else acc
       iacc + imacro
     case SBlock(attr, content)                     => analyzeSBlockType(content, scope, acc)
   }
-    def analyzeSBlockType(input: BlockType, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
-    case Paragraph(content) => content.inline.foldLeft(acc) { (cacc, inline) =>
+  def analyzeSBlockType(input: BlockType, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
+    case Paragraph(content)              => content.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
-        case Macro(_ : Quote, inner) => cacc
-        case m: Macro                => cacc + m
-        case InlineText(str)         => cacc
+        case Macro(_: Quote, inner) => cacc
+        case m: Macro               => cacc + m
+        case InlineText(str)        => cacc
       }
     }
     case ParsedBlock(delimiter, content) => analyzeAllSast(content, scope, acc)
@@ -90,8 +90,8 @@ class SastAnalyzer(val macroReporter: Reporter) {
   def analyzeText(input: Text, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
     input.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
-        case m: Macro                => cacc + m
-        case InlineText(str)         => cacc
+        case m: Macro        => cacc + m
+        case InlineText(str) => cacc
       }
     }
   }

@@ -1,11 +1,11 @@
 package scitzen.outputs
 
-import scitzen.generic.{Sast, Scope}
-import scitzen.generic.Sast._
-import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
-import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 import cats.data.Chain
 import cats.implicits._
+import scitzen.generic.Sast._
+import scitzen.generic.{Sast, Scope}
+import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
+import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 
 import scala.collection.compat.immutable
 
@@ -13,7 +13,7 @@ import scala.collection.compat.immutable
 case class SastToScimConverter() {
 
   val attributeEscapes = """[;=\]\n]|^[\s"\[]|\s$""".r
-  val countQuotes = """(]"*)""".r
+  val countQuotes      = """(]"*)""".r
 
   def encodeValue(v: String): String = {
     if (!attributeEscapes.pattern.matcher(v).find()) v
@@ -27,7 +27,7 @@ case class SastToScimConverter() {
   }
 
   def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): Chain[String] = {
-        if (!force && attributes.isEmpty) Chain.nil
+    if (!force && attributes.isEmpty) Chain.nil
     else Chain(attributesToScimF(attributes, spacy, force, light))
   }
 
@@ -35,10 +35,10 @@ case class SastToScimConverter() {
   def attributesToScimF(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): String = {
     if (!force && attributes.isEmpty) return ""
     val keylen = (0 +: attributes.map(_.id.length)).max
-    val pairs = attributes.map {
+    val pairs  = attributes.map {
       case Attribute("", v) => encodeValue(v)
       case Attribute(k, v)  =>
-        val spaces = " " * math.max(keylen - k .length, 0)
+        val spaces = " " * math.max(keylen - k.length, 0)
         if (spacy) s"""$k $spaces= ${encodeValue(v)}"""
         else s"""$k=${encodeValue(v)}"""
     }
@@ -77,32 +77,32 @@ case class SastToScimConverter() {
 
   def tlBlockToScim(sb: SBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
 
-      case Paragraph(content) =>
-        Chain(inlineToScim(content.inline))
+    case Paragraph(content) =>
+      Chain(inlineToScim(content.inline))
 
-      case ParsedBlock(delimiter, blockContent) =>
-        delimiter.charAt(0) match {
-          case '=' => (delimiter + attributesToScimF(sb.attr.raw, force = false, spacy = false)) +: toScimS(blockContent) :+ delimiter
-          // space indented blocks are currently only used for description lists
-          // they are parsed and inserted as if the indentation was not present
-          case ' ' | '\t' =>
-            Chain.fromSeq(
-              toScimS(blockContent)
-              .iterator
-              .flatMap(line => line.split("\n", -1))
-              .map {
-                case line if line.forall(_.isWhitespace) => ""
-                case line                                => s"$delimiter$line"
-              }.toList)
-        }
+    case ParsedBlock(delimiter, blockContent) =>
+      delimiter.charAt(0) match {
+        case '=' => (delimiter + attributesToScimF(sb.attr.raw, force = false, spacy = false)) +: toScimS(blockContent) :+ delimiter
+        // space indented blocks are currently only used for description lists
+        // they are parsed and inserted as if the indentation was not present
+        case ' ' | '\t' =>
+          Chain.fromSeq(
+            toScimS(blockContent)
+            .iterator
+            .flatMap(line => line.split("\n", -1))
+            .map {
+              case line if line.forall(_.isWhitespace) => ""
+              case line                                => s"$delimiter$line"
+            }.toList)
+      }
 
-      case RawBlock("comment|space", text) =>
-        Chain.fromSeq(immutable.ArraySeq.unsafeWrapArray(
-          text.stripLineEnd.split("\\n", -1).map(_.trim)))
-      case RawBlock(delimiter, text) =>
-        Chain(delimiter + attributesToScimF(sb.attr.raw, spacy = false, force = false),
-              text,
-              delimiter)
+    case RawBlock("comment|space", text) =>
+      Chain.fromSeq(immutable.ArraySeq.unsafeWrapArray(
+        text.stripLineEnd.split("\\n", -1).map(_.trim)))
+    case RawBlock(delimiter, text)       =>
+      Chain(delimiter + attributesToScimF(sb.attr.raw, spacy = false, force = false),
+            text,
+            delimiter)
   }
 
 
@@ -111,14 +111,14 @@ case class SastToScimConverter() {
   }
 
   def inlineToScim(inners: Seq[Inline]): String = inners.map {
-    case InlineText(str)         => str
-    case m: Macro                => macroToScim(m)
+    case InlineText(str) => str
+    case m: Macro        => macroToScim(m)
   }.mkString("")
 
   def macroToScim(m: Macro): String = m match {
     case Macro(Other("horizontal-rule"), attributes) => attributes.target
-    case Macro(Comment, attributes) => s":%${attributes.target}\n"
-    case Macro(Quote(q), inner2) => s":$q${inner2.target}$q"
-    case other => macroToScimRaw(other)
+    case Macro(Comment, attributes)                  => s":%${attributes.target}\n"
+    case Macro(Quote(q), inner2)                     => s":$q${inner2.target}$q"
+    case other                                       => macroToScimRaw(other)
   }
 }

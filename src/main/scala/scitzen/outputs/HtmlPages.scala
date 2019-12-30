@@ -2,10 +2,10 @@ package scitzen.outputs
 
 import scalatags.Text.Frag
 import scalatags.Text.all.{SeqFrag, frag}
-import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, href, id, lang, name, rel, title, hidden}
+import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel, title}
 import scalatags.Text.implicits.{Tag, raw, stringAttr}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
-import scalatags.Text.tags2.{main, nav, aside}
+import scalatags.Text.tags2.{aside, main, nav}
 
 object HtmlPages {
   def apply(cssPath: String): HtmlPages = new HtmlPages(cssPath)
