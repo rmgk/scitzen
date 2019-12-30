@@ -116,8 +116,7 @@ class SastToTexConverter(project: Project,
   def blockToTex(tlblock: SBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
     case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
 
-
-    case ParsedBlock(delimiter, blockContent) =>
+    case Parsed(delimiter, blockContent) =>
       delimiter.charAt(0) match {
         case '=' =>
           tlblock.attr.positional.headOption match {
@@ -162,22 +161,26 @@ class SastToTexConverter(project: Project,
         case _   => sastSeqToTex(blockContent)
       }
 
-    case RawBlock(delimiter, text) =>
-      if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
-      else delimiter.charAt(0) match {
-        case '`' =>
+    case Fenced(text) =>
+      tlblock.attr.positional.headOption match {
+
+        case Some("text") =>
+          val latexenc = latexencode(text).trim
+                                          .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
+                                          .replaceAllLiterally("\n", "\\newline{}\n")
+          ctx.ret(Chain("\\noindent", latexenc))
+
+        case other  =>
           val restext = tlblock.attr.named.get("label") match {
             case None        => text
             case Some(label) =>
               text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
           }
           ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}"))
-        case '.' =>
-          val latexenc = latexencode(text).trim
-                                          .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
-                                          .replaceAllLiterally("\n", "\\newline{}\n")
-          ctx.ret(Chain("\\noindent", latexenc))
+
       }
+
+    case SpaceComment(_) => ctx.empty
 
 
   }

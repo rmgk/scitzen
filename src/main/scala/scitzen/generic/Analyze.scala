@@ -47,8 +47,8 @@ class SastAnalyzer(val macroReporter: Reporter) {
 
   def analyzeR(input: SBlock, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = {
     input.content match {
-      case rb: RawBlock => acc + input
-      case other        => analyzeSBlockType(other, scope, acc)
+      case rb: Fenced => acc + input
+      case other      => analyzeSBlockType(other, scope, acc)
     }
   }
 
@@ -75,15 +75,16 @@ class SastAnalyzer(val macroReporter: Reporter) {
     case SBlock(attr, content)                     => analyzeSBlockType(content, scope, acc)
   }
   def analyzeSBlockType(input: BlockType, scope: Option[Target], acc: AnalyzeResult): AnalyzeResult = input match {
-    case Paragraph(content)              => content.inline.foldLeft(acc) { (cacc, inline) =>
+    case Paragraph(content)         => content.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
         case Macro(_: Quote, inner) => cacc
         case m: Macro               => cacc + m
         case InlineText(str)        => cacc
       }
     }
-    case ParsedBlock(delimiter, content) => analyzeAllSast(content, scope, acc)
-    case RawBlock(_, _)                  => acc
+    case Parsed(delimiter, content) => analyzeAllSast(content, scope, acc)
+    case Fenced(_)                  => acc
+    case SpaceComment(_)            => acc
   }
 
 

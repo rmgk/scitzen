@@ -51,18 +51,19 @@ class SastToSastConverter(project: Project,
       .map(il => SBlock(tlblock.attr, Paragraph(Text(il.toList))): Sast).single
 
 
-    case ParsedBlock(delimiter, blockContent) =>
-      convertSeq(blockContent).map(bc => SBlock(tlblock.attr, ParsedBlock(delimiter, bc.toList)): Sast).single
+    case Parsed(delimiter, blockContent) =>
+      convertSeq(blockContent).map(bc => SBlock(tlblock.attr, Parsed(delimiter, bc.toList)): Sast).single
 
-    case RawBlock(delimiter, text) =>
+    case Fenced(text) =>
       if (tlblock.attr.named.contains("converter")) {
         val resctx = converter.convert(tlblock).schedule(ctx)
         convertSingle(resctx.data)(resctx)
       }
-      else if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
       else {
-        ctx.retc(SBlock(tlblock.attr, RawBlock(delimiter, text)))
+        ctx.retc(tlblock)
       }
+
+    case SpaceComment(content) => ctx.retc(tlblock)
 
 
   }

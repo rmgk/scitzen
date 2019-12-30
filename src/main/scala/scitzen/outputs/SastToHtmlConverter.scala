@@ -142,7 +142,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           pathManager.project.resolve(pathManager.cwd, attributes.target) match {
             case None       => inlineValuesToHTML(List(mcro))
             case Some(file) =>
-              convertSingle(SBlock(attributes, RawBlock("```", file.contentAsString)))
+              convertSingle(SBlock(attributes, Fenced(file.contentAsString)))
           }
 
         case other =>
@@ -153,7 +153,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         val positiontype = tLBlock.attr.positional.headOption
         positiontype match {
           case Some("quote") =>
-            sblockToHtml(tLBlock.content).map { innerHtml =>
+            convertBlock(tLBlock).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
               // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
               val bq    = blockquote(innerHtml.toList)
@@ -163,7 +163,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             }
           case _             =>
             val prov = tLBlock.attr.prov
-            sblockToHtml(tLBlock.content).map { html =>
+            convertBlock(tLBlock).map { html =>
               if (prov.start <= syncPos && syncPos <= prov.end) {
                 scribe.info(s"highlighting $syncPos: $prov")
                 div(id := "highlight") +: html
@@ -175,11 +175,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   }
 
 
-  def sblockToHtml(sblockType: BlockType)(implicit ctx: Cta): CtxCF = sblockType match {
+  def convertBlock(sBlock: SBlock)(implicit ctx: Cta): CtxCF = sBlock.content match {
 
     case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
 
-    case ParsedBlock(delimiter, blockContent) =>
+    case Parsed(delimiter, blockContent) =>
       delimiter match {
         case rex"=+" => convertSeq(blockContent).map(cf => Chain(figure(cf.toList)))
         // space indented blocks are currently only used for description lists
@@ -194,23 +194,18 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         }
       }
 
-    case RawBlock(delimiter, text) =>
-      if (delimiter.isEmpty || delimiter == "comment|space") ctx.empty
-      else delimiter.charAt(0) match {
-        // Code listing
-        // Use this for monospace, space preserving, line preserving text
-        // It may wrap to fit the screen content
-        case '`' => ctx.retc(pre(code(text)))
-        // Literal block
-        // This seems to be supposed to work similar to code? But whats the point then?
-        // We interpret this as text with predetermined line wrappings
-        // and no special syntax, but otherwise normally formatted.
-        // This is great to represent copy&pasted posts or chat messages.
-        case '.'   => ctx.retc(pre(text))
-        case other =>
-          scribe.warn(s"unknown block type “$delimiter”")
-          ctx.retc(pre(code(text)))
-      }
+    case Fenced(text) => sBlock.attr.positional.headOption match {
+      // Preformatted plaintext, preserve linebreaks,
+      // but also wrap for linebreaks
+      case Some("text") => ctx.retc(pre(text))
+      // Code listing
+      // Use this for monospace, space preserving, line preserving text
+      // It may wrap to fit the screen content
+      case other =>
+        ctx.retc(pre(code(text)))
+    }
+
+    case SpaceComment(content) => ctx.empty
   }
 
 

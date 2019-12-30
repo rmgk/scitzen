@@ -32,9 +32,10 @@ object JsonSast {
   implicit val TextEncoder           : Writer[Text]            = macroW
   implicit val SectionEncoder        : Writer[Section]         = macroW
   implicit val MacroBlockEncoder     : Writer[SMacro]          = macroW
-  implicit val RawBlockEncoder       : Writer[RawBlock]        = macroW
-  implicit val ParsedBlockEncoder    : Writer[ParsedBlock]     = macroW
+  implicit val RawBlockEncoder       : Writer[Fenced]          = macroW
+  implicit val ParsedBlockEncoder    : Writer[Parsed]          = macroW
   implicit val ParagraphEncoder      : Writer[Paragraph]       = macroW
+  implicit val SpaceCommendEncoder   : Writer[SpaceComment]    = macroW
   implicit val SBlockTypeEncoder     : Writer[BlockType]       = macroW
   implicit val AttributedBlockEncoder: Writer[SBlock]          = macroW
   implicit val SastEncoder           : Writer[Sast]            = macroW

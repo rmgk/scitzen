@@ -129,8 +129,8 @@ p, pre {
   font-family: inherit;
 }
 
-main > figure > pre {
-  // undo max width of pres when top level in figure
+main > figure > pre:has(> code) {
+  // undo max width of code pres when top level in figure
   // to profit from oversize figures
   max-width: 100%;
 }

@@ -8,6 +8,7 @@ import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 
 import scala.collection.compat.immutable
+import scala.util.matching.Regex
 
 
 case class SastToScimConverter() {
@@ -72,15 +73,17 @@ case class SastToScimConverter() {
     case SMacro(m @ Macro(Def, attributes)) => Chain(macroToScimRaw(m, spacy = true))
     case SMacro(mcro)                       => Chain(macroToScim(mcro))
 
-    case tlb: SBlock => tlBlockToScim(tlb)
+    case tlb: SBlock => convertBlock(tlb)
   }
 
-  def tlBlockToScim(sb: SBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
+  private val fencedRegex: Regex = "`{3,}".r
+
+  def convertBlock(sb: SBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
 
     case Paragraph(content) =>
       Chain(inlineToScim(content.inline))
 
-    case ParsedBlock(delimiter, blockContent) =>
+    case Parsed(delimiter, blockContent) =>
       delimiter.charAt(0) match {
         case '=' => (delimiter + attributesToScimF(sb.attr.raw, force = false, spacy = false)) +: toScimS(blockContent) :+ delimiter
         // space indented blocks are currently only used for description lists
@@ -96,11 +99,13 @@ case class SastToScimConverter() {
             }.toList)
       }
 
-    case RawBlock("comment|space", text) =>
+    case SpaceComment(text) =>
       Chain.fromSeq(immutable.ArraySeq.unsafeWrapArray(
         text.stripLineEnd.split("\\n", -1).map(_.trim)))
-    case RawBlock(delimiter, text)       =>
-      Chain(delimiter + attributesToScimF(sb.attr.raw, spacy = false, force = false),
+    case Fenced(text)       =>
+      val foundlen = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
+      val delimiter = "`" * math.max(3, foundlen)
+      Chain(delimiter  + attributesToScimF(sb.attr.raw, spacy = false, force = false),
             text,
             delimiter)
   }

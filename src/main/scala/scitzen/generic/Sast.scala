@@ -24,8 +24,9 @@ object Sast {
 
   sealed trait BlockType
   case class Paragraph(content: Text) extends BlockType
-  case class RawBlock(delimiter: String, content: String) extends BlockType
-  case class ParsedBlock(delimiter: String, content: Seq[Sast]) extends BlockType
+  case class Fenced(content: String) extends BlockType
+  case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
+  case class SpaceComment(content: String) extends BlockType
 }
 
 
@@ -100,18 +101,20 @@ final case class SastConverter() {
 
       case m: Macro => SMacro(m)
 
-      case WhitespaceBlock(space) => SBlock(attributes, RawBlock("comment|space", space))
+      case WhitespaceBlock(space) => SBlock(attributes, SpaceComment(space))
 
-      case NormalBlock(delimiter, text, cprov, attr) => SBlock(
-        attributes.append(attr),
-        if (delimiter == "") Paragraph(inlineString(text, cprov))
+      case NormalBlock(delimiter, text, cprov, attr) =>
+        val proto = SBlock(attributes.append(attr), Fenced(""))
+        if (delimiter == "")
+          proto.copy(content = Paragraph(inlineString(text, cprov)))
         else delimiter.charAt(0) match {
-          case '`' | '.'        => RawBlock(delimiter, text)
-          case '=' | ' ' | '\t' => ParsedBlock(delimiter, documentString(text, cprov))
+          case '`'              => proto.copy(content = Fenced(text))
+          case '.'              => SBlock(proto.attr.prepend(List(Attribute("", "text"))), Fenced(text))
+          case '=' | ' ' | '\t' => proto.copy(content = Parsed(delimiter, documentString(text, cprov)))
           case other            =>
             scribe.warn(s"mismatched block $delimiter: $text")
-            RawBlock(delimiter, text)
-        })
+            proto.copy(content = Fenced(text))
+        }
 
     }
   }

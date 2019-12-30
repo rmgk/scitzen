@@ -28,12 +28,14 @@ object SastToTextConverter {
 
       case SMacro(_) => Nil
 
-      case SBlock(_, Paragraph(content)) => List(convertInline(content.inline))
+      case SBlock(_, blockType) => blockType match {
+        case Paragraph(content)      => List(convertInline(content.inline))
+        case Parsed(_, blockContent) => convert(blockContent)
+        case Fenced(text)            => List(text)
+        case SpaceComment(_)         => Nil
+      }
 
 
-      case SBlock(_, ParsedBlock(_, blockContent)) => convert(blockContent)
-
-      case SBlock(_, RawBlock(_, text)) => List(text)
     }
   }
 

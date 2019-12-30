@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import scalatags.Text.all._
 import scitzen.generic.Sast
-import scitzen.generic.Sast.{ParsedBlock, SBlock, Section}
+import scitzen.generic.Sast.{Parsed, SBlock, Section}
 
 object HtmlToc {
 
@@ -14,9 +14,9 @@ object HtmlToc {
   def tableOfContentsS(document: Seq[Sast], tocDepth: Int): Option[Frag] = {
     def findSections(cont: Seq[Sast]): Seq[Section] = {
       cont.flatMap {
-        case s: Section                         => List(s)
-        case SBlock(_, ParsedBlock(_, content)) => findSections(content)
-        case _                                  => Nil
+        case s: Section                    => List(s)
+        case SBlock(_, Parsed(_, content)) => findSections(content)
+        case _                             => Nil
       }
     }
 
