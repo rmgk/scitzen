@@ -6,7 +6,7 @@ import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scitzen.generic._
-import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.MacroCommand.Cite
 
 import scala.util.Try
@@ -61,6 +61,15 @@ object ConvertHtml {
       upickle.default.read[Map[String, String]](katexmapfile.path)
     }.getOrElse(Map())
 
+    def conversionPreproc(doc: ParsedDocument): SastToSastConverter = {
+      new SastToSastConverter(
+        project,
+        doc.file.parent,
+        doc.reporter,
+        new ImageConverter(project, "svg")
+        )
+    }
+
 
     def convertDoc(doc: FullDoc, pathManager: HtmlPathManager, ctx: ConversionContext[_]): ConversionContext[_] = {
 
@@ -78,17 +87,21 @@ object ConvertHtml {
                                                sdoc = analyzedDoc,
                                                document = Some(doc.parsed),
                                                sync = sync,
-                                               reporter = doc.parsed.reporter)
+                                               reporter = doc.parsed.reporter,
+                                               preproc = conversionPreproc)
       val toc        = HtmlToc.tableOfContents(doc.sast, 2)
       val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
-      val converted  = converter.convertSeq(doc.sast)(ctx)
-      val res        = HtmlPages(cssrelpath).wrapContentHtml(converted.data.toList ++ citations,
-                                                             "fullpost",
-                                                             toc,
-                                                             analyzedDoc.language
-                                                                        .orElse(nlp.map(_.language(analyzedDoc)))
-                                                                        .getOrElse(""))
-      val target     = pathManager.translatePost(doc.parsed.file)
+
+      val preprocessed = conversionPreproc(doc.parsed).convertSeq(doc.sast)(ctx)
+
+      val converted = converter.convertSeq(preprocessed.data.toList)(preprocessed)
+      val res       = HtmlPages(cssrelpath).wrapContentHtml(converted.data.toList ++ citations,
+                                                            "fullpost",
+                                                            toc,
+                                                            analyzedDoc.language
+                                                                       .orElse(nlp.map(_.language(analyzedDoc)))
+                                                                       .getOrElse(""))
+      val target    = pathManager.translatePost(doc.parsed.file)
       target.write(res)
       converted
     }
@@ -131,7 +144,8 @@ object ConvertHtml {
                                                      sdoc = sdoc,
                                                      document = None,
                                                      sync = None,
-                                                     reporter = m => "")
+                                                     reporter = m => "",
+                                                     preproc = conversionPreproc)
         val toc            = HtmlToc.tableOfContents(generatedIndex, 2)
 
         val convertedCtx = converter.convertSeq(generatedIndex)(docsCtx)
@@ -145,6 +159,11 @@ object ConvertHtml {
                          sdoc.language.getOrElse(""))
         project.outputdir./("index.html").write(res)
         convertedCtx
+    }
+
+    import scala.jdk.CollectionConverters._
+    resultContext.tasks.asJava.parallelStream().forEach { ct =>
+      ct.run()
     }
 
 

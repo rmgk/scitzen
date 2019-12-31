@@ -84,8 +84,11 @@ class SastToSastConverter(project: Project,
     case pmcro @ Macro(Image, attributes) if attributes.target.endsWith("pdf") && converter.formatHint == "svg" =>
       project.resolve(cwd, attributes.target).fold(ctx.ret(pmcro)) { file =>
         val resctx = converter.pdftosvg(file).schedule(ctx)
+        scribe.info(s"======================")
+        scribe.info(s"${resctx.data}")
+        val reltarget = cwd.relativize(resctx.data)
         convertMacro(Macro(Image, attributes.copy(
-          raw = attributes.raw.init :+ Attribute("", resctx.data.toString()))))(resctx)
+          raw = attributes.raw.init :+ Attribute("", reltarget.toString))))(resctx)
       }
 
     case other => ctx.ret(other)

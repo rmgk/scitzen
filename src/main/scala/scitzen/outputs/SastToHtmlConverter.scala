@@ -20,7 +20,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
  sdoc: AnalyzedDoc,
  document: Option[ParsedDocument],
  sync: Option[(File, Int)],
- reporter: Reporter) {
+ reporter: Reporter,
+ preproc: ParsedDocument => SastToSastConverter
+) {
 
 
   import bundle.all._
@@ -123,15 +125,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case Macro(Include, attributes) =>
           pathManager.findDoc(attributes.target) match {
             case Some(doc) =>
-              ctx.withScope(new Scope(3)) {
+              ctx.withScope(new Scope(3)) { ctx =>
+                val resctx = preproc(doc.parsed).convertSeq(doc.sast)(ctx)
                 new SastToHtmlConverter(bundle,
                                         pathManager.changeWorkingFile(doc.parsed.file),
                                         bibliography,
                                         doc.analyzed,
                                         Some(doc.parsed),
                                         sync,
-                                        doc.parsed.reporter)
-                .convertSeq(doc.parsed.sast)(_)
+                                        doc.parsed.reporter,
+                                        preproc)
+                .convertSeq(resctx.data.toList)(resctx)
               }
             case None      =>
               scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
