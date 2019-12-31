@@ -5,6 +5,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import better.files._
 import cats.data.Chain
 import cats.implicits._
+import scitzen.extern.Bibliography
 import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.MacroCommand.Cite

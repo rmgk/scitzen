@@ -1,4 +1,4 @@
-package scitzen.cli
+package scitzen.extern
 
 import java.nio.charset.StandardCharsets
 
