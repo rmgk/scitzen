@@ -3,14 +3,15 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, Project, Reporter, Sast, Scope}
+import scitzen.generic.{ConversionContext, ParsedDocument, Project, Reporter, Sast, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
 
 class SastToTexConverter(project: Project,
                          cwd: File,
-                         reporter: Reporter
+                         reporter: Reporter,
+                         preproc: ParsedDocument => SastToSastConverter
                         ) {
 
   type CtxCS = ConversionContext[Chain[String]]
@@ -92,9 +93,10 @@ class SastToTexConverter(project: Project,
       case Macro(Include, attributes) =>
         project.findDoc(cwd, attributes.target) match {
           case Some(doc) =>
-            ctx.withScope(new Scope(3))(
-              new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter)
-              .sastSeqToTex(doc.sast)(_))
+            ctx.withScope(new Scope(3)){ ctx =>
+              val preprocctx = preproc(doc.parsed).convertSeq(doc.sast)(ctx)
+              new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter, preproc)
+              .sastSeqToTex(preprocctx.data.toList)(preprocctx)}
 
           case None =>
             scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))

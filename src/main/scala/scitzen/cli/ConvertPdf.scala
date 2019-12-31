@@ -8,8 +8,8 @@ import cats.data.Chain
 import cats.implicits._
 import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, ParsedDocument, Project}
-import scitzen.outputs.{SastToTexConverter, TexPages}
+import scitzen.generic.{ConversionContext, ImageConverter, ParsedDocument, Project}
+import scitzen.outputs.{SastToSastConverter, SastToTexConverter, TexPages}
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
@@ -45,13 +45,26 @@ object ConvertPdf {
     val preConversionContext = ConversionContext(
       Chain.empty[String])
 
+    def preprocConverter(doc: ParsedDocument): SastToSastConverter = {
+      new SastToSastConverter(
+        project,
+        doc.file.parent,
+        doc.reporter,
+        new ImageConverter(project, "pdf")
+        )
+    }
+
+    val preprocessed = preprocConverter(main.parsed).convertSeq(main.sast)(preConversionContext)
+
+
     val resultContext = new SastToTexConverter(
       project,
       main.parsed.file.parent,
-      main.parsed.reporter
+      main.parsed.reporter,
+      preprocConverter
       ).convert(
-      main.parsed.sast
-      )(preConversionContext)
+      preprocessed.data.toList
+      )(preprocessed)
 
     val content = resultContext.data
 

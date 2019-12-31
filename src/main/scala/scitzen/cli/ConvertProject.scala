@@ -41,6 +41,9 @@ object ConvertProject {
             val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
             ConvertHtml.convertToHtml(project, sync)
           }
+          if (project.config.outputType.contains("pdf")) {
+            ConvertPdf.convertToPdf(project)
+          }
         }
     }
   }
