@@ -1,13 +1,10 @@
 package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Path
 
 import better.files._
 import cats.data.Chain
 import cats.implicits._
-import com.monovore.decline.Visibility.Partial
-import com.monovore.decline.{Command, Opts}
 import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.parser.MacroCommand.Cite
@@ -19,33 +16,10 @@ object ConvertHtml {
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  val optSource: Opts[Path] = Opts.argument[Path](metavar = "path")
-
-  val optSyncFile: Opts[Option[Path]] = Opts.option[Path]("sync-file", metavar = "file",
-                                                          visibility = Partial,
-                                                          help = "file to show in output").orNone
-  val optSyncPos : Opts[Option[Int]]  = Opts.option[Int]("sync-position", metavar = "integer",
-                                                         visibility = Partial,
-                                                         help = "character offset to show in output").orNone
 
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
-  }
-
-
-  val command: Command[Unit] = Command(name = "html",
-                                       header = "Convert Scim to HTML.") {
-    (optSource, optSyncFile, optSyncPos).mapN {
-      (sourcedirRel, syncFileRelOption, syncPos) =>
-
-        val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-
-        Project.fromSource(File(sourcedirRel)).foreach { project =>
-          scribe.info(project.toString)
-          convertToHtml(project, sync)
-        }
-    }
   }
 
 
@@ -124,12 +98,12 @@ object ConvertHtml {
                         katexMap = initialKatexMap
                         )
 
-    val resultContext = project.documentManager.sources match {
-      case List(sourcefile) =>
+    val resultContext = project.config.main.flatMap(project.resolve(project.root, _)) match {
+      case Some(sourcefile) =>
         val postoutput = project.outputdir
         postoutput.createDirectories()
         val doc         = dm.byPath(sourcefile)
-        val pathManager = HtmlPathManager(doc.parsed.file,
+        val pathManager = HtmlPathManager(sourcefile,
                                           project,
                                           postoutput)
         val resctx      = convertDoc(doc, pathManager, preConversionContext)
