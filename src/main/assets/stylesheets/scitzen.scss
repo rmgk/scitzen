@@ -186,6 +186,12 @@ figure, blockquote, dd {
     margin-top: 0;
   }
 
+  // center elements inside figure
+  & > * {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   & > :last-child {
     margin-bottom: 0;
   }
