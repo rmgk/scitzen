@@ -1,31 +1,15 @@
 package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Path
 
-import better.files._
 import cats.data.Chain
 import cats.implicits._
-import com.monovore.decline.{Command, Opts}
 import scitzen.extern.TexTikz.latexmk
 import scitzen.generic.{ConversionContext, ImageConverter, ParsedDocument, Project}
 import scitzen.outputs.{SastToSastConverter, SastToTexConverter, TexPages}
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
-  val optSource: Opts[Path] = Opts.argument[Path](metavar = "path")
-
-
-  val command: Command[Unit] = Command(name = "pdf",
-                                       header = "Convert Scim to PDF.") {
-    optSource.map { sourcePath =>
-      //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-      Project.fromSource(File(sourcePath)).foreach { project =>
-        convertToPdf(project)
-      }
-    }
-  }
-
 
   def convertToPdf(project: Project): Unit = {
 
