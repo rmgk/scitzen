@@ -52,14 +52,18 @@ object ConvertPdf {
 
     val content = resultContext.data
 
+    import scala.jdk.CollectionConverters._
+    resultContext.tasks.asJava.parallelStream().forEach { ct =>
+      ct.run()
+    }
+
 
     val targetfile = project.outputdir / "output.pdf"
 
 
-    val bibliography = None
-    //  dm.analyzed.collectFirstSome { pd =>
-    //  pd.named.get("bibliography").map(s => pd.file.parent / s.trim)
-    //}.map(_.pathAsString)
+    val bibliography = dm.fulldocs.collectFirstSome { pd =>
+      pd.analyzed.named.get("bibliography").map(s => pd.parsed.file.parent / s.trim)
+    }.map(_.pathAsString)
     scribe.info(s"bib is $bibliography")
     val authors = dm.analyzed.collectSomeFold(_.named.get("authors"))
 
