@@ -12,7 +12,7 @@ import scribe.Logger
 
 object Scitzen extends CommandApp(
   name = "scitzen",
-  header = "Static page generator"
+  header = "Static page generator",
   main = {
 
     import scribe.format._
