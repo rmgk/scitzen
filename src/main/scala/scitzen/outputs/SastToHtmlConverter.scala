@@ -182,14 +182,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
     case Parsed(delimiter, blockContent) =>
       delimiter match {
-        case rex"=+" => convertSeq(blockContent).map(cf => Chain(figure(cf.toList)))
+        case rex"=+" => convertSeq(blockContent).map{cf =>
+          Chain {
+            val fig = figure(cf.toList)
+            sBlock.attr.named.get("label").fold(fig: Tag)(l => fig(id := l))
+          }
+        }
         // space indented blocks are currently only used for description lists
         // they are parsed and inserted as if the indentation was not present
         case rex"\s+" => convertSeq(blockContent)
-        // includes are also included as is
-        case "include" => convertSeq(blockContent)
-        // there is also '=' example, and '+' passthrough.
-        // examples seems rather specific, and passthrough is not implemented.
         case _ => convertSeq(blockContent).map { inner =>
           Chain(div(delimiter, br, inner.toList, br, delimiter))
         }
