@@ -9,7 +9,7 @@ import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, ParsedDocument, Reporter, Sast, Scope}
-import scitzen.parser.MacroCommand.{Cite, Comment, Fence, Image, Include, Link, Other, Quote}
+import scitzen.parser.MacroCommand.{Cite, Comment, Fence, Image, Include, Link, Other, Quote, Ref}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 
@@ -41,23 +41,24 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     convertSeq(child.content)
   }
 
+  def categoriesSpan(analyzedDoc: AnalyzedDoc): Tag = {
+    val categories = List("categories", "people").flatMap(analyzedDoc.named.get)
+                                                 .flatMap(_.split(","))
+    span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
+  }
+
   def tMeta() = {
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
-    def categoriesSpan() = {
-      val categories = List("categories", "people").flatMap(sdoc.named.get)
-                                                   .flatMap(_.split(","))
-      span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
-    }
-
     div(cls := "metadata",
         sdoc.date.map(timeFull).getOrElse(""),
-        categoriesSpan(),
+        categoriesSpan(sdoc),
         frag(sdoc.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
         )
   }
 
+  def sectionRef(s: Section): String = s.attributes.named.getOrElse("label", s.title.str)
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
   def convertSingle(b: Sast)(implicit ctx: Cta): CtxCF = {
@@ -68,7 +69,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         val inner = (if (ctx.scope.level == 1) Chain(tMeta()) else Chain.nil) ++:[Frag]
                     ctx.incScope(convertSeq(subsections)(_))
         inlineValuesToHTML(title.inline)(inner).map { innerFrags =>
-          tag("h" + ctx.scope.level)(id := title.str, innerFrags.toList) +: inner.data
+          tag("h" + ctx.scope.level)(id := sectionRef(sec), innerFrags.toList) +: inner.data
         }
 
       case Slist(Nil)      => ctx.empty
@@ -101,16 +102,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case Macro(Other("horizontal-rule"), attributes) =>
           ctx.ret(Chain(hr))
 
-        case Macro(Include, attributes) if attributes.named.get("type").contains("article") =>
+        case Macro(Ref, attributes) if attributes.named.get("type").contains("article") =>
           val foundDoc = pathManager.findDoc(attributes.target)
           val post     = foundDoc.get
 
           def timeShort(date: ScitzenDateTime) = {
             time(stringFrag(date.monthDayTime + " "))
-          }
-
-          def categoriesSpan() = {
-            span(cls := "category")(post.analyzed.named.get("categories"), post.analyzed.named.get("people"))
           }
 
           val aref = pathManager.relativizePost(post.parsed.file).toString
@@ -119,7 +116,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             href := aref,
             article(timeShort(post.analyzed.date.getOrElse(throw new NoSuchElementException(s"Article has no date: ${post.parsed.file}"))),
                     span(cls := "title", post.analyzed.title),
-                    categoriesSpan()
+                    categoriesSpan(post.analyzed)
                     ))))
 
         case Macro(Include, attributes) =>
@@ -243,8 +240,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     case Macro(Other("ref"), attributes) =>
       sdoc.targets.find(_.id == attributes.positional.head).map[CtxCF] { target =>
         target.resolution match {
-          case Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
-            Chain(a(href := s"#${title.str}", inner.toList))
+          case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
+            Chain(a(href := s"#${sectionRef(sec)}", inner.toList))
           }
           case other                =>
             scribe.error(s"can not refer to $other")

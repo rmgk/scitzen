@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import scitzen.generic.Sast.{SMacro, Section, Text}
-import scitzen.parser.MacroCommand.Include
+import scitzen.parser.MacroCommand.Ref
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
 object GenIndexPage {
@@ -17,9 +17,13 @@ object GenIndexPage {
                  (f: FullDoc => String)
                  (cont: List[FullDoc] => List[Sast])
     : List[Section] = {
-      val years = pdocs.groupBy(f)
-      years.toList.sortBy(_._1)(ordering).map { case (year, docs) =>
-        Section(Text(List(InlineText(year))), cont(docs), Attributes.synt())
+      val sectionTitle = pdocs.groupBy(f)
+      sectionTitle.toList.sortBy(_._1)(ordering).map { case (key, docs) =>
+        val inner = cont(docs).map {
+          case s : Section => s.copy(attributes = Attributes.synt(Attribute("label", s"$key " + s.attributes.named("label"))))
+          case other => other
+        }
+        Section(Text(List(InlineText(key))), inner, Attributes.synt(Attribute("label", key)))
       }
     }
 
@@ -34,7 +38,7 @@ object GenIndexPage {
     sectionBy(dm.fulldocs)(_.analyzed.date.fold("(???)")(_.year)) { docs =>
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
-          List(SMacro(Macro(Include,
+          List(SMacro(Macro(Ref,
                             Attributes.synt(
                               Attribute("", project.root.relativize(doc.parsed.file).toString),
                               Attribute("type", "article")))),

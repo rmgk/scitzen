@@ -22,13 +22,15 @@ object HtmlToc {
 
     def makeToc(cont: Seq[Sast], depth: Int): Option[Tag] = {
       findSections(cont) match {
-        case Nil      => None
-        case sections =>
+        case sections if sections.length > 1 =>
           Some(ol(sections.map {
-            case Section(title, inner, _) =>
-              val sub = if (depth > 1) makeToc(inner, depth - 1) else None
-              li(a(href := s"#${title.str}", title.str))(sub)
+            case Section(title, inner, attr) =>
+              val label = attr.named.getOrElse("label", title.str)
+              val sub   = if (depth > 1) makeToc(inner, depth - 1) else None
+              li(a(href := s"#$label", title.str))(sub)
           }))
+
+        case _ => None
       }
     }
 
