@@ -1,5 +1,7 @@
 @import 'lib/normalize.css/normalize';
 
+/*! scitzen.scss */
+
 // define here for media queries, same as css variable below …
 $main-content-width: 171.9mm;
 
@@ -62,18 +64,20 @@ time {
 }
 
 
-// grid related things in main
-main {
-  // use grid to have text centered, but allow oversized image content
-  display: grid;
-  // the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
-  // but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
-  // causing the thing to widen in case the content is large,
-  // as could happen with some images.
-  // the content has a fixed minimum width to force a scrollbar on the content at some point
-  // note that everything breaks if --main-content-width is smaller than the minimum here,
-  // which is why the minimum is not min-content
-  grid-template-columns: [image-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [image-end];
+@media screen {
+  // grid related things in main
+  main {
+    // use grid to have text centered, but allow oversized image content
+    display: grid;
+    // the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
+    // but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
+    // causing the thing to widen in case the content is large,
+    // as could happen with some images.
+    // the content has a fixed minimum width to force a scrollbar on the content at some point
+    // note that everything breaks if --main-content-width is smaller than the minimum here,
+    // which is why the minimum is not min-content
+    grid-template-columns: [image-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [image-end];
+  }
 }
 
 // usually these should collapse, but because of grid they dont.
@@ -253,8 +257,10 @@ aside nav ol {
 // if the aside exists, it is pinned on the full height,
 // unless a button is pressed to hide it
 body {
-  display: flex;
-  align-items: stretch;
+  @media screen {
+    display: flex;
+    align-items: stretch;
+  }
 
   & > main {
     flex: 1 1 var(--main-content-width);
@@ -314,6 +320,12 @@ body {
 
     }
 
+  }
+
+  @media print {
+    > aside {
+      display: none;
+    }
   }
 
   // remove sidebar nav content
