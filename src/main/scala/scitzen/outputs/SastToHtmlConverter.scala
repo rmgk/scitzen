@@ -99,7 +99,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
               val path = pathManager.relativizeImage(target)
               ctx.requireInOutput(target, path).retc(img(src := path.toString))
             case None         =>
-              scribe.warn(s"could not find path ${attributes.target} in ${pathManager.cwd} and ${document.get.file}")
+              scribe.warn(s"could not find path ${attributes.target} from ${document.get.file}")
               ctx.empty
           }
 
@@ -307,11 +307,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
         case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter().macroToScim(mcro)))
 
+        case "tableofcontents" => ctx.empty
+
         case other => ctx.retc(unknownMacroOutput(mcro))
 
       }
 
-    case mcro @ Macro(Def | Fence | Image | Include, attributes) =>
+    case Macro(Def, _) => ctx.empty
+
+    case mcro @ Macro(Fence | Image | Include, attributes) =>
       ctx.retc(unknownMacroOutput(mcro))
 
 
