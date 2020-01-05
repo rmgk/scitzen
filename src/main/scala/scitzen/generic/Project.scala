@@ -42,7 +42,7 @@ case class Project(root: File, config: ProjectConfig) {
 object Project {
 
   case class ProjectConfig
-  (output: String = "output",
+  (output: String = "out",
    cache: String = "cache",
    stopwords: String = "scitzen",
    main: Option[String] = None,
