@@ -56,7 +56,6 @@ h1, h2, h3, h4, h5, h6 {
   text-align: center;
 }
 
-
 time, .category {
   @media screen {
     color: var(--color-subdued);
@@ -82,6 +81,11 @@ main {
   // note that everything breaks if --main-content-width is smaller than the minimum here,
   // which is why the minimum is not min-content
   grid-template-columns: [image-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [image-end];
+}
+
+// usually these should collapse, but because of grid they dont.
+h1 + h2 , p + p {
+  margin-top: 0;
 }
 
 main {
