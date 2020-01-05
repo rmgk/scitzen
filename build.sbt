@@ -30,10 +30,11 @@ lazy val scitzen = project.in(file("."))
                      SassKeys.cssStyle := Maxified,
                      normalizecss,
                      graalVMNativeImageOptions += "--initialize-at-build-time",
-                     toml
+                     toml,
+                     jsoup
                      )
 
-bloopExportJarClassifiers in Global := Some(Set("sources"))
+bloopSources
 
 lazy val nativeImage = taskKey[File]("calls graalvm native image")
 

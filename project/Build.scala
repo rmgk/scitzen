@@ -1,6 +1,7 @@
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
 import sbt._
+import bloop.integrations.sbt.BloopKeys.bloopExportJarClassifiers
 
 /* This file is shared between multiple projects
  * and may contain unused dependencies */
@@ -76,6 +77,8 @@ object Settings {
   )
 
   val strictCompile = Compile / compile / scalacOptions += "-Xfatal-warnings"
+
+  val bloopSources = bloopExportJarClassifiers in Global := Some(Set("sources"))
 }
 
 object Resolvers {

@@ -1,5 +1,6 @@
 package scitzen.outputs
 
+import org.jsoup.Jsoup
 import scalatags.Text.Frag
 import scalatags.Text.all.{SeqFrag, frag}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel, title}
@@ -23,7 +24,8 @@ class HtmlPages(cssPath: String) {
   }
 
 
-  def htmlDocument(tag: Tag): String = "<!DOCTYPE html>" + tag.render
+  def htmlDocument(tag: Tag): String =
+    "<!DOCTYPE html>\n" + Jsoup.parse(tag.render).outerHtml()
 
   val sidebarContainer: Tag =
     aside(
