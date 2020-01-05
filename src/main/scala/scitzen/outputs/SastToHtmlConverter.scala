@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import better.files.File
 import cats.data.Chain
+import cats.implicits._
 import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
@@ -41,21 +42,24 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     convertSeq(child.content)
   }
 
-  def categoriesSpan(analyzedDoc: AnalyzedDoc): Tag = {
+  def categoriesSpan(analyzedDoc: AnalyzedDoc): Option[Tag] = {
     val categories = List("categories", "people").flatMap(analyzedDoc.named.get)
                                                  .flatMap(_.split(","))
-    span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
+    Option.when(categories.nonEmpty)(
+      span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
+    )
   }
 
   def tMeta() = {
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
-    div(cls := "metadata",
-        sdoc.date.map(timeFull).getOrElse(""),
-        categoriesSpan(sdoc),
-        frag(sdoc.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f"))).toList: _*)
-        )
+    val metalist =
+      sdoc.date.map(timeFull) ++
+      categoriesSpan(sdoc) ++
+      sdoc.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
+
+    if (metalist.nonEmpty) div(cls := "metadata")(metalist.toSeq: _*) else frag()
   }
 
   def sectionRef(s: Section): String = s.attributes.named.getOrElse("label", s.title.str)
@@ -106,15 +110,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           val foundDoc = pathManager.findDoc(attributes.target)
           val post     = foundDoc.get
 
-          def timeShort(date: ScitzenDateTime) = {
-            time(stringFrag(date.monthDayTime + " "))
+          def timeShort(date: Option[ScitzenDateTime]) = date match {
+            case Some(date) => time(stringFrag(date.monthDayTime + " "))
+            case None => time("00-00 00:00")
           }
 
           val aref = pathManager.relativePostTarget(post.parsed.file).toString
 
           ctx.ret(Chain(a(
             href := aref,
-            article(timeShort(post.analyzed.date.getOrElse(throw new NoSuchElementException(s"Article has no date: ${post.parsed.file}"))),
+            article(timeShort(post.analyzed.date),
                     span(cls := "title", post.analyzed.title),
                     categoriesSpan(post.analyzed)
                     ))))

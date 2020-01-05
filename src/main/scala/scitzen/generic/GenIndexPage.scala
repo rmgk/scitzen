@@ -28,14 +28,14 @@ object GenIndexPage {
     }
 
     def secmon(fd: FullDoc): String = {
-      fd.analyzed.date.fold("(???)") { date =>
+      fd.analyzed.date.fold("") { date =>
         val m = date.date.month
         m + " " + months(m.toInt - 1)
       }
     }
 
 
-    sectionBy(dm.fulldocs)(_.analyzed.date.fold("(???)")(_.year)) { docs =>
+    sectionBy(dm.fulldocs)(_.analyzed.date.fold("Drafts")(_.year)) { docs =>
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
           List(SMacro(Macro(Ref,
