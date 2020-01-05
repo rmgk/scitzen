@@ -1,16 +1,12 @@
 package scitzen.generic
 
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-
 import better.files.File
 import cats.implicits._
 import scitzen.generic.Sast.Section
 import scitzen.generic.SastAnalyzer.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
-import scitzen.parser.{Attribute, Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
+import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
@@ -51,17 +47,7 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 }
 object AnalyzedDoc {
   def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {
-    val sast = parsedDocument.sast match {
-      case (section: Section) :: Nil if !section.attributes.named.contains("date") =>
-        val moddate       = parsedDocument.file.lastModifiedTime.truncatedTo(ChronoUnit.SECONDS)
-        val formattedDate = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault()).format(moddate)
-        section.copy(attributes = section.attributes.append(List(Attribute("date", formattedDate)))) :: Nil
-
-      case other => other
-    }
-
-    new AnalyzedDoc(sast,
-                    new SastAnalyzer(parsedDocument.reporter))
+    new AnalyzedDoc(parsedDocument.sast, new SastAnalyzer(parsedDocument.reporter))
   }
 }
 
