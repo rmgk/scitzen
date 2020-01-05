@@ -149,6 +149,10 @@ p > code {
   color: black;
 }
 
+.smallcaps {
+  font-variant: small-caps;
+}
+
 // quote links and code in paragraphs to clarify their borders
 p > a, p > code {
   &:before {

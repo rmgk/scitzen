@@ -10,7 +10,7 @@ import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, ParsedDocument, Reporter, Sast, Scope}
-import scitzen.parser.MacroCommand.{Cite, Comment, Fence, Image, Include, Link, Other, Quote, Ref}
+import scitzen.parser.MacroCommand.{Cite, Comment, Def, Fence, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 
@@ -47,7 +47,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                                                  .flatMap(_.split(","))
     Option.when(categories.nonEmpty)(
       span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
-    )
+      )
   }
 
   def tMeta() = {
@@ -112,7 +112,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
           def timeShort(date: Option[ScitzenDateTime]) = date match {
             case Some(date) => time(stringFrag(date.monthDayTime + " "))
-            case None => time("00-00 00:00")
+            case None       => time("00-00 00:00")
           }
 
           val aref = pathManager.relativePostTarget(post.parsed.file).toString
@@ -187,7 +187,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
     case Parsed(delimiter, blockContent) =>
       delimiter match {
-        case rex"=+" => convertSeq(blockContent).map{cf =>
+        case rex"=+" => convertSeq(blockContent).map { cf =>
           Chain {
             val fig = figure(cf.toList)
             sBlock.attr.named.get("label").fold(fig: Tag)(l => fig(id := l))
@@ -196,7 +196,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         // space indented blocks are currently only used for description lists
         // they are parsed and inserted as if the indentation was not present
         case rex"\s+" => convertSeq(blockContent)
-        case _ => convertSeq(blockContent).map { inner =>
+        case _        => convertSeq(blockContent).map { inner =>
           Chain(div(delimiter, br, inner.toList, br, delimiter))
         }
       }
@@ -243,18 +243,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
     case Macro(Comment, attributes) => ctx.empty
 
-    case Macro(Other("ref"), attributes) =>
-      sdoc.targets.find(_.id == attributes.positional.head).map[CtxCF] { target =>
-        target.resolution match {
-          case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
-            Chain(a(href := s"#${sectionRef(sec)}", inner.toList))
-          }
-          case other                =>
-            scribe.error(s"can not refer to $other")
-            ctx.empty
-        }
-      }.getOrElse(ctx.empty)
-
     case mcro @ Macro(Cite, attributes) =>
       val anchors = attributes.positional.flatMap {_.split(",")}.map { bibid =>
         bibid -> bibliography.getOrElse(bibid.trim, {
@@ -264,36 +252,68 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       }.sortBy(_._2).map { case (bibid, bib) => a(href := s"#$bibid", bib) }
       ctx.retc(frag("\u00A0", anchors))
 
-    case Macro(Other(tagname @ ("ins" | "del")), attributes) =>
-      ctx.retc(tag(tagname)(attributes.positional.mkString(", ")))
 
-    case Macro(Other(protocol @ ("http" | "https" | "ftp" | "irc" | "mailto")), attributes) =>
-      val linktarget = s"$protocol:${attributes.target}"
-      ctx.retc(linkTo(attributes, linktarget))
+    case Macro(Label, _) => ctx.empty
 
     case Macro(Link, attributes) =>
       val target = attributes.target
       ctx.retc(linkTo(attributes, target))
 
-    case mcro @ Macro(Ref, attributes) =>
+    case Macro(Ref, attributes) =>
       pathManager.findDoc(attributes.target) match {
         case Some(fd) =>
           val targetpath = pathManager.relativePostTarget(fd.parsed.file).toString
-          val name = if (attributes.positional.length > 1) attributes.positional.head else fd.parsed.file.nameWithoutExtension
+          val name       = if (attributes.positional.length > 1) attributes.positional.head else fd.parsed.file.nameWithoutExtension
           ctx.retc(
             a(href := targetpath, name)
             )
 
         case None =>
-          ctx.retc(unknownMacroOutput(mcro))
+          sdoc.targets.find(_.id == attributes.positional.head).map[CtxCF] { target =>
+            target.resolution match {
+              case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
+                Chain(a(href := s"#${sectionRef(sec)}", inner.toList))
+              }
+              case other                      =>
+                scribe.error(s"can not refer to $other")
+                ctx.empty
+            }
+          }.getOrElse(ctx.empty)
       }
 
-    case Macro(Other("footnote"), attributes) =>
-      val target = attributes.target
-      ctx.retc(a(title := target, "※"))
+
+    case mcro @ Macro(Other(othercommand), attributes) =>
+      othercommand match {
+        case "footnote" =>
+          val target = attributes.target
+          ctx.retc(a(title := target, "※"))
 
 
-    case im @ Macro(command, attributes) => ctx.retc(unknownMacroOutput(im))
+        case "textsc" =>
+          ctx.retc(span(`class` := "smallcaps", attributes.target))
+
+        case tagname @ ("ins" | "del") =>
+          ctx.retc(tag(tagname)(attributes.positional.mkString(", ")))
+
+        case protocol @ ("http" | "https" | "ftp" | "irc" | "mailto") =>
+          val linktarget = s"$protocol:${attributes.target}"
+          ctx.retc(linkTo(attributes, linktarget))
+
+
+        case "n" if pathManager.project.documentManager.attributes.contains(attributes.target) =>
+          ctx.retc(pathManager.project.documentManager.attributes(attributes.target))
+
+        case "subparagraph" => ctx.retc(h6(attributes.target))
+
+        case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter().macroToScim(mcro)))
+
+        case other => ctx.retc(unknownMacroOutput(mcro))
+
+      }
+
+    case mcro @ Macro(Def | Fence | Image | Include, attributes) =>
+      ctx.retc(unknownMacroOutput(mcro))
+
 
   }
 
