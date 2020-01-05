@@ -19,12 +19,6 @@ html {
     color: #222;
   }
 
-  // use a sans serif font on screens,
-  // and a serif font on print and high DPI screens
-  font-family: sans-serif;
-  @media (min-resolution: 192dpi) {
-    font-family: serif;
-  }
 }
 
 a {
@@ -52,7 +46,6 @@ a {
 
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: serif;
   text-align: center;
 }
 
