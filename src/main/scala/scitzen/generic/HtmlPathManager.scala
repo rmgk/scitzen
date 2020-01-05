@@ -23,7 +23,7 @@ case class HtmlPathManager(val cwf: File, project: Project, outputDir: File) {
     currentTargetDir.relativize(translateImage(targetFile))
   }
 
-  def relativizePost(targetPost: File): Path = {
+  def relativePostTarget(targetPost: File): Path = {
     currentTargetDir.relativize(translatePost(targetPost))
   }
 

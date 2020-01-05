@@ -110,7 +110,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             time(stringFrag(date.monthDayTime + " "))
           }
 
-          val aref = pathManager.relativizePost(post.parsed.file).toString
+          val aref = pathManager.relativePostTarget(post.parsed.file).toString
 
           ctx.ret(Chain(a(
             href := aref,
@@ -270,9 +270,23 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       val target = attributes.target
       ctx.retc(linkTo(attributes, target))
 
+    case mcro @ Macro(Ref, attributes) =>
+      pathManager.findDoc(attributes.target) match {
+        case Some(fd) =>
+          val targetpath = pathManager.relativePostTarget(fd.parsed.file).toString
+          val name = if (attributes.positional.length > 1) attributes.positional.head else fd.parsed.file.nameWithoutExtension
+          ctx.retc(
+            a(href := targetpath, name)
+            )
+
+        case None =>
+          ctx.retc(unknownMacroOutput(mcro))
+      }
+
     case Macro(Other("footnote"), attributes) =>
       val target = attributes.target
       ctx.retc(a(title := target, "※"))
+
 
     case im @ Macro(command, attributes) => ctx.retc(unknownMacroOutput(im))
 
