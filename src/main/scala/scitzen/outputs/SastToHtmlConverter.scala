@@ -99,7 +99,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
               val path = pathManager.relativizeImage(target)
               ctx.requireInOutput(target, path).retc(img(src := path.toString))
             case None         =>
-              scribe.warn(s"could not find path ${attributes.target} from ${document.get.file}")
+              scribe.warn(s"could not find path ${attributes.target}" + reporter(mcro))
               ctx.empty
           }
 
