@@ -25,9 +25,9 @@ object DelimitedBlockParsers {
 
   def whitespaceLiteral[_: P]: P[NormalBlock] = P(withProv(
     (significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
-      (untilI(eol) ~ significantSpaceLine.rep)
-      .!.rep(min = 1, sep = indentation)
-      .map(lines => NormalBlock(indentation, lines.mkString, Prov(), Nil))
+      untilI(eol)
+      .rep(min = 1, sep = significantSpaceLine.rep ~ indentation).!
+      .map(lines => NormalBlock(indentation, lines.indent(-indentation.size), Prov(), Nil))
     }).map { case (nb, prov) => nb.copy(cprov = prov.copy(indent = nb.delimiter.length)) })
 
 }

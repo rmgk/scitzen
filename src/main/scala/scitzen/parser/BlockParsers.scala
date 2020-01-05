@@ -10,7 +10,7 @@ object BlockParsers {
 
   def paragraph[_: P]: P[NormalBlock] =
     P(withProv(
-      (untilE(eol ~ spaceLine) ~ eol).! ~ spaceLine)
+      ((untilE(eol ~ spaceLine) ~ eol).! ~ spaceLine))
       .map {NormalBlock("", _)})
 
   def sectionStart[_: P]: P[Int] = P("=".rep(1).! ~ " ").map(_.length)

@@ -78,25 +78,32 @@ case class SastToScimConverter() {
 
   private val fencedRegex: Regex = "`{3,}".r
 
+  def stripLastEnd(strings: Chain[String]): Chain[String] = Chain.fromSeq(
+    (strings.toList.reverse match {
+      case Nil          => Nil
+      case head :: tail =>
+        val stripped = head.stripTrailing()
+        if (stripped.isEmpty) tail else stripped :: tail
+    }).reverse)
+
   def convertBlock(sb: SBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
 
     case Paragraph(content) =>
       Chain(inlineToScim(content.inline))
 
     case Parsed(delimiter, blockContent) =>
+      val strippedContent = toScimS(blockContent)
       delimiter.charAt(0) match {
-        case '=' => (delimiter + attributesToScimF(sb.attr.raw, force = false, spacy = false)) +: toScimS(blockContent) :+ delimiter
+        case '=' =>
+          (delimiter +
+           attributesToScimF(sb.attr.raw, force = false, spacy = false)) +:
+           strippedContent :+
+          delimiter
         // space indented blocks are currently only used for description lists
         // they are parsed and inserted as if the indentation was not present
         case ' ' | '\t' =>
-          Chain.fromSeq(
-            toScimS(blockContent)
-            .iterator
-            .flatMap(line => line.split("\n", -1))
-            .map {
-              case line if line.forall(_.isWhitespace) => ""
-              case line                                => s"$delimiter$line"
-            }.toList)
+          val size = delimiter.length + delimiter.count(_ == '\t') * 3
+          stripLastEnd(strippedContent.map(_.indent(size)))
       }
 
     case SpaceComment(text) =>
@@ -104,7 +111,7 @@ case class SastToScimConverter() {
         text.stripLineEnd.split("\\n", -1).map(_.trim)))
     case Fenced(text)       =>
       val foundlen = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
-      val delimiter = "`" * math.max(3, foundlen)
+      val delimiter = "`" * math.max(4, foundlen)
       Chain(delimiter  + attributesToScimF(sb.attr.raw, spacy = false, force = false),
             text,
             delimiter)
@@ -122,7 +129,7 @@ case class SastToScimConverter() {
 
   def macroToScim(m: Macro): String = m match {
     case Macro(Other("horizontal-rule"), attributes) => attributes.target
-    case Macro(Comment, attributes)                  => s":%${attributes.target}\n"
+    case Macro(Comment, attributes)                  => s":%${attributes.target}"
     case Macro(Quote(q), inner2)                     => s":$q${inner2.target}$q"
     case other                                       => macroToScimRaw(other)
   }

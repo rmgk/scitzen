@@ -33,7 +33,7 @@ object InlineParsers {
     P(notSyntax.!).map(InlineText)
   }
 
-  def comment[_: P]: P[Macro] = P(Index ~ commentStart ~ untilI(eol, 0) ~ Index)
+  def comment[_: P]: P[Macro] = P(Index ~ commentStart ~ untilI(eol, 0).! ~ Index)
   .map { case (s, text, e) => Macro(Comment, Attributes.a(Attribute("", text), Prov(s, e))) }
 
   def fullParagraph[_: P]: P[Seq[Inline]] =
