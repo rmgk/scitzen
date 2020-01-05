@@ -52,10 +52,10 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 object AnalyzedDoc {
   def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {
     val sast = parsedDocument.sast match {
-      case (section: Section) :: tail if !section.attributes.named.contains("date") =>
+      case (section: Section) :: Nil if !section.attributes.named.contains("date") =>
         val moddate       = parsedDocument.file.lastModifiedTime.truncatedTo(ChronoUnit.SECONDS)
         val formattedDate = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault()).format(moddate)
-        section.copy(attributes = section.attributes.append(List(Attribute("date", formattedDate)))) :: tail
+        section.copy(attributes = section.attributes.append(List(Attribute("date", formattedDate)))) :: Nil
 
       case other => other
     }
