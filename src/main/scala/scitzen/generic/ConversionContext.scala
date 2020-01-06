@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import better.files.File
 import cats.data.Chain
+import scitzen.generic.Sast.Section
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T]
@@ -11,12 +12,19 @@ case class ConversionContext[T]
  scope: Scope = new Scope(1),
  katexMap: Map[String, String] = Map.empty,
  resourceMap: Map[File, Path] = Map.empty,
- tasks: List[ConvertTask] = Nil
+ tasks: List[ConvertTask] = Nil,
+ labelledSections: Map[String, Section] = Map.empty,
+ uniquectr: Int = 0,
 ) {
 
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
     copy(resourceMap = resourceMap.updated(source, relative))
   }
+
+  def nextId: ConversionContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
+
+  def addSection(sec: Section): ConversionContext[Section] =
+    copy(labelledSections = labelledSections.updated(sec.ref, sec), data = sec)
 
 
   def ret[U](d: U): ConversionContext[U] = copy(data = d)

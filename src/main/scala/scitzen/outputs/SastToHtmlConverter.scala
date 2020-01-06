@@ -62,7 +62,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     if (metalist.nonEmpty) div(cls := "metadata")(metalist.toSeq: _*) else frag()
   }
 
-  def sectionRef(s: Section): String = s.attributes.named.getOrElse("label", s.title.str)
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
   def convertSingle(b: Sast)(implicit ctx: Cta): CtxCF = {
@@ -73,7 +72,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         val inner = (if (ctx.scope.level == 1) Chain(tMeta()) else Chain.nil) ++:[Frag]
                     ctx.incScope(convertSeq(subsections)(_))
         inlineValuesToHTML(title.inline)(inner).map { innerFrags =>
-          tag("h" + ctx.scope.level)(id := sectionRef(sec), innerFrags.toList) +: inner.data
+          tag("h" + ctx.scope.level)(id := sec.ref, innerFrags.toList) +: inner.data
         }
 
       case Slist(Nil)      => ctx.empty
@@ -272,7 +271,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           sdoc.targets.find(_.id == attributes.positional.head).map[CtxCF] { target =>
             target.resolution match {
               case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
-                Chain(a(href := s"#${sectionRef(sec)}", inner.toList))
+                Chain(a(href := s"#${sec.ref}", inner.toList))
               }
               case other                      =>
                 scribe.error(s"can not refer to $other")

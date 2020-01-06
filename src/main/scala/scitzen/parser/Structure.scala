@@ -9,6 +9,9 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
   def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other, prov)
   def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw, prov)
   def remove(key: String): Attributes = Attributes(raw.filterNot(_.id == key), prov)
+  def updated(key: String, value: String) = {
+    remove(key).append(List(Attribute(key, value)))
+  }
 }
 
 object Attributes {

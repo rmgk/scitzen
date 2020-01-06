@@ -27,10 +27,22 @@ class SastToSastConverter(project: Project,
 
     case tlBlock: SBlock => convertBlock(tlBlock)
 
-    case Section(title, contents, attr) =>
-      val conCtx = convertSeq(contents)(ctx)
+    case sec@Section(title, contents, attr) =>
+
+      val ref1 = sec.ref
+
+      val nextCtx =
+        if (ctx.labelledSections.contains(ref1)) {
+          val ctr = ctx.nextId
+          val cp  = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
+          ctr.addSection(cp)
+        } else {
+          ctx.addSection(sec)
+        }
+
+      val conCtx = convertSeq(contents)(nextCtx)
       convertInlines(title.inline)(conCtx).map { title =>
-        Chain(Section(Text(title.toList), conCtx.data.toList, attr))
+        Chain(Section(Text(title.toList), conCtx.data.toList, nextCtx.data.attributes))
       }
 
 

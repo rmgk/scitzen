@@ -18,7 +18,10 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, content: Seq[Sast], attributes: Attributes) extends Sast
+  case class Section(title: Text, content: Seq[Sast], attributes: Attributes) extends Sast {
+      def ref: String = attributes.named.getOrElse("label", title.str)
+
+  }
   case class SMacro(call: Macro) extends Sast
   case class SBlock(attr: Attributes, content: BlockType) extends Sast
 
