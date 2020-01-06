@@ -30,6 +30,7 @@ lazy val scitzen = project.in(file("."))
                      SassKeys.cssStyle := Maxified,
                      normalizecss,
                      graalVMNativeImageOptions += "--initialize-at-build-time",
+                     graalVMNativeImageOptions += "--no-fallback",
                      toml,
                      jsoup
                      )

@@ -102,8 +102,8 @@ case class SastToScimConverter() {
         // space indented blocks are currently only used for description lists
         // they are parsed and inserted as if the indentation was not present
         case ' ' | '\t' =>
-          val size = delimiter.length + delimiter.count(_ == '\t') * 3
-          stripLastEnd(strippedContent.map(_.indent(size)))
+          val indented = strippedContent.map(_.linesWithSeparators.map(delimiter + _).mkString)
+          stripLastEnd(indented)
       }
 
     case SpaceComment(text) =>
@@ -111,7 +111,7 @@ case class SastToScimConverter() {
         text.stripLineEnd.split("\\n", -1).map(_.trim)))
     case Fenced(text)       =>
       val foundlen = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
-      val delimiter = "`" * math.max(4, foundlen)
+      val delimiter = "`" * math.max(3, foundlen)
       Chain(delimiter  + attributesToScimF(sb.attr.raw, spacy = false, force = false),
             text,
             delimiter)
