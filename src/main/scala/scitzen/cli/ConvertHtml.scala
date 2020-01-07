@@ -65,7 +65,7 @@ object ConvertHtml {
     def conversionPreproc(doc: ParsedDocument): SastToSastConverter = {
       new SastToSastConverter(
         project,
-        doc.file.parent,
+        doc.file,
         doc.reporter,
         new ImageConverter(project, "svg")
         )

@@ -4,7 +4,8 @@ import java.nio.file.Path
 
 import better.files.File
 import cats.data.Chain
-import scitzen.generic.Sast.Section
+
+case class SastRef(file: File, sast: Sast)
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T]
@@ -13,9 +14,15 @@ case class ConversionContext[T]
  katexMap: Map[String, String] = Map.empty,
  resourceMap: Map[File, Path] = Map.empty,
  tasks: List[ConvertTask] = Nil,
- labelledSections: Map[String, Section] = Map.empty,
+ labelledSections: Map[String, List[SastRef]] = Map.empty,
  uniquectr: Int = 0,
+ stack: List[Sast] = Nil
 ) {
+
+
+  def resolveTarget(target: String): List[SastRef] =
+    labelledSections.getOrElse(target, Nil)
+
 
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
     copy(resourceMap = resourceMap.updated(source, relative))
@@ -23,8 +30,13 @@ case class ConversionContext[T]
 
   def nextId: ConversionContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
 
-  def addSection(sec: Section): ConversionContext[Section] =
-    copy(labelledSections = labelledSections.updated(sec.ref, sec), data = sec)
+  def addSection(ref: String, secref: SastRef): ConversionContext[SastRef] = {
+    val old = labelledSections.getOrElse(ref, Nil)
+    copy(labelledSections = labelledSections.updated(ref, secref :: old), data = secref)
+  }
+
+  def push(sast: Sast): ConversionContext[T] = copy(stack = sast :: stack)
+  def pop(): ConversionContext[T] = copy(stack = stack.tail)
 
 
   def ret[U](d: U): ConversionContext[U] = copy(data = d)

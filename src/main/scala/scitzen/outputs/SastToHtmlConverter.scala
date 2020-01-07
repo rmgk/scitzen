@@ -155,7 +155,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       }
 
       case tLBlock: SBlock =>
-        val positiontype = tLBlock.attr.positional.headOption
+        val positiontype = tLBlock.attributes.positional.headOption
         positiontype match {
           case Some("quote") =>
             convertBlock(tLBlock).map { innerHtml =>
@@ -163,11 +163,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
               // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
               val bq    = blockquote(innerHtml.toList)
               // first argument is "quote" we concat the rest and treat them as a single entity
-              val title = tLBlock.attr.positional.drop(1)
+              val title = tLBlock.attributes.positional.drop(1)
               Chain(if (title.nonEmpty) bq(cite(title)) else bq)
             }
           case _             =>
-            val prov = tLBlock.attr.prov
+            val prov = tLBlock.attributes.prov
             convertBlock(tLBlock).map { html =>
               if (prov.start <= syncPos && syncPos <= prov.end) {
                 scribe.info(s"highlighting $syncPos: $prov")
@@ -189,7 +189,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case rex"=+" => convertSeq(blockContent).map { cf =>
           Chain {
             val fig = figure(cf.toList)
-            sBlock.attr.named.get("label").fold(fig: Tag)(l => fig(id := l))
+            sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l))
           }
         }
         // space indented blocks are currently only used for description lists
@@ -200,7 +200,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         }
       }
 
-    case Fenced(text) => sBlock.attr.positional.headOption match {
+    case Fenced(text) => sBlock.attributes.positional.headOption match {
       // Preformatted plaintext, preserve linebreaks,
       // but also wrap for linebreaks
       case Some("text") => ctx.retc(pre(text))
@@ -268,6 +268,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             )
 
         case None =>
+          ctx.resolveTarget(attributes.target)
           sdoc.targets.find(_.id == attributes.positional.head).map[CtxCF] { target =>
             target.resolution match {
               case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>

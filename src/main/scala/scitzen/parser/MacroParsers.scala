@@ -18,16 +18,19 @@ object MacroParsers {
     P(withProv("\\" ~ identifier.! ~ "{" ~ CharsWhile(_ != '}').?.! ~ "}")
       .map { case ((i, c), p) =>
         i match {
-          case "sysname"                                                                                                                      => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
-          case "fsysname"                                                                                                                     => Macro(Other("n"), Attributes.a(Attribute("", "fsysname"), p))
-          case "basesysname"                                                                                                                  => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
-          case "citet"                                                                                                                        => Macro(Cite, Attributes(List(Attribute("style", "name"), Attribute("", c)), p))
+          case "sysname"     => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
+          case "fsysname"    => Macro(Other("n"), Attributes.a(Attribute("", "fsysname"), p))
+          case "basesysname" => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
+          case "citet"       => Macro(Cite, Attributes(List(Attribute("style", "name"), Attribute("", c)), p))
+          case "textit"      => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
+          case "emph"        => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
+          case "code"        => Macro(Quote("`"), Attributes.a(Attribute("", c), p))
+
+          case a @ ("begin" | "end" | "newcommand") => InlineText(s"\\$a{$c}")
+
           case arg @ ("ref" | "label" | "cite" | "subparagraph" | "todo" | "ref" | "caption" | "textsf" | "textsc" | "creation" | "footnote") =>
             Macro(MacroCommand.parse(arg), Attributes.a(Attribute("", c), p))
-          case "textit"                                                                                                                       => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
-          case "emph"                                                                                                                         => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
-          case "code"                                                                                                                         => Macro(Quote("`"), Attributes.a(Attribute("", c), p))
-          case a @ ("begin" | "end" | "newcommand")                                                                                           => InlineText(s"\\$a{$c}")
+
         }
       })
 

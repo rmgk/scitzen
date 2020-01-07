@@ -4,10 +4,14 @@ import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.Quote
 import scitzen.parser._
 
-sealed trait Sast
+sealed trait Sast {
+  def attributes: Attributes
+}
 
 object Sast {
-  case class Slist(children: Seq[SlistItem]) extends Sast
+  case class Slist(children: Seq[SlistItem]) extends Sast {
+    override def attributes: Attributes = Attributes.synt()
+  }
   case class SlistItem(marker: String, content: Seq[Sast])
   case class Text(inline: Seq[Inline]) {
     lazy val str = {
@@ -22,8 +26,10 @@ object Sast {
       def ref: String = attributes.named.getOrElse("label", title.str)
 
   }
-  case class SMacro(call: Macro) extends Sast
-  case class SBlock(attr: Attributes, content: BlockType) extends Sast
+  case class SMacro(call: Macro) extends Sast {
+    override def attributes: Attributes = call.attributes
+  }
+  case class SBlock(attributes: Attributes, content: BlockType) extends Sast
 
   sealed trait BlockType
   case class Paragraph(content: Text) extends BlockType
@@ -112,7 +118,7 @@ final case class SastConverter() {
           proto.copy(content = Paragraph(inlineString(text, cprov)))
         else delimiter.charAt(0) match {
           case '`'              => proto.copy(content = Fenced(text))
-          case '.'              => SBlock(proto.attr.prepend(List(Attribute("", "text"))), Fenced(text))
+          case '.'              => SBlock(proto.attributes.prepend(List(Attribute("", "text"))), Fenced(text))
           case '=' | ' ' | '\t' => proto.copy(content = Parsed(delimiter, documentString(text, cprov)))
           case other            =>
             scribe.warn(s"mismatched block $delimiter: $text")

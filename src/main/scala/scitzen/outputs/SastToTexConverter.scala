@@ -121,7 +121,7 @@ class SastToTexConverter(project: Project,
     case Parsed(delimiter, blockContent) =>
       delimiter.charAt(0) match {
         case '=' =>
-          tlblock.attr.positional.headOption match {
+          tlblock.attributes.positional.headOption match {
             case Some(blockname) =>
               blockname match {
                 case "figure" =>
@@ -140,13 +140,13 @@ class SastToTexConverter(project: Project,
                   sastSeqToTex(figContent) :++
                   Chain(
                     caption,
-                    tlblock.attr.named.get("label").fold("")(l => s"\\label{$l}"),
+                    tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
                     "\\end{figure}"
                     )
 
                 case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
 
-                  texbox(name, tlblock.attr.positional.tail, blockContent)
+                  texbox(name, tlblock.attributes.positional.tail, blockContent)
 
 
                 case other =>
@@ -164,7 +164,7 @@ class SastToTexConverter(project: Project,
       }
 
     case Fenced(text) =>
-      tlblock.attr.positional.headOption match {
+      tlblock.attributes.positional.headOption match {
 
         case Some("text") =>
           val latexenc = latexencode(text).trim
@@ -173,7 +173,7 @@ class SastToTexConverter(project: Project,
           ctx.ret(Chain("\\noindent", latexenc))
 
         case other  =>
-          val restext = tlblock.attr.named.get("label") match {
+          val restext = tlblock.attributes.named.get("label") match {
             case None        => text
             case Some(label) =>
               text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")

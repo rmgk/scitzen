@@ -96,7 +96,7 @@ case class SastToScimConverter() {
       delimiter.charAt(0) match {
         case '=' =>
           (delimiter +
-           attributesToScimF(sb.attr.raw, force = false, spacy = false)) +:
+           attributesToScimF(sb.attributes.raw, force = false, spacy = false)) +:
            strippedContent :+
           delimiter
         // space indented blocks are currently only used for description lists
@@ -112,7 +112,7 @@ case class SastToScimConverter() {
     case Fenced(text)       =>
       val foundlen = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
       val delimiter = "`" * math.max(3, foundlen)
-      Chain(delimiter  + attributesToScimF(sb.attr.raw, spacy = false, force = false),
+      Chain(delimiter  + attributesToScimF(sb.attributes.raw, spacy = false, force = false),
             text,
             delimiter)
   }

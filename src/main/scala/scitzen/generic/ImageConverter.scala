@@ -37,11 +37,11 @@ class ImageConverter(project: Project, val formatHint: String) {
 
 
   def convert(tlb: SBlock): ConvertSchedulable[Sast] = {
-    val converter = tlb.attr.named("converter")
+    val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
-    doConversion(converter, tlb.attr, content) match {
+    doConversion(converter, tlb.attributes, content) match {
       case None      =>
-        new ConvertSchedulable(tlb.copy(attr = tlb.attr.remove("converter")), None)
+        new ConvertSchedulable(tlb.copy(attributes = tlb.attributes.remove("converter")), None)
       case Some(res) => res.map(SMacro)
 
     }

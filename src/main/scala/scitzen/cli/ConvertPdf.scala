@@ -32,7 +32,7 @@ object ConvertPdf {
     def preprocConverter(doc: ParsedDocument): SastToSastConverter = {
       new SastToSastConverter(
         project,
-        doc.file.parent,
+        doc.file,
         doc.reporter,
         new ImageConverter(project, "pdf")
         )
