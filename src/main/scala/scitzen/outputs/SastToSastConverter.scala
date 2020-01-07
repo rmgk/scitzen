@@ -4,12 +4,12 @@ import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
 import scitzen.generic.{ConversionContext, ImageConverter, Project, Reporter, Sast, SastRef}
-import scitzen.parser.MacroCommand.{Image, Label}
+import scitzen.parser.MacroCommand.{Image, Include, Label}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro}
 
 
 class SastToSastConverter(project: Project,
-                          fileref: File,
+                          cwf: File,
                           reporter: Reporter,
                           converter: ImageConverter
                          ) {
@@ -18,7 +18,7 @@ class SastToSastConverter(project: Project,
   type Ctx[T] = ConversionContext[T]
   type Cta = Ctx[_]
 
-  val cwd = if (fileref.isDirectory) fileref else fileref.parent
+  val cwd = if (cwf.isDirectory) cwf else cwf.parent
 
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
@@ -37,10 +37,10 @@ class SastToSastConverter(project: Project,
         if (ctx.labelledSections.contains(ref1)) {
           val ctr    = ctx.nextId
           val cp     = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
-          val secref = SastRef(fileref, cp)
+          val secref = SastRef(cwf, cp)
           ctr.addSection(ref1, secref).addSection(cp.ref, secref)
         } else {
-          ctx.addSection(ref1, SastRef(fileref, sec))
+          ctx.addSection(ref1, SastRef(cwf, sec))
         }
 
       val conCtx = convertSeq(contents)(nextCtx.push(nextCtx.data.sast)).pop()
@@ -96,16 +96,25 @@ class SastToSastConverter(project: Project,
       val resctx = converter.convert(cwd, mcro).schedule(ctx)
       convertMacro(resctx.data)(resctx)
 
-    case pmcro @ Macro(Image, attributes) if attributes.target.endsWith("pdf") && converter.formatHint == "svg" =>
-      project.resolve(cwd, attributes.target).fold(ctx.ret(pmcro)) { file =>
+    case Macro(Image, attributes) if attributes.target.endsWith("pdf") && converter.formatHint == "svg" =>
+      project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
         val resctx    = converter.pdftosvg(file).schedule(ctx)
         val reltarget = cwd.relativize(resctx.data)
         convertMacro(Macro(Image, attributes.copy(
           raw = attributes.raw.init :+ Attribute("", reltarget.toString))))(resctx)
       }
 
-    case pmcro @ Macro(Label, attributes) =>
-      ctx.addSection(attributes.target, SastRef(fileref, ctx.stack.head)).ret(pmcro)
+    case Macro(Label, attributes) =>
+      ctx.addSection(attributes.target, SastRef(cwf, ctx.stack.head)).ret(mcro)
+
+    case Macro(Include, attributes) =>
+      project.resolve(cwd, attributes.target) match {
+        case None =>
+          scribe.error(s"unknown include ${attributes.target}" + reporter(mcro))
+          ctx.ret(mcro)
+        case Some(file) => ctx.copy(includes = file :: ctx.includes).ret(mcro)
+      }
+
 
     case other => ctx.ret(other)
 

@@ -4,11 +4,13 @@ import java.nio.file.Path
 
 import better.files._
 
-case class HtmlPathManager(val cwf: File, project: Project, outputDir: File) {
+case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
 
   val cwd = if (cwf.isDirectory) cwf else cwf.parent
 
   val currentTargetDir = translatePost(cwf).parent
+
+  def resolve(path: String) = project.resolve(cwd, path)
 
   def translatePost(post: File): File = {
     if (post.isDirectory) project.outputdir / "index.html"

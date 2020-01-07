@@ -3,15 +3,17 @@ package scitzen.outputs
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
-import better.files.File
+import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
-import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, ParsedDocument, Reporter, Sast, Scope}
+import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef, Scope}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Fence, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
+
+import scala.jdk.CollectionConverters._
 
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT]
@@ -19,10 +21,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
  pathManager: HtmlPathManager,
  bibliography: Map[String, String],
  sdoc: AnalyzedDoc,
- document: Option[ParsedDocument],
  sync: Option[(File, Int)],
  reporter: Reporter,
- preproc: ParsedDocument => SastToSastConverter
+ includeResolver: Map[File, Seq[Sast]]
 ) {
 
 
@@ -34,9 +35,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   type Ctx[T] = ConversionContext[T]
   type Cta = Ctx[_]
 
-  val syncPos =
-    document.filter(doc => sync.exists(_._1 == doc.file))
-            .fold(Int.MaxValue) { _ => sync.get._2 }
+  val syncPos: Int =
+    if (sync.exists(_._1 == pathManager.cwf)) sync.get._2
+    else Int.MaxValue
 
   def listItemToHtml(child: SlistItem)(implicit ctx: Cta): CtxCF = {
     convertSeq(child.content)
@@ -127,16 +128,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           pathManager.findDoc(attributes.target) match {
             case Some(doc) =>
               ctx.withScope(new Scope(3)) { ctx =>
-                val resctx = preproc(doc.parsed).convertSeq(doc.sast)(ctx)
+                val sast = includeResolver(doc.parsed.file)
                 new SastToHtmlConverter(bundle,
                                         pathManager.changeWorkingFile(doc.parsed.file),
                                         bibliography,
                                         doc.analyzed,
-                                        Some(doc.parsed),
                                         sync,
                                         doc.parsed.reporter,
-                                        preproc)
-                .convertSeq(resctx.data.toList)(resctx)
+                                        includeResolver)
+                .convertSeq(sast)(ctx)
               }
             case None      =>
               scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
@@ -218,6 +218,27 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   def inlineValuesToHTML(inlines: Seq[Inline])(implicit ctx: Cta): CtxCF =
     ctx.fold(inlines) { (ctx, inline) => inlineToHTML(inline)(ctx) }
 
+  def filterCandidates(scope: File, candidates: List[SastRef]): List[SastRef] = {
+    candidates match {
+      case Nil       => candidates
+      case List(one) => candidates
+      case multiple  =>
+        val searchScope = scope.path.iterator().asScala.toList
+        val sorted      = multiple.map { c =>
+          c ->
+          c.file.path.iterator().asScala.toList.zip(searchScope).takeWhile {
+            case (l, r) => l == r
+          }.size
+        }.sortBy(_._2).reverse
+
+        val best     = sorted.head._2
+        val bestOnly = sorted.takeWhile(_._2 == best)
+        (if (bestOnly.size == 1) bestOnly else sorted).map(_._1)
+    }
+
+
+  }
+
   def inlineToHTML(inline: Inline)(implicit ctx: Cta): CtxCF = inline match {
     case InlineText(str) => ctx.retc(stringFrag(str))
 
@@ -268,9 +289,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             )
 
         case None =>
-          ctx.resolveTarget(attributes.target)
-          sdoc.targets.find(_.id == attributes.positional.head).map[CtxCF] { target =>
-            target.resolution match {
+          val scope = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
+          val candidates = filterCandidates(scope, ctx.resolveRef(attributes.target))
+
+          if (candidates.lengthCompare(1) > 0) scribe.error(
+            s"multiple resolutions for ${attributes.target}" +
+            reporter(attributes.prov) +
+            s"\n\tresolutinos are in: ${candidates.map(c => c.file).mkString("\n\t", "\n\t", "")}")
+          candidates.headOption.map[CtxCF] { target =>
+            target.sast match {
               case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
                 Chain(a(href := s"#${sec.ref}", inner.toList))
               }

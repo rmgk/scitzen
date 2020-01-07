@@ -16,12 +16,13 @@ case class ConversionContext[T]
  tasks: List[ConvertTask] = Nil,
  labelledSections: Map[String, List[SastRef]] = Map.empty,
  uniquectr: Int = 0,
- stack: List[Sast] = Nil
+ stack: List[Sast] = Nil,
+ includes: List[File] = Nil
 ) {
 
 
-  def resolveTarget(target: String): List[SastRef] =
-    labelledSections.getOrElse(target, Nil)
+  def resolveRef(ref: String): List[SastRef] =
+    labelledSections.getOrElse(ref, Nil)
 
 
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
