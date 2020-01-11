@@ -15,6 +15,7 @@ object SastToSastConverter {
                           acc: Map[File, List[Sast]],
                           conversionPreproc: ParsedDocument => SastToSastConverter)
   : ConversionContext[Map[File, List[Sast]]] = {
+    if (acc.contains(doc.parsed.file)) return ctx.ret(acc)
     val preprocessed = conversionPreproc(doc.parsed).convertSeq(doc.sast)(ctx)
     val newctx       = preprocessed.copy(includes = Nil).ret(acc.updated(doc.parsed.file, preprocessed.data.toList))
     preprocessed.includes

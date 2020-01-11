@@ -65,14 +65,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
-  def convertSingle(b: Sast)(implicit ctx: Cta): CtxCF = {
-    b match {
+  def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
+    singleSast match {
 
 
       case sec @ Section(title, level, _) =>
         val inner = (if (ctx.stack.isEmpty) Chain(tMeta()) else Chain.nil)
         inlineValuesToHTML(title.inline)(ctx).map { innerFrags =>
-          tag("h" + level)(id := sec.ref, innerFrags.toList) +: inner
+          tag(s"h${level + ctx.stacklevel}")(id := sec.ref, innerFrags.toList) +: inner
         }.push(sec)
 
       case Slist(Nil)      => ctx.empty
@@ -135,7 +135,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                                       sync,
                                       doc.parsed.reporter,
                                       includeResolver)
-              .convertSeq(sast)(ctx)
+              .convertSeq(sast)(ctx.push(singleSast))
               .copy(stack = stack)
             case None      =>
               scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))

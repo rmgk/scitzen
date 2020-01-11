@@ -137,7 +137,8 @@ object ConvertHtml {
                                           postoutput)
 
         val docsCtx = dm.fulldocs.foldLeft(outputCtx.ret(Map.empty[File, List[Sast]])) { (ctx, doc) =>
-          SastToSastConverter.preprocessRecursive(doc, ctx, pathManager.project.documentManager, ctx.data, conversionPreproc)
+          val res = SastToSastConverter.preprocessRecursive(doc, ctx, pathManager.project.documentManager, ctx.data, conversionPreproc)
+          convertDoc(doc, pathManager, res).ret(res.data)
         }
 
         val generatedIndex = GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp)
