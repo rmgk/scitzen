@@ -3,10 +3,28 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, ImageConverter, Project, Reporter, Sast, SastRef}
+import scitzen.generic.{ConversionContext, ImageConverter, Project, Reporter, Sast, SastRef, _}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro}
 
+
+object SastToSastConverter {
+  def preprocessRecursive(doc: FullDoc,
+                          ctx: ConversionContext[_],
+                          documentManager: DocumentManager,
+                          acc: Map[File, List[Sast]],
+                          conversionPreproc: ParsedDocument => SastToSastConverter)
+  : ConversionContext[Map[File, List[Sast]]] = {
+    val preprocessed = conversionPreproc(doc.parsed).convertSeq(doc.sast)(ctx)
+    val newctx       = preprocessed.copy(includes = Nil).ret(acc.updated(doc.parsed.file, preprocessed.data.toList))
+    preprocessed.includes
+                .filter(f => !acc.contains(f))
+                .map(f => documentManager.byPath(f))
+                .foldLeft(newctx) { (ctx, fd) =>
+                  preprocessRecursive(fd, ctx, documentManager, ctx.data, conversionPreproc)
+                }
+  }
+}
 
 class SastToSastConverter(project: Project,
                           cwf: File,
@@ -29,7 +47,7 @@ class SastToSastConverter(project: Project,
 
     case tlBlock: SBlock => convertBlock(tlBlock)
 
-    case sec @ Section(title, contents, attr) =>
+    case sec @ Section(title, level, attr) =>
 
       val ref1 = sec.ref
 
@@ -43,9 +61,9 @@ class SastToSastConverter(project: Project,
           ctx.addSection(ref1, SastRef(cwf, sec))
         }
 
-      val conCtx = convertSeq(contents)(nextCtx.push(nextCtx.data.sast)).pop()
+      val conCtx = nextCtx.push(nextCtx.data.sast)
       convertInlines(title.inline)(conCtx).map { title =>
-        Chain(Section(Text(title.toList), conCtx.data.toList, nextCtx.data.sast.attributes))
+        Chain(Section(Text(title.toList), level, nextCtx.data.sast.attributes))
       }
 
 
@@ -109,7 +127,7 @@ class SastToSastConverter(project: Project,
 
     case Macro(Include, attributes) =>
       project.resolve(cwd, attributes.target) match {
-        case None =>
+        case None       =>
           scribe.error(s"unknown include ${attributes.target}" + reporter(mcro))
           ctx.ret(mcro)
         case Some(file) => ctx.copy(includes = file :: ctx.includes).ret(mcro)

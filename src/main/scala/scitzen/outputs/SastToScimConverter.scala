@@ -2,8 +2,8 @@ package scitzen.outputs
 
 import cats.data.Chain
 import cats.implicits._
+import scitzen.generic.Sast
 import scitzen.generic.Sast._
-import scitzen.generic.{Sast, Scope}
 import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
 
@@ -53,15 +53,14 @@ case class SastToScimConverter() {
     }
   }
 
-  def toScimS(b: Seq[Sast])(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = {
+  def toScimS(b: Seq[Sast]): Chain[String] = {
     Chain.fromSeq(b).flatMap(toScim(_))
   }
 
-  def toScim(sast: Sast)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sast match {
-    case Section(title, sc, attributes) =>
-      ("=" * nestingLevel.level + " " + inlineToScim(title.inline)) +:
-      (attributesToScim(attributes.raw, spacy = true, force = false, light = true) ++
-       toScimS(sc)(nestingLevel.inc))
+  def toScim(sast: Sast): Chain[String] = sast match {
+    case Section(title, level, attributes) =>
+      ("=" * level + " " + inlineToScim(title.inline)) +:
+      attributesToScim(attributes.raw, spacy = true, force = false, light = true)
 
     case Slist(children) => Chain.fromSeq(children).flatMap {
       case SlistItem(marker, SBlock(_, Paragraph(Text(inl))) :: rest) =>
@@ -86,7 +85,7 @@ case class SastToScimConverter() {
         if (stripped.isEmpty) tail else stripped :: tail
     }).reverse)
 
-  def convertBlock(sb: SBlock)(implicit nestingLevel: Scope = new Scope(1)): Chain[String] = sb.content match {
+  def convertBlock(sb: SBlock): Chain[String] = sb.content match {
 
     case Paragraph(content) =>
       Chain(inlineToScim(content.inline))

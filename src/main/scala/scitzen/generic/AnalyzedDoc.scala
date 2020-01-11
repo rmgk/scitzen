@@ -41,9 +41,6 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
       case _          => Map()
     }
   }
-
-  def targets = analyzeResult.targets
-
 }
 object AnalyzedDoc {
   def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {

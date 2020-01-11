@@ -15,9 +15,8 @@ object SastToTextConverter {
   def convertSast(b: Seq[Sast]): Seq[String] = {
     b.flatMap {
 
-      case Section(title, sc, _) =>
-        convertInline(title.inline) +:
-        convert(sc)
+      case Section(title, level, _) =>
+        List(convertInline(title.inline))
 
       case Slist(children) => children.flatMap {
         case SlistItem(marker, Seq(SBlock(_, Paragraph(Text(inl))))) =>

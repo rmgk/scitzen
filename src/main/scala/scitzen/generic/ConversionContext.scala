@@ -4,13 +4,13 @@ import java.nio.file.Path
 
 import better.files.File
 import cats.data.Chain
+import scitzen.generic.Sast.Section
 
 case class SastRef(file: File, sast: Sast)
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T]
 (data: T,
- scope: Scope = new Scope(1),
  katexMap: Map[String, String] = Map.empty,
  resourceMap: Map[File, Path] = Map.empty,
  tasks: List[ConvertTask] = Nil,
@@ -36,7 +36,17 @@ case class ConversionContext[T]
     copy(labelledSections = labelledSections.updated(ref, secref :: old), data = secref)
   }
 
-  def push(sast: Sast): ConversionContext[T] = copy(stack = sast :: stack)
+  def push(sast: Sast): ConversionContext[T] = {
+    val droppedStack = sast match {
+      case Section(_, level, _) =>
+        stack.dropWhile{
+          case Section(_, l, _) => l >= level
+          case other => false
+        }
+      case other => stack
+    }
+    copy(stack = sast :: droppedStack)
+  }
   def pop(): ConversionContext[T] = copy(stack = stack.tail)
 
 
@@ -57,10 +67,6 @@ case class ConversionContext[T]
   def empty[U]: ConversionContext[Chain[U]] = ret(Chain.empty[U])
   def single: ConversionContext[Chain[T]] = ret(Chain.one(data))
 
-  def withScope[U](scope: Scope)(f: ConversionContext[T] => ConversionContext[U]): ConversionContext[U] =
-    f(copy(scope = scope)).copy(scope = this.scope)
-  def incScope[U](f: ConversionContext[T] => ConversionContext[U]): ConversionContext[U] =
-    withScope(scope.inc)(f)
 
   def fold[U, V](seq: Seq[U])
                 (f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])

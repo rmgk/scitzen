@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.generic.Sast.{SMacro, Section, Text}
+import scitzen.generic.Sast.{Parsed, SBlock, SMacro, Section, Text}
 import scitzen.parser.MacroCommand.Ref
 import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
 
@@ -10,20 +10,22 @@ object GenIndexPage {
                      "July", "August", "September", "October", "November", "December")
 
 
-  def makeIndex(dm: DocumentManager, project: Project, reverse: Boolean = false, nlp: Option[NLP] = None): List[Section] = {
+  def makeIndex(dm: DocumentManager, project: Project, reverse: Boolean = false, nlp: Option[NLP] = None): List[Sast] = {
     def ordering[T: Ordering]: Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
     def sectionBy(pdocs: List[FullDoc])
                  (f: FullDoc => String)
                  (cont: List[FullDoc] => List[Sast])
-    : List[Section] = {
+    : List[Sast] = {
       val sectionTitle = pdocs.groupBy(f)
-      sectionTitle.toList.sortBy(_._1)(ordering).map { case (key, docs) =>
+      sectionTitle.toList.sortBy(_._1)(ordering).flatMap { case (key, docs) =>
         val inner = cont(docs).map {
-          case s : Section => s.copy(attributes = Attributes.synt(Attribute("label", s"$key " + s.attributes.named("label"))))
-          case other => other
+          case s: Section => s.copy(attributes = Attributes.synt(Attribute("label", s"$key " + s.attributes.named("label"))))
+          case other      => other
         }
-        Section(Text(List(InlineText(key))), inner, Attributes.synt(Attribute("label", key)))
+        List[Sast](
+          Section(Text(List(InlineText(key))), level = 1, Attributes.synt(Attribute("label", key))),
+          SBlock(Attributes.synt(), Parsed("====", inner)))
       }
     }
 

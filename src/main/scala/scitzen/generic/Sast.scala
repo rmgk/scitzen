@@ -22,8 +22,8 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, content: Seq[Sast], attributes: Attributes) extends Sast {
-      def ref: String = attributes.named.getOrElse("label", title.str)
+  case class Section(title: Text,level: Int, attributes: Attributes) extends Sast {
+    def ref: String = attributes.named.getOrElse("label", title.str)
 
   }
   case class SMacro(call: Macro) extends Sast {
@@ -73,38 +73,18 @@ final case class SastConverter() {
 
   private val ListConverter = new ListConverter(this)
 
-  @scala.annotation.tailrec
-  def sectionize(blocks: Seq[Block], accumulator: List[Sast]): List[Sast] = {
-    blocks.toList match {
-      case Nil             => accumulator.reverse
-      case section :: rest =>
-        val currentSection = section.content.asInstanceOf[SectionTitle]
-        val title          = inlineString(currentSection.title, section.prov)
-        val (inner, next)  = rest.span { block =>
-          block.content match {
-            case innerTitle: SectionTitle => innerTitle.level > currentSection.level
-            case _                        => true
-          }
-        }
-        sectionize(next, Section(title,
-                                 blockSequence(inner),
-                                 section.attributes.append(currentSection.rawAttributes)
-                                 ) :: accumulator)
-    }
-  }
-
 
   def blockSequence(blocks: List[Block]): List[Sast] = {
-    val (abstkt, sections) = blocks.span(!_.content.isInstanceOf[SectionTitle])
-    abstkt.map(block) ++ sectionize(sections, Nil)
+    blocks.map(block)
   }
 
 
   def blockContent(block: BlockContent, prov: Prov, attributes: Attributes): Sast = {
     block match {
 
-      case SectionTitle(level, title, _) =>
-        throw new IllegalStateException("sections should be out already …")
+      case SectionTitle(level, title, rawAttributes) =>
+
+        Section(inlineString(title, prov), level, Attributes(rawAttributes, prov))
 
       case ListBlock(items) => ListConverter.listtoSast(items)
 

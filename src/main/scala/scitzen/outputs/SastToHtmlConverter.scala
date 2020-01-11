@@ -9,7 +9,7 @@ import cats.implicits._
 import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
-import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef, Scope}
+import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Fence, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
@@ -69,12 +69,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     b match {
 
 
-      case sec @ Section(title, subsections, _) =>
-        val inner = (if (ctx.scope.level == 1) Chain(tMeta()) else Chain.nil) ++:[Frag]
-                    ctx.incScope(convertSeq(subsections)(_))
-        inlineValuesToHTML(title.inline)(inner).map { innerFrags =>
-          tag("h" + ctx.scope.level)(id := sec.ref, innerFrags.toList) +: inner.data
-        }
+      case sec @ Section(title, level, _) =>
+        val inner = (if (ctx.stack.isEmpty) Chain(tMeta()) else Chain.nil)
+        inlineValuesToHTML(title.inline)(ctx).map { innerFrags =>
+          tag("h" + level)(id := sec.ref, innerFrags.toList) +: inner
+        }.push(sec)
 
       case Slist(Nil)      => ctx.empty
       case Slist(children) =>
@@ -127,17 +126,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case Macro(Include, attributes) =>
           pathManager.findDoc(attributes.target) match {
             case Some(doc) =>
-              ctx.withScope(new Scope(3)) { ctx =>
-                val sast = includeResolver(doc.parsed.file)
-                new SastToHtmlConverter(bundle,
-                                        pathManager.changeWorkingFile(doc.parsed.file),
-                                        bibliography,
-                                        doc.analyzed,
-                                        sync,
-                                        doc.parsed.reporter,
-                                        includeResolver)
-                .convertSeq(sast)(ctx)
-              }
+              val stack = ctx.stack
+              val sast = includeResolver(doc.parsed.file)
+              new SastToHtmlConverter(bundle,
+                                      pathManager.changeWorkingFile(doc.parsed.file),
+                                      bibliography,
+                                      doc.analyzed,
+                                      sync,
+                                      doc.parsed.reporter,
+                                      includeResolver)
+              .convertSeq(sast)(ctx)
+              .copy(stack = stack)
             case None      =>
               scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
               ctx.empty

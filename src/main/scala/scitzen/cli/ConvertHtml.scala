@@ -71,20 +71,7 @@ object ConvertHtml {
         )
     }
 
-    def preprocessRecursive(doc: FullDoc,
-                            ctx: ConversionContext[_],
-                            pathManager: HtmlPathManager,
-                            acc: Map[File, List[Sast]])
-    : ConversionContext[Map[File, List[Sast]]] = {
-      val preprocessed = conversionPreproc(doc.parsed).convertSeq(doc.sast)(ctx)
-      val newctx = preprocessed.copy(includes = Nil).ret(acc.updated(doc.parsed.file, preprocessed.data.toList))
-      preprocessed.includes
-                  .filter(f => !acc.contains(f))
-                  .map(f => pathManager.project.documentManager.byPath(f))
-                  .foldLeft(newctx) { (ctx, fd) =>
-                    preprocessRecursive(fd, ctx, pathManager, ctx.data)
-                  }
-    }
+
 
 
     def convertDoc(doc: FullDoc, pathManager: HtmlPathManager, ctx: ConversionContext[_]): ConversionContext[_] = {
@@ -98,7 +85,7 @@ object ConvertHtml {
       val analyzedDoc = doc.analyzed
 
 
-      val preprocessed = preprocessRecursive(doc, ctx, pathManager, Map.empty)
+      val preprocessed = SastToSastConverter.preprocessRecursive(doc, ctx, pathManager.project.documentManager, Map.empty, conversionPreproc)
 
       val converter  = new SastToHtmlConverter(bundle = scalatags.Text,
                                                pathManager = pathManager,
@@ -150,7 +137,7 @@ object ConvertHtml {
                                           postoutput)
 
         val docsCtx = dm.fulldocs.foldLeft(outputCtx.ret(Map.empty[File, List[Sast]])) { (ctx, doc) =>
-          preprocessRecursive(doc, ctx, pathManager.changeWorkingFile(doc.parsed.file), ctx.data)
+          SastToSastConverter.preprocessRecursive(doc, ctx, pathManager.project.documentManager, ctx.data, conversionPreproc)
         }
 
         val generatedIndex = GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp)

@@ -2,10 +2,11 @@ package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
 
+import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, ImageConverter, ParsedDocument, Project}
+import scitzen.generic.{ConversionContext, ImageConverter, ParsedDocument, Project, Sast}
 import scitzen.outputs.{SastToSastConverter, SastToTexConverter, TexPages}
 
 object ConvertPdf {
@@ -38,17 +39,20 @@ object ConvertPdf {
         )
     }
 
-    val preprocessed = preprocConverter(main.parsed).convertSeq(main.sast)(preConversionContext)
+    val docsCtx = dm.fulldocs.foldLeft(preConversionContext.ret(Map.empty[File, List[Sast]])) { (ctx, doc) =>
+      SastToSastConverter.preprocessRecursive(doc, ctx, dm, ctx.data, preprocConverter)
+    }
+
 
 
     val resultContext = new SastToTexConverter(
       project,
       main.parsed.file.parent,
       main.parsed.reporter,
-      preprocConverter
+      docsCtx.data
       ).convert(
-      preprocessed.data.toList
-      )(preprocessed)
+      docsCtx.data(main.parsed.file)
+      )(docsCtx)
 
     val content = resultContext.data
 

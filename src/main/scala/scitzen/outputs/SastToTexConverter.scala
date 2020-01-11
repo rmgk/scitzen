@@ -3,7 +3,7 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, ParsedDocument, Project, Reporter, Sast, Scope}
+import scitzen.generic.{ConversionContext, Project, Reporter, Sast}
 import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Inline, InlineText, Macro}
 
@@ -11,7 +11,7 @@ import scitzen.parser.{Inline, InlineText, Macro}
 class SastToTexConverter(project: Project,
                          cwd: File,
                          reporter: Reporter,
-                         preproc: ParsedDocument => SastToSastConverter
+                         includeResolver: Map[File, Seq[Sast]]
                         ) {
 
   type CtxCS = ConversionContext[Chain[String]]
@@ -19,12 +19,12 @@ class SastToTexConverter(project: Project,
   type Cta = Ctx[_]
 
   def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = mainSast match {
-    case List(Section(title, content, _)) =>
+    case List(section @ Section(title, content, _)) =>
       val ilc = inlineValuesToTex(title.inline)
-      s"\\title{${ilc.data}}\\maketitle{}" +:
-      ilc.withScope(new Scope(2))(sastSeqToTex(content)(_))
+      ilc.push(section)
+         .retc(s"\\title{${ilc.data}}\\maketitle{}")
 
-    case list => ctx.withScope(new Scope(1))(sastSeqToTex(list)(_))
+    case list => sastSeqToTex(list)(ctx)
   }
 
   def latexencode(input: String): String = {
@@ -51,11 +51,10 @@ class SastToTexConverter(project: Project,
 
     case tlBlock: SBlock => blockToTex(tlBlock)
 
-    case Section(title, contents, _) =>
-      val sec = sectioning(ctx.scope)
+    case section @ Section(title, level, _) =>
+      val sec = sectioning(level)
       val ilc = inlineValuesToTex(title.inline)
-      s"\\$sec{${ilc.data}}" +:
-      ilc.incScope(sastSeqToTex(contents)(_))
+      ilc.push(section).retc(s"\\$sec{${ilc.data}}")
 
     case Slist(children) =>
       children match {
@@ -93,10 +92,13 @@ class SastToTexConverter(project: Project,
       case Macro(Include, attributes) =>
         project.findDoc(cwd, attributes.target) match {
           case Some(doc) =>
-            ctx.withScope(new Scope(3)){ ctx =>
-              val preprocctx = preproc(doc.parsed).convertSeq(doc.sast)(ctx)
-              new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter, preproc)
-              .sastSeqToTex(preprocctx.data.toList)(preprocctx)}
+
+
+            val included = includeResolver(doc.parsed.file)
+            val stack = ctx.stack
+
+            new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter, includeResolver)
+            .sastSeqToTex(included)(ctx.push(sast)).copy(stack = stack)
 
           case None =>
             scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
@@ -172,7 +174,7 @@ class SastToTexConverter(project: Project,
                                           .replaceAllLiterally("\n", "\\newline{}\n")
           ctx.ret(Chain("\\noindent", latexenc))
 
-        case other  =>
+        case other =>
           val restext = tlblock.attributes.named.get("label") match {
             case None        => text
             case Some(label) =>
@@ -187,9 +189,9 @@ class SastToTexConverter(project: Project,
 
   }
 
-  val sectioning: Scope => String = nesting => {
+  val sectioning: Int => String = nesting => {
     val secs = Array("book", "part", "chapter", "section", "subsection", "paragraph")
-    val sec  = secs.lift(nesting.level).getOrElse("paragraph")
+    val sec  = secs.lift(nesting).getOrElse("paragraph")
     sec
   }
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
