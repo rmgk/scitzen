@@ -99,6 +99,9 @@ main > * {
   // this causes per element scrollbars, instead of breaking the full layout
   max-width: 100%;
   overflow-x: auto;
+  // firefox seems to have scrollbars when katex
+  // elements are at the bottom of paragraphs without this
+  overflow-y: hidden;
 }
 
 
