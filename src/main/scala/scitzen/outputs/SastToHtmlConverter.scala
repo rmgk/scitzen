@@ -329,7 +329,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case "n" if pathManager.project.documentManager.attributes.contains(attributes.target) =>
           ctx.retc(pathManager.project.documentManager.attributes(attributes.target))
 
-        case "subparagraph" => ctx.retc(h6(attributes.target))
+        case "subparagraph" => ctx.retc(b(`class` := "paragraphtitle", attributes.target))
 
         case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter().macroToScim(mcro)))
 

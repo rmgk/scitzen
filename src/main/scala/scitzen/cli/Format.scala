@@ -73,5 +73,6 @@ object Format {
     .replaceAll("-+", "-")
     .trim
     .replaceAll("^-|-$", "")
+    .trim
 
 }
