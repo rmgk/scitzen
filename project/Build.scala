@@ -11,18 +11,19 @@ object Settings {
 
   val scalaVersion_211 = Def.settings(
     scalaVersion := "2.11.12",
-    scalacOptions ++= tpolecatsScalacOptionsCommon ++ scalaOptions12minus
+    scalacOptions ++= scalacOptionsCommon ++ scalaOptions12minus
   )
   val scalaVersion_212 = Def.settings(
     scalaVersion := "2.12.10",
-    scalacOptions ++= tpolecatsScalacOptionsCommon ++ scalacOptions12plus ++ scalaOptions12minus
+    scalacOptions ++= scalacOptionsCommon ++ scalacOptions12plus ++ scalaOptions12minus
   )
   val scalaVersion_213 = Def.settings(
     scalaVersion := "2.13.1",
-    scalacOptions ++= tpolecatsScalacOptionsCommon ++ scalacOptions12plus
+    scalacOptions ++= scalacOptionsCommon ++ scalacOptions12plus
     )
 
-  lazy val tpolecatsScalacOptionsCommon = Seq(
+  // based on tpolecats scala options https://tpolecat.github.io/2017/04/25/scalac-flags.html
+  lazy val scalacOptionsCommon = Seq(
     "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
     "-encoding", "utf-8",                // Specify character encoding used by source files.
     "-explaintypes",                     // Explain type errors in more detail.
@@ -93,15 +94,15 @@ object Dependencies {
   val betterFiles  = ld += "com.github.pathikrit" %% "better-files" % "3.8.0"
   val cats         = ld += "org.typelevel" %%% "cats-core" % "2.0.0"
   val decline      = ld += "com.monovore" %%% "decline" % "1.0.0"
-  val fastparse    = ld += "com.lihaoyi" %%% "fastparse" % "2.1.3"
-  val jsoup        = ld += "org.jsoup" % "jsoup" % "1.12.1"
+  val fastparse    = ld += "com.lihaoyi" %%% "fastparse" % "2.2.4"
+  val jsoup        = ld += "org.jsoup" % "jsoup" % "1.13.1"
   val kaleidoscope = ld += "com.propensive" %%% "kaleidoscope" % "0.1.0"
-  val pprint       = ld += "com.lihaoyi" %%% "pprint" % "0.5.6"
+  val pprint       = ld += "com.lihaoyi" %%% "pprint" % "0.5.9"
   val rmgkLogging  = Def.settings(Resolvers.rmgk, ld += "de.rmgk" %%% "logging" % "0.2.1")
   val scalactic    = ld += "org.scalactic" %% "scalactic" % "3.0.7"
-  val scribe       = ld += "com.outr" %%% "scribe" % "2.7.10"
+  val scribe       = ld += "com.outr" %%% "scribe" % "2.7.12"
   val sourcecode   = ld += "com.lihaoyi" %%% "sourcecode" % "0.1.7"
-  val upickle      = ld += "com.lihaoyi" %% "upickle" % "0.8.0"
+  val upickle      = ld += "com.lihaoyi" %% "upickle" % "1.0.0"
   val toml         = ld += "tech.sparse" %%% "toml-scala" % "0.2.2"
 
   val akkaHttp = ld ++= (Seq("akka-http-core",
@@ -118,14 +119,14 @@ object Dependencies {
 
   // frontend
   val normalizecss = ld += "org.webjars.npm" % "normalize.css" % "8.0.1"
-  val scalatags    = ld += "com.lihaoyi" %%% "scalatags" % "0.7.0"
+  val scalatags    = ld += "com.lihaoyi" %%% "scalatags" % "0.8.6"
   val scalajsdom   = ld += "org.scala-js" %%% "scalajs-dom" % "0.9.7"
   val fontawesome  = ld += "org.webjars" % "font-awesome" % "5.10.1"
 
   // tests
-  val scalacheck = ld += "org.scalacheck" %%% "scalacheck" % "1.14.2" % "test"
+  val scalacheck = ld += "org.scalacheck" %%% "scalacheck" % "1.14.3" % "test"
   val scalatestpluscheck = ld += "org.scalatestplus" %%% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % "test"
-  val scalatest  = ld += "org.scalatest" %%% "scalatest" % "3.1.0" % "test"
+  val scalatest  = ld += "org.scalatest" %%% "scalatest" % "3.1.1" % "test"
 
   // legacy
   val scalaXml   = ld += "org.scala-lang.modules" %% "scala-xml" % "1.2.0"
