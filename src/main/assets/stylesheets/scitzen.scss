@@ -6,21 +6,10 @@
 $main-content-width: 171.9mm;
 
 :root {
-  --theme-color-values: 0, 50%, 50%;
-  --theme-color: hsl(var(--theme-color-values));
+  --theme-color: hsl(0, 50%, 50%);
   --color-subdued: hsl(0, 0%, 66%);
   // a4 paper has 21cm, subtract 1.5 inch for print margins
   --main-content-width: 171.9mm;
-}
-
-html {
-  line-height: 1.5;
-
-  @media screen {
-    background: snow;
-    color: #222;
-  }
-
 }
 
 a {
@@ -59,7 +48,8 @@ time, .category {
 
 time {
   white-space: nowrap;
-  font-family: monospace;
+  // double monospace to override firefox default font size to use same as other fonts
+  font-family: monospace, monospace;
   letter-spacing: -0.0625em;
 }
 
@@ -91,6 +81,8 @@ main {
   padding: 1em;
   // allow overscrolling past the end of the content
   margin-bottom: calc(100vh - 3.5em);
+
+  line-height: 1.5;
 }
 
 main > * {
@@ -145,11 +137,6 @@ pre {
 
 pre > code {
   white-space: pre;
-}
-
-p > code {
-  font-family: monospace;
-  color: black;
 }
 
 .smallcaps {
