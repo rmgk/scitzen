@@ -69,7 +69,7 @@ object ConvertPdf {
       pd.analyzed.named.get("bibliography").map(s => pd.parsed.file.parent / s.trim)
     }.map(_.pathAsString)
     scribe.info(s"bib is $bibliography")
-    val authors = dm.analyzed.collectSomeFold(_.named.get("authors"))
+    val authors = dm.analyzed.collectFoldSome(_.named.get("authors"))
 
     val jobname     = targetfile.nameWithoutExtension(includeAll = false)
     val temptexfile = cacheDir / (jobname + ".tex")
