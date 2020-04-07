@@ -25,7 +25,7 @@ object GenIndexPage {
         }
         List[Sast](
           Section(Text(List(InlineText(key))), level = 1, Attributes.synt(Attribute("label", key))),
-          SBlock(Attributes.synt(), Parsed("====", inner)))
+          SBlock(Attributes.synt(), Parsed("", inner)))
       }
     }
 

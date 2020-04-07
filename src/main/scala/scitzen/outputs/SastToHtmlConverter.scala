@@ -192,8 +192,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           }
         }
         // space indented blocks are currently only used for description lists
+        // non delimiter blocks are synthetic
         // they are parsed and inserted as if the indentation was not present
-        case rex"\s+" => convertSeq(blockContent)
+        case "" | rex"\s+" => convertSeq(blockContent)
         case _        => convertSeq(blockContent).map { inner =>
           Chain(div(delimiter, br, inner.toList, br, delimiter))
         }
