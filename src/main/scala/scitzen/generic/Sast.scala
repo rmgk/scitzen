@@ -9,10 +9,15 @@ sealed trait Sast {
 }
 
 object Sast {
+
+  case object NoContent extends Sast {
+    override def attributes: Attributes = Attributes.synt()
+  }
+
   case class Slist(children: Seq[SlistItem]) extends Sast {
     override def attributes: Attributes = Attributes.synt()
   }
-  case class SlistItem(marker: String, content: Seq[Sast])
+  case class SlistItem(marker: String, text: Text, content: Sast)
   case class Text(inline: Seq[Inline]) {
     lazy val str = {
       inline.map {
@@ -22,7 +27,7 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text,level: Int, attributes: Attributes) extends Sast {
+  case class Section(title: Text, level: Int, attributes: Attributes) extends Sast {
     def ref: String = attributes.named.getOrElse("label", title.str)
 
   }
@@ -36,12 +41,12 @@ object Sast {
   case class Fenced(content: String) extends BlockType
   case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
   case class SpaceComment(content: String) extends BlockType
+
 }
 
 
 class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
-  import sastConverter.blockContent
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] = items.toList match {
     case Nil                    => Nil
@@ -52,7 +57,7 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
   def listtoSast(items: Seq[ListItem]): Slist = {
     /* defines which characters are distinguishing list levels */
-    def norm(m: String) = m.replaceAll("""[^\s*.:-]""", "")
+    def norm(m: String) = m.replaceAll("""[^\s\*\.•\-]""", "")
 
     val split = splitted(items.map(i => (norm(i.marker), i)))
 
@@ -61,9 +66,10 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
   private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
     val listItems = split.map { case (item, children) =>
-      val itemSast   = blockContent(item.content, Prov(), Attributes.synt())
-      val childSasts = if (children.isEmpty) Nil else List(listtoSast(children))
-      SlistItem(item.marker, itemSast +: childSasts)
+      val itemSast    = sastConverter.inlineString(item.text.content, item.text.cprov)
+      val contentSast = item.content.map(nb => sastConverter.blockContent(nb, nb.cprov, Attributes(nb.rawAttributes, nb.cprov)))
+      val childSasts  = if (children.isEmpty) None else Some(listtoSast(children))
+      SlistItem(item.marker, itemSast, contentSast.orElse(childSasts).getOrElse(NoContent))
     }
     Slist(listItems)
   }

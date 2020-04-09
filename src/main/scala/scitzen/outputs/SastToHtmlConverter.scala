@@ -40,7 +40,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     else Int.MaxValue
 
   def listItemToHtml(child: SlistItem)(implicit ctx: Cta): CtxCF = {
-    convertSeq(child.content)
+    val textCtx = inlineValuesToHTML(child.text.inline)(ctx)
+    textCtx.data ++: convertSingle(child.content)(textCtx)
   }
 
   def categoriesSpan(analyzedDoc: AnalyzedDoc): Option[Tag] = {
@@ -68,6 +69,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
     singleSast match {
 
+      case NoContent => ctx.empty
 
       case sec @ Section(title, level, _) =>
         val inner = (if (ctx.stack.isEmpty) Chain(tMeta()) else Chain.nil)
@@ -76,20 +78,22 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         }.push(sec)
 
       case Slist(Nil)      => ctx.empty
-      case Slist(children) =>
-        if (children.head.marker.contains(":")) {
-          ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
-            listItemToHtml(c)(ctx).map { innerFrags =>
-              Chain(dt(strong(c.marker.replaceAllLiterally(":", ""))), dd(innerFrags.toList))
-            }
-          }.map(i => Chain(dl(i.toList)))
-        }
-        else {
+      case Slist(children) => children.head.content match {
+        case NoContent | Slist(_) =>
           val listTag = if (children.head.marker.contains(".")) ol else ul
           ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
             listItemToHtml(c)(ctx).map(i => Chain(li(i.toList)))
           }.map(i => Chain(listTag(i.toList)))
-        }
+        case _                    =>
+          println(children.head)
+          println("was not a list?")
+          ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
+            val inlinesCtx = inlineValuesToHTML(c.text.inline)(ctx)
+            convertSingle(c.content)(inlinesCtx).map { innerFrags =>
+              Chain(dt(inlinesCtx.data.toList: _*), dd(innerFrags.toList))
+            }
+          }.map(i => Chain(dl(i.toList)))
+      }
 
       case SMacro(mcro) => mcro match {
         case Macro(Image, attributes) =>
@@ -127,7 +131,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           pathManager.findDoc(attributes.target) match {
             case Some(doc) =>
               val stack = ctx.stack
-              val sast = includeResolver(doc.parsed.file)
+              val sast  = includeResolver(doc.parsed.file)
               new SastToHtmlConverter(bundle,
                                       pathManager.changeWorkingFile(doc.parsed.file),
                                       bibliography,
@@ -195,7 +199,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         // non delimiter blocks are synthetic
         // they are parsed and inserted as if the indentation was not present
         case "" | rex"\s+" => convertSeq(blockContent)
-        case _        => convertSeq(blockContent).map { inner =>
+        case _             => convertSeq(blockContent).map { inner =>
           Chain(div(delimiter, br, inner.toList, br, delimiter))
         }
       }
@@ -289,7 +293,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             )
 
         case None =>
-          val scope = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
+          val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
           val candidates = filterCandidates(scope, ctx.resolveRef(attributes.target))
 
           if (candidates.lengthCompare(1) > 0) scribe.error(

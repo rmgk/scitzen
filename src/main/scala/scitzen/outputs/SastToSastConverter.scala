@@ -46,6 +46,8 @@ class SastToSastConverter(project: Project,
 
   def convertSingle(sast: Sast)(implicit ctx: Cta): CtxCS = sast match {
 
+    case NoContent => ctx.empty
+
     case tlBlock: SBlock => convertBlock(tlBlock)
 
     case sec @ Section(title, level, attr) =>
@@ -70,7 +72,10 @@ class SastToSastConverter(project: Project,
 
     case Slist(children) =>
       ctx.fold[SlistItem, SlistItem](children) { (ctx, child) =>
-        convertSeq(child.content)(ctx).map(con => Chain(SlistItem(child.marker, con.iterator.toSeq)))
+        convertSingle(child.content)(ctx).map { con =>
+          if (con.size > 1) throw new IllegalStateException("list contained more that one child")
+          Chain(SlistItem(child.marker, child.text, con.headOption.getOrElse(NoContent)))
+        }
       }.map { cs =>
         Chain(Slist(cs.iterator.toSeq))
       }

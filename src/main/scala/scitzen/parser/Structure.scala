@@ -34,7 +34,10 @@ case class ListBlock(items: Seq[ListItem]) extends BlockContent
 case class SectionTitle(level: Int, title: String, rawAttributes: Seq[Attribute]) extends BlockContent
 
 
-case class ListItem(marker: String, content: NormalBlock)
+case class ListItem(marker: String, text: NormalBlock, content: Option[NormalBlock])
+case object ListItem {
+  def apply(mc: (String, NormalBlock)): ListItem = ListItem(mc._1, mc._2, None)
+}
 
 case class Attribute(id: String, value: String)
 

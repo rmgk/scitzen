@@ -49,6 +49,8 @@ class SastToTexConverter(project: Project,
 
   def sastToTex(sast: Sast)(implicit ctx: Cta): CtxCS = sast match {
 
+    case NoContent => ctx.empty
+
     case tlBlock: SBlock => blockToTex(tlBlock)
 
     case section @ Section(title, level, _) =>
@@ -60,20 +62,23 @@ class SastToTexConverter(project: Project,
       children match {
         case Nil => ctx.ret(Chain.nil)
 
-        case SlistItem(m, _) :: _ if m.contains(":") =>
+        case SlistItem(m, text, NoContent) :: _ =>
+          "\\begin{itemize}" +:
           ctx.fold[SlistItem, String](children) { (ctx, child) =>
-            s"\\item[${child.marker.replaceAllLiterally(":", "")}]" +:
-            sastSeqToTex(child.content)(ctx)
+            inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item" + s))
+          } :+
+          "\\end{itemize}"
+
+        case SlistItem(m, _, _) :: _ =>
+          ctx.fold[SlistItem, String](children) { (ctx, child) =>
+          val inlines = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]")
+
+            inlines.data +: sastToTex(child.content)(inlines)
           }.map { content =>
             "\\begin{description}" +: content :+ "\\end{description}"
           }
 
-        case other =>
-          "\\begin{itemize}" +:
-          ctx.fold[SlistItem, String](children) { (ctx, child) =>
-            s"\\item" +: sastSeqToTex(child.content)(ctx)
-          } :+
-          "\\end{itemize}"
+
       }
 
     case SMacro(mcro) => mcro match {

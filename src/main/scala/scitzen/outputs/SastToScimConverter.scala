@@ -19,12 +19,12 @@ case class SastToScimConverter() {
   def encodeValue(v: String): String = {
     if (!attributeEscapes.pattern.matcher(v).find()) v
     else if (!v.contains("\"")) s""""$v""""
-    else {
-      val mi         = countQuotes.findAllIn(v)
-      val quoteCount = if (mi.isEmpty) 0 else mi.map(_.length).max
-      val quotes     = "\"" * quoteCount
-      s"""$quotes[$v]$quotes"""
-    }
+         else {
+           val mi         = countQuotes.findAllIn(v)
+           val quoteCount = if (mi.isEmpty) 0 else mi.map(_.length).max
+           val quotes     = "\"" * quoteCount
+           s"""$quotes[$v]$quotes"""
+         }
   }
 
   def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): Chain[String] = {
@@ -58,15 +58,18 @@ case class SastToScimConverter() {
   }
 
   def toScim(sast: Sast): Chain[String] = sast match {
+    case NoContent => Chain.empty
+
     case Section(title, level, attributes) =>
       ("=" * level + " " + inlineToScim(title.inline)) +:
       attributesToScim(attributes.raw, spacy = true, force = false, light = true)
 
     case Slist(children) => Chain.fromSeq(children).flatMap {
-      case SlistItem(marker, SBlock(_, Paragraph(Text(inl))) :: rest) =>
-        (s"$marker" + inlineToScim(inl)) +: toScimS(rest)
-      case SlistItem(marker, inner)                                   =>
-        marker +: toScimS(inner)
+      case SlistItem(marker, inner, NoContent) =>
+        Chain(marker + inlineToScim(inner.inline))
+
+      case SlistItem(marker, Text(inl), rest) =>
+        (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
     }
 
     case SMacro(m @ Macro(Def, attributes)) => Chain(macroToScimRaw(m, spacy = true))
@@ -96,7 +99,7 @@ case class SastToScimConverter() {
         case '=' =>
           (delimiter +
            attributesToScimF(sb.attributes.raw, force = false, spacy = false)) +:
-           strippedContent :+
+          strippedContent :+
           delimiter
         // space indented blocks are currently only used for description lists
         // they are parsed and inserted as if the indentation was not present
@@ -109,9 +112,9 @@ case class SastToScimConverter() {
       Chain.fromSeq(immutable.ArraySeq.unsafeWrapArray(
         text.stripLineEnd.split("\\n", -1).map(_.trim)))
     case Fenced(text)       =>
-      val foundlen = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
+      val foundlen  = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
       val delimiter = "`" * math.max(3, foundlen)
-      Chain(delimiter  + attributesToScimF(sb.attributes.raw, spacy = false, force = false),
+      Chain(delimiter + attributesToScimF(sb.attributes.raw, spacy = false, force = false),
             text,
             delimiter)
   }
