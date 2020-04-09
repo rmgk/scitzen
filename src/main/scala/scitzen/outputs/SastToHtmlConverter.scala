@@ -85,8 +85,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
             listItemToHtml(c)(ctx).map(i => Chain(li(i.toList)))
           }.map(i => Chain(listTag(i.toList)))
         case _                    =>
-          println(children.head)
-          println("was not a list?")
           ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
             val inlinesCtx = inlineValuesToHTML(c.text.inline)(ctx)
             convertSingle(c.content)(inlinesCtx).map { innerFrags =>

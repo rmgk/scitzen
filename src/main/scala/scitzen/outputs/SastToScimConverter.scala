@@ -5,7 +5,7 @@ import cats.implicits._
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
-import scitzen.parser.{Attribute, Inline, InlineText, Macro, MacroCommand}
+import scitzen.parser.{Attribute, AttributesParser, Inline, InlineText, Macro, MacroCommand}
 
 import scala.collection.compat.immutable
 import scala.util.matching.Regex
@@ -13,7 +13,7 @@ import scala.util.matching.Regex
 
 case class SastToScimConverter() {
 
-  val attributeEscapes = """[;=\]\n]|^[\s"\[]|\s$""".r
+  val attributeEscapes = """[;=\]}\n]|^[\s"\[]|\s$""".r
   val countQuotes      = """(]"*)""".r
 
   def encodeValue(v: String): String = {
@@ -46,10 +46,10 @@ case class SastToScimConverter() {
 
     if (!(spacy && attributes.size > 1)) {
       if (light) pairs.mkString("", "; ", "\n")
-      else pairs.mkString("[", "; ", "]")
+      else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
     } else {
       if (light) pairs.mkString("", "\n", "\n")
-      else pairs.mkString("[\n\t", "\n\t", "\n]")
+      else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
     }
   }
 
