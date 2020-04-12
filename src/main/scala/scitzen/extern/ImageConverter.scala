@@ -1,10 +1,12 @@
-package scitzen.generic
+package scitzen.extern
 
 import better.files.File
-import scitzen.extern.{Graphviz, TexTikz}
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast.{Fenced, SBlock, SMacro}
+import scitzen.generic.{ConversionContext, Project, Sast}
 import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
+
+import scala.jdk.CollectionConverters._
 
 
 trait ConvertTask {
@@ -20,7 +22,12 @@ class ConvertSchedulable[T](data: T, task: Option[ConvertTask]) {
   }
 }
 
-class ImageConverter(project: Project, val formatHint: String) {
+
+class ImageConverter(project: Project, val preferredFormat: String, unsupportedFormat: List[String] = Nil) {
+
+
+  def requiresConversion(filename: String): Boolean =
+    unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
   def convert(cwd: File, mcro: Macro): ConvertSchedulable[Macro] = {
     val converter = mcro.attributes.named("converter")
@@ -47,14 +54,36 @@ class ImageConverter(project: Project, val formatHint: String) {
     }
   }
 
-  def pdftosvg(file: File): ConvertSchedulable[File] = {
-    val (svgfile, tasko) = pdftosvg_(file)
-    new ConvertSchedulable[File](svgfile, tasko)
+  def applyConversion(file: File): ConvertSchedulable[File] = {
+    preferredFormat match {
+      case "svg" | "png" if (file.extension.contains(".pdf")) => {
+        val (svgfile, tasko) = pdfToCairo(file)
+        new ConvertSchedulable[File](svgfile, tasko)
+      }
+      case "pdf" | "png" if (file.extension.contains(".svg")) => {
+        val (svgfile, tasko) = svgToCairo(file)
+        new ConvertSchedulable[File](svgfile, tasko)
+      }
+    }
+
+
   }
 
-  private def pdftosvg_(file: File): (File, Option[ConvertTask]) = {
+  trait CommandFunction {
+    def genCommand(source: String, target: String): List[String]
+  }
+
+  def pdfToCairo(file: File): (File, Option[ConvertTask]) = {
+    convertExternal(file, (source, target) => {
+      List("pdftocairo", s"-$preferredFormat", source, target)
+    })
+  }
+
+  private def convertExternal(file: File, command: CommandFunction): (File, Option[ConvertTask]) = {
     val relative   = project.root.relativize(file.parent)
-    val targetfile = File((project.cacheDir / "svgs").path.resolve(relative).resolve(file.nameWithoutExtension + ".svg"))
+    val targetfile = File((project.cacheDir / "convertedImages")
+                          .path.resolve(relative)
+                          .resolve(file.nameWithoutExtension + s".$preferredFormat"))
     (targetfile,
     if (targetfile.exists) None
     else {
@@ -62,11 +91,26 @@ class ImageConverter(project: Project, val formatHint: String) {
         override def run(): Unit = {
           targetfile.parent.createDirectories()
           scribe.debug(s"converting $file to $targetfile")
-          new ProcessBuilder("pdftocairo", "-svg", file.toString(), targetfile.toString()).inheritIO().start().waitFor()
+          new ProcessBuilder(command.genCommand(file.pathAsString, targetfile.pathAsString).asJava)
+          .inheritIO().start().waitFor()
         }
       })
     })
   }
+
+  def svgToCairo(file: File): (File, Option[ConvertTask]) = {
+    convertExternal(file, (source, target) => {
+      List("cairosvg", source, "-o", target)
+    })
+  }
+
+  //def pdfToSvg(in: File): File = {
+  //  val out = in.sibling(in.name + ".svg")
+  //  if (out.exists) return out
+  //  Process(List("inkscape", in.pathAsString, "--export-plain-svg", out.pathAsString)).!
+  //  out
+  //}
+
 
   def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {
 
@@ -80,7 +124,8 @@ class ImageConverter(project: Project, val formatHint: String) {
     def applyConversion(data: (String, File, Option[ConvertTask])) = {
       val (hash, pdf, convertTaskO) = data
 
-      val (resfile, task2) = if (formatHint == "svg") pdftosvg_(data._2)
+      val (resfile, task2) = if (preferredFormat == "svg" || preferredFormat == "png")
+                               pdfToCairo(data._2)
                              else (data._2, None)
       val combinedTask     = (convertTaskO, task2) match {
         case (Some(l), Some(r)) => Some(new ConvertTask {
@@ -109,7 +154,7 @@ class ImageConverter(project: Project, val formatHint: String) {
         Some(Graphviz.convert(content,
                               project.cacheDir,
                               gr.split("\\s+", 2)(1),
-                              formatHint)
+                              preferredFormat)
                      .map(svg => makeImageMacro(svg)))
       case other                =>
         scribe.warn(s"unknown converter $other")

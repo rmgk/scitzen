@@ -49,7 +49,7 @@ object AnalyzedDoc {
 }
 
 final case class ParsedDocument(file: File, content: String, sast: List[Sast]) {
-  lazy val reporter: Reporter = new FileReporter(file, content)
+  lazy val reporter: FileReporter = new FileReporter(file, content)
 }
 
 object ParsedDocument {

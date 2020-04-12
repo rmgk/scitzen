@@ -37,11 +37,15 @@ object ConvertProject {
                                                          visibility = Partial,
                                                          help = "character offset to show in output").orNone
 
+  val optImageFileMap: Opts[Boolean] = Opts.flag("image-file-map",
+                                                     visibility = Partial,
+                                                     help = "character offset to show in output").orFalse
+
 
   val command: Command[Unit] = Command(name = "gen",
                                        header = "Convert Scim to Sast.") {
-    (optSource, optSyncFile, optSyncPos).mapN {
-      (sourcedirRel, syncFileRelOption, syncPos) =>
+    (optSource, optSyncFile, optSyncPos, optImageFileMap).mapN {
+      (sourcedirRel, syncFileRelOption, syncPos, imageFileMap) =>
         //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
         Project.fromSource(File(sourcedirRel)).foreach { project =>
           scribe.info(s"$project")
@@ -59,6 +63,9 @@ object ConvertProject {
           }
           if (project.config.outputType.contains("pdf")) {
             ConvertPdf.convertToPdf(project)
+          }
+          if (imageFileMap) {
+            ImageReferences.listAll(project)
           }
         }
     }

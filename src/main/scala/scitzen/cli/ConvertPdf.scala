@@ -5,8 +5,9 @@ import java.nio.charset.{Charset, StandardCharsets}
 import better.files._
 import cats.data.Chain
 import cats.implicits._
+import scitzen.extern.ImageConverter
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, ImageConverter, ParsedDocument, Project, Sast}
+import scitzen.generic.{ConversionContext, ParsedDocument, Project, Sast}
 import scitzen.outputs.{SastToSastConverter, SastToTexConverter, TexPages}
 
 object ConvertPdf {

@@ -31,6 +31,8 @@ case class Project(root: File, config: ProjectConfig) {
     res
   }
 
+  /** Does a project global file local resolve of the given path.
+   * Ensures that only files in the current project are accessed */
   def resolve(currentWorkingDirectory: File, pathString: String): Option[File] = {
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
     Some(res).filter(p => root.isParentOf(p) && p.isRegularFile)
@@ -70,7 +72,7 @@ object Project {
       }
       else Some(Project(file, ProjectConfig()))
     }
-    else None
+         else None
   }
 
   def fromConfig(file: File): Option[Project] = {

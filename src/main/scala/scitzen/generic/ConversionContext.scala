@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import better.files.File
 import cats.data.Chain
+import scitzen.extern.ConvertTask
 import scitzen.generic.Sast.Section
 
 case class SastRef(file: File, sast: Sast)

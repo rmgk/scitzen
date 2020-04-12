@@ -3,7 +3,6 @@ package scitzen.extern
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import scitzen.generic.ConvertTask
 import scitzen.outputs.TexPages
 
 

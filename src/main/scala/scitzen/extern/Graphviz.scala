@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import scitzen.generic.{ConvertSchedulable, ConvertTask}
 
 import scala.sys.process.Process
 

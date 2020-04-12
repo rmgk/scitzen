@@ -5,7 +5,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import better.files._
 import cats.data.Chain
 import cats.implicits._
-import scitzen.extern.Bibliography
+import scitzen.extern.{Bibliography, ImageConverter}
 import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.MacroCommand.Cite
@@ -66,7 +66,7 @@ object ConvertHtml {
         project,
         doc.file,
         doc.reporter,
-        new ImageConverter(project, "svg")
+        new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"))
         )
     }
 

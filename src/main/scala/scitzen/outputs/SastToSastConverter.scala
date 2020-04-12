@@ -2,8 +2,9 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
+import scitzen.extern.ImageConverter
 import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, ImageConverter, Project, Reporter, Sast, SastRef, _}
+import scitzen.generic.{ConversionContext, Project, Reporter, Sast, SastRef, _}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
 import scitzen.parser.{Attribute, Inline, InlineText, Macro}
 
@@ -120,9 +121,9 @@ class SastToSastConverter(project: Project,
       val resctx = converter.convert(cwd, mcro).schedule(ctx)
       convertMacro(resctx.data)(resctx)
 
-    case Macro(Image, attributes) if attributes.target.endsWith("pdf") && converter.formatHint == "svg" =>
+    case Macro(Image, attributes) if converter.requiresConversion(attributes.target) =>
       project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
-        val resctx    = converter.pdftosvg(file).schedule(ctx)
+        val resctx    = converter.applyConversion(file).schedule(ctx)
         val reltarget = cwd.relativize(resctx.data)
         convertMacro(Macro(Image, attributes.copy(
           raw = attributes.raw.init :+ Attribute("", reltarget.toString))))(resctx)
