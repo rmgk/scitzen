@@ -268,7 +268,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     case mcro @ Macro(Cite, attributes) =>
       val anchors = attributes.positional.flatMap {_.split(",")}.map { bibid =>
         bibid -> bibliography.getOrElse(bibid.trim, {
-          scribe.error(s"bib key not found: $bibid " + reportPos(mcro))
+          scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
           bibid
         })
       }.sortBy(_._2).map { case (bibid, bib) => a(href := s"#$bibid", bib) }

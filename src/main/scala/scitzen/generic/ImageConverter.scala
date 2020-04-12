@@ -66,7 +66,6 @@ class ImageConverter(project: Project, val formatHint: String) {
         }
       })
     })
-
   }
 
   def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {

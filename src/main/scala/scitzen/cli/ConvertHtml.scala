@@ -40,7 +40,6 @@ object ConvertHtml {
     val scitzenconfdir = project.nlpdir
     val nlp            = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
-
     val (bibEntries: Seq[Bibliography.BibEntry], biblio) = {
       val doc        = dm.fulldocs.find(_.analyzed.named.contains("bibliography"))
       val bibPath    = doc.flatMap(doc => doc.analyzed.named.get("bibliography").map { p =>
