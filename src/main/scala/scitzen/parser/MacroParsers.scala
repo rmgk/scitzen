@@ -28,7 +28,7 @@ object MacroParsers {
 
           case a @ ("begin" | "end" | "newcommand") => InlineText(s"\\$a{$c}")
 
-          case arg @ ("ref" | "label" | "cite" | "subparagraph" | "todo" | "ref" | "caption" | "textsf" | "textsc" | "creation" | "footnote") =>
+          case arg @ ("ref" | "label" | "cite" | "subparagraph" | "todo" | "caption" | "textsf" | "textsc" | "creation" | "footnote") =>
             Macro(MacroCommand.parse(arg), Attributes.a(Attribute("", c), p))
 
         }

@@ -12,8 +12,8 @@ object TexTikz {
 
   val header: String = """
     |\documentclass{standalone}
-    |\u005Cusepackage{tikz}
-    |\u005Cusetikzlibrary{shapes,backgrounds,calc,positioning}
+    |\usepackage{tikz}
+    |\usetikzlibrary{shapes,backgrounds,calc,positioning}
     """.stripMargin + TexPages.xelatexFont.mkString("\n") + """
     |
     |\begin{document}

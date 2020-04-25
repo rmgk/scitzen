@@ -29,18 +29,18 @@ class SastToTexConverter(project: Project,
 
   def latexencode(input: String): String = {
     val dummyForBSreplace = "»§ dummy to replace later ℓ«"
-    val nobs              = input.replaceAllLiterally("\\", dummyForBSreplace)
+    val nobs              = input.replace("\\", dummyForBSreplace)
     val nosimple          = "&%$#_{}".toList.map(_.toString).foldLeft(nobs) { (acc, char) =>
-      acc.replaceAllLiterally(char, s"\\$char")
+      acc.replace(char, s"\\$char")
     }
     val nomuch            = List(
       "~" -> "\\textasciitilde{}",
       "^" -> "\\textasciicircum{}",
       "`" -> "\\textasciigrave{}")
     .foldLeft(nosimple) { case (acc, (char, rep)) =>
-      acc.replaceAllLiterally(char, rep)
+      acc.replace(char, rep)
     }
-    nomuch.replaceAllLiterally(dummyForBSreplace, "\\textbackslash{}")
+    nomuch.replace(dummyForBSreplace, "\\textbackslash{}")
   }
 
   def sastSeqToTex(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
@@ -176,7 +176,7 @@ class SastToTexConverter(project: Project,
         case Some("text") =>
           val latexenc = latexencode(text).trim
                                           .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
-                                          .replaceAllLiterally("\n", "\\newline{}\n")
+                                          .replace("\n", "\\newline{}\n")
           ctx.ret(Chain("\\noindent", latexenc))
 
         case other =>

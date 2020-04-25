@@ -10,6 +10,7 @@ lazy val scitzen = project.in(file("."))
                      name := "scitzen",
                      organization := "de.rmgk",
                      scalaVersion_213,
+                     scalacOptions += "-Xsource:3",
                      Compile / resources ++= (Assets / SassKeys.sassify).value,
                      resolvers += Resolver.sonatypeRepo("public"),
                      libraryDependencies ++= Seq(
@@ -32,7 +33,8 @@ lazy val scitzen = project.in(file("."))
                      graalVMNativeImageOptions += "--initialize-at-build-time",
                      graalVMNativeImageOptions += "--no-fallback",
                      toml,
-                     jsoup
+                     jsoup,
+                     magnolia
                      )
 
 bloopSources

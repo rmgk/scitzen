@@ -44,8 +44,8 @@ object TexPages {
 
   def lstlistings: String = """
 % colors and definition for scalastyle
-\u005Cusepackage{listings}
-\u005Cusepackage{xcolor}
+\usepackage{listings}
+\usepackage{xcolor}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}

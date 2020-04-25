@@ -9,18 +9,23 @@ import bloop.integrations.sbt.BloopKeys.bloopExportJarClassifiers
 
 object Settings {
 
-  val commonCrossBuildVersions = crossScalaVersions := Seq("2.12.10", "2.13.1")
+  private val sv11 = "2.11.12"
+  private val sv12 = "2.12.11"
+  private val sv13 = "2.13.2"
+
+
+  val commonCrossBuildVersions = crossScalaVersions := Seq(sv11, sv12, sv13)
 
   val scalaVersion_211 = Def.settings(
-    scalaVersion := "2.11.12",
+    scalaVersion := sv11,
     scalacOptions ++= scalacOptionsCommon ++ scalaOptions12minus
-  )
+    )
   val scalaVersion_212 = Def.settings(
-    scalaVersion := "2.12.11",
+    scalaVersion := sv12,
     scalacOptions ++= scalacOptionsCommon ++ scalacOptions12plus ++ scalaOptions12minus
-  )
+    )
   val scalaVersion_213 = Def.settings(
-    scalaVersion := "2.13.1",
+    scalaVersion := sv13,
     scalacOptions ++= scalacOptionsCommon ++ scalacOptions12plus
     )
 
@@ -65,7 +70,7 @@ object Settings {
     "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
     "-Ywarn-unused:locals",              // Warn if a local definition is unused.
     "-Ywarn-unused:privates",            // Warn if a private member is unused.
-  )
+    )
   lazy val scalaOptions12minus = Seq(
     // do not work on 2.13
     "-Ywarn-inaccessible",               // Warn about inaccessible types in method signatures.
@@ -77,7 +82,7 @@ object Settings {
     "-Ywarn-nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
     "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
     "-Xfuture",                          // Turn on future language features.
-  )
+    )
 
   val strictCompile = Compile / compile / scalacOptions += "-Xfatal-warnings"
 
@@ -85,7 +90,7 @@ object Settings {
 }
 
 object Resolvers {
-  val stg  = resolvers += Resolver.bintrayRepo("stg-tud", "maven")
+  val stg = resolvers += Resolver.bintrayRepo("stg-tud", "maven")
 }
 
 object Dependencies {
@@ -94,22 +99,23 @@ object Dependencies {
 
   val betterFiles  = ld += "com.github.pathikrit" %% "better-files" % "3.8.0"
   val cats         = ld += "org.typelevel" %%% "cats-core" % "2.1.1"
-  val decline      = ld += "com.monovore" %%% "decline" % "1.0.0"
-  val fastparse    = ld += "com.lihaoyi" %%% "fastparse" % "2.2.4"
+  val decline      = ld += "com.monovore" %%% "decline" % "1.2.0"
+  val fastparse    = ld += "com.lihaoyi" %%% "fastparse" % "2.3.0"
   val jsoup        = ld += "org.jsoup" % "jsoup" % "1.13.1"
   val kaleidoscope = ld += "com.propensive" %%% "kaleidoscope" % "0.1.0"
+  val magnolia     = ld += "com.propensive" %%% "magnolia" % "0.15.0"
   val pprint       = ld += "com.lihaoyi" %%% "pprint" % "0.5.9"
   val scalactic    = ld += "org.scalactic" %% "scalactic" % "3.0.7"
   val scribe       = ld += "com.outr" %%% "scribe" % "2.7.12"
   val sourcecode   = ld += "com.lihaoyi" %%% "sourcecode" % "0.2.1"
-  val upickle      = ld += "com.lihaoyi" %% "upickle" % "1.0.0"
+  val upickle      = ld += "com.lihaoyi" %% "upickle" % "1.1.0"
   val toml         = ld += "tech.sparse" %%% "toml-scala" % "0.2.2"
 
   val akkaVersion = "2.6.4"
-  val akkaHttp = ld ++= (Seq("akka-http-core",
-                             "akka-http")
-                         .map(n => "com.typesafe.akka" %% n % "10.1.11") ++
-                         Seq("com.typesafe.akka" %% "akka-stream" % akkaVersion))
+  val akkaHttp    = ld ++= (Seq("akka-http-core",
+                                "akka-http")
+                            .map(n => "com.typesafe.akka" %% n % "10.1.11") ++
+                            Seq("com.typesafe.akka" %% "akka-stream" % akkaVersion))
 
   val circeVersion = "0.13.0"
 
@@ -117,21 +123,21 @@ object Dependencies {
                          "generic",
                          "generic-extras",
                          "parser")
-                     .map(n => "io.circe" %%% s"circe-$n" % circeVersion)
+  .map(n => "io.circe" %%% s"circe-$n" % circeVersion)
 
 
   // frontend
-  val normalizecss = ld += "org.webjars.npm" % "normalize.css" % "8.0.1"
-  val scalatagsVersion = "0.8.6"
-  val scalatags    = ld += "com.lihaoyi" %%% "scalatags" % scalatagsVersion
+  val normalizecss      = ld += "org.webjars.npm" % "normalize.css" % "8.0.1"
+  val scalatagsVersion  = "0.9.0"
+  val scalatags         = ld += "com.lihaoyi" %%% "scalatags" % scalatagsVersion
   val scalajsdomVersion = "1.0.0"
-  val scalajsdom   = ld += "org.scala-js" %%% "scalajs-dom" % scalajsdomVersion
-  val fontawesome  = ld += "org.webjars" % "font-awesome" % "5.10.1"
+  val scalajsdom        = ld += "org.scala-js" %%% "scalajs-dom" % scalajsdomVersion
+  val fontawesome       = ld += "org.webjars" % "font-awesome" % "5.10.1"
 
   // tests
-  val scalacheck = ld += "org.scalacheck" %%% "scalacheck" % "1.14.3" % "test"
+  val scalacheck         = ld += "org.scalacheck" %%% "scalacheck" % "1.14.3" % "test"
   val scalatestpluscheck = ld += "org.scalatestplus" %%% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % "test"
-  val scalatest  = ld += "org.scalatest" %%% "scalatest" % "3.1.1" % "test"
+  val scalatest          = ld += "org.scalatest" %%% "scalatest" % "3.1.1" % "test"
 
   // legacy
   val scalaXml   = ld += "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
