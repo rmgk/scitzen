@@ -33,8 +33,7 @@ lazy val scitzen = project.in(file("."))
                      graalVMNativeImageOptions += "--initialize-at-build-time",
                      graalVMNativeImageOptions += "--no-fallback",
                      toml,
-                     jsoup,
-                     magnolia
+                     jsoup
                      )
 
 bloopSources
