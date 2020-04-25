@@ -2,7 +2,6 @@ package scitzen.outputs
 
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
-import scitzen.parser.MacroCommand.Quote
 import scitzen.parser.{Inline, InlineText, Macro}
 
 
@@ -42,7 +41,6 @@ object SastToTextConverter {
 
   def convertInline(inners: Seq[Inline]): String = inners.map {
     case InlineText(str)         => str
-    case Macro(Quote(q), inner2) => inner2.target
     case m: Macro                => ""
   }.mkString("")
 }

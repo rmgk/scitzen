@@ -17,7 +17,7 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
 
 object Attributes {
   def a(attrs: Attribute, prov: Prov): Attributes = Attributes(List(attrs), prov)
-  def synt(attr: Attribute*) = Attributes(attr, Prov())
+  def synt(attr: Attribute*): Attributes = Attributes(attr, Prov())
   def target(string: String, prov: Prov): Attributes = Attributes.a(Attribute("", string), prov)
 
 }
@@ -49,31 +49,40 @@ case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
 sealed trait MacroCommand
 object MacroCommand {
   val (parseMap, printMap) = {
-    val seq = List(
+    val standard = List(
       "cite" -> Cite,
       "comment" -> Comment,
       "def" -> Def,
-      "fence" -> Include,
       "image" -> Image,
       "include" -> Include,
       "label" -> Label,
       "link" -> Link,
       "ref" -> Ref,
-      "code" -> Quote("`"),
-      "emph" -> Quote("_"),
-      "strong" -> Quote("*"),
-      "math" -> Quote("$")
+      "code" -> Code,
+      "emph" -> Emph,
+      "strong" -> Strong,
+      "math" -> Math
       )
-    (seq.toMap, seq.map(p => p._2 -> p._1).toMap)
+    val aliases = Map(
+      "fence" -> Include,
+      "_" -> Emph,
+      "`" -> Code,
+      "*" -> Strong,
+      "$" -> Math
+      )
+
+    (standard.toMap ++ aliases, standard.map(p => p._2 -> p._1).toMap)
   }
   def parse(str: String): MacroCommand = parseMap.getOrElse(str, Other(str))
   def print(m: MacroCommand): String = m match {
     case Other(str) => str
-    case Quote(q)   => q
     case o          => printMap(o)
   }
 
-  case class Quote(q: String) extends MacroCommand
+  object Code extends MacroCommand
+  object Emph extends MacroCommand
+  object Strong extends MacroCommand
+  object Math extends MacroCommand
   object Cite extends MacroCommand
   object Comment extends MacroCommand
   object Def extends MacroCommand
@@ -84,7 +93,6 @@ object MacroCommand {
   object Ref extends MacroCommand
   case class Other(str: String) extends MacroCommand
 
-  implicit val codecQ: upickle.default.ReadWriter[Quote]        = upickle.default.macroRW
   implicit val codecO: upickle.default.ReadWriter[Other]        = upickle.default.macroRW
   implicit val codec : upickle.default.ReadWriter[MacroCommand] = upickle.default.macroRW
 }

@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import scitzen.generic.Sast._
-import scitzen.parser.MacroCommand.Quote
+import scitzen.parser.MacroCommand.{Emph, Strong}
 import scitzen.parser._
 
 sealed trait Sast {
@@ -21,7 +21,7 @@ object Sast {
   case class Text(inline: Seq[Inline]) {
     lazy val str = {
       inline.map {
-        case Macro(_: Quote, attributes) => attributes.target
+        case Macro(Strong | Emph, attributes) => attributes.target
         case Macro(command, attributes)  => ""
         case InlineText(string)          => string
       }.mkString("").trim

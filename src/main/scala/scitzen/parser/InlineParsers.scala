@@ -3,7 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.MacroCommand.{Comment, Quote}
+import scitzen.parser.MacroCommand.{Comment, Math}
 
 
 object InlineParsers {
@@ -41,7 +41,7 @@ object InlineParsers {
     .map(_.getOrElse(Nil))
 
   def texDollar[_: P]: P[Macro] = P(withProv("$" ~ untilI("$", 0))).map {
-    case (q, p) => Macro(Quote("$"), Attributes.a(Attribute("", q), p))
+    case (q, p) => Macro(Math, Attributes.a(Attribute("", q), p))
   }
 
   def inlineSequence[_: P]: P[Seq[Inline]] = P {
@@ -60,6 +60,7 @@ object InlineParsers {
         (!(delimiter | anySpace) ~ untilE(delimiter))
         .! ~ delimiter.!
       }
-    }.map { case ((v, delimiter), prov) => Macro(Quote(delimiter), Attributes.a(Attribute("", v), prov)) }
+    }.map { case ((v, delimiter), prov) =>
+      Macro(MacroCommand.parse(delimiter), Attributes.a(Attribute("", v), prov)) }
   }
 }

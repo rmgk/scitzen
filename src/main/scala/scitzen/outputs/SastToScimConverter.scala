@@ -4,7 +4,7 @@ import cats.data.Chain
 import cats.implicits._
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
-import scitzen.parser.MacroCommand.{Comment, Def, Other, Quote}
+import scitzen.parser.MacroCommand.{Comment, Def, Other}
 import scitzen.parser.{Attribute, AttributesParser, Inline, InlineText, Macro, MacroCommand}
 
 import scala.collection.compat.immutable
@@ -132,14 +132,6 @@ case class SastToScimConverter() {
   def macroToScim(m: Macro): String = m match {
     case Macro(Other("horizontal-rule"), attributes) => attributes.target
     case Macro(Comment, attributes)                  => s":%${attributes.target}"
-    case Macro(Quote(q), inner2)                     =>
-      val replacement = q match {
-        case "`" => Other("code")
-        case "$" => Other("math")
-        case "_" => Other("emph")
-        case "*" => Other("strong")
-      }
-      macroToScim(Macro(replacement, inner2))
     case other                                       => macroToScimRaw(other)
   }
 }

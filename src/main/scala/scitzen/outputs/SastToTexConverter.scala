@@ -4,7 +4,7 @@ import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
 import scitzen.generic.{ConversionContext, Project, Reporter, Sast}
-import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Math, Other, Ref, Strong}
 import scitzen.parser.{Inline, InlineText, Macro}
 
 
@@ -71,7 +71,7 @@ class SastToTexConverter(project: Project,
 
         case SlistItem(m, _, _) :: _ =>
           ctx.fold[SlistItem, String](children) { (ctx, child) =>
-          val inlines = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]")
+            val inlines = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]")
 
             inlines.data +: sastToTex(child.content)(inlines)
           }.map { content =>
@@ -100,7 +100,7 @@ class SastToTexConverter(project: Project,
 
 
             val included = includeResolver(doc.parsed.file)
-            val stack = ctx.stack
+            val stack    = ctx.stack
 
             new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter, includeResolver)
             .sastSeqToTex(included)(ctx.push(sast)).copy(stack = stack)
@@ -200,25 +200,19 @@ class SastToTexConverter(project: Project,
     sec
   }
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
-    case InlineText(str) => latexencode(str)
+    case InlineText(str)                          => latexencode(str)
+    case Macro(Cite, attributes)                  => s"\\cite{${attributes.target}}"
+    case Macro(Code, attrs)                       => s"\\texttt{${latexencode(attrs.target)}"
+    case Macro(Comment, attributes)               => ""
+    case Macro(Def, _)                            => ""
+    case Macro(Emph, attrs)                       => s"\\emph{${latexencode(attrs.target)}"
+    case Macro(Label, attributes)                 => s"\\label{${attributes.target}}"
+    case Macro(Math, attrs)                       => s"$$${attrs.target}${latexencode(attrs.target)}$$"
+    case Macro(Other("subparagraph"), attributes) => s"\\subparagraph{${attributes.target}}"
+    case Macro(Other("textsc"), attributes)       => s"\\textsc{${attributes.target}}"
+    case Macro(Ref, attributes)                   => s"\\ref{${attributes.target}}"
+    case Macro(Strong, attrs)                     => s"\\textbf{${latexencode(attrs.target)}"
 
-    case Macro(Def, _) => ""
-
-    case Macro(Quote(q), inner2)    =>
-      val inner = latexencode(inner2.target)
-      //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
-      q.head match {
-        case '_' => s"\\emph{$inner}"
-        case '*' => s"\\textbf{$inner}"
-        case '`' => s"\\texttt{$inner}"
-        case '$' => s"$$${inner2.target}$$"
-      }
-    case Macro(Comment, attributes) => ""
-
-    case Macro(Ref, attributes) => s"\\ref{${attributes.target}}"
-
-    case Macro(Cite, attributes) =>
-      s"\\cite{${attributes.target}}"
 
     case Macro(Link, attributes) =>
       val target = attributes.target
@@ -235,16 +229,9 @@ class SastToTexConverter(project: Project,
       val target = latexencode(attributes.target)
       s"\\footnote{$target}"
 
-    case Macro(Label, attributes) => s"\\label{${attributes.target}}"
 
     case Macro(Other("tableofcontents"), attributes) =>
       List("\\clearpage", "\\tableofcontents*", "\\clearpage").mkString("\n")
-
-    case Macro(Other("subparagraph"), attributes) =>
-      s"\\subparagraph{${attributes.target}}"
-
-    case Macro(Other("textsc"), attributes) =>
-      s"\\textsc{${attributes.target}}"
 
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")

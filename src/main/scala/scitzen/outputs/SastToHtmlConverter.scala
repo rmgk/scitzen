@@ -10,7 +10,7 @@ import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef}
-import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Other, Ref, Strong, Math}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.jdk.CollectionConverters._
@@ -252,24 +252,20 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   def inlineToHTML(inline: Inline)(implicit ctx: Cta): CtxCF = inline match {
     case InlineText(str) => ctx.retc(stringFrag(str))
 
-    case Macro(Quote(q), attrs) => {
-      val inner = attrs.target
-      //scribe.warn(s"inline quote $q: $inner; ${post.sourcePath}")
-      q.head match {
-        case '_' => ctx.retc(em(inner))
-        case '*' => ctx.retc(strong(inner))
-        case '`' => ctx.retc(code(inner))
-        case '$' =>
+    case Macro(Strong, attrs) => ctx.retc(strong(attrs.target))
+    case Macro(Emph, attrs)   => ctx.retc(em(attrs.target))
+    case Macro(Code, attrs)   => ctx.retc(code(attrs.target))
 
-          val katexdefs      = sdoc.named.get("katexTemplate")
-                                   .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
-                                   .map(_.contentAsString).getOrElse("")
-          val (mathml, ictx) = ctx.katex(inner, {
-            (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream((katexdefs + inner).getBytes(StandardCharsets.UTF_8))).!!
-          })
-          ictx.retc(span(raw(mathml)))
-      }
-    }
+    case Macro(Math, attrs) =>
+      val katexdefs      = sdoc.named.get("katexTemplate")
+                               .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
+                               .map(_.contentAsString).getOrElse("")
+      val inner          = attrs.target
+      val (mathml, ictx) = ctx.katex(inner, {
+        (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream((katexdefs + inner).getBytes(StandardCharsets.UTF_8))).!!
+      })
+      ictx.retc(span(raw(mathml)))
+
 
     case Macro(Comment, attributes) => ctx.empty
 

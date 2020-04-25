@@ -3,7 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.MacroCommand.{Cite, Other, Quote}
+import scitzen.parser.MacroCommand.{Cite, Code, Emph, Other}
 
 object MacroParsers {
   // ensure consistency between detect start and start
@@ -22,9 +22,9 @@ object MacroParsers {
           case "fsysname"    => Macro(Other("n"), Attributes.a(Attribute("", "fsysname"), p))
           case "basesysname" => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
           case "citet"       => Macro(Cite, Attributes(List(Attribute("style", "name"), Attribute("", c)), p))
-          case "textit"      => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
-          case "emph"        => Macro(Quote("_"), Attributes.a(Attribute("", c), p))
-          case "code"        => Macro(Quote("`"), Attributes.a(Attribute("", c), p))
+          case "textit"      => Macro(Emph, Attributes.a(Attribute("", c), p))
+          case "emph"        => Macro(Emph, Attributes.a(Attribute("", c), p))
+          case "code"        => Macro(Code, Attributes.a(Attribute("", c), p))
 
           case a @ ("begin" | "end" | "newcommand") => InlineText(s"\\$a{$c}")
 
