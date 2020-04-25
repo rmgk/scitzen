@@ -132,7 +132,7 @@ class SastToSastConverter(project: Project,
     case Macro(Label, attributes) =>
       ctx.addSection(attributes.target, SastRef(cwf, ctx.stack.head)).ret(mcro)
 
-    case Macro(Include, attributes) =>
+    case Macro(Include, attributes) if attributes.arguments.isEmpty =>
       project.resolve(cwd, attributes.target) match {
         case None       =>
           scribe.error(s"unknown include ${attributes.target}" + reporter(mcro))

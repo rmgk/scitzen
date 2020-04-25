@@ -10,7 +10,7 @@ object DelimitedBlockParsers {
   def anyStart[_: P]: P[String] = P(CharIn(".=`").rep(3).!)
 
   def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
-    (start ~ AttributesParser.list.? ~ spaceLine ~/ Pass)
+    (start ~ AttributesParser.braces.? ~ spaceLine ~/ Pass)
     .flatMap { case (delimiter, attr) =>
       def closing = eol ~ delimiter ~ spaceLine
 

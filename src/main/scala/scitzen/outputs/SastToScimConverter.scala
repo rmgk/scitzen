@@ -13,19 +13,33 @@ import scala.util.matching.Regex
 
 case class SastToScimConverter() {
 
-  val attributeEscapes = """[;=\]}\n]|^[\s"\[]|\s$""".r
-  val countQuotes      = """(]"*)""".r
+  //val attributeEscapes = """[;=\]}\n]|^[\s"\[]|\s$""".r
+  val countQuotes = """(]"*)""".r
 
-  def encodeValue(v: String): String = {
-    if (!attributeEscapes.pattern.matcher(v).find()) v
-    else if (!v.contains("\"")) s""""$v""""
-         else {
-           val mi         = countQuotes.findAllIn(v)
-           val quoteCount = if (mi.isEmpty) 0 else mi.map(_.length).max
-           val quotes     = "\"" * quoteCount
-           s"""$quotes[$v]$quotes"""
-         }
+  def encodeValue(value: String, isNamed: Boolean): String = {
+    def parses(quoted: String) = {
+      val res = fastparse.parse(quoted,
+                                if (isNamed)
+                                  AttributesParser.positionalAttribute(_)
+                                else AttributesParser.attribute(_))
+      res.get.value.value == value
+    }
+
+    def pickFirst(candidate: (() => String)*): Option[String] = {
+      candidate.view.map(_.apply()).find(parses)
+    }
+
+
+    pickFirst(() => value,
+              () => s""""$value"""",
+              () => s"[$value]").getOrElse {
+      val mi         = countQuotes.findAllIn(value)
+      val quoteCount = if (mi.isEmpty) 0 else mi.map(_.length).max
+      val quotes     = "\"" * quoteCount
+      s"""$quotes[$value]$quotes"""
+    }
   }
+
 
   def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): Chain[String] = {
     if (!force && attributes.isEmpty) Chain.nil
@@ -37,11 +51,11 @@ case class SastToScimConverter() {
     if (!force && attributes.isEmpty) return ""
     val keylen = (0 +: attributes.map(_.id.length)).max
     val pairs  = attributes.map {
-      case Attribute("", v) => encodeValue(v)
+      case Attribute("", v) => encodeValue(v, isNamed = false)
       case Attribute(k, v)  =>
         val spaces = " " * math.max(keylen - k.length, 0)
-        if (spacy) s"""$k $spaces= ${encodeValue(v)}"""
-        else s"""$k=${encodeValue(v)}"""
+        if (spacy) s"""$k $spaces= ${encodeValue(v, isNamed = true)}"""
+        else s"""$k=${encodeValue(v, isNamed = true)}"""
     }
 
     if (!(spacy && attributes.size > 1)) {
