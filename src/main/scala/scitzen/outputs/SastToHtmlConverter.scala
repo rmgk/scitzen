@@ -10,7 +10,7 @@ import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef}
-import scitzen.parser.MacroCommand.{Cite, Comment, Def, Fence, Image, Include, Label, Link, Other, Quote, Ref}
+import scitzen.parser.MacroCommand.{Cite, Comment, Def, Image, Include, Label, Link, Other, Quote, Ref}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.jdk.CollectionConverters._
@@ -126,30 +126,38 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                     ))))
 
         case Macro(Include, attributes) =>
-          pathManager.findDoc(attributes.target) match {
-            case Some(doc) =>
-              val stack = ctx.stack
-              val sast  = includeResolver(doc.parsed.file)
-              new SastToHtmlConverter(bundle,
-                                      pathManager.changeWorkingFile(doc.parsed.file),
-                                      bibliography,
-                                      doc.analyzed,
-                                      sync,
-                                      doc.parsed.reporter,
-                                      includeResolver)
-              .convertSeq(sast)(ctx.push(singleSast))
-              .copy(stack = stack)
-            case None      =>
-              scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
+          attributes.arguments.headOption match {
+            case Some("code") =>
+              pathManager.resolve(attributes.target) match {
+                case None       => inlineValuesToHTML(List(mcro))
+                case Some(file) =>
+                  convertSingle(SBlock(attributes, Fenced(file.contentAsString)))
+              }
+
+            case None =>
+              pathManager.findDoc(attributes.target) match {
+                case Some(doc) =>
+                  val stack = ctx.stack
+                  val sast  = includeResolver(doc.parsed.file)
+                  new SastToHtmlConverter(bundle,
+                                          pathManager.changeWorkingFile(doc.parsed.file),
+                                          bibliography,
+                                          doc.analyzed,
+                                          sync,
+                                          doc.parsed.reporter,
+                                          includeResolver)
+                  .convertSeq(sast)(ctx.push(singleSast))
+                  .copy(stack = stack)
+                case None      =>
+                  scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
+                  ctx.empty
+              }
+
+            case Some(other) =>
+              scribe.error(s"unknown include type ${other}" + reporter(attributes.prov))
               ctx.empty
           }
 
-        case Macro(Fence, attributes) =>
-          pathManager.project.resolve(pathManager.cwd, attributes.target) match {
-            case None       => inlineValuesToHTML(List(mcro))
-            case Some(file) =>
-              convertSingle(SBlock(attributes, Fenced(file.contentAsString)))
-          }
 
         case other =>
           inlineValuesToHTML(List(other))
@@ -344,7 +352,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
     case Macro(Def, _) => ctx.empty
 
-    case mcro @ Macro(Fence | Image | Include, attributes) =>
+    case mcro @ Macro(Image | Include, attributes) =>
       ctx.retc(unknownMacroOutput(mcro))
 
 

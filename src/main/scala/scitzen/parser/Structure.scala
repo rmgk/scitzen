@@ -4,6 +4,7 @@ package scitzen.parser
 case class Attributes(raw: Seq[Attribute], prov: Prov) {
   def all = raw
   lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
+  lazy val arguments : Seq[String]         = positional.dropRight(1)
   lazy val target    : String              = positional.last
   lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
   def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other, prov)
@@ -17,6 +18,8 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
 object Attributes {
   def a(attrs: Attribute, prov: Prov): Attributes = Attributes(List(attrs), prov)
   def synt(attr: Attribute*) = Attributes(attr, Prov())
+  def target(string: String, prov: Prov): Attributes = Attributes.a(Attribute("", string), prov)
+
 }
 
 case class Block(rawAttributes: Seq[Attribute], prov: Prov, content: BlockContent) {
@@ -50,12 +53,16 @@ object MacroCommand {
       "cite" -> Cite,
       "comment" -> Comment,
       "def" -> Def,
-      "fence" -> Fence,
+      "fence" -> Include,
       "image" -> Image,
       "include" -> Include,
       "label" -> Label,
       "link" -> Link,
       "ref" -> Ref,
+      "code" -> Quote("`"),
+      "emph" -> Quote("_"),
+      "strong" -> Quote("*"),
+      "math" -> Quote("$")
       )
     (seq.toMap, seq.map(p => p._2 -> p._1).toMap)
   }
@@ -70,7 +77,6 @@ object MacroCommand {
   object Cite extends MacroCommand
   object Comment extends MacroCommand
   object Def extends MacroCommand
-  object Fence extends MacroCommand
   object Image extends MacroCommand
   object Include extends MacroCommand
   object Label extends MacroCommand
