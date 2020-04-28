@@ -44,14 +44,14 @@ object Bibliography {
       val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
       cacheDir.createDirectories()
       val cachefile = cacheDir / (hash + ".json")
-      if (cachefile.exists) {cachefile.contentAsString}
-      else {
-        val res = scala.sys.process.Process(Seq("pandoc-citeproc",
-                                                "--bib2json",
-                                                source.pathAsString)).!!
-        cachefile.write(res)
-        res
+      if (!cachefile.exists) {
+        new ProcessBuilder("pandoc-citeproc",
+                           "--bib2json",
+                           source.pathAsString)
+        .inheritIO()
+        .redirectOutput(cachefile.toJava).start().waitFor()
       }
+      cachefile.contentAsString
     }
     ujson.read(jsonStr).arr.iterator.map { e =>
       val obj = e.obj

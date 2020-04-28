@@ -71,8 +71,6 @@ object ConvertHtml {
     }
 
 
-
-
     def convertDoc(doc: FullDoc, pathManager: HtmlPathManager, ctx: ConversionContext[_]): ConversionContext[_] = {
 
       val citations = if (bibEntries.isEmpty) Nil else {
@@ -137,8 +135,10 @@ object ConvertHtml {
 
         val docsCtx = dm.fulldocs.foldLeft(outputCtx.ret(Map.empty[File, List[Sast]])) { (ctx, doc) =>
           val res = SastToSastConverter.preprocessRecursive(doc, ctx, pathManager.project.documentManager, ctx.data, conversionPreproc)
+                                       .execTasks()
           convertDoc(doc, pathManager.changeWorkingFile(doc.parsed.file), res).ret(res.data)
         }
+
 
         val generatedIndex = GenIndexPage.makeIndex(dm, project, reverse = true, nlp = nlp)
         val sdoc           = new AnalyzedDoc(generatedIndex, new SastAnalyzer(m => ""))
@@ -164,10 +164,8 @@ object ConvertHtml {
         convertedCtx
     }
 
-    import scala.jdk.CollectionConverters._
-    resultContext.tasks.asJava.parallelStream().forEach { ct =>
-      ct.run()
-    }
+
+    resultContext.execTasks()
 
 
     if (resultContext.katexMap.nonEmpty) {

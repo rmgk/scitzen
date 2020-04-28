@@ -1,12 +1,9 @@
 package scitzen.extern
 
-import java.io.ByteArrayInputStream
+import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 
-import better.files.File
-
-import scala.sys.process.Process
-
+import better.files._
 
 object Graphviz {
   def convert(content: String, working: File, layout: String, format: String): ConvertSchedulable[File] = {
@@ -22,12 +19,13 @@ object Graphviz {
           dir.createDirectories()
 
           val start   = System.nanoTime()
-          val command = List("dot",
-                             s"-K$layout",
-                             s"-T$format",
-                             s"-o${target.pathAsString}")
-          (Process(command) #<
-           new ByteArrayInputStream(bytes)).!
+          val process = new ProcessBuilder("dot",
+                                           s"-K$layout",
+                                           s"-T$format",
+                                           s"-o${target.pathAsString}")
+          .inheritIO().redirectInput(Redirect.PIPE).start()
+          process.getOutputStream.autoClosed.foreach {_.write(bytes)}
+          process.waitFor()
           scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
         }
       }))

@@ -155,7 +155,12 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
                               project.cacheDir,
                               gr.split("\\s+", 2)(1),
                               preferredFormat)
-                     .map(svg => makeImageMacro(svg)))
+                     .map(img => makeImageMacro(img)))
+      case gr @ rex"mermaid"    =>
+        Some(Mermaid.convert(content,
+                             project.cacheDir,
+                             preferredFormat)
+                    .map(img => makeImageMacro(img)))
       case other                =>
         scribe.warn(s"unknown converter $other")
         None

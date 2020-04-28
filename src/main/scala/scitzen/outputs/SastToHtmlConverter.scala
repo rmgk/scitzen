@@ -1,7 +1,6 @@
 package scitzen.outputs
 
-import java.io.ByteArrayInputStream
-import java.nio.charset.StandardCharsets
+import java.lang.ProcessBuilder.Redirect
 
 import better.files._
 import cats.data.Chain
@@ -10,7 +9,7 @@ import scalatags.generic.Bundle
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef}
-import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Other, Ref, Strong, Math}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Math, Other, Ref, Strong}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.jdk.CollectionConverters._
@@ -262,7 +261,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                                .map(_.contentAsString).getOrElse("")
       val inner          = attrs.target
       val (mathml, ictx) = ctx.katex(inner, {
-        (scala.sys.process.Process(s"katex") #< new ByteArrayInputStream((katexdefs + inner).getBytes(StandardCharsets.UTF_8))).!!
+        val process = new ProcessBuilder("katex")
+        .redirectInput(Redirect.PIPE)
+        .redirectOutput(Redirect.PIPE)
+        .start()
+        process.getOutputStream.writeAndClose(katexdefs + inner)
+        process.waitFor()
+        process.getInputStream.asString()
       })
       ictx.retc(span(raw(mathml)))
 

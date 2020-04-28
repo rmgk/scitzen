@@ -38,7 +38,7 @@ case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
     resources.foreach { case (img, path) =>
       val target = File(outputDir.path.resolve(path))
       if (!target.exists) {
-        scribe.info(s"copy $img to $target")
+        scribe.info(s"hardlink $img to $target")
         target.parent.createDirectoryIfNotExists()
         img.linkTo(target, symbolic = false)
       }

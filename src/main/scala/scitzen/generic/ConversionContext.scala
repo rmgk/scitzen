@@ -40,11 +40,11 @@ case class ConversionContext[T]
   def push(sast: Sast): ConversionContext[T] = {
     val droppedStack = sast match {
       case Section(_, level, _) =>
-        stack.dropWhile{
+        stack.dropWhile {
           case Section(_, l, _) => l >= level
-          case other => false
+          case other            => false
         }
-      case other => stack
+      case other                => stack
     }
     copy(stack = sast :: droppedStack)
   }
@@ -90,6 +90,12 @@ case class ConversionContext[T]
     }
   }
 
+
+  def execTasks(): ConversionContext[T] = {
+    import scala.jdk.CollectionConverters._
+    tasks.asJava.parallelStream().forEach { ct => ct.run() }
+    copy(tasks = Nil)
+  }
 
 }
 
