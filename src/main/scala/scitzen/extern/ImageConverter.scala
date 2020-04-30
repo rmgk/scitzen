@@ -70,12 +70,14 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
   }
 
   trait CommandFunction {
-    def genCommand(source: String, target: String): List[String]
+    def genCommand(source: File, target: File): List[String]
   }
 
   def pdfToCairo(file: File): (File, Option[ConvertTask]) = {
     convertExternal(file, (source, target) => {
-      List("pdftocairo", s"-$preferredFormat", source, target)
+      List("pdftocairo", "-singlefile", s"-$preferredFormat",
+           source.pathAsString,
+           target.sibling(target.nameWithoutExtension).pathAsString)
     })
   }
 
@@ -91,7 +93,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
         override def run(): Unit = {
           targetfile.parent.createDirectories()
           scribe.debug(s"converting $file to $targetfile")
-          new ProcessBuilder(command.genCommand(file.pathAsString, targetfile.pathAsString).asJava)
+          new ProcessBuilder(command.genCommand(file, targetfile).asJava)
           .inheritIO().start().waitFor()
         }
       })
@@ -100,7 +102,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
 
   def svgToCairo(file: File): (File, Option[ConvertTask]) = {
     convertExternal(file, (source, target) => {
-      List("cairosvg", source, "-o", target)
+      List("cairosvg", source.pathAsString, "-o", target.pathAsString)
     })
   }
 
