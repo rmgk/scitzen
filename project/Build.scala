@@ -114,14 +114,10 @@ object Resolvers {
     publishTo := {
       val proj = moduleName.value
       val ver  = version.value
-      if (isSnapshot.value) {
-        None // Bintray does not support snapshots
-      } else {
-        val url = new java.net.URL(
-          s"https://api.bintray.com/content/$bintrayOrganization/maven/$proj/$ver")
-        val patterns = Resolver.mavenStylePatterns
-        Some(Resolver.url("bintray", url)(patterns))
-      }
+      val url = new java.net.URL(
+        s"https://api.bintray.com/content/$bintrayOrganization/maven/$proj/$ver")
+      val patterns = Resolver.mavenStylePatterns
+      Some(Resolver.url("bintray", url)(patterns))
     }
   )
 }
