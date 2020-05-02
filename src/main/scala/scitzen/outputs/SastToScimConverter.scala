@@ -5,7 +5,7 @@ import cats.implicits._
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Comment, Def, Other}
-import scitzen.parser.{Attribute, AttributesParser, Inline, InlineText, Macro, MacroCommand}
+import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineText, Macro, MacroCommand}
 
 import scala.collection.compat.immutable
 import scala.util.matching.Regex
@@ -41,16 +41,16 @@ case class SastToScimConverter() {
   }
 
 
-  def attributesToScim(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): Chain[String] = {
-    if (!force && attributes.isEmpty) Chain.nil
+  def attributesToScim(attributes: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): Chain[String] = {
+    if (!force && attributes.raw.isEmpty) Chain.nil
     else Chain(attributesToScimF(attributes, spacy, force, light))
   }
 
 
-  def attributesToScimF(attributes: Seq[Attribute], spacy: Boolean, force: Boolean, light: Boolean = false): String = {
-    if (!force && attributes.isEmpty) return ""
-    val keylen = (0 +: attributes.map(_.id.length)).max
-    val pairs  = attributes.map {
+  def attributesToScimF(attributes: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String = {
+    if (!force && attributes.raw.isEmpty) return ""
+    val keylen = (0 +: attributes.raw.map(_.id.length)).max
+    val pairs  = attributes.raw.map {
       case Attribute("", v) => encodeValue(v, isNamed = false)
       case Attribute(k, v)  =>
         val spaces = " " * math.max(keylen - k.length, 0)
@@ -58,11 +58,11 @@ case class SastToScimConverter() {
         else s"""$k=${encodeValue(v, isNamed = true)}"""
     }
 
-    if (!(spacy && attributes.size > 1)) {
-      if (light) pairs.mkString("", "; ", "\n")
+    if (!(spacy && attributes.raw.size > 1)) {
+      if (light && attributes.positional.isEmpty) pairs.mkString("", "; ", "\n")
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
     } else {
-      if (light) pairs.mkString("", "\n", "\n")
+      if (light && attributes.positional.isEmpty) pairs.mkString("", "\n", "\n")
       else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
     }
   }
@@ -76,7 +76,7 @@ case class SastToScimConverter() {
 
     case Section(title, level, attributes) =>
       ("=" * level + " " + inlineToScim(title.inline)) +:
-      attributesToScim(attributes.raw, spacy = true, force = false, light = true)
+      attributesToScim(attributes, spacy = true, force = false, light = true)
 
     case Slist(children) => Chain.fromSeq(children).flatMap {
       case SlistItem(marker, inner, NoContent) =>
@@ -112,7 +112,7 @@ case class SastToScimConverter() {
       delimiter.charAt(0) match {
         case '=' =>
           (delimiter +
-           attributesToScimF(sb.attributes.raw, force = false, spacy = false)) +:
+           attributesToScimF(sb.attributes, force = false, spacy = false)) +:
           strippedContent :+
           delimiter
         // space indented blocks are currently only used for description lists
@@ -128,14 +128,14 @@ case class SastToScimConverter() {
     case Fenced(text)       =>
       val foundlen  = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
       val delimiter = "`" * math.max(3, foundlen)
-      Chain(delimiter + attributesToScimF(sb.attributes.raw, spacy = false, force = false),
+      Chain(delimiter + attributesToScimF(sb.attributes, spacy = false, force = false),
             text,
             delimiter)
   }
 
 
   def macroToScimRaw(mcro: Macro, spacy: Boolean = false): String = {
-    s":${MacroCommand.print(mcro.command)}${attributesToScimF(mcro.attributes.all, spacy, force = true)}"
+    s":${MacroCommand.print(mcro.command)}${attributesToScimF(mcro.attributes, spacy, force = true)}"
   }
 
   def inlineToScim(inners: Seq[Inline]): String = inners.map {

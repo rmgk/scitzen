@@ -17,7 +17,7 @@ object BlockParsers {
 
   def sectionTitle[_: P]: P[SectionTitle] =
     P(sectionStart ~ untilI(eol) ~
-      (AttributesParser.noBraces | (":def" ~ AttributesParser.braces ~ spaceLine ~ spaceLine)).?)
+      (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
     .map { case (level, str, ll) => SectionTitle(level, str, ll.getOrElse(Nil)) }
 
   def horizontalRuleChars[_: P] = P(AnyChar("'\\-*"))

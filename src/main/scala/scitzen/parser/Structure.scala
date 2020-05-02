@@ -2,11 +2,10 @@ package scitzen.parser
 
 
 case class Attributes(raw: Seq[Attribute], prov: Prov) {
-  def all = raw
-  lazy val positional: Seq[String]         = all.collect { case Attribute("", value) => value }
+  lazy val positional: Seq[String]         = raw.collect { case Attribute("", value) => value }
   lazy val arguments : Seq[String]         = positional.dropRight(1)
   lazy val target    : String              = positional.last
-  lazy val named     : Map[String, String] = all.collect { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
+  lazy val named     : Map[String, String] = raw.collect { case Attribute(id, value) if id.nonEmpty => (id, value) }.toMap
   def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other, prov)
   def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw, prov)
   def remove(key: String): Attributes = Attributes(raw.filterNot(_.id == key), prov)

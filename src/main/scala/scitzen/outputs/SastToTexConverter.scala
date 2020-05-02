@@ -19,10 +19,9 @@ class SastToTexConverter(project: Project,
   type Cta = Ctx[_]
 
   def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = mainSast match {
-    case List(section @ Section(title, content, _)) =>
+    case (section @ Section(title, _, _)) :: rest =>
       val ilc = inlineValuesToTex(title.inline)
-      ilc.push(section)
-         .retc(s"\\title{${ilc.data}}\\maketitle{}")
+      s"\\title{${ilc.data}}\\maketitle{}" +: sastSeqToTex(rest)(ilc.push(section))
 
     case list => sastSeqToTex(list)(ctx)
   }
@@ -47,14 +46,22 @@ class SastToTexConverter(project: Project,
     ctx.fold(b) { (ctx, sast) => sastToTex(sast)(ctx) }
   }
 
+
+  val sectioning: Int => String = nesting => {
+    // "book", "part", "chapter",
+    val secs = Array("", "section", "subsection", "paragraph")
+    val sec  = secs.lift(nesting).getOrElse("paragraph")
+    sec
+  }
+
   def sastToTex(sast: Sast)(implicit ctx: Cta): CtxCS = sast match {
 
     case NoContent => ctx.empty
 
     case tlBlock: SBlock => blockToTex(tlBlock)
 
-    case section @ Section(title, level, _) =>
-      val sec = sectioning(level)
+    case section @ Section(title, level, attr) =>
+      val sec = if (attr.positional.lastOption.isDefined) attr.target else sectioning(level)
       val ilc = inlineValuesToTex(title.inline)
       ilc.push(section).retc(s"\\$sec{${ilc.data}}")
 
@@ -65,13 +72,13 @@ class SastToTexConverter(project: Project,
         case SlistItem(m, text, NoContent) :: _ =>
           "\\begin{itemize}" +:
           ctx.fold[SlistItem, String](children) { (ctx, child) =>
-            inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item" + s))
+            inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item{}" + s))
           } :+
           "\\end{itemize}"
 
         case SlistItem(m, _, _) :: _ =>
           ctx.fold[SlistItem, String](children) { (ctx, child) =>
-            val inlines = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]")
+            val inlines = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]{}")
 
             inlines.data +: sastToTex(child.content)(inlines)
           }.map { content =>
@@ -194,11 +201,7 @@ class SastToTexConverter(project: Project,
 
   }
 
-  val sectioning: Int => String = nesting => {
-    val secs = Array("book", "part", "chapter", "section", "subsection", "paragraph")
-    val sec  = secs.lift(nesting).getOrElse("paragraph")
-    sec
-  }
+
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
     case InlineText(str)                          => latexencode(str)
     case Macro(Cite, attributes)                  => s"\\cite{${attributes.target}}"
@@ -235,7 +238,7 @@ class SastToTexConverter(project: Project,
 
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
-      s"$command[${attributes.all.mkString(",")}]"
+      s"$command[${attributes.raw.mkString(",")}]"
   }.mkString(""))
 
   def reportPos(m: Macro): String = reporter(m)
