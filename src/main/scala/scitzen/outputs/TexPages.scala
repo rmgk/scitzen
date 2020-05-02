@@ -142,7 +142,7 @@ object TexPages {
       )
   }
 
-  def wrap(content: Chain[String], authorsStr: String, layout: String, bibliography: Option[String]): String = {
+  def wrap(content: Chain[String], authorsStr: String, layout: String, bibliography: Option[String], raw: String): String = {
     val authors       = Chain.fromSeq {
       Parse.paragraph(authorsStr, Prov()).toTry.get.collect {
         case Macro(Other("author"), attributes) => (attributes.positional.head, attributes.positional.tail)
@@ -171,6 +171,7 @@ object TexPages {
       case "acmconf" =>
         Chain(
           acmHeader,
+          raw,
           s"\\begin{document}"
           ) ++ authorstrings ++ content ++ importBibACM :+
         s"\\end{document}"
@@ -180,6 +181,7 @@ object TexPages {
                        memoirPackages ++ proofboxes ++
                        theorems) :+
                       //"\\abstractnum" :+
+                      raw :+
                       s"\\begin{document}" /*:+ "\\sloppy"*/) ++
         content ++ importBibNatbib :+ s"\\end{document}"
 

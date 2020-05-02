@@ -66,16 +66,22 @@ object ConvertPdf {
     val targetfile = project.outputdir / "output.pdf"
 
 
-    val bibliography = dm.fulldocs.collectFirstSome { pd =>
-      pd.analyzed.named.get("bibliography").map(s => pd.parsed.file.parent / s.trim)
-    }.map(_.pathAsString)
+    def fileFromParam(param: String) = {
+      dm.fulldocs.collectFirstSome { pd =>
+        pd.analyzed.named.get(param).map(s => pd.parsed.file.parent / s.trim)
+      }
+    }
+
+    val bibliography = fileFromParam("bibliography").map(_.pathAsString)
     scribe.debug(s"bib is $bibliography")
     val authors = dm.analyzed.collectFoldSome(_.named.get("authors"))
+
+    val macros = fileFromParam("texMathMacroFile").map(_.contentAsString).getOrElse("")
 
     val jobname     = targetfile.nameWithoutExtension(includeAll = false)
     val temptexfile = cacheDir / (jobname + ".tex")
     val temptexdir  = cacheDir / "tex"
-    temptexfile.write(TexPages.wrap(content, authors, "memoir", bibliography))
+    temptexfile.write(TexPages.wrap(content, authors, "memoir", bibliography, macros))
     latexmk(temptexdir, jobname, temptexfile).copyTo(targetfile, overwrite = true)
   }
 
