@@ -1,6 +1,8 @@
 package scitzen.generic
 
 import better.files.File
+import cats.data.Chain
+import scitzen.parser.Macro
 
 
 case class FullDoc(parsed: ParsedDocument, analyzed: AnalyzedDoc) {
@@ -30,5 +32,7 @@ class DocumentManager(root: File) {
     fulldocs.map(fd => fd.parsed.file -> fd).toMap
 
   lazy val attributes: Map[String, String] = analyzed.flatMap(_.named).toMap
+
+  lazy val macros: Chain[Macro] = Chain.fromSeq(analyzed).flatMap(a => Chain.fromSeq(a.analyzeResult.macros))
 
 }

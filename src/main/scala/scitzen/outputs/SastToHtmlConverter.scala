@@ -349,7 +349,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
         case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter().macroToScim(mcro)))
 
-        case "tableofcontents" | "bookmatter" => ctx.empty
+        case "tableofcontents" => ctx.empty
 
         case other => ctx.retc(unknownMacroOutput(mcro))
 

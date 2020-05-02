@@ -18,7 +18,11 @@ class SastToTexConverter(project: Project,
   type Ctx[T] = ConversionContext[T]
   type Cta = Ctx[_]
 
-  def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = sastSeqToTex(mainSast)(ctx)
+  def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = {
+    project.documentManager.macros.find(_.command == Other("tableofcontents"))
+           .fold(Chain.empty[String])(_ => Chain("\\frontmatter")) ++:
+    sastSeqToTex(mainSast)(ctx)
+  }
 
   def latexencode(input: String): String = {
     val dummyForBSreplace = "»§ dummy to replace later ℓ«"
@@ -125,8 +129,6 @@ class SastToTexConverter(project: Project,
             scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
             ctx.empty
         }
-
-      case Macro(Other("bookmatter"), attr) => ctx.retc {s"\\${attr.target}matter{}"}
 
       case other =>
         inlineValuesToTex(List(other)).single
@@ -251,7 +253,7 @@ class SastToTexConverter(project: Project,
 
 
     case Macro(Other("tableofcontents"), attributes) =>
-      List("\\clearpage", "\\tableofcontents*", "\\clearpage").mkString("\n")
+      List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
 
     case im @ Macro(command, attributes) =>
       scribe.warn(s"inline macro “$command[$attributes]”")
