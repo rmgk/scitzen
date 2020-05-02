@@ -13,12 +13,17 @@ object BlockParsers {
       ((untilE(eol ~ spaceLine) ~ eol).! ~ spaceLine))
       .map {NormalBlock("", _)})
 
-  def sectionStart[_: P]: P[Int] = P("=".rep(1).! ~ " ").map(_.length)
+  def sectionStart[_: P]: P[(Int, Seq[Attribute])] = P("=".rep(1).! ~ AttributesParser.braces.? ~ " ")
+  .map {
+    case (e, attr) => (e.length, attr.getOrElse(Nil))
+  }
 
   def sectionTitle[_: P]: P[SectionTitle] =
     P(sectionStart ~ untilI(eol) ~
       (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
-    .map { case (level, str, ll) => SectionTitle(level, str, ll.getOrElse(Nil)) }
+    .map { case (level, pattr, str, attrl) =>
+      SectionTitle(level, str, List(pattr, attrl.getOrElse(Nil)).flatten)
+    }
 
   def horizontalRuleChars[_: P] = P(AnyChar("'\\-*"))
   def horizontalRule[_: P]: P[Macro] = P(Index ~ (verticalSpaces ~ horizontalRuleChars.!.flatMap { chr =>

@@ -75,8 +75,14 @@ case class SastToScimConverter() {
     case NoContent => Chain.empty
 
     case Section(title, level, attributes) =>
-      ("=" * level + " " + inlineToScim(title.inline)) +:
-      attributesToScim(attributes, spacy = true, force = false, light = true)
+      if (attributes.raw.size == 1 && attributes.positional.size == 1) {
+        Chain("=" * level + attributesToScim(attributes, spacy = false, force = false).headOption.get + " " + inlineToScim(title.inline))
+      }
+      else {
+        ("=" * level + " " + inlineToScim(title.inline)) +:
+        attributesToScim(attributes, spacy = true, force = false, light = true)
+      }
+
 
     case Slist(children) => Chain.fromSeq(children).flatMap {
       case SlistItem(marker, inner, NoContent) =>
