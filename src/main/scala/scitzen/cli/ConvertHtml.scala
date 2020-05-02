@@ -71,7 +71,10 @@ object ConvertHtml {
     }
 
 
-    def convertDoc(doc: FullDoc, pathManager: HtmlPathManager, ctx: ConversionContext[_]): ConversionContext[_] = {
+    def convertDoc(doc: FullDoc,
+                   pathManager: HtmlPathManager,
+                   ctx: ConversionContext[Map[File, List[Sast]]])
+    : ConversionContext[Map[File, List[Sast]]] = {
 
       val citations = if (bibEntries.isEmpty) Nil else {
         import scalatags.Text.all.{id, li, ol}
@@ -82,7 +85,9 @@ object ConvertHtml {
       val analyzedDoc = doc.analyzed
 
 
-      val preprocessed = SastToSastConverter.preprocessRecursive(doc, ctx, pathManager.project.documentManager, Map.empty, conversionPreproc)
+      val preprocessed = SastToSastConverter.preprocessRecursive(
+        doc, ctx,
+        pathManager.project.documentManager, conversionPreproc).execTasks()
 
       val converter  = new SastToHtmlConverter(bundle = scalatags.Text,
                                                pathManager = pathManager,
@@ -104,7 +109,7 @@ object ConvertHtml {
                                                                        .getOrElse(""))
       val target    = pathManager.translatePost(doc.parsed.file)
       target.write(res)
-      converted
+      converted.ret(preprocessed.data)
     }
 
     val preConversionContext =
@@ -120,7 +125,7 @@ object ConvertHtml {
         val pathManager = HtmlPathManager(sourcefile,
                                           project,
                                           postoutput)
-        val resctx      = convertDoc(doc, pathManager, preConversionContext)
+        val resctx      = convertDoc(doc, pathManager, preConversionContext.ret(Map.empty))
         pathManager.copyResources(resctx.resourceMap)
         resctx
       case _                =>
@@ -134,9 +139,7 @@ object ConvertHtml {
                                           postoutput)
 
         val docsCtx = dm.fulldocs.foldLeft(outputCtx.ret(Map.empty[File, List[Sast]])) { (ctx, doc) =>
-          val res = SastToSastConverter.preprocessRecursive(doc, ctx, pathManager.project.documentManager, ctx.data, conversionPreproc)
-                                       .execTasks()
-          convertDoc(doc, pathManager.changeWorkingFile(doc.parsed.file), res).ret(res.data)
+          convertDoc(doc, pathManager.changeWorkingFile(doc.parsed.file), ctx)
         }
 
 

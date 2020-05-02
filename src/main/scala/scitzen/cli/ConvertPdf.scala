@@ -41,7 +41,7 @@ object ConvertPdf {
     }
 
     val docsCtx = dm.fulldocs.foldLeft(preConversionContext.ret(Map.empty[File, List[Sast]])) { (ctx, doc) =>
-      SastToSastConverter.preprocessRecursive(doc, ctx, dm, ctx.data, preprocConverter)
+      SastToSastConverter.preprocessRecursive(doc, ctx, dm, preprocConverter)
     }
 
 

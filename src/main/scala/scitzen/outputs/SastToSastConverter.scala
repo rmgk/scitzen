@@ -11,11 +11,11 @@ import scitzen.parser.{Attribute, Inline, InlineText, Macro}
 
 object SastToSastConverter {
   def preprocessRecursive(doc: FullDoc,
-                          ctx: ConversionContext[_],
+                          ctx: ConversionContext[Map[File, List[Sast]]],
                           documentManager: DocumentManager,
-                          acc: Map[File, List[Sast]],
                           conversionPreproc: ParsedDocument => SastToSastConverter)
   : ConversionContext[Map[File, List[Sast]]] = {
+    val acc = ctx.data
     if (acc.contains(doc.parsed.file)) return ctx.ret(acc)
     val preprocessed = conversionPreproc(doc.parsed).convertSeq(doc.sast)(ctx)
     val newctx       = preprocessed.copy(includes = Nil).ret(acc.updated(doc.parsed.file, preprocessed.data.toList))
@@ -23,7 +23,7 @@ object SastToSastConverter {
                 .filter(f => !acc.contains(f))
                 .map(f => documentManager.byPath(f))
                 .foldLeft(newctx) { (ctx, fd) =>
-                  preprocessRecursive(fd, ctx, documentManager, ctx.data, conversionPreproc)
+                  preprocessRecursive(fd, ctx, documentManager, conversionPreproc)
                 }
   }
 }
