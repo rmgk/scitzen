@@ -202,16 +202,16 @@ class SastToTexConverter(project: Project,
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
     case InlineText(str)                          => latexencode(str)
     case Macro(Cite, attributes)                  => s"\\cite{${attributes.target}}"
-    case Macro(Code, attrs)                       => s"\\texttt{${latexencode(attrs.target)}"
+    case Macro(Code, attrs)                       => s"\\texttt{${latexencode(attrs.target)}}"
     case Macro(Comment, attributes)               => ""
     case Macro(Def, _)                            => ""
-    case Macro(Emph, attrs)                       => s"\\emph{${latexencode(attrs.target)}"
+    case Macro(Emph, attrs)                       => s"\\emph{${latexencode(attrs.target)}}"
     case Macro(Label, attributes)                 => s"\\label{${attributes.target}}"
     case Macro(Math, attrs)                       => s"$$${attrs.target}${latexencode(attrs.target)}$$"
     case Macro(Other("subparagraph"), attributes) => s"\\subparagraph{${attributes.target}}"
     case Macro(Other("textsc"), attributes)       => s"\\textsc{${attributes.target}}"
     case Macro(Ref, attributes)                   => s"\\ref{${attributes.target}}"
-    case Macro(Strong, attrs)                     => s"\\textbf{${latexencode(attrs.target)}"
+    case Macro(Strong, attrs)                     => s"\\textbf{${latexencode(attrs.target)}}"
 
 
     case Macro(Link, attributes) =>
