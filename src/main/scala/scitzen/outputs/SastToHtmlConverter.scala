@@ -27,7 +27,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
 
   import bundle.all._
-  import bundle.tags2.{article, time}
+  import bundle.tags2.{article, time, section}
 
 
   type CtxCF = ConversionContext[Chain[Frag]]
@@ -196,7 +196,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       delimiter match {
         case rex"=+" => convertSeq(blockContent).map { cf =>
           Chain {
-            val fig = figure(cf.toList)
+            val tag = if (sBlock.attributes.positional.headOption.contains("figure")) figure else section
+            val fig = tag(cf.toList)
             sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l))
           }
         }

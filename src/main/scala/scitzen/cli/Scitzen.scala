@@ -38,8 +38,8 @@ object ConvertProject {
                                                          help = "character offset to show in output").orNone
 
   val optImageFileMap: Opts[Boolean] = Opts.flag("image-file-map",
-                                                     visibility = Partial,
-                                                     help = "character offset to show in output").orFalse
+                                                 visibility = Partial,
+                                                 help = "character offset to show in output").orFalse
 
 
   val command: Command[Unit] = Command(name = "gen",
@@ -60,6 +60,10 @@ object ConvertProject {
           if (project.config.outputType.contains("html")) {
             val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
             ConvertHtml.convertToHtml(project, sync)
+          }
+          if (project.config.outputType.contains("reveal")) {
+            val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+            ConvertRevealPresentation.convertToHtml(project, sync)
           }
           if (project.config.outputType.contains("pdf")) {
             ConvertPdf.convertToPdf(project)
