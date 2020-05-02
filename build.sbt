@@ -37,8 +37,6 @@ lazy val scitzen = project.in(file("."))
                      jsoup
                      )
 
-bloopSources
-
 lazy val nativeImage = taskKey[File]("calls graalvm native image")
 
 nativeImage := (scitzen / GraalVMNativeImage / packageBin).value
