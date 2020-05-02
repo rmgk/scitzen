@@ -5,6 +5,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import better.files._
 import cats.data.Chain
 import cats.implicits._
+import org.jsoup.Jsoup
 import scitzen.extern.{Bibliography, ImageConverter}
 import scitzen.generic._
 import scitzen.outputs.{SastToHtmlConverter, SastToSastConverter}
@@ -106,7 +107,8 @@ object ConvertRevealPresentation {
       templateDir.copyTo(project.outputdir, overwrite = true)
       val template = templateDir./("index.html.template").contentAsString
       val content   = template.replace("<!-- SCITZEN PASTES STUFF HERE -->", scalatags.Text.all.frag(converted.data.toList: _*).render)
-      project.outputdir./("index.html").write(content)
+      val cleanContent = Jsoup.parse(content).outerHtml()
+      project.outputdir./("index.html").write(cleanContent)
 
       converted.ret(preprocessed.data)
     }
