@@ -135,7 +135,7 @@ object Dependencies {
   val magnolia     = ld += "com.propensive" %%% "magnolia" % "0.15.0"
   val pprint       = ld += "com.lihaoyi" %%% "pprint" % "0.5.9"
   val scalactic    = ld += "org.scalactic" %% "scalactic" % "3.0.7"
-  val scribe       = ld += "com.outr" %%% "scribe" % "2.7.12"
+  val scribe       = ld += "com.outr" %%% "scribe" % "[2.7.0,2.8.0)"
   val sourcecode   = ld += "com.lihaoyi" %%% "sourcecode" % "0.2.1"
   val upickle      = ld += "com.lihaoyi" %% "upickle" % "1.1.0"
   val toml         = ld += "tech.sparse" %%% "toml-scala" % "0.2.2"
