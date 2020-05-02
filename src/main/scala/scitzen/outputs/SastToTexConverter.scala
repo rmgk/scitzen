@@ -225,7 +225,7 @@ class SastToTexConverter(project: Project,
     case Macro(Def, _)                      => ""
     case Macro(Emph, attrs)                 => s"\\emph{${latexencode(attrs.target)}}"
     case Macro(Label, attr)                 => s"\\label{${attr.target}}"
-    case Macro(Math, attrs)                 => s"$$${attrs.target}${latexencode(attrs.target)}$$"
+    case Macro(Math, attrs)                 => s"$$${attrs.target}$$"
     case Macro(Other("break"), attrs)       => s"\\clearpage{}"
     case Macro(Other("subparagraph"), attr) => s"\\subparagraph{${attr.target}}"
     case Macro(Other("textsc"), attr)       => s"\\textsc{${attr.target}}"
