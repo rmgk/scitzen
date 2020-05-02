@@ -17,7 +17,6 @@ object ConvertRevealPresentation {
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
 
     val documents: List[ParsedDocument] = project.documentManager.documents
@@ -103,7 +102,10 @@ object ConvertRevealPresentation {
       //                                                                 .getOrElse(""))
       //val target    = pathManager.translatePost(doc.parsed.file)
       //target.write(res)
-      val content   = template(scalatags.Text.all.frag(converted.data.toList: _*).render)
+      val templateDir = project.resolveUnchecked(project.root, project.config.revealTemplate.get)
+      templateDir.copyTo(project.outputdir, overwrite = true)
+      val template = templateDir./("index.html.template").contentAsString
+      val content   = template.replace("<!-- SCITZEN PASTES STUFF HERE -->", scalatags.Text.all.frag(converted.data.toList: _*).render)
       project.outputdir./("index.html").write(content)
 
       converted.ret(preprocessed.data)
@@ -134,98 +136,5 @@ object ConvertRevealPresentation {
     }
 
   }
-
-  def template(slides: String) = s"""
-<!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-		<title>reveal.js</title>
-
-		<link rel="stylesheet" href="css/reset.css">
-		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
-		<style>
-		  .reveal section img {
-		    background-color: white;
-		  }
-		</style>
-
-		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="lib/css/monokai.css">
-
-		<!-- Printing and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-        $slides
-			</div>
-		</div>
-
-		<script src="js/reveal.js"></script>
-
-		<script>
-			// More info about config & dependencies:
-			// - https://github.com/hakimel/reveal.js#configuration
-			// - https://github.com/hakimel/reveal.js#dependencies
-			Reveal.initialize({
-	// Display presentation control arrows
-	controls: false,
-
-	// Help the user learn the controls by providing hints, for example by
-	// bouncing the down arrow when they first encounter a vertical slide
-	controlsTutorial: true,
-
-	// Display a presentation progress bar
-	progress: false,
-
-	// Display the page number of the current slide
-	slideNumber: true,
-
-	// Add the current slide number to the URL hash so that reloading the
-	// page/copying the URL will return you to the same slide
-	hash: true,
-
-	// Push each slide change to the browser history. Implies `hash: true`
-	history: true,
-
-	// Vertical centering of slides
-	center: true,
-
-	// Time before the cursor is hidden (in ms)
-	hideCursorTime: 2000,
-
-	// Transition style
-	transition: 'none', // none/fade/slide/convex/concave/zoom
-
-	// Transition style for full page slide backgrounds
-	backgroundTransition: 'none', // none/fade/slide/convex/concave/zoom
-
-	// The display mode that will be used to show slides
-	display: 'block',
-	dependencies: [
-		// Syntax highlight for <code> elements
-		{ src: 'plugin/highlight/highlight.js', async: true },
-		// Zoom in and out with Ctrl+click
-		{ src: 'plugin/zoom-js/zoom.js', async: true },
-		// Speaker notes
-		{ src: 'plugin/notes/notes.js', async: true },
-	]
-
-});
-		</script>
-	</body>
-</html>
-"""
 
 }

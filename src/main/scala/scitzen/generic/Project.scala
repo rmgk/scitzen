@@ -49,7 +49,8 @@ object Project {
    stopwords: String = "scitzen",
    main: Option[String] = None,
    format: List[String] = Nil,
-   outputType: List[String] = Nil
+   outputType: List[String] = Nil,
+   revealTemplate: Option[String] = None
   )
 
   val scitzenconfig: String = "scitzen.toml"
