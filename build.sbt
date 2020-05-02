@@ -13,6 +13,7 @@ lazy val scitzen = project.in(file("."))
                      scalacOptions += "-Xsource:3",
                      Compile / resources ++= (Assets / SassKeys.sassify).value,
                      resolvers += Resolver.sonatypeRepo("public"),
+                     Resolvers.bintrayPublish("rmgk", "rmgk", "scitzen"),
                      libraryDependencies ++= Seq(
                        "com.vdurmont" % "emoji-java" % "5.1.1"
                        ),

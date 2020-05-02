@@ -18,19 +18,26 @@ object Settings {
 
   val scalaVersion_211 = Def.settings(
     scalaVersion := sv11,
-    scalacOptions ++= scalacOptionsCommon ++ scalaOptions12minus
+    scalacOptions ++= settingsFor(scalaVersion.value)
     )
   val scalaVersion_212 = Def.settings(
     scalaVersion := sv12,
-    scalacOptions ++= scalacOptionsCommon ++ scalacOptions12plus ++ scalaOptions12minus
+    scalacOptions ++= settingsFor(scalaVersion.value)
     )
   val scalaVersion_213 = Def.settings(
     scalaVersion := sv13,
-    scalacOptions ++= scalacOptionsCommon ++ scalacOptions12plus
+    scalacOptions ++= settingsFor(scalaVersion.value)
     )
 
+  def settingsFor(version: String) = (
+    version match {
+      case a if a.startsWith("2.11") =>  scalacOptionsCommon ++ scalaOptions12minus
+      case a if a.startsWith("2.12") =>  scalacOptionsCommon ++ scalacOptions12plus ++ scalaOptions12minus
+      case a if a.startsWith("2.13") =>  scalacOptionsCommon ++ scalacOptions12plus
+    })
+
   // based on tpolecats scala options https://tpolecat.github.io/2017/04/25/scalac-flags.html
-  lazy val scalacOptionsCommon = Seq(
+  lazy val scalacOptionsCommon: Seq[String] = Seq(
     "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
     "-encoding", "utf-8",                // Specify character encoding used by source files.
     "-explaintypes",                     // Explain type errors in more detail.
@@ -62,7 +69,7 @@ object Settings {
     //"-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
     //"-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
     )
-  lazy val scalacOptions12plus = Seq(
+  lazy val scalacOptions12plus: Seq[String] = Seq(
     // do not work on 2.11
     "-Xlint:constant",                   // Evaluation of a constant arithmetic expression results in an error.
     "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
@@ -70,8 +77,8 @@ object Settings {
     "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
     "-Ywarn-unused:locals",              // Warn if a local definition is unused.
     "-Ywarn-unused:privates",            // Warn if a private member is unused.
-    )
-  lazy val scalaOptions12minus = Seq(
+  )
+  lazy val scalaOptions12minus: Seq[String] = Seq(
     // do not work on 2.13
     "-Ywarn-inaccessible",               // Warn about inaccessible types in method signatures.
     "-Ywarn-infer-any",                  // Warn when a type argument is inferred to be `Any`.
@@ -82,7 +89,7 @@ object Settings {
     "-Ywarn-nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
     "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
     "-Xfuture",                          // Turn on future language features.
-    )
+  )
 
   val strictCompile = Compile / compile / scalacOptions += "-Xfatal-warnings"
 
@@ -90,7 +97,33 @@ object Settings {
 }
 
 object Resolvers {
-  val stg = resolvers += Resolver.bintrayRepo("stg-tud", "maven")
+  val stg  = resolvers += Resolver.bintrayRepo("stg-tud", "maven")
+
+  def bintrayPublish(bintrayOrganization: String, githubOrganization: String, githubReponame: String) = Seq(
+    publishArtifact in Compile := true,
+    publishArtifact in Test := false,
+    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
+    scmInfo := Some(
+      ScmInfo(
+        browseUrl = url(s"https://github.com/$githubOrganization/$githubReponame/"),
+        connection = s"scm:git:git@github.com:$githubOrganization/$githubReponame.git"
+      )
+    ),
+    // Publish to Bintray, without the sbt-bintray plugin
+    publishMavenStyle := true,
+    publishTo := {
+      val proj = moduleName.value
+      val ver  = version.value
+      if (isSnapshot.value) {
+        None // Bintray does not support snapshots
+      } else {
+        val url = new java.net.URL(
+          s"https://api.bintray.com/content/$bintrayOrganization/maven/$proj/$ver")
+        val patterns = Resolver.mavenStylePatterns
+        Some(Resolver.url("bintray", url)(patterns))
+      }
+    }
+  )
 }
 
 object Dependencies {
@@ -112,10 +145,10 @@ object Dependencies {
   val toml         = ld += "tech.sparse" %%% "toml-scala" % "0.2.2"
 
   val akkaVersion = "2.6.4"
-  val akkaHttp    = ld ++= (Seq("akka-http-core",
-                                "akka-http")
-                            .map(n => "com.typesafe.akka" %% n % "10.1.11") ++
-                            Seq("com.typesafe.akka" %% "akka-stream" % akkaVersion))
+  val akkaHttp = ld ++= (Seq("akka-http-core",
+                             "akka-http")
+                         .map(n => "com.typesafe.akka" %% n % "10.1.11") ++
+                         Seq("com.typesafe.akka" %% "akka-stream" % akkaVersion))
 
   val circeVersion = "0.13.0"
 
@@ -123,7 +156,7 @@ object Dependencies {
                          "generic",
                          "generic-extras",
                          "parser")
-  .map(n => "io.circe" %%% s"circe-$n" % circeVersion)
+                     .map(n => "io.circe" %%% s"circe-$n" % circeVersion)
 
 
   // frontend
@@ -136,7 +169,7 @@ object Dependencies {
 
   // tests
   val scalacheck         = ld += "org.scalacheck" %%% "scalacheck" % "1.14.3" % "test"
-  val scalatestpluscheck = ld += "org.scalatestplus" %%% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % "test"
+  val scalatestpluscheck = ld += "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.1.1" % "test"
   val scalatest          = ld += "org.scalatest" %%% "scalatest" % "3.1.1" % "test"
 
   // legacy
@@ -145,9 +178,11 @@ object Dependencies {
 
 
   object loci {
+
+    val version = "0.3.0"
     def generic(n: String) = Def.settings(
       Resolvers.stg,
-      ld += "de.tuda.stg" %%% s"scala-loci-$n" % "0.3.0")
+      ld += "de.tuda.stg" %%% s"scala-loci-$n" % version)
 
     val communication = generic("communication")
 
