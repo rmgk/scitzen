@@ -102,7 +102,7 @@ object Resolvers {
   def bintrayPublish(bintrayOrganization: String, githubOrganization: String, githubReponame: String) = Seq(
     publishArtifact in Compile := true,
     publishArtifact in Test := false,
-    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
+    // licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
     scmInfo := Some(
       ScmInfo(
         browseUrl = url(s"https://github.com/$githubOrganization/$githubReponame/"),
