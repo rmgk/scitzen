@@ -179,6 +179,7 @@ object TexPages {
                       (xelatexPackages ++ xelatexFont ++
                        memoirPackages ++ proofboxes ++
                        theorems) :+
+                      //"\\abstractnum" :+
                       s"\\begin{document}" /*:+ "\\sloppy"*/) ++
         content ++ importBibNatbib :+ s"\\end{document}"
 

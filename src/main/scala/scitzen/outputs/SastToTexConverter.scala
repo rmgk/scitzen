@@ -5,7 +5,7 @@ import cats.data.Chain
 import scitzen.generic.Sast._
 import scitzen.generic.{ConversionContext, Project, Reporter, Sast}
 import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Math, Other, Ref, Strong}
-import scitzen.parser.{Inline, InlineText, Macro}
+import scitzen.parser.{Attributes, Inline, InlineText, Macro}
 
 
 class SastToTexConverter(project: Project,
@@ -18,13 +18,7 @@ class SastToTexConverter(project: Project,
   type Ctx[T] = ConversionContext[T]
   type Cta = Ctx[_]
 
-  def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = mainSast match {
-    case (section @ Section(title, _, _)) :: rest =>
-      val ilc = inlineValuesToTex(title.inline)
-      s"\\title{${ilc.data}}\\maketitle{}" +: sastSeqToTex(rest)(ilc.push(section))
-
-    case list => sastSeqToTex(list)(ctx)
-  }
+  def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = sastSeqToTex(mainSast)(ctx)
 
   def latexencode(input: String): String = {
     val dummyForBSreplace = "»§ dummy to replace later ℓ«"
@@ -61,18 +55,33 @@ class SastToTexConverter(project: Project,
     case tlBlock: SBlock => blockToTex(tlBlock)
 
     case section @ Section(title, level, attr) =>
-      val sec = if (attr.positional.lastOption.isDefined) attr.target else sectioning(level)
-      val ilc = inlineValuesToTex(title.inline)
-      ilc.push(section).retc(s"\\$sec{${ilc.data}}")
+      val ilc = inlineValuesToTex(title.inline)(ctx)
+
+      val header = attr.positional.headOption match {
+        case None =>
+          val sec = sectioning(level)
+          s"\\$sec{${ilc.data}}"
+        case Some("title") =>
+          s"\\title{${ilc.data}}\\maketitle{}"
+        case Some("chapter" | "part" | "book") =>
+          s"\\${attr.positional.head}{${ilc.data}}"
+        case other =>
+          scribe.warn(s"invalid section type: ${other.get}" + reporter(attr.prov))
+          val sec = sectioning(level)
+          s"\\$sec{${ilc.data}}"
+      }
+      ilc.push(section).retc(header)
 
     case Slist(children) =>
       children match {
         case Nil => ctx.ret(Chain.nil)
 
-        case SlistItem(m, text, NoContent) :: _ =>
+        case SlistItem(m, text, NoContent | Slist(_)) :: _ =>
           "\\begin{itemize}" +:
           ctx.fold[SlistItem, String](children) { (ctx, child) =>
-            inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item{}" + s))
+            val inlineCtx  = inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item{$s}"))
+            val contentCtx = sastToTex(child.content)(inlineCtx)
+            inlineCtx.data ++: contentCtx
           } :+
           "\\end{itemize}"
 
@@ -117,6 +126,8 @@ class SastToTexConverter(project: Project,
             ctx.empty
         }
 
+      case Macro(Other("bookmatter"), attr) => ctx.retc {s"\\${attr.target}matter{}"}
+
       case other =>
         inlineValuesToTex(List(other)).single
     }
@@ -158,7 +169,7 @@ class SastToTexConverter(project: Project,
                     "\\end{figure}"
                     )
 
-                case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
+                case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example" | "abstract") =>
 
                   texbox(name, tlblock.attributes.positional.tail, blockContent)
 
@@ -201,19 +212,24 @@ class SastToTexConverter(project: Project,
 
   }
 
+  def nbrs(attributes: Attributes): String = {
+      if (attributes.arguments.nonEmpty) s"${attributes.arguments.head}~"
+      else ""
+  }
 
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
     case InlineText(str)                          => latexencode(str)
-    case Macro(Cite, attributes)                  => s"\\cite{${attributes.target}}"
+    case Macro(Cite, attributes)                  => s"${nbrs(attributes)}\\cite{${attributes.target}}"
     case Macro(Code, attrs)                       => s"\\texttt{${latexencode(attrs.target)}}"
     case Macro(Comment, attributes)               => ""
     case Macro(Def, _)                            => ""
     case Macro(Emph, attrs)                       => s"\\emph{${latexencode(attrs.target)}}"
     case Macro(Label, attributes)                 => s"\\label{${attributes.target}}"
     case Macro(Math, attrs)                       => s"$$${attrs.target}${latexencode(attrs.target)}$$"
+    case Macro(Other("break"), attrs)             => s"\\clearpage{}"
     case Macro(Other("subparagraph"), attributes) => s"\\subparagraph{${attributes.target}}"
     case Macro(Other("textsc"), attributes)       => s"\\textsc{${attributes.target}}"
-    case Macro(Ref, attributes)                   => s"\\ref{${attributes.target}}"
+    case Macro(Ref, attributes)                   => s"${nbrs(attributes)}\\ref{${attributes.target}}"
     case Macro(Strong, attrs)                     => s"\\textbf{${latexencode(attrs.target)}}"
 
 
@@ -240,7 +256,4 @@ class SastToTexConverter(project: Project,
       scribe.warn(s"inline macro “$command[$attributes]”")
       s"$command[${attributes.raw.mkString(",")}]"
   }.mkString(""))
-
-  def reportPos(m: Macro): String = reporter(m)
-
 }

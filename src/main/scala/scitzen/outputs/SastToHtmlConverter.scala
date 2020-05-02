@@ -103,7 +103,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
               ctx.empty
           }
 
-        case Macro(Other("horizontal-rule"), attributes) =>
+        case Macro(Other("break"), attributes) =>
           ctx.ret(Chain(hr))
 
         case Macro(Ref, attributes) if attributes.named.get("type").contains("article") =>
