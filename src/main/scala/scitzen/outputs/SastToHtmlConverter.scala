@@ -258,14 +258,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     case Macro(Math, attrs) =>
       val katexdefs      = sdoc.named.get("katexTemplate")
                                .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
-                               .map(_.contentAsString).getOrElse("")
       val inner          = attrs.target
       val (mathml, ictx) = ctx.katex(inner, {
-        val process = new ProcessBuilder("katex")
-        .redirectInput(Redirect.PIPE)
-        .redirectOutput(Redirect.PIPE)
-        .start()
-        process.getOutputStream.writeAndClose(katexdefs + inner)
+        val pb      = katexdefs match {
+          case None       => new ProcessBuilder("katex")
+          case Some(file) => new ProcessBuilder("katex", "--macro-file", file.pathAsString)
+        }
+        val process = pb.redirectInput(Redirect.PIPE)
+                        .redirectOutput(Redirect.PIPE)
+                        .start()
+        process.getOutputStream.writeAndClose(inner)
         process.waitFor()
         process.getInputStream.asString()
       })
