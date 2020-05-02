@@ -155,11 +155,11 @@ class SastToTexConverter(project: Project,
                   val (figContent, caption) = {
                     blockContent.lastOption match {
                       case Some(inner @ SBlock(_, Paragraph(content))) =>
-                        val captionstr = inlineValuesToTex(content.inline).single.data.iterator.mkString("\n")
+                        val captionstr = inlineValuesToTex(content.inline).data
                         (blockContent.init,
                         s"\\caption{$captionstr}")
                       case other                                       =>
-                        scribe.warn(s"figure has no caption")
+                        scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
                         (blockContent, "")
                     }
                   }
