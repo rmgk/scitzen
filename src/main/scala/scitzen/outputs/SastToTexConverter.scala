@@ -21,7 +21,14 @@ class SastToTexConverter(project: Project,
   def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = {
     project.documentManager.macros.find(_.command == Other("tableofcontents"))
            .fold(Chain.empty[String])(_ => Chain("\\frontmatter")) ++:
-    sastSeqToTex(mainSast)(ctx)
+    (mainSast match {
+      case (section @ Section(title, _, _)) :: rest =>
+        val ilc = inlineValuesToTex(title.inline)
+        s"\\title{${ilc.data}}\\maketitle{}" +: sastSeqToTex(rest)(ilc.push(section))
+
+      case list =>
+        sastSeqToTex(mainSast)(ctx)
+    })
   }
 
   def latexencode(input: String): String = {
