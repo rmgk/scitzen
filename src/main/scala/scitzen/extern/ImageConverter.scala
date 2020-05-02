@@ -75,9 +75,17 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
 
   def pdfToCairo(file: File): (File, Option[ConvertTask]) = {
     convertExternal(file, (source, target) => {
-      List("pdftocairo", "-singlefile", s"-$preferredFormat",
-           source.pathAsString,
-           target.sibling(target.nameWithoutExtension).pathAsString)
+      preferredFormat match {
+        case "png" | "jpeg" | "tiff" =>
+          List("pdftocairo", "-singlefile", s"-$preferredFormat",
+               source.pathAsString,
+               target.sibling(target.nameWithoutExtension).pathAsString)
+
+        case "svg" =>
+          List("pdftocairo", s"-$preferredFormat",
+               source.pathAsString,
+               target.pathAsString)
+      }
     })
   }
 
