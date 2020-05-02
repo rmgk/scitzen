@@ -58,14 +58,14 @@ class SastToTexConverter(project: Project,
       val ilc = inlineValuesToTex(title.inline)(ctx)
 
       val header = attr.positional.headOption match {
-        case None =>
+        case None                              =>
           val sec = sectioning(level)
           s"\\$sec{${ilc.data}}"
-        case Some("title") =>
+        case Some("title")                     =>
           s"\\title{${ilc.data}}\\maketitle{}"
         case Some("chapter" | "part" | "book") =>
           s"\\${attr.positional.head}{${ilc.data}}"
-        case other =>
+        case other                             =>
           scribe.warn(s"invalid section type: ${other.get}" + reporter(attr.prov))
           val sec = sectioning(level)
           s"\\$sec{${ilc.data}}"
@@ -213,24 +213,25 @@ class SastToTexConverter(project: Project,
   }
 
   def nbrs(attributes: Attributes): String = {
-      if (attributes.arguments.nonEmpty) s"${attributes.arguments.head}~"
-      else ""
+    if (attributes.arguments.nonEmpty) s"${attributes.arguments.head}~"
+    else ""
   }
 
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] = ctx.ret(inners.map {
-    case InlineText(str)                          => latexencode(str)
-    case Macro(Cite, attributes)                  => s"${nbrs(attributes)}\\cite{${attributes.target}}"
-    case Macro(Code, attrs)                       => s"\\texttt{${latexencode(attrs.target)}}"
-    case Macro(Comment, attributes)               => ""
-    case Macro(Def, _)                            => ""
-    case Macro(Emph, attrs)                       => s"\\emph{${latexencode(attrs.target)}}"
-    case Macro(Label, attributes)                 => s"\\label{${attributes.target}}"
-    case Macro(Math, attrs)                       => s"$$${attrs.target}${latexencode(attrs.target)}$$"
-    case Macro(Other("break"), attrs)             => s"\\clearpage{}"
-    case Macro(Other("subparagraph"), attributes) => s"\\subparagraph{${attributes.target}}"
-    case Macro(Other("textsc"), attributes)       => s"\\textsc{${attributes.target}}"
-    case Macro(Ref, attributes)                   => s"${nbrs(attributes)}\\ref{${attributes.target}}"
-    case Macro(Strong, attrs)                     => s"\\textbf{${latexencode(attrs.target)}}"
+    case InlineText(str)                    => latexencode(str)
+    case Macro(Cite, attr)                  => s"${nbrs(attr)}\\cite{${attr.target}}"
+    case Macro(Code, attrs)                 => s"\\texttt{${latexencode(attrs.target)}}"
+    case Macro(Comment, attr)               => ""
+    case Macro(Def, _)                      => ""
+    case Macro(Emph, attrs)                 => s"\\emph{${latexencode(attrs.target)}}"
+    case Macro(Label, attr)                 => s"\\label{${attr.target}}"
+    case Macro(Math, attrs)                 => s"$$${attrs.target}${latexencode(attrs.target)}$$"
+    case Macro(Other("break"), attrs)       => s"\\clearpage{}"
+    case Macro(Other("subparagraph"), attr) => s"\\subparagraph{${attr.target}}"
+    case Macro(Other("textsc"), attr)       => s"\\textsc{${attr.target}}"
+    case Macro(Other("todo"), attr)         => s"{\\color{red}TODO:${attr.target}}"
+    case Macro(Ref, attr)                   => s"${nbrs(attr)}\\ref{${attr.target}}"
+    case Macro(Strong, attrs)               => s"\\textbf{${latexencode(attrs.target)}}"
 
 
     case Macro(Link, attributes) =>

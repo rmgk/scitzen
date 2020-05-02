@@ -275,13 +275,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     case Macro(Comment, attributes) => ctx.empty
 
     case mcro @ Macro(Cite, attributes) =>
-      val anchors = attributes.positional.flatMap {_.split(",")}.map { bibid =>
+      val anchors = attributes.target.split(",").toList.map { bibid =>
         bibid -> bibliography.getOrElse(bibid.trim, {
           scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
           bibid
         })
       }.sortBy(_._2).map { case (bibid, bib) => a(href := s"#$bibid", bib) }
-      ctx.retc(frag("\u00A0", anchors))
+      if (attributes.arguments.nonEmpty) {
+        ctx.retc(frag(s"${attributes.arguments.head}\u00A0", anchors))
+      } else ctx.retc(anchors)
 
 
     case Macro(Label, _) => ctx.empty
@@ -345,7 +347,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
         case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter().macroToScim(mcro)))
 
-        case "tableofcontents" => ctx.empty
+        case "tableofcontents" | "bookmatter" => ctx.empty
 
         case other => ctx.retc(unknownMacroOutput(mcro))
 
