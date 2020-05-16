@@ -97,7 +97,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           pathManager.project.resolve(pathManager.cwd, attributes.target) match {
             case Some(target) =>
               val path = pathManager.relativizeImage(target)
-              ctx.requireInOutput(target, path).retc(img(src := path.toString))
+              ctx.requireInOutput(target, path).retc{
+                img(src := path.toString)(attributes.named.get("style").map(style := _))
+              }
             case None         =>
               scribe.warn(s"could not find path ${attributes.target}" + reporter(mcro))
               ctx.empty

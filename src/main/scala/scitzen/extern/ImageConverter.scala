@@ -125,7 +125,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
   def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {
 
 
-    def makeImageMacro(file: File) = {
+    def makeImageMacro(file: File): Macro = {
       val relTarget = project.root.relativize(file)
       Macro(MacroCommand.Image,
             attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
@@ -163,15 +163,19 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
       case gr @ rex"graphviz.*" =>
         Some(Graphviz.convert(content,
                               project.cacheDir,
-                              gr.split("\\s+", 2)(1),
+                              gr.split("\\s+", 2).lift(1),
                               preferredFormat)
                      .map(img => makeImageMacro(img)))
       case gr @ rex"mermaid"    =>
         Some(Mermaid.convert(content,
                              project.cacheDir,
                              preferredFormat)
-                    .map(img => makeImageMacro(img)))
-      case other                =>
+                    .map { img =>
+                      val m = makeImageMacro(img)
+                      m.copy(attributes = m.attributes.updated("style", "background-color: white"))
+                    })
+
+      case other =>
         scribe.warn(s"unknown converter $other")
         None
     }

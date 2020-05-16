@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import better.files._
 
 object Graphviz {
-  def convert(content: String, working: File, layout: String, format: String): ConvertSchedulable[File] = {
+  def convert(content: String, working: File, layout: Option[String], format: String): ConvertSchedulable[File] = {
     val bytes  = (s"//$layout\n" + content).getBytes(StandardCharsets.UTF_8)
     val hash   = Hashes.sha1hex(bytes)
     val dir    = working / hash
@@ -20,7 +20,7 @@ object Graphviz {
 
           val start   = System.nanoTime()
           val process = new ProcessBuilder("dot",
-                                           s"-K$layout",
+                                           layout.map(l => s"-K$l").getOrElse("-Kdot"),
                                            s"-T$format",
                                            s"-o${target.pathAsString}")
           .inheritIO().redirectInput(Redirect.PIPE).start()
