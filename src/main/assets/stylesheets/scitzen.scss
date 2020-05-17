@@ -85,7 +85,7 @@ main {
   line-height: 1.5;
 }
 
-main > * {
+main > *, main > section > * {
   grid-column: content-start / content-end;
   // keep all content inside the page
   // this causes per element scrollbars, instead of breaking the full layout
@@ -96,8 +96,12 @@ main > * {
   overflow-y: hidden;
 }
 
+main > section {
+  display: contents;
+}
 
-main > figure, main > img {
+
+main > figure, main > img, main > section > figure, main > section > img {
   // oversized figures and images
   grid-column: image-start / image-end;
 
@@ -125,7 +129,7 @@ p, pre {
   font-family: inherit;
 }
 
-main > figure > pre:has(> code) {
+main > figure > pre:has(> code), main > section > figure > pre:has(> code) {
   // undo max width of code pres when top level in figure
   // to profit from oversize figures
   max-width: 100%;
@@ -300,7 +304,7 @@ body {
       top: 0;
 
       // show scrollbar
-      overflow-y: scroll;
+      overflow-y: auto;
 
       // box sizing together with height makes it occupy the full height pixel perfect
       box-sizing: border-box;
