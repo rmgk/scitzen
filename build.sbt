@@ -10,7 +10,6 @@ lazy val scitzen = project.in(file("."))
                      name := "scitzen",
                      organization := "de.rmgk",
                      scalaVersion_213,
-                     scalacOptions += "-Xsource:3",
                      Compile / resources ++= (Assets / SassKeys.sassify).value,
                      resolvers += Resolver.sonatypeRepo("public"),
                      Resolvers.bintrayPublish("rmgk", "rmgk", "scitzen"),
@@ -21,7 +20,6 @@ lazy val scitzen = project.in(file("."))
                      decline,
                      betterFiles,
                      scalatags,
-                     strictCompile,
                      fastparse,
                      scalatest,
                      scalacheck,
@@ -34,7 +32,8 @@ lazy val scitzen = project.in(file("."))
                      graalVMNativeImageOptions += "--initialize-at-build-time",
                      graalVMNativeImageOptions += "--no-fallback",
                      toml,
-                     jsoup
+                     jsoup,
+                     libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value))
                      )
 
 lazy val nativeImage = taskKey[File]("calls graalvm native image")

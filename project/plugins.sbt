@@ -21,3 +21,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.2") // https://gi
 // tooling
 addSbtPlugin("org.tpolecat" % "tut-plugin" % "0.6.13")
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.7")
+
+// dotty?
+addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.4.1")
