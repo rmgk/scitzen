@@ -26,25 +26,25 @@ object Scitzen extends CommandApp(
 
 
 object ConvertProject {
-  val optSource: Opts[Path] = Opts.argument[Path](metavar = "path")
-                                  .withDefault(Paths.get(""))
 
-
-  val optSyncFile: Opts[Option[Path]] = Opts.option[Path]("sync-file", metavar = "file",
-                                                          visibility = Partial,
-                                                          help = "file to show in output").orNone
-  val optSyncPos : Opts[Option[Int]]  = Opts.option[Int]("sync-position", metavar = "integer",
-                                                         visibility = Partial,
-                                                         help = "character offset to show in output").orNone
-
-  val optImageFileMap: Opts[Boolean] = Opts.flag("image-file-map",
-                                                 visibility = Partial,
-                                                 help = "character offset to show in output").orFalse
+  val args = (
+             Opts.argument[Path](metavar = "path")
+                 .withDefault(Paths.get("")),
+             Opts.option[Path]("sync-file", metavar = "file",
+                               visibility = Partial,
+                               help = "file to show in output").orNone,
+             Opts.option[Int]("sync-position", metavar = "integer",
+                              visibility = Partial,
+                              help = "character offset to show in output").orNone,
+             Opts.flag("image-file-map",
+                       visibility = Partial,
+                       help = "character offset to show in output").orFalse
+             )
 
 
   val command: Command[Unit] = Command(name = "gen",
                                        header = "Convert Scim to Sast.") {
-    (optSource, optSyncFile, optSyncPos, optImageFileMap).mapN {
+    args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap) =>
         //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
         Project.fromSource(File(sourcedirRel)).foreach { project =>

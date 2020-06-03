@@ -29,8 +29,10 @@ lazy val scitzen = project.in(file("."))
                      scribe,
                      SassKeys.cssStyle := Maxified,
                      normalizecss,
-                     graalVMNativeImageOptions += "--initialize-at-build-time",
-                     graalVMNativeImageOptions += "--no-fallback",
+                     graalVMNativeImageOptions ++= Seq(
+                       "--initialize-at-build-time",
+                       "--no-fallback"
+                     ),
                      toml,
                      jsoup,
                      libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value))
