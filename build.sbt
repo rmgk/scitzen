@@ -10,6 +10,7 @@ lazy val scitzen = project.in(file("."))
                      name := "scitzen",
                      organization := "de.rmgk",
                      scalaVersion_213,
+                     scalacOptions += "-Xsource:3",
                      Compile / resources ++= (Assets / SassKeys.sassify).value,
                      resolvers += Resolver.sonatypeRepo("public"),
                      Resolvers.bintrayPublish("rmgk", "rmgk", "scitzen"),
