@@ -36,7 +36,7 @@ object ConvertPdf {
         project,
         doc.file,
         doc.reporter,
-        new ImageConverter(project, "pdf")
+        new ImageConverter(project, "pdf", List("svg"))
         )
     }
 
