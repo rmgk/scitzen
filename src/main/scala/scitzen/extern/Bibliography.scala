@@ -45,12 +45,12 @@ object Bibliography {
   case class CiteprocAuthor(family: Option[String], given: Option[String]) {
     def toAuthor: Author = Author(given, family)
   }
-  case class CiteprocEntry(id: String, author: List[CiteprocAuthor], issued: CiteprocDate, `container-title`: Option[String], `type`: String, title: Option[String]) {
+  case class CiteprocEntry(id: String, author: List[CiteprocAuthor], issued: Option[CiteprocDate], `container-title`: Option[String], `type`: String, title: Option[String]) {
     def toBibEntry: BibEntry =
       BibEntry(id = id,
                authors = author.map(_.toAuthor),
                title = title,
-               year = issued.year,
+               year = issued.flatMap(_.year),
                container = `container-title`,
                `type` = `type`
                )

@@ -14,7 +14,7 @@ import scala.util.matching.Regex
 case class SastToScimConverter() {
 
   //val attributeEscapes = """[;=\]}\n]|^[\s"\[]|\s$""".r
-  val countQuotes = """(]"*)""".r
+  val countQuotes: Regex = """(]"*)""".r
 
   def encodeValue(value: String, isNamed: Boolean): String = {
     def parses(quoted: String) = {

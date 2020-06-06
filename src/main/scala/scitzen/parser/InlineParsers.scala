@@ -14,7 +14,7 @@ object InlineParsers {
   def specialChars[_: P]: P[Unit] = CharIn("_*`$%")
 
 
-  def syntaxStart[_: P]: P[Unit] = P(":" ~ (specialChars | MacroParsers.macroCommand))
+  def syntaxStart[_: P]: P[Unit] = P(":" ~ (specialChars | MacroParsers.detectStart))
   def texStart[_: P]: P[Unit] = P("\\" ~ (identifier ~ "{"))
 
   // grab everything until a unconstrained position followed by a syntax starter

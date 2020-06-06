@@ -42,6 +42,7 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
     }
   }
 }
+
 object AnalyzedDoc {
   def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {
     new AnalyzedDoc(parsedDocument.sast, new SastAnalyzer(parsedDocument.reporter))
