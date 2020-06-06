@@ -26,7 +26,7 @@ lazy val scitzen = project.in(file("."))
                      scalacheck,
                      pprint,
                      cats,
-                     upickle,
+                     jsoniter,
                      scribe,
                      SassKeys.cssStyle := Maxified,
                      normalizecss,

@@ -7,7 +7,7 @@ import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Comment, Def, Other}
 import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineText, Macro, MacroCommand}
 
-import scala.collection.compat.immutable
+import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex
 
 
@@ -129,7 +129,7 @@ case class SastToScimConverter() {
       }
 
     case SpaceComment(text) =>
-      Chain.fromSeq(immutable.ArraySeq.unsafeWrapArray(
+      Chain.fromSeq(ArraySeq.unsafeWrapArray(
         text.stripLineEnd.split("\\n", -1).map(_.trim)))
     case Fenced(text)       =>
       val foundlen  = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)

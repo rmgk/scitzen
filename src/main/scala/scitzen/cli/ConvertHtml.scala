@@ -10,6 +10,10 @@ import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.MacroCommand.Cite
 
+import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
+
+
 import scala.util.Try
 
 
@@ -20,8 +24,10 @@ object ConvertHtml {
 
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
-    Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
+    Resource.asStream("scitzen.css").fold(File("scicltzen.css").byteArray)(_.byteArray)
   }
+
+  val mapCodec: JsonValueCodec[Map[String, String]]  = JsonCodecMaker.make
 
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
@@ -58,7 +64,7 @@ object ConvertHtml {
 
     val katexmapfile    = project.cacheDir / "katexmap.json"
     val initialKatexMap = Try {
-      upickle.default.read[Map[String, String]](katexmapfile.path)
+      readFromStream[Map[String, String]](katexmapfile.newInputStream)(mapCodec)
     }.getOrElse(Map())
 
     def conversionPreproc(doc: ParsedDocument): SastToSastConverter = {
@@ -173,7 +179,7 @@ object ConvertHtml {
 
     if (resultContext.katexMap.nonEmpty) {
       katexmapfile.parent.createDirectories()
-      katexmapfile.write(upickle.default.write[Map[String, String]](resultContext.katexMap, indent = 2))
+      katexmapfile.writeByteArray(writeToArray[Map[String, String]](resultContext.katexMap, WriterConfig.withIndentionStep(2))(mapCodec))
     }
 
   }

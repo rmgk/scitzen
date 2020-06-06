@@ -5,8 +5,8 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import scalatags.Text.all._
 
-import scala.util.Try
-import scala.util.control.NonFatal
+import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
 object Bibliography {
 
@@ -39,54 +39,40 @@ object Bibliography {
   }
 
 
+  case class CiteprocDate(`date-parts`: List[List[Int]]) {
+    def year: Option[Int] = `date-parts`.flatten.headOption
+  }
+  case class CiteprocAuthor(family: Option[String], given: Option[String]) {
+    def toAuthor: Author = Author(given, family)
+  }
+  case class CiteprocEntry(id: String, author: List[CiteprocAuthor], issued: CiteprocDate, `container-title`: Option[String], `type`: String, title: Option[String]) {
+    def toBibEntry: BibEntry =
+      BibEntry(id = id,
+               authors = author.map(_.toAuthor),
+               title = title,
+               year = issued.year,
+               container = `container-title`,
+               `type` = `type`
+               )
+  }
+
+  val citeprocCodec: JsonValueCodec[List[CiteprocEntry]] = JsonCodecMaker.make
+
+
   def parse(cacheDir: File)(source: File): List[BibEntry] = {
-    val jsonStr = {
-      val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
-      cacheDir.createDirectories()
-      val cachefile = cacheDir / (hash + ".json")
-      if (!cachefile.exists) {
-        new ProcessBuilder("pandoc-citeproc",
-                           "--bib2json",
-                           source.pathAsString)
-        .inheritIO()
-        .redirectOutput(cachefile.toJava).start().waitFor()
-      }
-      cachefile.contentAsString
+    val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
+    cacheDir.createDirectories()
+    val cachefile = cacheDir / (hash + ".json")
+    if (!cachefile.exists) {
+      new ProcessBuilder("pandoc-citeproc",
+                         "--bib2json",
+                         source.pathAsString)
+      .inheritIO()
+      .redirectOutput(cachefile.toJava).start().waitFor()
     }
-    ujson.read(jsonStr).arr.iterator.map { e =>
-      val obj = e.obj
 
-      def opt(v: ujson.Value) = Try {v.str}.toOption
+    val entries = readFromStream(cachefile.newInputStream)(citeprocCodec)
 
-      val id = obj("id").str
-      try {
-        val authors = {
-          obj.get("author").toList.flatMap {
-            _.arr.map(a => Author(given = a.obj.get("given").map(_.str), family = a.obj.get("family").map(_.str)))
-          }
-        }
-
-        val year = {
-          for {
-            iss <- obj.get("issued")
-            parts <- iss.obj.get("date-parts")
-            first <- parts.arr.headOption
-            year <- first.arr.headOption
-          } yield year.num.toInt
-        }
-
-        BibEntry(id = id,
-                 authors = authors,
-                 title = opt(obj("title")),
-                 year = year,
-                 container = obj.get("container-title").flatMap(opt),
-                 `type` = obj("type").str
-                 )
-      } catch {
-        case NonFatal(e) =>
-          scribe.error(s"error while converting bib $id")
-          throw e
-      }
-    }.toList
+    entries.map {_.toBibEntry}
   }
 }

@@ -5,7 +5,9 @@ import java.nio.charset.{Charset, StandardCharsets}
 import better.files._
 import cats.data.Chain
 import cats.implicits._
+import com.github.plokhotnyuk.jsoniter_scala.core.{WriterConfig, readFromStream, writeToArray}
 import org.jsoup.Jsoup
+import scitzen.cli.ConvertHtml.mapCodec
 import scitzen.extern.{Bibliography, ImageConverter}
 import scitzen.generic._
 import scitzen.outputs.{SastToHtmlConverter, SastToSastConverter}
@@ -52,7 +54,7 @@ object ConvertRevealPresentation {
 
     val katexmapfile    = project.cacheDir / "katexmap.json"
     val initialKatexMap = Try {
-      upickle.default.read[Map[String, String]](katexmapfile.path)
+      readFromStream[Map[String, String]](katexmapfile.newInputStream)(mapCodec)
     }.getOrElse(Map())
 
     def conversionPreproc(doc: ParsedDocument): SastToSastConverter = {
@@ -134,7 +136,7 @@ object ConvertRevealPresentation {
 
     if (resultContext.katexMap.nonEmpty) {
       katexmapfile.parent.createDirectories()
-      katexmapfile.write(upickle.default.write[Map[String, String]](resultContext.katexMap, indent = 2))
+      katexmapfile.writeByteArray(writeToArray[Map[String, String]](resultContext.katexMap, WriterConfig.withIndentionStep(2))(mapCodec))
     }
 
   }

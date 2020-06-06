@@ -93,9 +93,6 @@ object MacroCommand {
   object Link extends MacroCommand
   object Ref extends MacroCommand
   case class Other(str: String) extends MacroCommand
-
-  implicit val codecO: upickle.default.ReadWriter[Other]        = upickle.default.macroRW
-  implicit val codec : upickle.default.ReadWriter[MacroCommand] = upickle.default.macroRW
 }
 
 sealed trait Inline

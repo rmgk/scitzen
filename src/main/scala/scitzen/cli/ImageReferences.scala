@@ -6,14 +6,17 @@ import scitzen.parser.MacroCommand
 import cats.data.Chain
 import scitzen.extern.ImageConverter
 
+import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
+
 object ImageReferences {
 
   case class Reference(file: String, start: Int, end: Int)
 
-  implicit val rferenceRW: upickle.default.ReadWriter[Reference] = upickle.default.macroRW
+  implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
   def listAll(project: Project) = {
-    val fileImageMap = project.documentManager.fulldocs.map { fd =>
+    val fileImageMap: Map[String, List[Reference]] = project.documentManager.fulldocs.map { fd =>
       val doc = fd.parsed
       val cwf = fd.parsed.file
       val cwd = cwf.parent
@@ -46,6 +49,6 @@ object ImageReferences {
       }
       cwf.pathAsString -> images
     }.filter(_._2.nonEmpty).toMap
-    project.outputdir./("image-file-map.json").write(upickle.default.write(fileImageMap, 2))
+    project.outputdir./("image-file-map.json").writeByteArray(writeToArray(fileImageMap, WriterConfig.withIndentionStep(2))(rferenceRW))
   }
 }
