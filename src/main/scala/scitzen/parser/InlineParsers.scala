@@ -7,12 +7,6 @@ import scitzen.parser.MacroCommand.{Comment, Math}
 
 
 object InlineParsers {
-  //TODO: unsupported `+` for passthrough macros
-  // plan: only keep macro form, less magic syntax
-  // https://asciidoctor.org/docs/user-manual/#pass-macros
-
-  // also do not support super ^ subscript ~ or span #
-
 
   def quoteChars[_: P]: P[Unit] = CharIn("_*`$")
   def commentStart[_: P]: P[Unit] = P(":%")
@@ -20,7 +14,7 @@ object InlineParsers {
   def specialChars[_: P]: P[Unit] = CharIn("_*`$%")
 
 
-  def syntaxStart[_: P]: P[Unit] = P(":" ~ (specialChars | MacroParsers.detectStart))
+  def syntaxStart[_: P]: P[Unit] = P(":" ~ (specialChars | MacroParsers.macroCommand))
   def texStart[_: P]: P[Unit] = P("\\" ~ (identifier ~ "{"))
 
   // grab everything until a unconstrained position followed by a syntax starter

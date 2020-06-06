@@ -98,8 +98,8 @@ final case class SastConverter() {
 
       case WhitespaceBlock(space) => SBlock(attributes, SpaceComment(space))
 
-      case NormalBlock(delimiter, text, cprov, attr) =>
-        val proto = SBlock(attributes.append(attr), Fenced(""))
+      case NormalBlock(delimiter, command, text, cprov, attr) =>
+        val proto = SBlock(attributes.append(attr).prepend(List(Attribute("", command.str))), Fenced(""))
         if (delimiter == "")
           proto.copy(content = Paragraph(inlineString(text, cprov)))
         else delimiter.charAt(0) match {

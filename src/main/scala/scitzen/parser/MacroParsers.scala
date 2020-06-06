@@ -8,9 +8,9 @@ import scitzen.parser.MacroCommand.{Cite, Code, Emph, Other}
 object MacroParsers {
   // ensure consistency between detect start and start
   def detectStart[_: P]: P[Unit] = P(identifier.? ~ AttributesParser.start)
-  def start[_: P]: P[String] = P(":" ~ identifier.?.! ~ &(AttributesParser.start))
+  def macroCommand[_: P]: P[String] = P(identifier.?.!)
 
-  def full[_: P]: P[Macro] = P(withProv(start ~ AttributesParser.braces)).map {
+  def full[_: P]: P[Macro] = P(withProv(":" ~ macroCommand ~ AttributesParser.braces)).map {
     case ((name, attributes), prov) => Macro(MacroCommand.parse(name), Attributes(attributes, prov))
   }
 

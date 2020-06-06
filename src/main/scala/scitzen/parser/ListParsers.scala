@@ -4,9 +4,6 @@ import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
 
-/*
- Does not support attaching to ancestors: https://asciidoctor.org/docs/user-manual/#attaching-to-an-ancestor-list
- */
 object ListParsers {
 
   def simpleMarker[_: P]: P[String] = P(verticalSpaces
@@ -21,16 +18,17 @@ object ListParsers {
   def simpleListItem[_: P]: P[ListItem] = P(simpleMarker ~ listContent.map(NormalBlock.apply("", _))).map(ListItem.apply)
 
 
-  def descriptionListItem[_: P]: P[ListItem] = P(simpleMarker ~ descriptionListContent ~
-                                                 (spaceLine.rep(0) ~
-                                                  DelimitedBlockParsers.whitespaceLiteral).?)
-  .map {
-    case (m, dls, b) =>
-      ListItem(m, NormalBlock("", dls), b)
-  }
+  def descriptionListItem[_: P]: P[ListItem] =
+    P(simpleMarker ~ descriptionListContent ~
+      (spaceLine.rep(0) ~
+       DelimitedBlockParsers.whitespaceLiteral).?)
+    .map {
+      case (m, dls, b) =>
+        ListItem(m, NormalBlock("", dls), b)
+    }
 
 
-  def list[_: P]: P[ListBlock] = P((descriptionListItem | simpleListItem).rep(1, sep = "" | spaceLine.rep(1)))
-  .map(ListBlock)
+  def list[_: P]: P[ListBlock] =
+    P((descriptionListItem | simpleListItem).rep(1, sep = "" | spaceLine.rep(1))).map(ListBlock)
 
 }

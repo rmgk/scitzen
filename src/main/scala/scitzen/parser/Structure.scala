@@ -28,9 +28,9 @@ case class Block(rawAttributes: Seq[Attribute], prov: Prov, content: BlockConten
 
 sealed trait BlockContent
 case class WhitespaceBlock(content: String) extends BlockContent
-case class NormalBlock(delimiter: String, content: String, cprov: Prov, rawAttributes: Seq[Attribute]) extends BlockContent
+case class NormalBlock(delimiter: String, command: BlockCommand, content: String, cprov: Prov, rawAttributes: Seq[Attribute]) extends BlockContent
 object NormalBlock {
-  def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, cp._1, cp._2, Nil)
+  def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, BlockCommand(""), cp._1, cp._2, Nil)
 }
 case class ListBlock(items: Seq[ListItem]) extends BlockContent
 case class SectionTitle(level: Int, title: String, rawAttributes: Seq[Attribute]) extends BlockContent
@@ -44,6 +44,8 @@ case object ListItem {
 case class Attribute(id: String, value: String)
 
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
+
+case class BlockCommand(str: String)
 
 sealed trait MacroCommand
 object MacroCommand {
