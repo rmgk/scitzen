@@ -108,39 +108,41 @@ case class SastToScimConverter() {
         if (stripped.isEmpty) tail else stripped :: tail
     }).reverse)
 
-  def convertBlock(sb: SBlock): Chain[String] = sb.content match {
+  def convertBlock(sb: SBlock): Chain[String] = {
+    val (remattr, command) = sb.attributes.raw.headOption match {
+      case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
+      case _ => (sb.attributes, "")
+    }
+    sb.content match {
 
-    case Paragraph(content) =>
-      Chain(inlineToScim(content.inline))
+      case Paragraph(content) =>
+        Chain(inlineToScim(content.inline))
 
-    case Parsed(delimiter, blockContent) =>
-      val strippedContent = toScimS(blockContent)
-      delimiter.charAt(0) match {
-        case ':' =>
-          val (remattr, command) = sb.attributes.raw.headOption match {
-            case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
-            case _ => (sb.attributes, "")
-          }
-          (delimiter + command +
-           attributesToScimF(remattr, force = false, spacy = false)) +:
-          strippedContent :+
-          delimiter
-        // space indented blocks are currently only used for description lists
-        // they are parsed and inserted as if the indentation was not present
-        case ' ' | '\t' =>
-          val indented = strippedContent.map(_.linesWithSeparators.map(delimiter + _).mkString)
-          stripLastEnd(indented)
-      }
+      case Parsed(delimiter, blockContent) =>
+        val strippedContent = toScimS(blockContent)
+        delimiter.charAt(0) match {
+          case ':' =>
+            (delimiter + command +
+             attributesToScimF(remattr, force = false, spacy = false)) +:
+            strippedContent :+
+            delimiter
+          // space indented blocks are currently only used for description lists
+          // they are parsed and inserted as if the indentation was not present
+          case ' ' | '\t' =>
+            val indented = strippedContent.map(_.linesWithSeparators.map(delimiter + _).mkString)
+            stripLastEnd(indented)
+        }
 
-    case SpaceComment(text) =>
-      Chain.fromSeq(ArraySeq.unsafeWrapArray(
-        text.stripLineEnd.split("\\n", -1).map(_.trim)))
-    case Fenced(text)       =>
-      val foundlen  = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
-      val delimiter = "`" * math.max(3, foundlen)
-      Chain(delimiter + attributesToScimF(sb.attributes, spacy = false, force = false),
-            text,
-            delimiter)
+      case SpaceComment(text) =>
+        Chain.fromSeq(ArraySeq.unsafeWrapArray(
+          text.stripLineEnd.split("\\n", -1).map(_.trim)))
+      case Fenced(text)       =>
+        val foundlen  = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
+        val delimiter = "`" * math.max(3, foundlen)
+        Chain(delimiter + command + attributesToScimF(remattr, spacy = false, force = false),
+              text,
+              delimiter)
+    }
   }
 
 
