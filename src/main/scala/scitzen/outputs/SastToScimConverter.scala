@@ -117,8 +117,12 @@ case class SastToScimConverter() {
       val strippedContent = toScimS(blockContent)
       delimiter.charAt(0) match {
         case '=' =>
-          (delimiter +
-           attributesToScimF(sb.attributes, force = false, spacy = false)) +:
+          val (remattr, command) = sb.attributes.raw.headOption match {
+            case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
+            case _ => (sb.attributes, "")
+          }
+          (delimiter + command +
+           attributesToScimF(remattr, force = false, spacy = false)) +:
           strippedContent :+
           delimiter
         // space indented blocks are currently only used for description lists
