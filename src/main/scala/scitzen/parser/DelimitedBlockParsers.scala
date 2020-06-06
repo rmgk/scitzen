@@ -6,8 +6,8 @@ import scitzen.parser.CommonParsers._
 
 object DelimitedBlockParsers {
   // we currently use ` for code, . for literal text,
-  // = for nested content
-  def anyStart[_: P]: P[String] = P(CharIn(".=`").rep(2).!)
+  // : for nested content
+  def anyStart[_: P]: P[String] = P(CharIn(":.=`").rep(2).!)
 
   def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
     (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass)
@@ -16,7 +16,7 @@ object DelimitedBlockParsers {
 
       (withProv(untilE(closing, min = 0)) ~ closing)
       .map { case (content, prov) =>
-        NormalBlock(delimiter, BlockCommand(command.getOrElse("")), content, prov, attr.getOrElse(Nil))
+        NormalBlock(delimiter.replace("=", ":"), BlockCommand(command.getOrElse("")), content, prov, attr.getOrElse(Nil))
       }
     }
 

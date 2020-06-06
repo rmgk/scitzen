@@ -116,7 +116,7 @@ case class SastToScimConverter() {
     case Parsed(delimiter, blockContent) =>
       val strippedContent = toScimS(blockContent)
       delimiter.charAt(0) match {
-        case '=' =>
+        case ':' =>
           val (remattr, command) = sb.attributes.raw.headOption match {
             case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
             case _ => (sb.attributes, "")

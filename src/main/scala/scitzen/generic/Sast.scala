@@ -105,7 +105,7 @@ final case class SastConverter() {
         else delimiter.charAt(0) match {
           case '`'              => proto.copy(content = Fenced(text))
           case '.'              => SBlock(proto.attributes.prepend(List(Attribute("", "text"))), Fenced(text))
-          case '=' | ' ' | '\t' => proto.copy(content = Parsed(delimiter, documentString(text, cprov)))
+          case ':' | ' ' | '\t' => proto.copy(content = Parsed(delimiter, documentString(text, cprov)))
           case other            =>
             scribe.warn(s"mismatched block $delimiter: $text")
             proto.copy(content = Fenced(text))
