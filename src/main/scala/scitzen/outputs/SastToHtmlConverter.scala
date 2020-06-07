@@ -6,7 +6,6 @@ import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scalatags.generic.Bundle
-import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef}
 import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Math, Other, Ref, Strong}
@@ -27,7 +26,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
 
 
   import bundle.all._
-  import bundle.tags2.{article, time, section}
+  import bundle.tags2.{article, section, time}
 
 
   type CtxCF = ConversionContext[Chain[Frag]]
@@ -195,20 +194,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
     case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
 
     case Parsed(delimiter, blockContent) =>
-      delimiter match {
-        case rex"=+" => convertSeq(blockContent).map { cf =>
-          Chain {
-            val tag = if (sBlock.attributes.positional.headOption.contains("figure")) figure else section
-            val fig = tag(cf.toList)
-            sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l))
-          }
-        }
-        // space indented blocks are currently only used for description lists
-        // non delimiter blocks are synthetic
-        // they are parsed and inserted as if the indentation was not present
-        case "" | rex"\s+" => convertSeq(blockContent)
-        case _             => convertSeq(blockContent).map { inner =>
-          Chain(div(delimiter, br, inner.toList, br, delimiter))
+      convertSeq(blockContent).map { blockContent =>
+        if (delimiter.isBlank) blockContent
+        else {
+          val tag = if (sBlock.attributes.positional.headOption.contains("figure")) figure else section
+          val fig = tag(blockContent.toList)
+          Chain(sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l)))
         }
       }
 
