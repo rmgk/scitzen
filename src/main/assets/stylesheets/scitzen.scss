@@ -10,6 +10,7 @@ $main-content-width: 171.9mm;
   --color-subdued: hsl(0, 0%, 66%);
   // a4 paper has 21cm, subtract 1.5 inch for print margins
   --main-content-width: 171.9mm;
+  --sidebar-max-width: 20em;
 }
 
 a {
@@ -268,6 +269,8 @@ body {
     // the sidebar never shrinks below its minimum content,
     // and tries to grow as soon as possible
     flex: 0 100 max-content;
+    // max width, because sidebar with very long header names does not look great
+    max-width: var(--sidebar-max-width);
 
     // input label pair to allow hiding the sidebar content (nav)
     & > input {
