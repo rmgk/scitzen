@@ -153,48 +153,38 @@ class SastToTexConverter(project: Project,
     case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
 
     case Parsed(delimiter, blockContent) =>
-      delimiter.charAt(0) match {
-        case '=' =>
-          tlblock.attributes.positional.headOption match {
-            case Some(blockname) =>
-              blockname match {
-                case "figure" =>
-                  val (figContent, caption) = {
-                    blockContent.lastOption match {
-                      case Some(inner @ SBlock(_, Paragraph(content))) =>
-                        val captionstr = inlineValuesToTex(content.inline).data
-                        (blockContent.init,
-                        s"\\caption{$captionstr}")
-                      case other                                       =>
-                        scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
-                        (blockContent, "")
-                    }
-                  }
-                  "\\begin{figure}" +:
-                  sastSeqToTex(figContent) :++
-                  Chain(
-                    caption,
-                    tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
-                    "\\end{figure}"
-                    )
-
-                case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example" | "abstract") =>
-
-                  texbox(name, tlblock.attributes.positional.tail, blockContent)
-
-
-                case other =>
-                  sastSeqToTex(blockContent)
+      tlblock.attributes.positional.headOption match {
+        case Some(blockname) =>
+          blockname match {
+            case "figure" =>
+              val (figContent, caption) = {
+                blockContent.lastOption match {
+                  case Some(inner @ SBlock(_, Paragraph(content))) =>
+                    val captionstr = inlineValuesToTex(content.inline).data
+                    (blockContent.init,
+                    s"\\caption{$captionstr}")
+                  case other                                       =>
+                    scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
+                    (blockContent, "")
+                }
               }
+              "\\begin{figure}" +:
+              sastSeqToTex(figContent) :++
+              Chain(
+                caption,
+                tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
+                "\\end{figure}"
+                )
 
-            case None =>
+            case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example" | "abstract") =>
+              texbox(name, tlblock.attributes.positional.tail, blockContent)
+
+            case other =>
               sastSeqToTex(blockContent)
           }
 
-        // space indented blocks are currently only used for description lists
-        // they are parsed and inserted as if the indentation was not present
-        case ' ' => sastSeqToTex(blockContent)
-        case _   => sastSeqToTex(blockContent)
+        case None =>
+          sastSeqToTex(blockContent)
       }
 
     case Fenced(text) =>
