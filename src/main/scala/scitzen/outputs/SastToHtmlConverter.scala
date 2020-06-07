@@ -288,7 +288,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       val target = attributes.target
       ctx.retc(linkTo(attributes, target))
 
-    case Macro(Ref, attributes) =>
+    case macroRef @ Macro(Ref, attributes) =>
       pathManager.findDoc(attributes.target) match {
         case Some(fd) =>
           val targetpath = pathManager.relativePostTarget(fd.parsed.file).toString
@@ -301,10 +301,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
           val candidates = filterCandidates(scope, ctx.resolveRef(attributes.target))
 
-          if (candidates.lengthCompare(1) > 0) scribe.error(
+          if (candidates.sizeIs > 1) scribe.error(
             s"multiple resolutions for ${attributes.target}" +
             reporter(attributes.prov) +
             s"\n\tresolutinos are in: ${candidates.map(c => c.file).mkString("\n\t", "\n\t", "")}")
+
           candidates.headOption.map[CtxCF] { target =>
             target.sast match {
               case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
@@ -314,7 +315,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
                 scribe.error(s"can not refer to $other")
                 ctx.empty
             }
-          }.getOrElse(ctx.empty)
+          }.getOrElse{
+            scribe.error(s"no resolutions for ${attributes.target}${reporter(attributes.prov)}")
+            ctx.retc(unknownMacroOutput(macroRef))
+          }
       }
 
 
