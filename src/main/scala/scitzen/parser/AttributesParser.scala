@@ -21,7 +21,7 @@ object AttributesParser {
   }
 
   def namedAttribute[_: P]: P[Attribute] =
-    P(anySpaces ~ identifier.! ~ anySpaces ~ "=" ~ value)
+    P(anySpaces ~ identifier.! ~ verticalSpaces ~ "=" ~ value)
     .map { case (id, v) => Attribute(id, v) }
 
   def positionalAttribute[_: P]: P[Attribute] = P(value).map(v => Attribute("", v))
