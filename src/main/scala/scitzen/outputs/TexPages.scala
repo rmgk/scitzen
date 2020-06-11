@@ -100,10 +100,11 @@ object TexPages {
   // using fontspec should load Latin Modern, which should contain more symbols
   // but seemingly still not enough
   val xelatexFont: List[String] = {
-    usePackages("{fontspec}") :+
+    usePackages("{fontspec}", "{unicode-math}") :+
     "\\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}" :+
-    "\\setmainfont{Linux Libertine O}" :+
-    "\\setsansfont{Linux Biolinum O}" :+
+    "\\setmainfont{Libertinus Serif}" :+
+    "\\setsansfont{Libertinus Sans}" :+
+    "\\setmathfont{Libertinus Math}" :+
     "\\setmonofont{Hack}"
   }
 
