@@ -7,6 +7,7 @@ $main-content-width: 171.9mm;
 
 :root {
   --theme-color: hsl(0, 50%, 50%);
+  --light-theme-color: hsla(0, 50%, 50%, 0.4);
   --color-subdued: hsl(0, 0%, 66%);
   // a4 paper has 21cm, subtract 1.5 inch for print margins
   --main-content-width: 171.9mm;
@@ -242,15 +243,6 @@ a > article {
 }
 
 
-// style sidbar list
-aside nav ol {
-  list-style: disc;
-  margin: 0;
-  margin-left: 1em;
-  padding: 0;
-}
-
-
 // Sidebar design
 // body has an optional aside and a main
 // if the aside exists, it is pinned on the full height,
@@ -307,17 +299,25 @@ body {
       top: 0;
 
       // show scrollbar
-      overflow-y: auto;
+      overflow-y: scroll;
+      scrollbar-width: thin;
+      scrollbar-color: var(--light-theme-color) hsla(0, 0%, 0%, 0);
 
       // box sizing together with height makes it occupy the full height pixel perfect
       box-sizing: border-box;
       height: 100vh;
 
       // top margin to not collide with the label as much
-      padding: 2.5em 0.5em;
+      padding: 2.5em 0.5em 0 0.5em;
 
       border-right: 1px solid var(--theme-color);
-      background-color: white;
+
+      ol {
+        list-style: disc;
+        margin: 0;
+        margin-left: 1em;
+        padding: 0;
+      }
 
     }
 
