@@ -20,7 +20,7 @@ object ListParsers {
 
   def descriptionListItem[_: P]: P[ListItem] =
     P(simpleMarker ~ descriptionListContent ~
-      (spaceLine.rep(0) ~
+      (significantSpaceLine.rep(0) ~
        DelimitedBlockParsers.whitespaceLiteral).?)
     .map {
       case (m, dls, b) =>
