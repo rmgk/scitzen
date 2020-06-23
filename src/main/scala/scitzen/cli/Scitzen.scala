@@ -47,30 +47,32 @@ object ConvertProject {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap) =>
         //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-        Project.fromSource(File(sourcedirRel)).foreach { project =>
-          scribe.info(s"$project")
-          if (project.config.format.contains("content")) {
-            scribe.info(s"format contents")
-            Format.formatContents(project)
-          }
-          if (project.config.format.contains("filename")) {
-            scribe.info(s"format filenames")
-            Format.formatRename(project)
-          }
-          if (project.config.outputType.contains("html")) {
-            val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-            ConvertHtml.convertToHtml(project, sync)
-          }
-          if (project.config.outputType.contains("reveal")) {
-            val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-            ConvertRevealPresentation.convertToHtml(project, sync)
-          }
-          if (project.config.outputType.contains("pdf")) {
-            ConvertPdf.convertToPdf(project)
-          }
-          if (imageFileMap) {
-            ImageReferences.listAll(project)
-          }
+        Project.fromSource(File(sourcedirRel)) match {
+          case None => scribe.error(s"could not find project for $sourcedirRel")
+          case Some(project) =>
+            scribe.info(s"$project")
+            if (project.config.format.contains("content")) {
+              scribe.info(s"format contents")
+              Format.formatContents(project)
+            }
+            if (project.config.format.contains("filename")) {
+              scribe.info(s"format filenames")
+              Format.formatRename(project)
+            }
+            if (project.config.outputType.contains("html")) {
+              val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+              ConvertHtml.convertToHtml(project, sync)
+            }
+            if (project.config.outputType.contains("reveal")) {
+              val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+              ConvertRevealPresentation.convertToHtml(project, sync)
+            }
+            if (project.config.outputType.contains("pdf")) {
+              ConvertPdf.convertToPdf(project)
+            }
+            if (imageFileMap) {
+              ImageReferences.listAll(project)
+            }
         }
     }
   }
