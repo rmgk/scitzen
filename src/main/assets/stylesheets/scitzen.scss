@@ -8,10 +8,28 @@ $main-content-width: 171.9mm;
 :root {
   --theme-color: hsl(0, 50%, 50%);
   --light-theme-color: hsla(0, 50%, 50%, 0.4);
-  --color-subdued: hsl(0, 0%, 66%);
+  --color-subdued: hsl(0, 0%, 60%);
   // a4 paper has 21cm, subtract 1.5 inch for print margins
   --main-content-width: 171.9mm;
   --sidebar-max-width: 20em;
+
+  // used for media query based theming
+  --background-color: #f0f0f0;
+  --text-color: black;
+  --figure-box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #101010;
+    --text-color: white;
+    --figure-box-shadow: none;
+  }
+}
+
+html {
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 a {
@@ -108,8 +126,8 @@ main > figure, main > img, main > section > figure, main > section > img {
   grid-column: image-start / image-end;
 
   // add borders around figures and pure images
-  box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
-  background: #fffc;
+  box-shadow: var(--figure-box-shadow);
+  //background: rgba(255, 255, 255, 0.8);
   border-radius: 5px;
 
   // justify instead of margins to center elements in grid
