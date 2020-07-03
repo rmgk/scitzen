@@ -15,7 +15,7 @@ case class ConversionContext[T]
  katexMap: Map[String, String] = Map.empty,
  resourceMap: Map[File, Path] = Map.empty,
  tasks: List[ConvertTask] = Nil,
- labelledSections: Map[String, List[SastRef]] = Map.empty,
+ labelledThings: Map[String, List[SastRef]] = Map.empty,
  uniquectr: Int = 0,
  stack: List[Sast] = Nil,
  includes: List[File] = Nil
@@ -23,7 +23,7 @@ case class ConversionContext[T]
 
 
   def resolveRef(ref: String): List[SastRef] =
-    labelledSections.getOrElse(ref, Nil)
+    labelledThings.getOrElse(ref, Nil)
 
 
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
@@ -32,9 +32,9 @@ case class ConversionContext[T]
 
   def nextId: ConversionContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
 
-  def addSection(ref: String, secref: SastRef): ConversionContext[SastRef] = {
-    val old = labelledSections.getOrElse(ref, Nil)
-    copy(labelledSections = labelledSections.updated(ref, secref :: old), data = secref)
+  def addRefTarget(ref: String, secref: SastRef): ConversionContext[SastRef] = {
+    val old = labelledThings.getOrElse(ref, Nil)
+    copy(labelledThings = labelledThings.updated(ref, secref :: old), data = secref)
   }
 
   def push(sast: Sast): ConversionContext[T] = {

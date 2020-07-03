@@ -292,7 +292,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       pathManager.findDoc(attributes.target) match {
         case Some(fd) =>
           val targetpath = pathManager.relativePostTarget(fd.parsed.file).toString
-          val name       = if (attributes.positional.length > 1) attributes.positional.head else fd.parsed.file.nameWithoutExtension
+          val name       = attributes.arguments.headOption.getOrElse(fd.parsed.file.nameWithoutExtension)
           ctx.retc(
             a(href := targetpath, name)
             )
@@ -311,12 +311,19 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
               case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
                 Chain(a(href := s"#${sec.ref}", inner.toList))
               }
+              case block @ SBlock(attr, content) =>
+                val label = attr.named("label")
+                val name =
+                  attributes.arguments.headOption
+                            .fold(label)(n => s"$n $label")
+                ctx.retc(a(href := s"#${label}", name))
+
               case other                      =>
                 scribe.error(s"can not refer to $other")
                 ctx.empty
             }
           }.getOrElse{
-            scribe.error(s"no resolutions for ${attributes.target}${reporter(attributes.prov)}")
+            scribe.error(s"no resolutions for »${attributes.target}«${reporter(attributes.prov)}")
             ctx.retc(unknownMacroOutput(macroRef))
           }
       }

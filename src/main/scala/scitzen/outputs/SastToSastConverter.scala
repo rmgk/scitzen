@@ -49,25 +49,13 @@ class SastToSastConverter(project: Project,
 
     case NoContent => ctx.empty
 
-    case tlBlock: SBlock => convertBlock(tlBlock)
+    case tlBlock: SBlock => convertBlock(tlBlock)(ctx)
 
-    case sec @ Section(title, level, attr) =>
-
-      val ref1 = sec.ref
-
-      val nextCtx =
-        if (ctx.labelledSections.contains(ref1)) {
-          val ctr    = ctx.nextId
-          val cp     = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
-          val secref = SastRef(cwf, cp)
-          ctr.addSection(ref1, secref).addSection(cp.ref, secref)
-        } else {
-          ctx.addSection(ref1, SastRef(cwf, sec))
-        }
-
-      val conCtx = nextCtx.push(nextCtx.data.sast)
+    case sec @ Section(title, level, _) =>
+      val ctxWithRef = addRefTargetMakeUnique(ctx, sec)
+      val conCtx     = ctxWithRef.push(ctxWithRef.data.sast)
       convertInlines(title.inline)(conCtx).map { title =>
-        Chain(Section(Text(title.toList), level, nextCtx.data.sast.attributes))
+        Chain(Section(Text(title.toList), level, ctxWithRef.data.sast.attributes))
       }
 
 
@@ -85,27 +73,46 @@ class SastToSastConverter(project: Project,
       convertMacro(mcro).map(SMacro(_): Sast).single
   }
 
-  def convertBlock(tlblock: SBlock)(implicit ctx: Cta): CtxCS = tlblock.content match {
-    case Paragraph(content) =>
-      convertInlines(content.inline)
-      .map(il => SBlock(tlblock.attributes, Paragraph(Text(il.toList))): Sast).single
+  def addRefTargetMakeUnique(ctx: Cta, sec: Section): Ctx[SastRef] = {
+    val ref1 = sec.ref
+    val attr = sec.attributes
+    if (ctx.labelledThings.contains(ref1)) {
+      val ctr    = ctx.nextId
+      val cp     = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
+      val secref = SastRef(cwf, cp)
+      ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref)
+    } else {
+      ctx.addRefTarget(ref1, SastRef(cwf, sec))
+    }
+  }
+  
+  def convertBlock(tlblock: SBlock)(ctx: Cta): CtxCS = {
+    val refctx = tlblock.attributes.named.get("label") match {
+      case None => ctx
+      case Some(ref) => ctx.addRefTarget(ref, SastRef(cwf, tlblock))
+    }
+    tlblock.content match {
+      case Paragraph(content) =>
+        convertInlines(content.inline)(refctx)
+        .map(il => SBlock(tlblock.attributes, Paragraph(Text(il.toList))): Sast).single
 
 
-    case Parsed(delimiter, blockContent) =>
-      convertSeq(blockContent).map(bc => SBlock(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast).single
+      case Parsed(delimiter, blockContent) =>
+        convertSeq(blockContent)(refctx).map(bc => SBlock(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast).single
 
-    case Fenced(text) =>
-      if (tlblock.attributes.named.contains("converter")) {
-        val resctx = converter.convert(tlblock).schedule(ctx)
-        convertSingle(resctx.data)(resctx)
-      }
-      else {
-        ctx.retc(tlblock)
-      }
+      case Fenced(text) =>
+        if (tlblock.attributes.named.contains("converter")) {
+          val resctx = converter.convert(tlblock).schedule(refctx)
+          convertSingle(resctx.data)(resctx)
+        }
+        else {
+          ctx.retc(tlblock)
+        }
 
-    case SpaceComment(content) => ctx.retc(tlblock)
+      case SpaceComment(content) => ctx.retc(tlblock)
 
 
+    }
   }
 
   def convertInlines(inners: Seq[Inline])(implicit ctx: Cta): Ctx[Chain[Inline]] =
@@ -130,7 +137,7 @@ class SastToSastConverter(project: Project,
       }
 
     case Macro(Label, attributes) =>
-      ctx.addSection(attributes.target, SastRef(cwf, ctx.stack.head)).ret(mcro)
+      ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head)).ret(mcro)
 
     case Macro(Include, attributes) if attributes.arguments.isEmpty =>
       project.resolve(cwd, attributes.target) match {
