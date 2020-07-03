@@ -1,5 +1,7 @@
 package scitzen.parser
 
+import scitzen.outputs.AttributesToScim
+
 
 case class Attributes(raw: Seq[Attribute], prov: Prov) {
   lazy val positional: Seq[String]         = raw.collect { case Attribute("", value) => value }
@@ -12,6 +14,8 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
   def updated(key: String, value: String) = {
     remove(key).append(List(Attribute(key, value)))
   }
+  override def toString: String =
+    s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)}, $prov)"
 }
 
 object Attributes {

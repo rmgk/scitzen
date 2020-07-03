@@ -29,12 +29,13 @@ object Sast {
   }
   case class Section(title: Text, level: Int, attributes: Attributes) extends Sast {
     def ref: String = attributes.named.getOrElse("label", title.str)
-
   }
   case class SMacro(call: Macro) extends Sast {
     override def attributes: Attributes = call.attributes
   }
-  case class SBlock(attributes: Attributes, content: BlockType) extends Sast
+  case class SBlock(attributes: Attributes, content: BlockType) extends Sast {
+    override def toString: String = s"SBlock(${content.getClass.getSimpleName}, $attributes)"
+  }
 
   sealed trait BlockType
   case class Paragraph(content: Text) extends BlockType
