@@ -19,13 +19,13 @@ $main-content-width: 171.9mm;
   --figure-box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background-color: #101010;
-    --text-color: white;
-    --figure-box-shadow: none;
-  }
-}
+//@media (prefers-color-scheme: dark) {
+//  :root {
+//    --background-color: #101010;
+//    --text-color: white;
+//    --figure-box-shadow: none;
+//  }
+//}
 
 html {
   background-color: var(--background-color);
