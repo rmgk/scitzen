@@ -211,7 +211,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       // Use this for monospace, space preserving, line preserving text
       // It may wrap to fit the screen content
       case other =>
-        ctx.retc(pre(code(text)))
+        val txt = if (!sBlock.attributes.named.contains("label")) text else {
+          text.replaceAll(""":§([^§]*?)§""", "")
+        }
+        val respre = pre(code(txt))
+        val res = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
+        ctx.retc(res)
     }
 
     case SpaceComment(content) => ctx.empty

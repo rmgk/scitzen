@@ -87,6 +87,7 @@ class SastToSastConverter(project: Project,
   }
   
   def convertBlock(tlblock: SBlock)(ctx: Cta): CtxCS = {
+    // make all blocks labellable
     val refctx = tlblock.attributes.named.get("label") match {
       case None => ctx
       case Some(ref) => ctx.addRefTarget(ref, SastRef(cwf, tlblock))
@@ -106,7 +107,15 @@ class SastToSastConverter(project: Project,
           convertSingle(resctx.data)(resctx)
         }
         else {
-          ctx.retc(tlblock)
+          // fenced blocks allow line labels
+          tlblock.attributes.named.get("label") match {
+            case None => ctx.retc(tlblock)
+            case Some(ref) =>
+              val matches = """:§([^§]*?)§""".r.findAllMatchIn(text).map(_.group(1)).toList
+              val target = SastRef(cwf, tlblock)
+              matches.foldLeft(ctx.ret(target)){(cx, group) => cx.addRefTarget(ref + group, target)}.retc(tlblock)
+          }
+
         }
 
       case SpaceComment(content) => ctx.retc(tlblock)
