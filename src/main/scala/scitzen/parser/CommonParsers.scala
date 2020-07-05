@@ -28,7 +28,7 @@ object CommonParsers {
   def untilE[_: P](closing: => P[Unit], min: Int = 1): P[String] =
     P(((!closing) ~ AnyChar).rep(min).!)
 
-  def untilI[_: P](closing: => P[Unit], min: Int = 1): P[String] =
+  def untilI[_: P](closing: => P[Unit], min: Int = 0): P[String] =
     untilE(closing, min) ~ closing
 
 
