@@ -29,6 +29,6 @@ object ListParsers {
 
 
   def list[_: P]: P[ListBlock] =
-    P((descriptionListItem | simpleListItem).rep(1, sep = "" | spaceLine.rep(1))).map(ListBlock)
+    P((descriptionListItem | simpleListItem).rep(1)).map(ListBlock)
 
 }
