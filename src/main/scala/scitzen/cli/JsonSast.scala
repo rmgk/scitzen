@@ -36,4 +36,10 @@ object JsonSast {
 
   }
 
+  def jsonFor(file: File): String = {
+    val content = file.contentAsString
+    val sast    = SastConverter().documentString(content, Prov(0, content.length))
+    writeToString(sast)(SastEncoder)
+  }
+
 }

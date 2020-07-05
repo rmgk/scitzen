@@ -38,40 +38,45 @@ object ConvertProject {
                               help = "character offset to show in output").orNone,
              Opts.flag("image-file-map",
                        visibility = Partial,
-                       help = "character offset to show in output").orFalse
+                       help = "character offset to show in output").orFalse,
+             Opts.option[Path](long = "json", metavar = "path", help = "print single file structure as json")
+                 .orNone,
              )
 
 
   val command: Command[Unit] = Command(name = "gen",
                                        header = "Convert Scim to Sast.") {
     args.mapN {
-      (sourcedirRel, syncFileRelOption, syncPos, imageFileMap) =>
-        //val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-        Project.fromSource(File(sourcedirRel)) match {
-          case None => scribe.error(s"could not find project for $sourcedirRel")
-          case Some(project) =>
-            scribe.info(s"$project")
-            if (project.config.format.contains("content")) {
-              scribe.info(s"format contents")
-              Format.formatContents(project)
-            }
-            if (project.config.format.contains("filename")) {
-              scribe.info(s"format filenames")
-              Format.formatRename(project)
-            }
-            if (project.config.outputType.contains("html")) {
-              val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-              ConvertHtml.convertToHtml(project, sync)
-            }
-            if (project.config.outputType.contains("reveal")) {
-              val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-              ConvertRevealPresentation.convertToHtml(project, sync)
-            }
-            if (project.config.outputType.contains("pdf")) {
-              ConvertPdf.convertToPdf(project)
-            }
-            if (imageFileMap) {
-              ImageReferences.listAll(project)
+      (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
+        printJson match {
+          case Some(path) => println(JsonSast.jsonFor(File(path)))
+          case None =>
+            Project.fromSource(File(sourcedirRel)) match {
+              case None          => scribe.error(s"could not find project for $sourcedirRel")
+              case Some(project) =>
+                scribe.info(s"$project")
+                if (project.config.format.contains("content")) {
+                  scribe.info(s"format contents")
+                  Format.formatContents(project)
+                }
+                if (project.config.format.contains("filename")) {
+                  scribe.info(s"format filenames")
+                  Format.formatRename(project)
+                }
+                if (project.config.outputType.contains("html")) {
+                  val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+                  ConvertHtml.convertToHtml(project, sync)
+                }
+                if (project.config.outputType.contains("reveal")) {
+                  val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+                  ConvertRevealPresentation.convertToHtml(project, sync)
+                }
+                if (project.config.outputType.contains("pdf")) {
+                  ConvertPdf.convertToPdf(project)
+                }
+                if (imageFileMap) {
+                  ImageReferences.listAll(project)
+                }
             }
         }
     }
