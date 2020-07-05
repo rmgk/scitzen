@@ -19,25 +19,20 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
 }
 
 object Attributes {
-  def a(attrs: Attribute, prov: Prov): Attributes = Attributes(List(attrs), prov)
-  def synt(attr: Attribute*): Attributes = Attributes(attr, Prov())
-  def target(string: String, prov: Prov): Attributes = Attributes.a(Attribute("", string), prov)
+  def synthetic(attr: Attribute*): Attributes = Attributes(attr, Prov())
+  def target(string: String, prov: Prov): Attributes = Attribute("", string).toAttributes(prov)
 
 }
 
-case class Block(rawAttributes: Seq[Attribute], prov: Prov, content: BlockContent) {
-  lazy val attributes: Attributes = Attributes(rawAttributes, prov)
-
-}
 
 sealed trait BlockContent
-case class WhitespaceBlock(content: String) extends BlockContent
-case class NormalBlock(delimiter: String, command: BlockCommand, content: String, cprov: Prov, rawAttributes: Seq[Attribute]) extends BlockContent
+case class WhitespaceBlock(content: String, prov: Prov) extends BlockContent
+case class NormalBlock(delimiter: String, command: BlockCommand, content: String, attributes: Attributes) extends BlockContent
 object NormalBlock {
-  def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, BlockCommand(""), cp._1, cp._2, Nil)
+  def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, BlockCommand(""), cp._1, Attributes(Nil, cp._2))
 }
 case class ListBlock(items: Seq[ListItem]) extends BlockContent
-case class SectionTitle(level: Int, title: String, rawAttributes: Seq[Attribute]) extends BlockContent
+case class SectionTitle(level: Int, title: String, attributes: Attributes) extends BlockContent
 
 
 case class ListItem(marker: String, text: NormalBlock, content: Option[NormalBlock])
@@ -45,7 +40,9 @@ case object ListItem {
   def apply(mc: (String, NormalBlock)): ListItem = ListItem(mc._1, mc._2, None)
 }
 
-case class Attribute(id: String, value: String)
+case class Attribute(id: String, value: String) {
+  def toAttributes(prov: Prov): Attributes = Attributes(List(this), prov)
+}
 
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
 

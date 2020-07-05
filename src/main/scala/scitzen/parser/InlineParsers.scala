@@ -28,14 +28,14 @@ object InlineParsers {
   }
 
   def comment[_: P]: P[Macro] = P(Index ~ commentStart ~ untilI(eol, 0).! ~ Index)
-  .map { case (s, text, e) => Macro(Comment, Attributes.a(Attribute("", text), Prov(s, e))) }
+  .map { case (s, text, e) => Macro(Comment, Attribute("", text).toAttributes(Prov(s, e))) }
 
   def fullParagraph[_: P]: P[Seq[Inline]] =
     P(inlineSequence.? ~ End)
     .map(_.getOrElse(Nil))
 
   def texDollar[_: P]: P[Macro] = P(withProv("$" ~ untilI("$", 0))).map {
-    case (q, p) => Macro(Math, Attributes.a(Attribute("", q), p))
+    case (q, p) => Macro(Math, Attribute("", q).toAttributes(p))
   }
 
   def inlineSequence[_: P]: P[Seq[Inline]] = P {
@@ -55,6 +55,6 @@ object InlineParsers {
         .! ~ delimiter.!
       }
     }.map { case ((v, delimiter), prov) =>
-      Macro(MacroCommand.parse(delimiter), Attributes.a(Attribute("", v), prov)) }
+      Macro(MacroCommand.parse(delimiter), Attribute("", v).toAttributes(prov)) }
   }
 }

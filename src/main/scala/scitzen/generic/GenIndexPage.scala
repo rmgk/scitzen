@@ -20,12 +20,12 @@ object GenIndexPage {
       val sectionTitle = pdocs.groupBy(f)
       sectionTitle.toList.sortBy(_._1)(ordering).flatMap { case (key, docs) =>
         val inner = cont(docs).map {
-          case s: Section => s.copy(attributes = Attributes.synt(Attribute("label", s"$key " + s.attributes.named("label"))))
+          case s: Section => s.copy(attributes = Attributes.synthetic(Attribute("label", s"$key " + s.attributes.named("label"))))
           case other      => other
         }
         List[Sast](
-          Section(Text(List(InlineText(key))), level = 1, Attributes.synt(Attribute("label", key))),
-          SBlock(Attributes.synt(), Parsed("", inner)))
+          Section(Text(List(InlineText(key))), level = 1, Attributes.synthetic(Attribute("label", key))),
+          SBlock(Attributes.synthetic(), Parsed("", inner)))
       }
     }
 
@@ -41,7 +41,7 @@ object GenIndexPage {
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
           List(SMacro(Macro(Ref,
-                            Attributes.synt(
+                            Attributes.synthetic(
                               Attribute("", project.root.relativize(doc.parsed.file).toString),
                               Attribute("type", "article")))),
                //Paragraph(Text(

@@ -11,23 +11,40 @@ object DelimitedBlockParsers {
 
   def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
     (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass)
-    .flatMap { case (delimiter, command, attr) =>
-      def closing = eol ~ delimiter ~ spaceLine
+      .flatMap {
+        case (delimiter, command, attr) =>
+          def closing = eol ~ delimiter ~ spaceLine
 
-      (withProv(untilE(closing, min = 0)) ~ closing)
-      .map { case (content, prov) =>
-        NormalBlock(delimiter.replace("=", ":"), BlockCommand(command.getOrElse("")), content, prov, attr.getOrElse(Nil))
+          (withProv(untilE(closing, min = 0)) ~ closing)
+            .map {
+              case (content, prov) =>
+                NormalBlock(
+                  delimiter.replace("=", ":"),
+                  BlockCommand(command.getOrElse("")),
+                  content,
+                  Attributes(attr.getOrElse(Nil), prov)
+                )
+            }
       }
-    }
 
   def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart))
 
-
-  def whitespaceLiteral[_: P]: P[NormalBlock] = P(withProv(
-    (significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
+  def whitespaceLiteral[_: P]: P[NormalBlock] =
+    P(withProv((significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
       (indentation.? ~ untilI(eol).!)
-      .rep(min = 1, sep = significantSpaceLine.rep ~ &(indentation))
-      .map(lines => NormalBlock(indentation, BlockCommand(""), lines.mkString, Prov(), Nil))
-    }).map { case (nb, prov) => nb.copy(cprov = prov.copy(indent = nb.delimiter.length)) })
+        .rep(min = 1, sep = significantSpaceLine.rep ~ &(indentation))
+        .map(
+          lines =>
+            NormalBlock(
+              indentation,
+              BlockCommand(""),
+              lines.mkString,
+              Attributes.synthetic()
+          )
+        )
+    }).map {
+      case (nb, prov) =>
+        nb.copy(attributes = nb.attributes.copy(prov = nb.attributes.prov.copy(indent = nb.delimiter.length)))
+    })
 
 }

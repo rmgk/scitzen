@@ -18,18 +18,18 @@ object MacroParsers {
     P(withProv("\\" ~ identifier.! ~ "{" ~ CharsWhile(_ != '}').?.! ~ "}")
       .map { case ((i, c), p) =>
         i match {
-          case "sysname"     => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
-          case "fsysname"    => Macro(Other("n"), Attributes.a(Attribute("", "fsysname"), p))
-          case "basesysname" => Macro(Other("n"), Attributes.a(Attribute("", "sysname"), p))
+          case "sysname"     => Macro(Other("n"), Attribute("", "sysname").toAttributes(p))
+          case "fsysname"    => Macro(Other("n"), Attribute("", "fsysname").toAttributes(p))
+          case "basesysname" => Macro(Other("n"), Attribute("", "sysname").toAttributes(p))
           case "citet"       => Macro(Cite, Attributes(List(Attribute("style", "name"), Attribute("", c)), p))
-          case "textit"      => Macro(Emph, Attributes.a(Attribute("", c), p))
-          case "emph"        => Macro(Emph, Attributes.a(Attribute("", c), p))
-          case "code"        => Macro(Code, Attributes.a(Attribute("", c), p))
+          case "textit"      => Macro(Emph, Attribute("", c).toAttributes(p))
+          case "emph"        => Macro(Emph, Attribute("", c).toAttributes(p))
+          case "code"        => Macro(Code, Attribute("", c).toAttributes(p))
 
           case a @ ("begin" | "end" | "newcommand") => InlineText(s"\\$a{$c}")
 
           case arg @ ("ref" | "label" | "cite" | "subparagraph" | "todo" | "caption" | "textsf" | "textsc" | "creation" | "footnote") =>
-            Macro(MacroCommand.parse(arg), Attributes.a(Attribute("", c), p))
+            Macro(MacroCommand.parse(arg), Attribute("", c).toAttributes(p))
 
         }
       })

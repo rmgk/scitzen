@@ -12,6 +12,6 @@ import fastparse._
  *
  * */
 object DocumentParsers {
-  def document[_: P]: P[Seq[Block]] = P(BlockParsers.fullBlock.rep ~ End)
+  def document[_: P]: P[Seq[BlockContent]] = P(BlockParsers.fullBlock.rep ~ End)
 }
 
