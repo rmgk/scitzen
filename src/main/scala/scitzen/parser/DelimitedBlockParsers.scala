@@ -18,14 +18,24 @@ object DelimitedBlockParsers {
           (withProv(untilE(closing, min = 0)) ~ closing)
             .map {
               case (content, prov) =>
+                val strippedContent = stripIfPossible(content, delimiter.length)
                 NormalBlock(
                   delimiter.replace("=", ":"),
                   BlockCommand(command.getOrElse("")),
-                  content,
-                  Attributes(attr.getOrElse(Nil), prov)
+                  strippedContent,
+                  Attributes(attr.getOrElse(Nil), prov.copy(indent = delimiter.length))
                 )
             }
       }
+
+  def stripIfPossible(str: String, i: Int): String = {
+    val prefix = " ".repeat(i)
+    str.linesIterator.map{ l =>
+      if (l.startsWith(prefix)) l.substring(i)
+      else if (l.forall(_ == ' ')) l
+      else return str
+    }.mkString("\n")
+  }
 
   def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart))
 

@@ -61,6 +61,12 @@ case class SastToScimConverter() {
         if (stripped.isEmpty) tail else stripped :: tail
     }).reverse)
 
+  def addIndent(lines: String, delimiter: String): String =
+    lines.linesWithSeparators.map { line =>
+      if (line.isBlank) line
+      else delimiter + line
+    }.mkString
+
   def convertBlock(sb: SBlock): Chain[String] = {
     val (remattr, command) = sb.attributes.raw.headOption match {
       case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
@@ -72,18 +78,17 @@ case class SastToScimConverter() {
         Chain(inlineToScim(content.inline))
 
       case Parsed(delimiter, blockContent) =>
-        val strippedContent = toScimS(blockContent)
+        val content = toScimS(blockContent)
         delimiter.charAt(0) match {
           case ':' =>
-            (delimiter + command +
+            ("::" + command +
              AttributesToScim.convert(remattr, force = false, spacy = false)) +:
-            strippedContent :+
-            delimiter
+            content.map(addIndent(_, "  ")) :+
+            "::"
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' | '\t' =>
-            val indented = strippedContent.map(_.linesWithSeparators.map(delimiter + _).mkString)
-            stripLastEnd(indented)
+            stripLastEnd(content.map(addIndent(_, delimiter)))
         }
 
       case SpaceComment(text) =>
@@ -91,9 +96,9 @@ case class SastToScimConverter() {
           text.stripLineEnd.split("\\n", -1).map(_.trim)))
       case Fenced(text)       =>
         val foundlen  = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
-        val delimiter = "`" * math.max(3, foundlen)
+        val delimiter = "`" * math.max(2, foundlen)
         Chain(delimiter + command + AttributesToScim.convert(remattr, spacy = false, force = false),
-              text,
+              addIndent(text, " ".repeat(delimiter.length)),
               delimiter)
     }
   }
