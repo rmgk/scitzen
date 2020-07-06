@@ -72,7 +72,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       case sec @ Section(title, level, _) =>
         val inner = (if (ctx.stack.isEmpty) Chain(tMeta()) else Chain.nil)
         inlineValuesToHTML(title.inline)(ctx).map { innerFrags =>
-          tag(s"h${level + ctx.stacklevel}")(id := sec.ref, innerFrags.toList) +: inner
+          tag(s"h${level.length + ctx.stacklevel}")(id := sec.ref, innerFrags.toList) +: inner
         }.push(sec)
 
       case Slist(Nil)      => ctx.empty

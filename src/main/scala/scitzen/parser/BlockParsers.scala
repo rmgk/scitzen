@@ -13,9 +13,9 @@ object BlockParsers {
       ((untilE(eol ~ spaceLine) ~ eol).! ~ spaceLine))
       .map {NormalBlock("", _)})
 
-  def sectionStart[_: P]: P[(Int, Seq[Attribute])] = P("=".rep(1).! ~ AttributesParser.braces.? ~ " ")
+  def sectionStart[_: P]: P[(String, Seq[Attribute])] = P("=".rep(1).! ~ AttributesParser.braces.? ~ " ")
   .map {
-    case (e, attr) => (e.length, attr.getOrElse(Nil))
+    case (e, attr) => (e, attr.getOrElse(Nil))
   }
 
   def sectionTitle[_: P]: P[SectionTitle] =

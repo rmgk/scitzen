@@ -51,7 +51,7 @@ case class ConversionContext[T]
   def pop(): ConversionContext[T] = copy(stack = stack.tail)
 
   lazy val stacklevel: Int = stack.dropWhile(_.isInstanceOf[Section])
-                                  .collectFirst { case Section(_, level, _) => level }
+                                  .collectFirst { case Section(_, level, _) => level.size }
                                   .getOrElse(0)
 
 

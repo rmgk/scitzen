@@ -32,7 +32,7 @@ object NormalBlock {
   def apply(delimiter: String, cp: (String, Prov)): NormalBlock = NormalBlock(delimiter, BlockCommand(""), cp._1, Attributes(Nil, cp._2))
 }
 case class ListBlock(items: Seq[ListItem]) extends BlockContent
-case class SectionTitle(level: Int, title: String, attributes: Attributes) extends BlockContent
+case class SectionTitle(prefix: String, title: String, attributes: Attributes) extends BlockContent
 
 
 case class ListItem(marker: String, text: NormalBlock, content: Option[NormalBlock])

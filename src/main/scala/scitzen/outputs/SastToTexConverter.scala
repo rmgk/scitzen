@@ -65,12 +65,12 @@ class SastToTexConverter(project: Project,
 
     case tlBlock: SBlock => blockToTex(tlBlock)
 
-    case section @ Section(title, level, attr) =>
+    case section @ Section(title, prefix, attr) =>
       val ilc = inlineValuesToTex(title.inline)(ctx)
 
       val header = attr.positional.headOption match {
         case None                              =>
-          val sec = sectioning(level)
+          val sec = sectioning(prefix.length)
           s"\\$sec{${ilc.data}}"
         case Some("title")                     =>
           s"\\title{${ilc.data}}\\maketitle{}"
@@ -78,7 +78,7 @@ class SastToTexConverter(project: Project,
           s"\\${attr.positional.head}{${ilc.data}}"
         case other                             =>
           scribe.warn(s"invalid section type: ${other.get}" + reporter(attr.prov))
-          val sec = sectioning(level)
+          val sec = sectioning(prefix.length)
           s"\\$sec{${ilc.data}}"
       }
       ilc.push(section).retc(header)

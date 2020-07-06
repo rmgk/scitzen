@@ -27,12 +27,12 @@ case class SastToScimConverter() {
   def toScim(sast: Sast): Chain[String] = sast match {
     case NoContent => Chain.empty
 
-    case Section(title, level, attributes) =>
+    case Section(title, prefix, attributes) =>
       if (attributes.raw.size == 1 && attributes.positional.size == 1) {
-        Chain("=" * level + attributesToScim(attributes, spacy = false, force = false).headOption.get + " " + inlineToScim(title.inline))
+        Chain(prefix + attributesToScim(attributes, spacy = false, force = false).headOption.get + " " + inlineToScim(title.inline))
       }
       else {
-        ("=" * level + " " + inlineToScim(title.inline)) +:
+        (prefix + " " + inlineToScim(title.inline)) +:
         attributesToScim(attributes, spacy = true, force = false, light = true)
       }
 

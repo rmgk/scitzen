@@ -24,7 +24,7 @@ object GenIndexPage {
           case other      => other
         }
         List[Sast](
-          Section(Text(List(InlineText(key))), level = 1, Attributes.synthetic(Attribute("label", key))),
+          Section(Text(List(InlineText(key))), prefix = "#", Attributes.synthetic(Attribute("label", key))),
           SBlock(Attributes.synthetic(), Parsed("", inner)))
       }
     }

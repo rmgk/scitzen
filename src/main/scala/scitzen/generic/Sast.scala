@@ -27,7 +27,7 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, level: Int, attributes: Attributes) extends Sast {
+  case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast {
     def ref: String = attributes.named.getOrElse("label", title.str)
   }
   case class SMacro(call: Macro) extends Sast {
