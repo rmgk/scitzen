@@ -4,7 +4,7 @@ import better.files.File
 import cats.data.Chain
 import scitzen.generic.Sast._
 import scitzen.generic.{ConversionContext, Project, Reporter, Sast}
-import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Math, Other, Ref, Strong}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro}
 
 
@@ -241,8 +241,8 @@ class SastToTexConverter(project: Project,
       }
       else s"\\url{$target}"
 
-    case Macro(Other("n"), attributes) if project.documentManager.attributes.contains(attributes.target) =>
-      project.documentManager.attributes(attributes.target)
+    case Macro(Lookup, attributes) if project.config.definitions.contains(attributes.target) =>
+      project.config.definitions(attributes.target)
 
     case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
@@ -252,8 +252,9 @@ class SastToTexConverter(project: Project,
     case Macro(Other("tableofcontents"), attributes) =>
       List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
 
-    case im @ Macro(command, attributes) =>
-      scribe.warn(s"inline macro “$command[$attributes]”")
-      s"$command[${attributes.raw.mkString(",")}]"
+    case im @ Macro(Other(command), attributes) =>
+      val str = SastToScimConverter().macroToScim(im)
+      scribe.warn(s"unknown macro “$str”" + reporter(im))
+      str
   }.mkString(""))
 }

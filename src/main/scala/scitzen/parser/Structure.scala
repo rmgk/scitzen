@@ -63,14 +63,16 @@ object MacroCommand {
       "code" -> Code,
       "emph" -> Emph,
       "strong" -> Strong,
-      "math" -> Math
+      "math" -> Math,
+      "" -> Lookup
       )
     val aliases = Map(
       "fence" -> Include,
       "_" -> Emph,
       "`" -> Code,
       "*" -> Strong,
-      "$" -> Math
+      "$" -> Math,
+      "n" -> Lookup
       )
 
     (standard.toMap ++ aliases, standard.map(p => p._2 -> p._1).toMap)
@@ -93,6 +95,7 @@ object MacroCommand {
   object Label extends MacroCommand
   object Link extends MacroCommand
   object Ref extends MacroCommand
+  object Lookup extends MacroCommand
   case class Other(str: String) extends MacroCommand
 }
 

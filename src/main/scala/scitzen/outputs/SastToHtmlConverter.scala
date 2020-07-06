@@ -8,7 +8,7 @@ import cats.implicits._
 import scalatags.generic.Bundle
 import scitzen.generic.Sast._
 import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef}
-import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Math, Other, Ref, Strong}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
 
 import scala.jdk.CollectionConverters._
@@ -334,6 +334,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       }
 
 
+    case Macro(Lookup, attributes) if pathManager.project.config.definitions.contains(attributes.target) =>
+      ctx.retc(pathManager.project.config.definitions(attributes.target))
+
     case mcro @ Macro(Other(othercommand), attributes) =>
       othercommand match {
         case "footnote" =>
@@ -350,10 +353,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
         case protocol @ ("http" | "https" | "ftp" | "irc" | "mailto") =>
           val linktarget = s"$protocol:${attributes.target}"
           ctx.retc(linkTo(attributes, linktarget))
-
-
-        case "n" if pathManager.project.documentManager.attributes.contains(attributes.target) =>
-          ctx.retc(pathManager.project.documentManager.attributes(attributes.target))
 
         case "subparagraph" => ctx.retc(b(`class` := "paragraphtitle", attributes.target))
 
