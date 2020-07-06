@@ -241,8 +241,10 @@ class SastToTexConverter(project: Project,
       }
       else s"\\url{$target}"
 
-    case Macro(Lookup, attributes) if project.config.definitions.contains(attributes.target) =>
-      project.config.definitions(attributes.target)
+    case Macro(Lookup, attributes) =>
+      if (project.config.definitions.contains(attributes.target))
+        project.config.definitions(attributes.target)
+      else scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
 
     case Macro(Other("footnote"), attributes) =>
       val target = latexencode(attributes.target)
@@ -255,6 +257,11 @@ class SastToTexConverter(project: Project,
     case im @ Macro(Other(command), attributes) =>
       val str = SastToScimConverter().macroToScim(im)
       scribe.warn(s"unknown macro “$str”" + reporter(im))
+      str
+
+    case im @ Macro(Image | Include, attributes) =>
+      val str = SastToScimConverter().macroToScim(im)
+      scribe.warn(s"tex backend does not allow inline images or includes" + reporter(im))
       str
   }.mkString(""))
 }

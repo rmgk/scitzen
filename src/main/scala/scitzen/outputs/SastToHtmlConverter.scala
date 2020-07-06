@@ -334,8 +334,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
       }
 
 
-    case Macro(Lookup, attributes) if pathManager.project.config.definitions.contains(attributes.target) =>
-      ctx.retc(pathManager.project.config.definitions(attributes.target))
+    case Macro(Lookup, attributes) =>
+      if (pathManager.project.config.definitions.contains(attributes.target))
+        ctx.retc(pathManager.project.config.definitions(attributes.target))
+      else {
+        scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
+        ctx.retc(code(attributes.target))
+      }
 
     case mcro @ Macro(Other(othercommand), attributes) =>
       othercommand match {
