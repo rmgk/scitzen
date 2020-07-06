@@ -63,7 +63,7 @@ case class SastToScimConverter() {
 
   def addIndent(lines: String, delimiter: String): String =
     lines.linesWithSeparators.map { line =>
-      if (line.isBlank) line
+      if (line == "\n") line
       else delimiter + line
     }.mkString
 
