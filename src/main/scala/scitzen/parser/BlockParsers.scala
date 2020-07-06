@@ -13,7 +13,7 @@ object BlockParsers {
       ((untilE(eol ~ spaceLine) ~ eol).! ~ spaceLine))
       .map {NormalBlock("", _)})
 
-  def sectionStart[_: P]: P[(String, Seq[Attribute])] = P("=".rep(1).! ~ AttributesParser.braces.? ~ " ")
+  def sectionStart[_: P]: P[(String, Seq[Attribute])] = P(CharsWhileIn("=#").! ~ AttributesParser.braces.? ~ " ")
   .map {
     case (e, attr) => (e, attr.getOrElse(Nil))
   }
