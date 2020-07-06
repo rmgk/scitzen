@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import better.files._
 
@@ -18,6 +18,10 @@ case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
   }
   def translateImage(image: File): File = {
     (project.outputdir / "images").path.resolve(project.root.relativize(image))
+  }
+
+  def relativizeToProject(target: File): Path = {
+    Paths.get("/").resolve(project.root.relativize(target))
   }
 
 

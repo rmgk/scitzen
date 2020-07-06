@@ -309,7 +309,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
           if (candidates.sizeIs > 1) scribe.error(
             s"multiple resolutions for ${attributes.target}" +
             reporter(attributes.prov) +
-            s"\n\tresolutinos are in: ${candidates.map(c => c.file).mkString("\n\t", "\n\t", "")}")
+            s"\n\tresolutinos are in: ${candidates.map(c => pathManager.relativizeToProject(c.file)).mkString("\n\t", "\n\t", "\n\t")}")
 
           candidates.headOption.map[CtxCF] { target =>
             target.sast match {
