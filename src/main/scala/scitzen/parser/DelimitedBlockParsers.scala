@@ -28,13 +28,15 @@ object DelimitedBlockParsers {
             }
       }
 
+  val spaceNewline = " *\\n?$".r
+
   def stripIfPossible(str: String, i: Int): String = {
     val prefix = " ".repeat(i)
-    str.linesIterator.map{ l =>
+    str.linesWithSeparators.map{ l =>
       if (l.startsWith(prefix)) l.substring(i)
-      else if (l.forall(_ == ' ')) l
+      else if (spaceNewline.matches(l)) l
       else return str
-    }.mkString("\n")
+    }.mkString
   }
 
   def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart))
