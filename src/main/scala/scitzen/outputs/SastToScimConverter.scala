@@ -28,13 +28,8 @@ case class SastToScimConverter() {
     case NoContent => Chain.empty
 
     case Section(title, prefix, attributes) =>
-      if (attributes.raw.size == 1 && attributes.positional.size == 1) {
-        Chain(prefix + attributesToScim(attributes, spacy = false, force = false).headOption.get + " " + inlineToScim(title.inline))
-      }
-      else {
         (prefix + " " + inlineToScim(title.inline)) +:
         attributesToScim(attributes, spacy = true, force = false, light = true)
-      }
 
 
     case Slist(children) => Chain.fromSeq(children).flatMap {
@@ -70,7 +65,7 @@ case class SastToScimConverter() {
   def convertBlock(sb: SBlock): Chain[String] = {
     val (remattr, command) = sb.attributes.raw.headOption match {
       case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
-      case _ => (sb.attributes, "")
+      case _                            => (sb.attributes, "")
     }
     sb.content match {
 
