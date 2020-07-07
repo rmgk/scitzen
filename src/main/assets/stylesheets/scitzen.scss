@@ -91,7 +91,7 @@ time {
 }
 
 // usually these should collapse, but because of grid they dont.
-h1 + h2 , p + p {
+main > p , main > section > p {
   margin-top: 0;
 }
 
@@ -147,6 +147,11 @@ p, pre {
   // restrict max width also when nested inside something else
   max-width: var(--main-content-width);
   font-family: inherit;
+}
+
+main .marginnote {
+  grid-column: content-end;
+  margin-left: 2em;
 }
 
 main > figure > pre:has(> code), main > section > figure > pre:has(> code) {
