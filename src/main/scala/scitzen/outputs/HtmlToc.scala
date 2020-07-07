@@ -16,7 +16,10 @@ object HtmlToc {
     //if (tocDepth != 2) scribe.warn(s"toc with more then one level of depth currently unsuported")
 
     def makeToc(cont: Seq[Sast], depth: Int): Option[Tag] = {
-      val sections = getSections(cont)
+      val allSections          = getSections(cont).filterNot(_.prefix == "=")
+      val firstStructuralLevel = allSections.filter(_.prefix.contains('='))
+      val sections             = if (firstStructuralLevel.sizeIs > 1) firstStructuralLevel
+                                 else allSections
       if (sections.length <= 1) None
       else {
         Some(ol(sections.map {
@@ -35,7 +38,7 @@ object HtmlToc {
 
   private def getSections(cont: Seq[Sast]): Seq[Section] = {
     cont.collect {
-      case s: Section => List(s)
+      case s: Section                    => List(s)
       case SBlock(_, Parsed(_, content)) => getSections(content)
     }.flatten
   }
