@@ -10,7 +10,7 @@ object BlockParsers {
 
   def paragraph[_: P]: P[NormalBlock] =
     P(withProv(
-      (AttributesParser.braces ~ anySpaces).? ~
+      (AttributesParser.braces ~ spaceLine).? ~
       ((untilE(eol ~ spaceLine) ~ eol).! ~ spaceLine))
       .map {case ((attrOpt, text), prov) => NormalBlock("", BlockCommand(""), text, Attributes(attrOpt.getOrElse(Nil), prov))
       })
