@@ -35,6 +35,7 @@ object Sast {
   }
   case class SBlock(attributes: Attributes, content: BlockType) extends Sast {
     override def toString: String = s"SBlock(${content.getClass.getSimpleName}, $attributes)"
+    def command: String = attributes.positional.headOption.getOrElse("")
   }
 
   sealed trait BlockType

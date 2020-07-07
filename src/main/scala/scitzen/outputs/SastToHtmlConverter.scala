@@ -189,37 +189,43 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT]
   }
 
 
-  def convertBlock(sBlock: SBlock)(implicit ctx: Cta): CtxCF = sBlock.content match {
+  def convertBlock(sBlock: SBlock)(implicit ctx: Cta): CtxCF = {
+    val innerCtx: CtxCF = sBlock.content match {
 
-    case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
+      case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
 
-    case Parsed(delimiter, blockContent) =>
-      convertSeq(blockContent).map { blockContent =>
-        if (delimiter.isBlank) blockContent
-        else {
-          val tag = if (sBlock.attributes.positional.headOption.contains("figure")) figure else section
-          val fig = tag(blockContent.toList)
-          Chain(sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l)))
+      case Parsed(delimiter, blockContent) =>
+        convertSeq(blockContent).map { blockContent =>
+          if (delimiter.isBlank) blockContent
+          else {
+            val tag = if (sBlock.command == "figure") figure else section
+            val fig = tag(blockContent.toList)
+            Chain(sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l)))
+          }
         }
+
+      case Fenced(text) => sBlock.attributes.positional.headOption match {
+        // Preformatted plaintext, preserve linebreaks,
+        // but also wrap for linebreaks
+        case Some("text") => ctx.retc(pre(text))
+        // Code listing
+        // Use this for monospace, space preserving, line preserving text
+        // It may wrap to fit the screen content
+        case other =>
+          val txt    = if (!sBlock.attributes.named.contains("label")) text else {
+            text.replaceAll(""":§([^§]*?)§""", "")
+          }
+          val respre = pre(code(txt))
+          val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
+          ctx.retc(res)
       }
 
-    case Fenced(text) => sBlock.attributes.positional.headOption match {
-      // Preformatted plaintext, preserve linebreaks,
-      // but also wrap for linebreaks
-      case Some("text") => ctx.retc(pre(text))
-      // Code listing
-      // Use this for monospace, space preserving, line preserving text
-      // It may wrap to fit the screen content
-      case other =>
-        val txt = if (!sBlock.attributes.named.contains("label")) text else {
-          text.replaceAll(""":§([^§]*?)§""", "")
-        }
-        val respre = pre(code(txt))
-        val res = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
-        ctx.retc(res)
+      case SpaceComment(content) => ctx.empty
     }
 
-    case SpaceComment(content) => ctx.empty
+    sBlock.attributes.named.get("note").fold(innerCtx) { note =>
+      innerCtx :+ p(`class` := "marginnote", sBlock.attributes.named("note"))
+    }
   }
 
 

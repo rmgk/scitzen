@@ -10,8 +10,10 @@ object BlockParsers {
 
   def paragraph[_: P]: P[NormalBlock] =
     P(withProv(
+      (AttributesParser.braces ~ anySpaces).? ~
       ((untilE(eol ~ spaceLine) ~ eol).! ~ spaceLine))
-      .map {NormalBlock("", _)})
+      .map {case ((attrOpt, text), prov) => NormalBlock("", BlockCommand(""), text, Attributes(attrOpt.getOrElse(Nil), prov))
+      })
 
   def sectionStart[_: P]: P[(String, Seq[Attribute])] = P(CharsWhileIn("=#").! ~ AttributesParser.braces.? ~ " ")
   .map {

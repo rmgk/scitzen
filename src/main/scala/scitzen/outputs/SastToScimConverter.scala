@@ -70,7 +70,8 @@ case class SastToScimConverter() {
     sb.content match {
 
       case Paragraph(content) =>
-        Chain(inlineToScim(content.inline))
+        val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
+        attrres :+ inlineToScim(content.inline)
 
       case Parsed(delimiter, blockContent) =>
         val content = toScimS(blockContent)
