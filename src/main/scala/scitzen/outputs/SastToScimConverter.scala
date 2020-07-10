@@ -4,7 +4,7 @@ import cats.data.Chain
 import cats.implicits._
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
-import scitzen.parser.MacroCommand.{Comment, Def, Other}
+import scitzen.parser.MacroCommand.{Comment, Def}
 import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineText, Macro, MacroCommand}
 
 import scala.collection.immutable.ArraySeq
@@ -45,8 +45,6 @@ case class SastToScimConverter() {
 
     case tlb: SBlock => convertBlock(tlb)
   }
-
-  private val fencedRegex: Regex = "`{3,}".r
 
   def stripLastEnd(strings: Chain[String]): Chain[String] = Chain.fromSeq(
     (strings.toList.reverse match {
@@ -91,8 +89,7 @@ case class SastToScimConverter() {
         Chain.fromSeq(ArraySeq.unsafeWrapArray(
           text.stripLineEnd.split("\\n", -1).map(_.trim)))
       case Fenced(text)       =>
-        val foundlen  = fencedRegex.findAllMatchIn(text).map(r => r.end - r.start).maxOption.getOrElse(0)
-        val delimiter = "`" * math.max(2, foundlen)
+        val delimiter = "``"
         Chain(delimiter + command + AttributesToScim.convert(remattr, spacy = false, force = false),
               addIndent(text, " ".repeat(delimiter.length)),
               delimiter)
@@ -110,7 +107,6 @@ case class SastToScimConverter() {
   }.mkString("")
 
   def macroToScim(m: Macro): String = m match {
-    case Macro(Other("horizontal-rule"), attributes) => attributes.target
     case Macro(Comment, attributes)                  => s":%${attributes.target}"
     case other                                       => macroToScimRaw(other)
   }
