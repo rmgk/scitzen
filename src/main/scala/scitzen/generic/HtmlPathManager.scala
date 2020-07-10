@@ -24,7 +24,6 @@ case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
     Paths.get("/").resolve(project.root.relativize(target))
   }
 
-
   def relativizeImage(targetFile: File): Path = {
     currentTargetDir.relativize(translateImage(targetFile))
   }
@@ -39,13 +38,14 @@ case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
   def changeWorkingFile(parent: File): HtmlPathManager = copy(cwf = parent)
 
   def copyResources(resources: Map[File, Path]) =
-    resources.foreach { case (img, path) =>
-      val target = File(outputDir.path.resolve(path))
-      if (!target.exists) {
-        scribe.info(s"hardlink $img to $target")
-        target.parent.createDirectoryIfNotExists()
-        img.linkTo(target, symbolic = false)
-      }
+    resources.foreach {
+      case (img, path) =>
+        val target = File(outputDir.path.resolve(path))
+        if (!target.exists) {
+          scribe.info(s"hardlink $img to $target")
+          target.parent.createDirectoryIfNotExists()
+          img.linkTo(target, symbolic = false)
+        }
     }
 
 }

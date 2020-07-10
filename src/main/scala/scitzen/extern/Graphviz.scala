@@ -14,21 +14,25 @@ object Graphviz {
     new ConvertSchedulable(
       target,
       if (target.exists) None
-      else Some(new ConvertTask {
-        override def run(): Unit = {
-          dir.createDirectories()
+      else
+        Some(new ConvertTask {
+          override def run(): Unit = {
+            dir.createDirectories()
 
-          val start   = System.nanoTime()
-          val process = new ProcessBuilder("dot",
-                                           layout.map(l => s"-K$l").getOrElse("-Kdot"),
-                                           s"-T$format",
-                                           s"-o${target.pathAsString}")
-          .inheritIO().redirectInput(Redirect.PIPE).start()
-          process.getOutputStream.autoClosed.foreach {_.write(bytes)}
-          process.waitFor()
-          scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-        }
-      }))
+            val start = System.nanoTime()
+            val process = new ProcessBuilder(
+              "dot",
+              layout.map(l => s"-K$l").getOrElse("-Kdot"),
+              s"-T$format",
+              s"-o${target.pathAsString}"
+            )
+              .inheritIO().redirectInput(Redirect.PIPE).start()
+            process.getOutputStream.autoClosed.foreach { _.write(bytes) }
+            process.waitFor()
+            scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+          }
+        })
+    )
   }
 
 }

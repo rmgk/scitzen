@@ -5,13 +5,11 @@ import fastparse.NoWhitespace._
 import fastparse.Parsed.{Failure, Success, TracedFailure}
 import fastparse._
 
-
 object DocumentParsers {
   def document[_: P]: P[Seq[BlockContent]] = P(BlockParsers.alternatives.rep ~ End)
 }
 
 case class ParsingAnnotation(content: String, failure: TracedFailure) extends Exception
-
 
 object Parse {
 
@@ -21,9 +19,11 @@ object Parse {
     val parsed = fastparse.parse(content, { p: P[_] => p.misc("provenanceOffset") = prov; parser(p) })
     parsed match {
       case Success(value, index) => value.asRight
-      case f: Failure            =>
+      case f: Failure =>
         val traced = f.trace()
-        scribe.error(s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(0, math.min(80, content.length))}...")
+        scribe.error(
+          s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(0, math.min(80, content.length))}..."
+        )
         ParsingAnnotation(content, traced).asLeft
     }
   }

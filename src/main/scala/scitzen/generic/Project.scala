@@ -8,15 +8,12 @@ import toml.Codecs._
 
 case class Project(root: File, config: ProjectConfig) {
 
-
-  val cacheDir: File = root / config.cache
+  val cacheDir: File                        = root / config.cache
   lazy val documentManager: DocumentManager = new DocumentManager(root)
-  val outputdir: File = root / config.output
-  val nlpdir   : File = root / config.stopwords
-
+  val outputdir: File                       = root / config.output
+  val nlpdir: File                          = root / config.stopwords
 
   val main: Option[File] = config.main.map(root / _).filter(Project.isScim)
-
 
   def findDoc(currentWorkingDirectory: File, pathString: String): Option[FullDoc] = {
     documentManager.byPath.get(resolveUnchecked(currentWorkingDirectory, pathString))
@@ -24,7 +21,7 @@ case class Project(root: File, config: ProjectConfig) {
 
   def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File = {
     val rawPath = Paths.get(pathString)
-    val res     =
+    val res =
       if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
       else currentWorkingDirectory / pathString
     scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
@@ -32,26 +29,26 @@ case class Project(root: File, config: ProjectConfig) {
   }
 
   /** Does a project global file local resolve of the given path.
-   * Ensures that only files in the current project are accessed */
+    * Ensures that only files in the current project are accessed
+    */
   def resolve(currentWorkingDirectory: File, pathString: String): Option[File] = {
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
     Some(res).filter(p => root.isParentOf(p) && p.isRegularFile)
   }
 
-
 }
 
 object Project {
 
-  case class ProjectConfig
-  (output: String = "out",
-   cache: String = "cache",
-   stopwords: String = "scitzen",
-   main: Option[String] = None,
-   format: List[String] = Nil,
-   outputType: List[String] = Nil,
-   revealTemplate: Option[String] = None,
-   definitions: Map[String, String] = Map.empty
+  case class ProjectConfig(
+      output: String = "out",
+      cache: String = "cache",
+      stopwords: String = "scitzen",
+      main: Option[String] = None,
+      format: List[String] = Nil,
+      outputType: List[String] = Nil,
+      revealTemplate: Option[String] = None,
+      definitions: Map[String, String] = Map.empty
   )
 
   val scitzenconfig: String = "scitzen.toml"
@@ -67,19 +64,16 @@ object Project {
         case None       => Some(Project(file.parent, ProjectConfig(main = Some(file.name))))
         case Some(file) => fromConfig(file)
       }
-    }
-    else if (file.isDirectory) {
+    } else if (file.isDirectory) {
       if ((file / scitzenconfig).isRegularFile) {
         fromConfig(file)
-      }
-      else Some(Project(file, ProjectConfig()))
-    }
-         else None
+      } else Some(Project(file, ProjectConfig()))
+    } else None
   }
 
   def fromConfig(file: File): Option[Project] = {
     toml.Toml.parseAs[ProjectConfig]((file / scitzenconfig).contentAsString) match {
-      case Right(value)       => Some(Project(file, value))
+      case Right(value) => Some(Project(file, value))
       case Left((addr, mesg)) =>
         val errormessage = s"could not parse config:\n$mesg\nat $addr"
         scribe.error(errormessage)
@@ -88,17 +82,17 @@ object Project {
   }
   def isScim(c: File): Boolean =
     c.isRegularFile &&
-    c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
+      c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
 
   val fileEnding = "scim"
   def discoverSources(source: File): List[File] = {
     import scala.jdk.CollectionConverters._
     source match {
       case f if f.isRegularFile => List(f)
-      case f if f.isDirectory   =>
+      case f if f.isDirectory =>
         f.collectChildren { c =>
           isScim(c) &&
-          !f.relativize(c).iterator().asScala.exists {_.toString.startsWith(".")}
+          !f.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
         }.toList
     }
   }

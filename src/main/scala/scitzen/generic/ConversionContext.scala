@@ -10,21 +10,19 @@ import scitzen.generic.Sast.Section
 case class SastRef(file: File, sast: Sast)
 
 /** The conversion context, used to keep state of in the conversion. */
-case class ConversionContext[T]
-(data: T,
- katexMap: Map[String, String] = Map.empty,
- resourceMap: Map[File, Path] = Map.empty,
- tasks: List[ConvertTask] = Nil,
- labelledThings: Map[String, List[SastRef]] = Map.empty,
- uniquectr: Int = 0,
- stack: List[Sast] = Nil,
- includes: List[File] = Nil
+case class ConversionContext[T](
+    data: T,
+    katexMap: Map[String, String] = Map.empty,
+    resourceMap: Map[File, Path] = Map.empty,
+    tasks: List[ConvertTask] = Nil,
+    labelledThings: Map[String, List[SastRef]] = Map.empty,
+    uniquectr: Int = 0,
+    stack: List[Sast] = Nil,
+    includes: List[File] = Nil
 ) {
-
 
   def resolveRef(ref: String): List[SastRef] =
     labelledThings.getOrElse(ref, Nil)
-
 
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
     copy(resourceMap = resourceMap.updated(source, relative))
@@ -44,20 +42,19 @@ case class ConversionContext[T]
           case Section(_, l, _) => l >= level
           case other            => false
         }
-      case other                => stack
+      case other => stack
     }
     copy(stack = sast :: droppedStack)
   }
   def pop(): ConversionContext[T] = copy(stack = stack.tail)
 
   lazy val stacklevel: Int = stack.dropWhile(_.isInstanceOf[Section])
-                                  .collectFirst { case Section(_, level, _) => level.size }
-                                  .getOrElse(0)
+    .collectFirst { case Section(_, level, _) => level.size }
+    .getOrElse(0)
 
-
-  def ret[U](d: U): ConversionContext[U] = copy(data = d)
+  def ret[U](d: U): ConversionContext[U]         = copy(data = d)
   def retc[U](d: U): ConversionContext[Chain[U]] = copy(data = Chain(d))
-  def map[U](f: T => U): ConversionContext[U] = ret(f(data))
+  def map[U](f: T => U): ConversionContext[U]    = ret(f(data))
 
   def +:[I](value: I)(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => value +: data)
@@ -70,12 +67,10 @@ case class ConversionContext[T]
     map(data => data ++ value)
 
   def empty[U]: ConversionContext[Chain[U]] = ret(Chain.empty[U])
-  def single: ConversionContext[Chain[T]] = ret(Chain.one(data))
+  def single: ConversionContext[Chain[T]]   = ret(Chain.one(data))
 
-
-  def fold[U, V](seq: Seq[U])
-                (f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])
-  : ConversionContext[Chain[V]] =
+  def fold[U, V](seq: Seq[U])(f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])
+      : ConversionContext[Chain[V]] =
     seq.foldLeft(ret(Chain.empty[V])) { (ctx, elem) =>
       val nctx = f(ctx, elem)
       nctx.map(data => ctx.data ++ data)
@@ -83,13 +78,12 @@ case class ConversionContext[T]
 
   def katex(key: String, default: => String): (String, ConversionContext[T]) = {
     katexMap.get(key) match {
-      case None        =>
+      case None =>
         val computed = default
         (computed, copy(katexMap = katexMap.updated(key, computed)))
       case Some(value) => (value, this)
     }
   }
-
 
   def execTasks(): ConversionContext[T] = {
     import scala.jdk.CollectionConverters._

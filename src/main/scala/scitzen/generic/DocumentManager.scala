@@ -4,7 +4,6 @@ import better.files.File
 import cats.data.Chain
 import scitzen.parser.Macro
 
-
 case class FullDoc(parsed: ParsedDocument, analyzed: AnalyzedDoc) {
   def sast: List[Sast] = analyzed.sast
 
@@ -26,7 +25,7 @@ class DocumentManager(root: File) {
 
   lazy val fulldocs: List[FullDoc] =
     documents.zip(analyzed)
-             .map { case (a, b) => FullDoc(a, b) }
+      .map { case (a, b) => FullDoc(a, b) }
 
   lazy val byPath: Map[File, FullDoc] =
     fulldocs.map(fd => fd.parsed.file -> fd).toMap

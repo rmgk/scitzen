@@ -17,20 +17,20 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 
   lazy val named: Map[String, String] = {
     val sectionattrs = analyzeResult.sections.flatMap(_.attributes.raw)
-    val macroattrs   = analyzeResult.macros.filter(_.command == Def)
-                                    .flatMap(m => m.attributes.raw)
+    val macroattrs = analyzeResult.macros.filter(_.command == Def)
+      .flatMap(m => m.attributes.raw)
     Attributes(macroattrs ++ sectionattrs, Prov()).named
   }
 
   lazy val language: Option[String] = named.get("language").map(_.trim)
 
   lazy val date: Option[ScitzenDateTime] = named.get("date")
-                                                .map(v => DateParsingHelper.parseDate(v.trim))
+    .map(v => DateParsingHelper.parseDate(v.trim))
 
   lazy val title: Option[String] = sast.headOption.collect { case s: Section => s }.map(_.title.str)
 
   lazy val words: List[String] = SastToTextConverter.convert(sast)
-                                                    .flatMap(_.split("[^\\p{L}]+")).toList
+    .flatMap(_.split("[^\\p{L}]+")).toList
 
   lazy val wordcount: Map[String, Int] =
     words.foldMap(s => Map(s.toLowerCase() -> 1))
@@ -92,6 +92,6 @@ final class FileReporter(file: File, content: String) extends Reporter {
   override def apply(prov: Prov): String = {
     val pos = indexToPosition(prov.start)
     s" at »${File.currentWorkingDirectory.relativize(file)}:" +
-    s"${pos._1}:${pos._2}«"
+      s"${pos._1}:${pos._2}«"
   }
 }

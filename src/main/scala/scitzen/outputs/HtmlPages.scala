@@ -20,9 +20,8 @@ class HtmlPages(cssPath: String) {
       link(href := cssPath, rel := "stylesheet", `type` := "text/css"),
       meta(name := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
       meta(charset := "UTF-8")
-      )
+    )
   }
-
 
   def htmlDocument(tag: Tag): String =
     "<!DOCTYPE html>\n" + Jsoup.parse(tag.render).outerHtml()
@@ -30,7 +29,10 @@ class HtmlPages(cssPath: String) {
   val sidebarContainer: Tag =
     aside(
       input(`type` := "checkbox", id := "sidebar-switch", hidden),
-      label(`for` := "sidebar-switch", hidden, raw("""
+      label(
+        `for` := "sidebar-switch",
+        hidden,
+        raw("""
               |<svg viewBox="0 0 48 48" width="48px" height="48px">
               |  <g stroke="currentColor" stroke-width="4" stroke-linecap="round">
               |  <path d="M 6 12 H 42" />
@@ -38,17 +40,17 @@ class HtmlPages(cssPath: String) {
               |  <path d="M 6 36 H 42" />
               |  </g>
               |</svg>
-              |""".stripMargin)))
+              |""".stripMargin)
+      )
+    )
 
   def wrapContentHtml(content: Seq[Frag], bodyClass: String, sidebar: Option[Frag], language: String = ""): String = {
-
 
     htmlDocument(html(tHead)(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,
       main(content)(if (language.nonEmpty) lang := language else frag()),
-      )))
+    )))
   }
-
 
 }

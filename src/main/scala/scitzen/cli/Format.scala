@@ -7,11 +7,9 @@ import scitzen.generic.{AnalyzedDoc, Project, Sast}
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.MacroCommand.Image
 
-
 object Format {
 
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
-
 
   def formatContents(project: Project): Unit = {
 
@@ -23,10 +21,12 @@ object Format {
   def formatRename(project: Project): Unit = {
     project.documentManager.fulldocs.foreach { fd =>
       if (renamePossible(fd.analyzed)) renameFileFromHeader(fd.parsed.file, fd.analyzed)
-      else scribe.info(s"could not format ${fd.parsed.file}, header was ${fd.analyzed.title}, date was ${fd.analyzed.date}")
+      else
+        scribe.info(
+          s"could not format ${fd.parsed.file}, header was ${fd.analyzed.title}, date was ${fd.analyzed.date}"
+        )
     }
   }
-
 
   def checkReferences(file: File, sdoc: AnalyzedDoc): Unit = {
     sdoc.analyzeResult.macros.foreach { mcro =>
@@ -49,7 +49,6 @@ object Format {
     }
   }
 
-
   def renameFileFromHeader(f: File, sdoc: AnalyzedDoc): Unit = {
     val newName: String = canonicalName(sdoc)
 
@@ -68,11 +67,11 @@ object Format {
 
   def sluggify(str: String): String =
     str
-    .replaceAll("""[<>":;%/\?\[\]\\\*\|]""", "-")
-    .replaceAll("\\s+", " ")
-    .replaceAll("-+", "-")
-    .trim
-    .replaceAll("^-|-$", "")
-    .trim
+      .replaceAll("""[<>":;%/\?\[\]\\\*\|]""", "-")
+      .replaceAll("\\s+", " ")
+      .replaceAll("-+", "-")
+      .trim
+      .replaceAll("^-|-$", "")
+      .trim
 
 }

@@ -10,7 +10,6 @@ object HtmlToc {
     tableOfContentsS(document, tocDepth)
   }
 
-
   def tableOfContentsS(document: Seq[Sast], tocDepth: Int): Option[Frag] = {
 
     //if (tocDepth != 2) scribe.warn(s"toc with more then one level of depth currently unsuported")
@@ -18,8 +17,9 @@ object HtmlToc {
     def makeToc(cont: Seq[Sast], depth: Int): Option[Tag] = {
       val allSections          = getSections(cont).filterNot(_.prefix == "=")
       val firstStructuralLevel = allSections.filter(_.prefix.contains('='))
-      val sections             = if (firstStructuralLevel.sizeIs > 1) firstStructuralLevel
-                                 else allSections
+      val sections =
+        if (firstStructuralLevel.sizeIs > 1) firstStructuralLevel
+        else allSections
       if (sections.length <= 1) None
       else {
         Some(ol(sections.map {
@@ -29,7 +29,6 @@ object HtmlToc {
         }))
       }
     }
-
 
     document match {
       case other => makeToc(other, tocDepth)

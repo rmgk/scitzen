@@ -29,7 +29,8 @@ object ConvertPdf {
     cacheDir.createDirectories()
 
     val preConversionContext = ConversionContext(
-      Chain.empty[String])
+      Chain.empty[String]
+    )
 
     def preprocConverter(doc: ParsedDocument): SastToSastConverter = {
       new SastToSastConverter(
@@ -37,23 +38,21 @@ object ConvertPdf {
         doc.file,
         doc.reporter,
         new ImageConverter(project, "pdf", List("svg"))
-        )
+      )
     }
 
     val docsCtx = dm.fulldocs.foldLeft(preConversionContext.ret(Map.empty[File, List[Sast]])) { (ctx, doc) =>
       SastToSastConverter.preprocessRecursive(doc, ctx, dm, preprocConverter)
     }
 
-
-
     val resultContext = new SastToTexConverter(
       project,
       main.parsed.file.parent,
       main.parsed.reporter,
       docsCtx.data
-      ).convert(
+    ).convert(
       docsCtx.data(main.parsed.file)
-      )(docsCtx)
+    )(docsCtx)
 
     val content = resultContext.data
 
@@ -62,9 +61,7 @@ object ConvertPdf {
       ct.run()
     }
 
-
     val targetfile = project.outputdir / "output.pdf"
-
 
     def fileFromParam(param: String) = {
       dm.fulldocs.collectFirstSome { pd =>

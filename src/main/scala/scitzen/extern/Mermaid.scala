@@ -14,20 +14,20 @@ object Mermaid {
     new ConvertSchedulable(
       target,
       if (target.exists) None
-      else Some(new ConvertTask {
-        override def run(): Unit = {
+      else
+        Some(new ConvertTask {
+          override def run(): Unit = {
 
-          val start = System.nanoTime()
+            val start = System.nanoTime()
 
-          mermaidSource.createIfNotExists(createParents = true)
-          mermaidSource.writeByteArray(bytes)
+            mermaidSource.createIfNotExists(createParents = true)
+            mermaidSource.writeByteArray(bytes)
 
-          new ProcessBuilder("mmdc",
-                             "--input", mermaidSource.pathAsString,
-                             "--output", target.pathAsString)
-          .inheritIO().start().waitFor()
-          scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-        }
-      }))
+            new ProcessBuilder("mmdc", "--input", mermaidSource.pathAsString, "--output", target.pathAsString)
+              .inheritIO().start().waitFor()
+            scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+          }
+        })
+    )
   }
 }

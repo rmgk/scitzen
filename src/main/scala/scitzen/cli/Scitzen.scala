@@ -9,50 +9,48 @@ import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.generic.Project
 import scribe.Logger
 
+object Scitzen
+    extends CommandApp(
+      name = "scitzen",
+      header = "Static page generator",
+      main = {
 
-object Scitzen extends CommandApp(
-  name = "scitzen",
-  header = "Static page generator",
-  main = {
+        import scribe.format._
+        val myFormatter: Formatter = formatter"$message ($position)"
+        Logger.root.clearHandlers().withHandler(
+          formatter = myFormatter,
+          minimumLevel = Some(scribe.Level.Info)
+        ).replace()
 
-    import scribe.format._
-    val myFormatter: Formatter = formatter"$message ($position)"
-    Logger.root.clearHandlers().withHandler(formatter = myFormatter,
-                                            minimumLevel = Some(scribe.Level.Info)).replace()
-
-    ConvertProject.command.options
-  }
-  )
-
+        ConvertProject.command.options
+      }
+    )
 
 object ConvertProject {
 
   val args = (
-             Opts.argument[Path](metavar = "path")
-                 .withDefault(Paths.get("")),
-             Opts.option[Path]("sync-file", metavar = "file",
-                               visibility = Partial,
-                               help = "file to show in output").orNone,
-             Opts.option[Int]("sync-position", metavar = "integer",
-                              visibility = Partial,
-                              help = "character offset to show in output").orNone,
-             Opts.flag("image-file-map",
-                       visibility = Partial,
-                       help = "character offset to show in output").orFalse,
-             Opts.option[Path](long = "json", metavar = "path", help = "print single file structure as json")
-                 .orNone,
-             )
+    Opts.argument[Path](metavar = "path")
+      .withDefault(Paths.get("")),
+    Opts.option[Path]("sync-file", metavar = "file", visibility = Partial, help = "file to show in output").orNone,
+    Opts.option[Int](
+      "sync-position",
+      metavar = "integer",
+      visibility = Partial,
+      help = "character offset to show in output"
+    ).orNone,
+    Opts.flag("image-file-map", visibility = Partial, help = "character offset to show in output").orFalse,
+    Opts.option[Path](long = "json", metavar = "path", help = "print single file structure as json")
+      .orNone,
+  )
 
-
-  val command: Command[Unit] = Command(name = "gen",
-                                       header = "Convert Scim to Sast.") {
+  val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
         printJson match {
           case Some(path) => println(JsonSast.jsonFor(File(path)))
           case None =>
             Project.fromSource(File(sourcedirRel)) match {
-              case None          => scribe.error(s"could not find project for $sourcedirRel")
+              case None => scribe.error(s"could not find project for $sourcedirRel")
               case Some(project) =>
                 scribe.info(s"$project")
                 if (project.config.format.contains("content")) {
