@@ -4,9 +4,10 @@ import cats.implicits._
 import fastparse.NoWhitespace._
 import fastparse.Parsed.{Failure, Success, TracedFailure}
 import fastparse._
+import scitzen.generic.Sast
 
 object DocumentParsers {
-  def document[_: P]: P[Seq[BlockContent]] = P(BlockParsers.alternatives.rep ~ End)
+  def document[_: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
 }
 
 case class ParsingAnnotation(content: String, failure: TracedFailure) extends Exception
@@ -28,9 +29,14 @@ object Parse {
     }
   }
 
-  def document(blockContent: String, prov: Prov): Result[Seq[BlockContent]] =
+  def document(blockContent: String, prov: Prov): Result[Seq[Sast]] =
     parseResult(blockContent, scitzen.parser.DocumentParsers.document(_), prov)
 
   def paragraph(paragraphString: String, prov: Prov): Result[Seq[Inline]] =
     parseResult(paragraphString, scitzen.parser.InlineParsers.fullParagraph(_), prov)
+
+  def valueOrThrow[T](result: Result[T]): T = result match {
+    case Right(value) => value
+    case Left(pa) => throw pa
+  }
 }

@@ -2,28 +2,36 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
+import scitzen.generic.Sast
+import scitzen.generic.Sast.{Fenced, Parsed, SBlock}
 import scitzen.parser.CommonParsers._
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
   def anyStart[_: P]: P[String] = P(CharIn(":`").rep(2).!)
 
-  def makeDelimited[_: P](start: => P[String]): P[NormalBlock] =
+  def makeDelimited[_: P](start: => P[String]): P[SBlock] =
     (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass).flatMap {
       case (delimiter, command, attr) =>
         def closing = eol ~ delimiter ~ spaceLine
         (withProv(untilE(closing, min = 0)) ~ closing)
           .map {
-            case (content, prov) =>
-              val strippedContent = stripIfPossible(content, delimiter.length)
-              NormalBlock(
-                delimiter,
-                BlockCommand(command.getOrElse("")),
-                strippedContent,
-                Attributes(attr.getOrElse(Nil), prov.copy(indent = delimiter.length))
-              )
+            case (text, prov) =>
+              val strippedText = stripIfPossible(text, delimiter.length)
+              val rawAttr      = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
+              val blockContent =
+                delimiter(0) match {
+                  case '`' => Fenced(strippedText)
+                  case ':' =>
+                    val sast: Seq[Sast] = Parse.valueOrThrow(Parse.document(strippedText, prov))
+                    Parsed(delimiter, sast)
+                }
+              SBlock(Attributes(rawAttr, prov.copy(indent = delimiter.length)), blockContent)
           }
     }
+
+  def anyDelimited[_: P]: P[SBlock] = P(makeDelimited(anyStart))
+
 
   val spaceNewline = " *\\n?$".r
 
@@ -36,23 +44,18 @@ object DelimitedBlockParsers {
     }.mkString
   }
 
-  def full[_: P]: P[NormalBlock] = P(makeDelimited(anyStart))
 
-  def whitespaceLiteral[_: P]: P[NormalBlock] =
+  def whitespaceLiteral[_: P]: P[SBlock] =
     P(withProv((significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
       (indentation.? ~ untilI(eol).!)
         .rep(min = 1, sep = significantSpaceLine.rep ~ &(indentation))
-        .map(lines =>
-          NormalBlock(
-            indentation,
-            BlockCommand(""),
-            lines.mkString,
-            Attributes.synthetic()
-          )
-        )
+        .map { lines =>
+          val sast: Seq[Sast] = Parse.valueOrThrow(Parse.document(lines.mkString, Prov()))
+          Parsed(indentation, sast)
+        }
     }).map {
-      case (nb, prov) =>
-        nb.copy(attributes = nb.attributes.copy(prov = nb.attributes.prov.copy(indent = nb.delimiter.length)))
+      case (parsed, prov) =>
+        SBlock(Attributes(Nil, prov.copy(indent = parsed.delimiter.length)), parsed)
     })
 
 }

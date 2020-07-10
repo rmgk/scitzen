@@ -46,7 +46,7 @@ object Sast {
 
 }
 
-class ListConverter(val sastConverter: SastConverter) extends AnyVal {
+object ListConverter {
 
   def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] =
     items.toList match {
@@ -68,8 +68,8 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
   private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
     val listItems = split.map {
       case (item, children) =>
-        val itemSast    = sastConverter.inlineString(item.text.content, item.text.attributes.prov)
-        val contentSast = item.content.map(nb => sastConverter.blockContent(nb))
+        val itemSast    = item.text.content.asInstanceOf[Paragraph].content
+        val contentSast = item.content
         val childSasts  = if (children.isEmpty) None else Some(listtoSast(children))
         SlistItem(item.marker, itemSast, contentSast.orElse(childSasts).getOrElse(NoContent))
     }
@@ -79,7 +79,6 @@ class ListConverter(val sastConverter: SastConverter) extends AnyVal {
 
 final case class SastConverter() {
 
-  private val ListConverter = new ListConverter(this)
 
   def blockSequence(blocks: List[BlockContent]): List[Sast] = {
     blocks.map(blockContent)
@@ -116,10 +115,10 @@ final case class SastConverter() {
   }
 
   def documentString(blockContent: String, prov: Prov): Seq[Sast] = {
-    blockSequence(Parse.document(blockContent, prov) match {
+    Parse.document(blockContent, prov) match {
       case Left(parsingAnnotation) => throw parsingAnnotation
       case Right(res)              => res.toList
-    })
+    }
   }
 
   def inlineString(paragraphString: String, prov: Prov): Text = {
