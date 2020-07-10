@@ -1,6 +1,8 @@
 package scitzen.parser
 
+import scitzen.outputs.AttributesToScim
 import scitzen.parser.MacroCommand.{Emph, Strong}
+import scitzen.parser.Sast.SBlock
 
 sealed trait Sast {
   def attributes: Attributes
@@ -28,7 +30,7 @@ object Sast {
   case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast {
     def ref: String = attributes.named.getOrElse("label", title.str)
   }
-  case class SMacro(command: MacroCommand, attributes: Attributes) extends Inline with BlockContent with Sast
+  case class SMacro(command: MacroCommand, attributes: Attributes) extends Inline with Sast
   case class SBlock(attributes: Attributes, content: BlockType) extends Sast {
     override def toString: String = s"SBlock(${content.getClass.getSimpleName}, $attributes)"
     def command: String           = attributes.positional.headOption.getOrElse("")
@@ -41,10 +43,6 @@ object Sast {
   case class SpaceComment(content: String)                 extends BlockType
 
 }
-
-
-import Sast.SBlock
-import scitzen.outputs.AttributesToScim
 
 case class Attributes(raw: Seq[Attribute], prov: Prov) {
   lazy val positional: Seq[String]               = raw.collect { case Attribute("", value) => value }
@@ -66,9 +64,6 @@ object Attributes {
   def target(string: String, prov: Prov): Attributes = Attribute("", string).toAttributes(prov)
 }
 
-sealed trait BlockContent
-case class ListBlock(items: Seq[ListItem])                                     extends BlockContent
-
 case class ListItem(marker: String, text: SBlock, content: Option[SBlock])
 case object ListItem {
   def apply(mc: (String, SBlock)): ListItem = ListItem(mc._1, mc._2, None)
@@ -80,7 +75,6 @@ case class Attribute(id: String, value: String) {
 
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
 
-case class BlockCommand(str: String)
 
 sealed trait MacroCommand
 object MacroCommand {
@@ -99,7 +93,7 @@ object MacroCommand {
       "strong"  -> Strong,
       "math"    -> Math,
       ""        -> Lookup
-      )
+    )
     val aliases = Map(
       "fence" -> Include,
       "_"     -> Emph,
@@ -107,7 +101,7 @@ object MacroCommand {
       "*"     -> Strong,
       "$"     -> Math,
       "n"     -> Lookup
-      )
+    )
 
     (standard.toMap ++ aliases, standard.map(p => p._2 -> p._1).toMap)
   }
@@ -135,4 +129,4 @@ object MacroCommand {
 }
 
 sealed trait Inline
-case class InlineText(str: String)                              extends Inline
+case class InlineText(str: String) extends Inline
