@@ -3,7 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.Sast.{Paragraph, Block, Section, SpaceComment, Text}
+import scitzen.parser.Sast.{Block, Paragraph, Section, SpaceComment, Text}
 
 object BlockParsers {
 

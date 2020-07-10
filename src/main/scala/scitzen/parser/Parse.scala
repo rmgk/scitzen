@@ -26,7 +26,6 @@ object Parse {
 
   def parserDocument[_: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
 
-
   def document(blockContent: String, prov: Prov): Result[Seq[Sast]] =
     parseResult(blockContent, parserDocument(_), prov)
 

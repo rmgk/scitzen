@@ -2,8 +2,8 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import Sast.{Fenced, Parsed, Block}
 import scitzen.parser.CommonParsers._
+import scitzen.parser.Sast.{Block, Fenced, Parsed}
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
@@ -31,7 +31,6 @@ object DelimitedBlockParsers {
 
   def anyDelimited[_: P]: P[Block] = P(makeDelimited(anyStart))
 
-
   val spaceNewline = " *\\n?$".r
 
   def stripIfPossible(str: String, i: Int): String = {
@@ -42,7 +41,6 @@ object DelimitedBlockParsers {
       else return str
     }.mkString
   }
-
 
   def whitespaceLiteral[_: P]: P[Block] =
     P(withProv((significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
