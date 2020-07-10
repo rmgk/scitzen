@@ -13,15 +13,16 @@ object ListParsers {
                                         ~ verticalSpace).!
 
   def listContent[_: P]: P[(String, Prov)] = P(withProv(untilE(eol ~ (spaceLine | simpleMarker).map(_ => ()))) ~ eol)
-  def descriptionListContent[_: P]: P[(String, Prov)] = P(withProv(untilE(":" ~ verticalSpaces ~ eol | eol) ~ ":" ~ verticalSpaces ~ eol))
+
+  def descriptionListContent[_: P]: P[(String, Prov)] =
+    P(withProv(untilE(":" ~ verticalSpaces ~ eol | eol) ~ ":" ~ verticalSpaces ~ eol))
 
   def simpleListItem[_: P]: P[ListItem] = P(simpleMarker ~ listContent.map(NormalBlock.apply("", _))).map(ListItem.apply)
 
 
   def descriptionListItem[_: P]: P[ListItem] =
     P(simpleMarker ~ descriptionListContent ~
-      (significantSpaceLine.rep(0) ~
-       DelimitedBlockParsers.whitespaceLiteral).?)
+      DelimitedBlockParsers.whitespaceLiteral.?)
     .map {
       case (m, dls, b) =>
         ListItem(m, NormalBlock("", dls), b)

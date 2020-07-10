@@ -9,12 +9,9 @@ object MacroParsers {
   def detectStart[_: P]: P[Unit] = P(":" ~ identifier.? ~ AttributesParser.start)
   def macroCommand[_: P]: P[String] = P(identifier.?.!)
 
-  def plain[_: P]: P[Macro] = P(withProv(macroCommand ~ AttributesParser.braces)).map {
+  def full[_: P]: P[Macro] = P(withProv(":" ~ macroCommand ~ AttributesParser.braces)).map {
     case ((name, attributes), prov) => Macro(MacroCommand.parse(name), Attributes(attributes, prov))
   }
-
-  def full[_: P]: P[Macro] = P(":" ~ plain)
-
 
   def commentStart[_: P]: P[Unit] = P(":%")
 
