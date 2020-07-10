@@ -6,7 +6,7 @@ import scitzen.extern.ImageConverter
 import scitzen.parser.Sast._
 import scitzen.generic.{ConversionContext, Project, Reporter, SastRef, _}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
-import scitzen.parser.{Attribute, Inline, InlineText, Sast}
+import scitzen.parser.{Attribute, Attributes, Inline, InlineText, Sast}
 
 object SastToSastConverter {
   def preprocessRecursive(
@@ -48,10 +48,10 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _) =>
-        val ctxWithRef = addRefTargetMakeUnique(ctx, sec)
+        val (newAttr, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
         val conCtx     = ctxWithRef.push(ctxWithRef.data.sast)
         convertInlines(title.inline)(conCtx).map { title =>
-          Chain(Section(Text(title.toList), level, ctxWithRef.data.sast.attributes))
+          Chain(Section(Text(title.toList), level, newAttr))
         }
 
       case Slist(children) =>
@@ -68,16 +68,16 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
         convertMacro(mcro).map(identity(_): Sast).single
     }
 
-  def addRefTargetMakeUnique(ctx: Cta, sec: Section): Ctx[SastRef] = {
+  def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Attributes, Ctx[SastRef]) = {
     val ref1 = sec.ref
     val attr = sec.attributes
     if (ctx.labelledThings.contains(ref1)) {
       val ctr    = ctx.nextId
       val cp     = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
       val secref = SastRef(cwf, cp)
-      ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref)
+      (cp.attributes, ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
     } else {
-      ctx.addRefTarget(ref1, SastRef(cwf, sec))
+      (sec.attributes, ctx.addRefTarget(ref1, SastRef(cwf, sec)))
     }
   }
 

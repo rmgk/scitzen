@@ -3,19 +3,13 @@ package scitzen.parser
 import scitzen.outputs.AttributesToScim
 import scitzen.parser.MacroCommand.{Emph, Strong}
 
-sealed trait Sast {
-  def attributes: Attributes
-}
+sealed trait Sast
 
 object Sast {
 
-  case object NoContent extends Sast {
-    override def attributes: Attributes = Attributes.synthetic()
-  }
+  case object NoContent extends Sast
 
-  case class Slist(children: Seq[ListItem]) extends Sast {
-    override def attributes: Attributes = Attributes.synthetic()
-  }
+  case class Slist(children: Seq[ListItem]) extends Sast
   case class ListItem(marker: String, text: Text, content: Sast)
   case class Text(inline: Seq[Inline]) {
     lazy val str = {
