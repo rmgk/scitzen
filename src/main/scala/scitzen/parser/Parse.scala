@@ -1,10 +1,17 @@
 package scitzen.parser
 
 import cats.implicits._
-import fastparse.P
+import fastparse.NoWhitespace._
 import fastparse.Parsed.{Failure, Success, TracedFailure}
+import fastparse._
+
+
+object DocumentParsers {
+  def document[_: P]: P[Seq[BlockContent]] = P(BlockParsers.alternatives.rep ~ End)
+}
 
 case class ParsingAnnotation(content: String, failure: TracedFailure) extends Exception
+
 
 object Parse {
 
