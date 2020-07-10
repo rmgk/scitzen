@@ -87,8 +87,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }.map(i => Chain(dl(i.toList)))
         }
 
-      case mcro @ SMacro(_, _) => mcro match {
-          case SMacro(Image, attributes) =>
+      case mcro @ Macro(_, _) => mcro match {
+          case Macro(Image, attributes) =>
             pathManager.project.resolve(pathManager.cwd, attributes.target) match {
               case Some(target) =>
                 val path = pathManager.relativizeImage(target)
@@ -100,10 +100,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 ctx.empty
             }
 
-          case SMacro(Other("break"), attributes) =>
+          case Macro(Other("break"), attributes) =>
             ctx.ret(Chain(hr))
 
-          case SMacro(Ref, attributes) if attributes.named.get("type").contains("article") =>
+          case Macro(Ref, attributes) if attributes.named.get("type").contains("article") =>
             val foundDoc = pathManager.findDoc(attributes.target)
             val post     = foundDoc.get
 
@@ -124,13 +124,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               )
             )))
 
-          case SMacro(Include, attributes) =>
+          case Macro(Include, attributes) =>
             attributes.arguments.headOption match {
               case Some("code") =>
                 pathManager.resolve(attributes.target) match {
                   case None => inlineValuesToHTML(List(mcro))
                   case Some(file) =>
-                    convertSingle(SBlock(attributes, Fenced(file.contentAsString)))
+                    convertSingle(Block(attributes, Fenced(file.contentAsString)))
                 }
 
               case None =>
@@ -163,7 +163,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             inlineValuesToHTML(List(other))
         }
 
-      case tLBlock: SBlock =>
+      case tLBlock: Block =>
         val positiontype = tLBlock.attributes.positional.headOption
         positiontype match {
           case Some("quote") =>
@@ -188,7 +188,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     }
   }
 
-  def convertBlock(sBlock: SBlock)(implicit ctx: Cta): CtxCF = {
+  def convertBlock(sBlock: Block)(implicit ctx: Cta): CtxCF = {
     val innerCtx: CtxCF = sBlock.content match {
 
       case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
@@ -256,11 +256,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     inline match {
       case InlineText(str) => ctx.retc(stringFrag(str))
 
-      case SMacro(Strong, attrs) => ctx.retc(strong(attrs.target))
-      case SMacro(Emph, attrs)   => ctx.retc(em(attrs.target))
-      case SMacro(Code, attrs)   => ctx.retc(code(attrs.target))
+      case Macro(Strong, attrs) => ctx.retc(strong(attrs.target))
+      case Macro(Emph, attrs)   => ctx.retc(em(attrs.target))
+      case Macro(Code, attrs)   => ctx.retc(code(attrs.target))
 
-      case SMacro(Math, attrs) =>
+      case Macro(Math, attrs) =>
         val katexdefs = sdoc.named.get("katexTemplate")
           .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
         val inner = attrs.target
@@ -280,9 +280,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         )
         ictx.retc(span(raw(mathml)))
 
-      case SMacro(Comment, attributes) => ctx.empty
+      case Macro(Comment, attributes) => ctx.empty
 
-      case mcro @ SMacro(Cite, attributes) =>
+      case mcro @ Macro(Cite, attributes) =>
         val anchors = attributes.target.split(",").toList.map { bibid =>
           bibid -> bibliography.getOrElse(
             bibid.trim, {
@@ -295,13 +295,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           ctx.retc(frag(s"${attributes.arguments.head}\u00A0", anchors))
         } else ctx.retc(anchors)
 
-      case SMacro(Label, _) => ctx.empty
+      case Macro(Label, _) => ctx.empty
 
-      case SMacro(Link, attributes) =>
+      case Macro(Link, attributes) =>
         val target = attributes.target
         ctx.retc(linkTo(attributes, target))
 
-      case macroRef @ SMacro(Ref, attributes) =>
+      case macroRef @ Macro(Ref, attributes) =>
         pathManager.findDoc(attributes.target) match {
           case Some(fd) =>
             val targetpath = pathManager.relativePostTarget(fd.parsed.file).toString
@@ -323,10 +323,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
             candidates.headOption.map[CtxCF] { target =>
               target.sast match {
-                case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
+                case sec @ Section(title, _, _)   => inlineValuesToHTML(title.inline).map { inner =>
                     Chain(a(href := s"#${sec.ref}", inner.toList))
                   }
-                case block @ SBlock(attr, content) =>
+                case block @ Block(attr, content) =>
                   val label = attr.named("label")
                   val name =
                     attributes.arguments.headOption
@@ -343,7 +343,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }
         }
 
-      case SMacro(Lookup, attributes) =>
+      case Macro(Lookup, attributes) =>
         if (pathManager.project.config.definitions.contains(attributes.target))
           ctx.retc(pathManager.project.config.definitions(attributes.target))
         else {
@@ -351,7 +351,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           ctx.retc(code(attributes.target))
         }
 
-      case mcro @ SMacro(Other(othercommand), attributes) =>
+      case mcro @ Macro(Other(othercommand), attributes) =>
         othercommand match {
           case "footnote" =>
             val target = attributes.target
@@ -377,16 +377,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
         }
 
-      case SMacro(Def, _) => ctx.empty
+      case Macro(Def, _) => ctx.empty
 
-      case mcro @ SMacro(Image | Include, attributes) =>
+      case mcro @ Macro(Image | Include, attributes) =>
         ctx.retc(unknownMacroOutput(mcro))
 
     }
 
-  def reportPos(m: SMacro): String = reporter(m)
+  def reportPos(m: Macro): String = reporter(m)
 
-  def unknownMacroOutput(im: SMacro): Tag = {
+  def unknownMacroOutput(im: Macro): Tag = {
     val str = SastToScimConverter().macroToScim(im)
     scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)

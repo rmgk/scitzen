@@ -3,7 +3,7 @@ package scitzen.extern
 import better.files.File
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.{ConversionContext, Project}
-import scitzen.parser.Sast.{Fenced, SBlock, SMacro}
+import scitzen.parser.Sast.{Fenced, Block, Macro}
 import scitzen.parser.{Attribute, Attributes, MacroCommand, Sast}
 
 import scala.jdk.CollectionConverters._
@@ -26,7 +26,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
-  def convert(cwd: File, mcro: SMacro): ConvertSchedulable[SMacro] = {
+  def convert(cwd: File, mcro: Macro): ConvertSchedulable[Macro] = {
     val converter = mcro.attributes.named("converter")
     project.resolve(cwd, mcro.attributes.target) flatMap { file =>
       val content = file.contentAsString
@@ -45,7 +45,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
     }
   }
 
-  def convert(tlb: SBlock): ConvertSchedulable[Sast] = {
+  def convert(tlb: Block): ConvertSchedulable[Sast] = {
     val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
     doConversion(converter, tlb.attributes, content) match {
@@ -132,11 +132,11 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
   //  out
   //}
 
-  def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[SMacro]] = {
+  def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {
 
-    def makeImageMacro(file: File): SMacro = {
+    def makeImageMacro(file: File): Macro = {
       val relTarget = project.root.relativize(file)
-      SMacro(MacroCommand.Image, attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
+      Macro(MacroCommand.Image, attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
     }
 
     def applyConversion(data: (String, File, Option[ConvertTask])) = {

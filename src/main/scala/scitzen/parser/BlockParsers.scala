@@ -3,18 +3,18 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.Sast.{Paragraph, SBlock, Section, SpaceComment, Text}
+import scitzen.parser.Sast.{Paragraph, Block, Section, SpaceComment, Text}
 
 object BlockParsers {
 
-  def paragraph[_: P]: P[SBlock] =
+  def paragraph[_: P]: P[Block] =
     P((
       (AttributesParser.braces ~ spaceLine).? ~
         (withProv((untilE(eol ~ spaceLine) ~ eol).!) ~ spaceLine)
     ).map {
       case (attrOpt, (text, prov)) =>
         val inlines = Parse.inlineUnwrap(text, prov)
-        SBlock(Attributes(attrOpt.getOrElse(Nil), prov), Paragraph(Text(inlines)))
+        Block(Attributes(attrOpt.getOrElse(Nil), prov), Paragraph(Text(inlines)))
     })
 
   def sectionStart[_: P]: P[String] = P(CharsWhileIn("=#").! ~ " ")
@@ -28,13 +28,13 @@ object BlockParsers {
           Section(Text(inlines), prefix, Attributes(attrl.getOrElse(Nil), prov))
       }
 
-  def extendedWhitespace[_: P]: P[SBlock] =
+  def extendedWhitespace[_: P]: P[Block] =
     P(withProv(
       (significantSpaceLine.rep(1) |
         MacroParsers.comment.rep(1)).rep(1).!
     )).map {
       case (str, prov) =>
-        SBlock(Attributes(Nil, prov), SpaceComment(str))
+        Block(Attributes(Nil, prov), SpaceComment(str))
     }
 
   def alternatives[_: P]: P[Sast] =

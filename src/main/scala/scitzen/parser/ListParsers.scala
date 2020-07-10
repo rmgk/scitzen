@@ -2,7 +2,7 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import Sast.{NoContent, Paragraph, SBlock, Slist, SlistItem, Text}
+import Sast.{NoContent, Paragraph, Block, Slist, SlistItem, Text}
 import scitzen.parser.CommonParsers._
 
 object ListParsers {
@@ -14,11 +14,11 @@ object ListParsers {
         | (digits.? ~ ".".rep(1)))
       ~ verticalSpace).!
 
-  def listContent[_: P]: P[SBlock] =
+  def listContent[_: P]: P[Block] =
     P(withProv(untilE(eol ~ (spaceLine | simpleMarker).map(_ => ()))) ~ eol)
       .map { case (str, prov) =>
         val sast: Seq[Inline] = Parse.inlineUnwrap(str, prov)
-        SBlock(Attributes(Nil, prov), Paragraph(Text(sast)))
+        Block(Attributes(Nil, prov), Paragraph(Text(sast)))
       }
 
   def descriptionListContent[_: P]: P[(String, Prov)] =
@@ -33,7 +33,7 @@ object ListParsers {
       .map {
         case (marker, (str, prov), innerBlock) =>
           val sast: Seq[Inline] = Parse.inlineUnwrap(str, prov)
-          ListItem(marker, SBlock(Attributes(Nil, prov), Paragraph(Text(sast))), innerBlock)
+          ListItem(marker, Block(Attributes(Nil, prov), Paragraph(Text(sast))), innerBlock)
       }
 
   def list[_: P]: P[Slist] =

@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import scitzen.parser.MacroCommand.Ref
-import scitzen.parser.Sast.{Parsed, SBlock, SMacro, Section, Text}
+import scitzen.parser.Sast.{Parsed, Block, Macro, Section, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Sast}
 
 object GenIndexPage {
@@ -40,8 +40,8 @@ object GenIndexPage {
           }
           List[Sast](
             Section(Text(List(InlineText(key))), prefix = "#", Attributes.synthetic(Attribute("label", key))),
-            SBlock(Attributes.synthetic(), Parsed("", inner))
-          )
+            Block(Attributes.synthetic(), Parsed("", inner))
+            )
       }
     }
 
@@ -55,7 +55,7 @@ object GenIndexPage {
     sectionBy(dm.fulldocs)(_.analyzed.date.fold("Drafts")(_.year)) { docs =>
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
-          List(SMacro(
+          List(Macro(
             Ref,
             Attributes.synthetic(
               Attribute("", project.root.relativize(doc.parsed.file).toString),

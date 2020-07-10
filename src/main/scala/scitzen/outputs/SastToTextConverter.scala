@@ -23,9 +23,9 @@ object SastToTextConverter {
             convertInline(text.inline) +: convertSast(List(inner))
         }
 
-      case SMacro(_, _) => Nil
+      case Macro(_, _) => Nil
 
-      case SBlock(_, blockType) => blockType match {
+      case Block(_, blockType) => blockType match {
           case Paragraph(content)      => List(convertInline(content.inline))
           case Parsed(_, blockContent) => convert(blockContent)
           case Fenced(text)            => List(text)
@@ -38,6 +38,6 @@ object SastToTextConverter {
   def convertInline(inners: Seq[Inline]): String =
     inners.map {
       case InlineText(str) => str
-      case m: SMacro       => ""
+      case m: Macro        => ""
     }.mkString("")
 }

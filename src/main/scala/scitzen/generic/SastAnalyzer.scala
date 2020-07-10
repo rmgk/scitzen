@@ -7,9 +7,9 @@ import scitzen.parser._
 import scala.util.control.NonFatal
 
 object SastAnalyzer {
-  case class AnalyzeResult(macros: List[SMacro], rawBlocks: List[SBlock], sections: List[Section]) {
-    def +(m: SMacro): AnalyzeResult   = copy(macros = m :: macros)
-    def +(m: SBlock): AnalyzeResult  = copy(rawBlocks = m :: rawBlocks)
+  case class AnalyzeResult(macros: List[Macro], rawBlocks: List[Block], sections: List[Section]) {
+    def +(m: Macro): AnalyzeResult   = copy(macros = m :: macros)
+    def +(m: Block): AnalyzeResult  = copy(rawBlocks = m :: rawBlocks)
     def +(m: Section): AnalyzeResult = copy(sections = m :: sections)
   }
 }
@@ -18,7 +18,7 @@ class SastAnalyzer(val macroReporter: Reporter) {
 
   import scitzen.generic.SastAnalyzer._
 
-  def reportTarget(mcr: SMacro): String =
+  def reportTarget(mcr: Macro): String =
     try {
       mcr.attributes.target
     } catch {
@@ -34,10 +34,10 @@ class SastAnalyzer(val macroReporter: Reporter) {
     AnalyzeResult(m.reverse, b.reverse, s.reverse)
   }
 
-  def analyzeAll(inputs: Seq[SBlock], acc: AnalyzeResult): AnalyzeResult =
+  def analyzeAll(inputs: Seq[Block], acc: AnalyzeResult): AnalyzeResult =
     inputs.foldLeft(acc)((cacc, sast) => analyzeR(sast, cacc))
 
-  def analyzeR(input: SBlock, acc: AnalyzeResult): AnalyzeResult = {
+  def analyzeR(input: Block, acc: AnalyzeResult): AnalyzeResult = {
     input.content match {
       case rb: Fenced => acc + input
       case other      => analyzeSBlockType(other, acc)
@@ -59,10 +59,10 @@ class SastAnalyzer(val macroReporter: Reporter) {
       case sec @ Section(level, title, attributes) =>
         acc + sec
 
-      case imacro @ SMacro(_, _) =>
+      case imacro @ Macro(_, _) =>
         acc + imacro
 
-      case SBlock(attr, content) => analyzeSBlockType(content, acc)
+      case Block(attr, content) => analyzeSBlockType(content, acc)
     }
   def analyzeSBlockType(input: BlockType, acc: AnalyzeResult): AnalyzeResult =
     input match {
@@ -75,7 +75,7 @@ class SastAnalyzer(val macroReporter: Reporter) {
   def analyzeText(text: Text, acc: AnalyzeResult): AnalyzeResult = {
     text.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
-        case m: SMacro       => cacc + m
+        case m: Macro        => cacc + m
         case InlineText(str) => cacc
       }
     }

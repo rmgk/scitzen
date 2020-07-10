@@ -2,7 +2,7 @@ package scitzen.parser
 
 import scitzen.outputs.AttributesToScim
 import scitzen.parser.MacroCommand.{Emph, Strong}
-import scitzen.parser.Sast.SBlock
+import scitzen.parser.Sast.Block
 
 sealed trait Sast {
   def attributes: Attributes
@@ -21,17 +21,17 @@ object Sast {
   case class Text(inline: Seq[Inline]) {
     lazy val str = {
       inline.map {
-        case SMacro(Strong | Emph, attributes) => attributes.target
-        case SMacro(command, attributes)       => ""
-        case InlineText(string)                => string
+        case Macro(Strong | Emph, attributes) => attributes.target
+        case Macro(command, attributes)       => ""
+        case InlineText(string)               => string
       }.mkString("").trim
     }
   }
   case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast {
     def ref: String = attributes.named.getOrElse("label", title.str)
   }
-  case class SMacro(command: MacroCommand, attributes: Attributes) extends Inline with Sast
-  case class SBlock(attributes: Attributes, content: BlockType) extends Sast {
+  case class Macro(command: MacroCommand, attributes: Attributes) extends Inline with Sast
+  case class Block(attributes: Attributes, content: BlockType) extends Sast {
     override def toString: String = s"SBlock(${content.getClass.getSimpleName}, $attributes)"
     def command: String           = attributes.positional.headOption.getOrElse("")
   }
@@ -64,9 +64,9 @@ object Attributes {
   def target(string: String, prov: Prov): Attributes = Attribute("", string).toAttributes(prov)
 }
 
-case class ListItem(marker: String, text: SBlock, content: Option[SBlock])
+case class ListItem(marker: String, text: Block, content: Option[Block])
 case object ListItem {
-  def apply(mc: (String, SBlock)): ListItem = ListItem(mc._1, mc._2, None)
+  def apply(mc: (String, Block)): ListItem = ListItem(mc._1, mc._2, None)
 }
 
 case class Attribute(id: String, value: String) {
@@ -76,57 +76,6 @@ case class Attribute(id: String, value: String) {
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
 
 
-sealed trait MacroCommand
-object MacroCommand {
-  val (parseMap, printMap) = {
-    val standard = List(
-      "cite"    -> Cite,
-      "comment" -> Comment,
-      "def"     -> Def,
-      "image"   -> Image,
-      "include" -> Include,
-      "label"   -> Label,
-      "link"    -> Link,
-      "ref"     -> Ref,
-      "code"    -> Code,
-      "emph"    -> Emph,
-      "strong"  -> Strong,
-      "math"    -> Math,
-      ""        -> Lookup
-    )
-    val aliases = Map(
-      "fence" -> Include,
-      "_"     -> Emph,
-      "`"     -> Code,
-      "*"     -> Strong,
-      "$"     -> Math,
-      "n"     -> Lookup
-    )
-
-    (standard.toMap ++ aliases, standard.map(p => p._2 -> p._1).toMap)
-  }
-  def parse(str: String): MacroCommand = parseMap.getOrElse(str, Other(str))
-  def print(m: MacroCommand): String =
-    m match {
-      case Other(str) => str
-      case o          => printMap(o)
-    }
-
-  object Code                   extends MacroCommand
-  object Emph                   extends MacroCommand
-  object Strong                 extends MacroCommand
-  object Math                   extends MacroCommand
-  object Cite                   extends MacroCommand
-  object Comment                extends MacroCommand
-  object Def                    extends MacroCommand
-  object Image                  extends MacroCommand
-  object Include                extends MacroCommand
-  object Label                  extends MacroCommand
-  object Link                   extends MacroCommand
-  object Ref                    extends MacroCommand
-  object Lookup                 extends MacroCommand
-  case class Other(str: String) extends MacroCommand
-}
 
 sealed trait Inline
 case class InlineText(str: String) extends Inline

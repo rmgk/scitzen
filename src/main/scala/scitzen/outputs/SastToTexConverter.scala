@@ -60,7 +60,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
       case NoContent => ctx.empty
 
-      case tlBlock: SBlock => blockToTex(tlBlock)
+      case tlBlock: Block => blockToTex(tlBlock)
 
       case section @ Section(title, prefix, attr) =>
         val ilc = inlineValuesToTex(title.inline)(ctx)
@@ -104,8 +104,8 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
         }
 
-      case mcro @ SMacro(_, _) => mcro match {
-          case SMacro(Image, attributes) =>
+      case mcro @ Macro(_, _) => mcro match {
+          case Macro(Image, attributes) =>
             val target = attributes.target
 
             project.resolve(cwd, target) match {
@@ -116,7 +116,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
                 ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
             }
 
-          case SMacro(Include, attributes) =>
+          case Macro(Include, attributes) =>
             project.findDoc(cwd, attributes.target) match {
               case Some(doc) =>
                 val included = includeResolver(doc.parsed.file)
@@ -142,7 +142,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
       s"\\end{$name}"
   }
 
-  def blockToTex(tlblock: SBlock)(implicit ctx: Cta): CtxCS =
+  def blockToTex(tlblock: Block)(implicit ctx: Cta): CtxCS =
     tlblock.content match {
       case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
 
@@ -153,10 +153,10 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
               case "figure" =>
                 val (figContent, caption) = {
                   blockContent.lastOption match {
-                    case Some(inner @ SBlock(_, Paragraph(content))) =>
+                    case Some(inner @ Block(_, Paragraph(content))) =>
                       val captionstr = inlineValuesToTex(content.inline).data
                       (blockContent.init, s"\\caption{$captionstr}")
-                    case other =>
+                    case other                                      =>
                       scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
                       (blockContent, "")
                   }
@@ -210,46 +210,46 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] =
     ctx.ret(inners.map {
-      case InlineText(str)                     => latexencode(str)
-      case SMacro(Cite, attr)                  => s"${nbrs(attr)}\\cite{${attr.target}}"
-      case SMacro(Code, attrs)                 => s"\\texttt{${latexencode(attrs.target)}}"
-      case SMacro(Comment, attr)               => ""
-      case SMacro(Def, _)                      => ""
-      case SMacro(Emph, attrs)                 => s"\\emph{${latexencode(attrs.target)}}"
-      case SMacro(Label, attr)                 => s"\\label{${attr.target}}"
-      case SMacro(Math, attrs)                 => s"$$${attrs.target}$$"
-      case SMacro(Other("break"), attrs)       => s"\\clearpage{}"
-      case SMacro(Other("subparagraph"), attr) => s"\\subparagraph{${attr.target}}"
-      case SMacro(Other("textsc"), attr)       => s"\\textsc{${attr.target}}"
-      case SMacro(Other("todo"), attr)         => s"{\\color{red}TODO:${attr.target}}"
-      case SMacro(Ref, attr)                   => s"${nbrs(attr)}\\ref{${attr.target}}"
-      case SMacro(Strong, attrs)               => s"\\textbf{${latexencode(attrs.target)}}"
+      case InlineText(str)                    => latexencode(str)
+      case Macro(Cite, attr)                  => s"${nbrs(attr)}\\cite{${attr.target}}"
+      case Macro(Code, attrs)                 => s"\\texttt{${latexencode(attrs.target)}}"
+      case Macro(Comment, attr)               => ""
+      case Macro(Def, _)                      => ""
+      case Macro(Emph, attrs)                 => s"\\emph{${latexencode(attrs.target)}}"
+      case Macro(Label, attr)                 => s"\\label{${attr.target}}"
+      case Macro(Math, attrs)                 => s"$$${attrs.target}$$"
+      case Macro(Other("break"), attrs)       => s"\\clearpage{}"
+      case Macro(Other("subparagraph"), attr) => s"\\subparagraph{${attr.target}}"
+      case Macro(Other("textsc"), attr)       => s"\\textsc{${attr.target}}"
+      case Macro(Other("todo"), attr)         => s"{\\color{red}TODO:${attr.target}}"
+      case Macro(Ref, attr)                   => s"${nbrs(attr)}\\ref{${attr.target}}"
+      case Macro(Strong, attrs)               => s"\\textbf{${latexencode(attrs.target)}}"
 
-      case SMacro(Link, attributes) =>
+      case Macro(Link, attributes) =>
         val target = attributes.target
         if (attributes.positional.size > 1) {
           val name = """{"""" + attributes.positional.head + """"}"""
           s"\\href{$target}{$name}"
         } else s"\\url{$target}"
 
-      case SMacro(Lookup, attributes) =>
+      case Macro(Lookup, attributes) =>
         if (project.config.definitions.contains(attributes.target))
           project.config.definitions(attributes.target)
         else scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
 
-      case SMacro(Other("footnote"), attributes) =>
+      case Macro(Other("footnote"), attributes) =>
         val target = latexencode(attributes.target)
         s"\\footnote{$target}"
 
-      case SMacro(Other("tableofcontents"), attributes) =>
+      case Macro(Other("tableofcontents"), attributes) =>
         List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
 
-      case im @ SMacro(Other(command), attributes) =>
+      case im @ Macro(Other(command), attributes) =>
         val str = SastToScimConverter().macroToScim(im)
         scribe.warn(s"unknown macro “$str”" + reporter(im))
         str
 
-      case im @ SMacro(Image | Include, attributes) =>
+      case im @ Macro(Image | Include, attributes) =>
         val str = SastToScimConverter().macroToScim(im)
         scribe.warn(s"tex backend does not allow inline images or includes" + reporter(im))
         str

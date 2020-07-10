@@ -42,9 +42,9 @@ case class SastToScimConverter() {
             (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
         }
 
-      case mcro@ SMacro(_, _) => Chain(macroToScim(mcro))
+      case mcro@ Macro(_, _) => Chain(macroToScim(mcro))
 
-      case tlb: SBlock => convertBlock(tlb)
+      case tlb: Block => convertBlock(tlb)
     }
 
   def stripLastEnd(strings: Chain[String]): Chain[String] =
@@ -63,7 +63,7 @@ case class SastToScimConverter() {
       else delimiter + line
     }.mkString
 
-  def convertBlock(sb: SBlock): Chain[String] = {
+  def convertBlock(sb: Block): Chain[String] = {
     val (remattr, command) = sb.attributes.raw.headOption match {
       case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
       case _                            => (sb.attributes, "")
@@ -102,10 +102,10 @@ case class SastToScimConverter() {
     }
   }
 
-  def macroToScim(mcro: SMacro, spacy: Boolean = false): String = {
+  def macroToScim(mcro: Macro, spacy: Boolean = false): String = {
     mcro match {
-      case SMacro(Comment, attributes) => s":%${attributes.target}"
-      case other                       =>
+      case Macro(Comment, attributes) => s":%${attributes.target}"
+      case other                      =>
         s":${MacroCommand.print(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
     }
   }
@@ -113,7 +113,7 @@ case class SastToScimConverter() {
   def inlineToScim(inners: Seq[Inline]): String =
     inners.map {
       case InlineText(str) => str
-      case m: SMacro       => macroToScim(m)
+      case m: Macro        => macroToScim(m)
     }.mkString("")
 
 }

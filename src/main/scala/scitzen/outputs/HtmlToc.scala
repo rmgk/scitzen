@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import scalatags.Text.all._
-import scitzen.parser.Sast.{Parsed, SBlock, Section}
+import scitzen.parser.Sast.{Parsed, Block, Section}
 import scitzen.parser.Sast
 
 object HtmlToc {
@@ -37,8 +37,8 @@ object HtmlToc {
 
   private def getSections(cont: Seq[Sast]): Seq[Section] = {
     cont.collect {
-      case s: Section                    => List(s)
-      case SBlock(_, Parsed(_, content)) => getSections(content)
+      case s: Section                   => List(s)
+      case Block(_, Parsed(_, content)) => getSections(content)
     }.flatten
   }
 }

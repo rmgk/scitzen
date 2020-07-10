@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import cats.data.Chain
 import scitzen.parser.Sast
-import scitzen.parser.Sast.SMacro
+import scitzen.parser.Sast.Macro
 
 case class FullDoc(parsed: ParsedDocument, analyzed: AnalyzedDoc) {
   def sast: List[Sast] = analyzed.sast
@@ -33,6 +33,6 @@ class DocumentManager(root: File) {
 
   lazy val attributes: Map[String, String] = analyzed.flatMap(_.named).toMap
 
-  lazy val macros: Chain[SMacro] = Chain.fromSeq(analyzed).flatMap(a => Chain.fromSeq(a.analyzeResult.macros))
+  lazy val macros: Chain[Macro] = Chain.fromSeq(analyzed).flatMap(a => Chain.fromSeq(a.analyzeResult.macros))
 
 }

@@ -2,14 +2,14 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import Sast.{Fenced, Parsed, SBlock}
+import Sast.{Fenced, Parsed, Block}
 import scitzen.parser.CommonParsers._
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
   def anyStart[_: P]: P[String] = P(CharIn(":`").rep(2).!)
 
-  def makeDelimited[_: P](start: => P[String]): P[SBlock] =
+  def makeDelimited[_: P](start: => P[String]): P[Block] =
     (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass).flatMap {
       case (delimiter, command, attr) =>
         def closing = eol ~ delimiter ~ spaceLine
@@ -25,11 +25,11 @@ object DelimitedBlockParsers {
                     val sast: Seq[Sast] = Parse.documentUnwrap(strippedText, prov)
                     Parsed(delimiter, sast)
                 }
-              SBlock(Attributes(rawAttr, prov.copy(indent = delimiter.length)), blockContent)
+              Block(Attributes(rawAttr, prov.copy(indent = delimiter.length)), blockContent)
           }
     }
 
-  def anyDelimited[_: P]: P[SBlock] = P(makeDelimited(anyStart))
+  def anyDelimited[_: P]: P[Block] = P(makeDelimited(anyStart))
 
 
   val spaceNewline = " *\\n?$".r
@@ -44,7 +44,7 @@ object DelimitedBlockParsers {
   }
 
 
-  def whitespaceLiteral[_: P]: P[SBlock] =
+  def whitespaceLiteral[_: P]: P[Block] =
     P(withProv((significantVerticalSpaces.! ~ !newline).flatMap { indentation =>
       (indentation.? ~ untilI(eol).!)
         .rep(min = 1, sep = significantSpaceLine.rep ~ &(indentation))
@@ -54,7 +54,7 @@ object DelimitedBlockParsers {
         }
     }).map {
       case (parsed, prov) =>
-        SBlock(Attributes(Nil, prov.copy(indent = parsed.delimiter.length)), parsed)
+        Block(Attributes(Nil, prov.copy(indent = parsed.delimiter.length)), parsed)
     })
 
 }

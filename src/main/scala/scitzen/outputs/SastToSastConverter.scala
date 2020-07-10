@@ -45,7 +45,7 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
 
       case NoContent => ctx.empty
 
-      case tlBlock: SBlock => convertBlock(tlBlock)(ctx)
+      case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _) =>
         val ctxWithRef = addRefTargetMakeUnique(ctx, sec)
@@ -64,7 +64,7 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
           Chain(Slist(cs.iterator.toSeq))
         }
 
-      case mcro @ SMacro(_, _) =>
+      case mcro @ Macro(_, _) =>
         convertMacro(mcro).map(identity(_): Sast).single
     }
 
@@ -81,7 +81,7 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
     }
   }
 
-  def convertBlock(tlblock: SBlock)(ctx: Cta): CtxCS = {
+  def convertBlock(tlblock: Block)(ctx: Cta): CtxCS = {
     // make all blocks labellable
     val refctx = tlblock.attributes.named.get("label") match {
       case None      => ctx
@@ -90,11 +90,11 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
     tlblock.content match {
       case Paragraph(content) =>
         convertInlines(content.inline)(refctx)
-          .map(il => SBlock(tlblock.attributes, Paragraph(Text(il.toList))): Sast).single
+        .map(il => Block(tlblock.attributes, Paragraph(Text(il.toList))): Sast).single
 
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent)(refctx).map(bc =>
-          SBlock(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast
+                                               Block(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast
         ).single
 
       case Fenced(text) =>
@@ -122,21 +122,21 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
     ctx.fold(inners) { (ctx, inline) =>
       inline match {
         case inlineText: InlineText => ctx.retc(inlineText)
-        case m: SMacro              => convertMacro(m)(ctx).map(identity[Inline]).single
+        case m: Macro               => convertMacro(m)(ctx).map(identity[Inline]).single
       }
     }
 
-  def convertMacro(mcro: SMacro)(implicit ctx: Cta): Ctx[SMacro] =
+  def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] =
     mcro match {
-      case SMacro(Image, attributes) if attributes.named.contains("converter") =>
+      case Macro(Image, attributes) if attributes.named.contains("converter") =>
         val resctx = converter.convert(cwd, mcro).schedule(ctx)
         convertMacro(resctx.data)(resctx)
 
-      case SMacro(Image, attributes) if converter.requiresConversion(attributes.target) =>
+      case Macro(Image, attributes) if converter.requiresConversion(attributes.target) =>
         project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
           val resctx    = converter.applyConversion(file).schedule(ctx)
           val reltarget = cwd.relativize(resctx.data)
-          convertMacro(SMacro(
+          convertMacro(Macro(
             Image,
             attributes.copy(
               raw = attributes.raw.init :+ Attribute("", reltarget.toString)
@@ -144,10 +144,10 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
           ))(resctx)
         }
 
-      case SMacro(Label, attributes) =>
+      case Macro(Label, attributes) =>
         ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head)).ret(mcro)
 
-      case SMacro(Include, attributes) if attributes.arguments.isEmpty =>
+      case Macro(Include, attributes) if attributes.arguments.isEmpty =>
         project.resolve(cwd, attributes.target) match {
           case None =>
             scribe.error(s"unknown include ${attributes.target}" + reporter(mcro))
