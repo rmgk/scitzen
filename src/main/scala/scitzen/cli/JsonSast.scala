@@ -7,7 +7,6 @@ import better.files.File
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
 import com.monovore.decline.{Command, Opts}
-import scitzen.generic.{Sast, SastConverter}
 import scitzen.parser._
 
 object JsonSast {
@@ -24,7 +23,7 @@ object JsonSast {
         .filter(_.isRegularFile)
         .foreach { file =>
           val content = file.contentAsString
-          val sast    = SastConverter().documentString(content, Prov(0, content.length))
+          val sast    = Parse.documentUnwrap(content, Prov(0, content.length))
           val target  = file.sibling(file.name + ".json")
           val json    = writeToArray(sast, WriterConfig.withIndentionStep(2))(SastEncoder)
           target.writeByteArray(json)
@@ -35,7 +34,7 @@ object JsonSast {
 
   def jsonFor(file: File): String = {
     val content = file.contentAsString
-    val sast    = SastConverter().documentString(content, Prov(0, content.length))
+    val sast    = Parse.documentUnwrap(content, Prov(0, content.length))
     writeToString(sast)(SastEncoder)
   }
 

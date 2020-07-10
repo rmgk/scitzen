@@ -1,8 +1,7 @@
-package scitzen.generic
+package scitzen.parser
 
-import scitzen.generic.Sast._
 import scitzen.parser.MacroCommand.{Emph, Strong}
-import scitzen.parser._
+import scitzen.parser.Sast._
 
 sealed trait Sast {
   def attributes: Attributes
@@ -74,54 +73,5 @@ object ListConverter {
         SlistItem(item.marker, itemSast, contentSast.orElse(childSasts).getOrElse(NoContent))
     }
     Slist(listItems)
-  }
-}
-
-final case class SastConverter() {
-
-
-  def blockSequence(blocks: List[BlockContent]): List[Sast] = {
-    blocks.map(blockContent)
-  }
-
-  def blockContent(block: BlockContent): Sast = {
-    block match {
-
-      case SectionTitle(level, title, attributes) =>
-        Section(inlineString(title, attributes.prov), level, attributes)
-
-      case ListBlock(items) => ListConverter.listtoSast(items)
-
-      case m: Macro => SMacro(m)
-
-      case WhitespaceBlock(space, prov) => SBlock(Attributes(Nil, prov), SpaceComment(space))
-
-      case NormalBlock(delimiter, command, text, attributes) =>
-        val proto =
-          SBlock(attributes.prepend(if (command.str.nonEmpty) List(Attribute("", command.str)) else Nil), Fenced(""))
-        if (delimiter == "")
-          proto.copy(content = Paragraph(inlineString(text, attributes.prov)))
-        else
-          delimiter.charAt(0) match {
-            case '`'              => proto.copy(content = Fenced(text))
-            case '.'              => SBlock(proto.attributes.prepend(List(Attribute("", "text"))), Fenced(text))
-            case ':' | ' ' | '\t' => proto.copy(content = Parsed(delimiter, documentString(text, attributes.prov)))
-            case other =>
-              scribe.warn(s"mismatched block $delimiter: $text")
-              proto.copy(content = Fenced(text))
-          }
-
-    }
-  }
-
-  def documentString(blockContent: String, prov: Prov): Seq[Sast] = {
-    Parse.document(blockContent, prov) match {
-      case Left(parsingAnnotation) => throw parsingAnnotation
-      case Right(res)              => res.toList
-    }
-  }
-
-  def inlineString(paragraphString: String, prov: Prov): Text = {
-    Text(Parse.paragraph(paragraphString, prov).toTry.get)
   }
 }

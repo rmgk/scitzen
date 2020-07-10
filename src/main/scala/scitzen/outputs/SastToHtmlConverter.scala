@@ -6,10 +6,10 @@ import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scalatags.generic.Bundle
-import scitzen.generic.Sast._
-import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, Sast, SastRef}
+import scitzen.parser.Sast._
+import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, SastRef}
 import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
-import scitzen.parser.{Attributes, Inline, InlineText, Macro, ScitzenDateTime}
+import scitzen.parser.{Attributes, Inline, InlineText, Macro, Sast, ScitzenDateTime}
 
 import scala.jdk.CollectionConverters._
 

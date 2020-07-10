@@ -4,9 +4,9 @@ import cats.data.Chain
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.ImageConverter
-import scitzen.generic.{ConversionContext, Project, Sast}
+import scitzen.generic.{ConversionContext, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.parser.MacroCommand
+import scitzen.parser.{MacroCommand, Sast}
 
 object ImageReferences {
 

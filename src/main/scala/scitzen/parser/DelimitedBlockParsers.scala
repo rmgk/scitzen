@@ -2,8 +2,7 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import scitzen.generic.Sast
-import scitzen.generic.Sast.{Fenced, Parsed, SBlock}
+import Sast.{Fenced, Parsed, SBlock}
 import scitzen.parser.CommonParsers._
 
 object DelimitedBlockParsers {
@@ -23,7 +22,7 @@ object DelimitedBlockParsers {
                 delimiter(0) match {
                   case '`' => Fenced(strippedText)
                   case ':' =>
-                    val sast: Seq[Sast] = Parse.valueOrThrow(Parse.document(strippedText, prov))
+                    val sast: Seq[Sast] = Parse.documentUnwrap(strippedText, prov)
                     Parsed(delimiter, sast)
                 }
               SBlock(Attributes(rawAttr, prov.copy(indent = delimiter.length)), blockContent)
@@ -50,7 +49,7 @@ object DelimitedBlockParsers {
       (indentation.? ~ untilI(eol).!)
         .rep(min = 1, sep = significantSpaceLine.rep ~ &(indentation))
         .map { lines =>
-          val sast: Seq[Sast] = Parse.valueOrThrow(Parse.document(lines.mkString, Prov()))
+          val sast: Seq[Sast] = Parse.documentUnwrap(lines.mkString, Prov())
           Parsed(indentation, sast)
         }
     }).map {

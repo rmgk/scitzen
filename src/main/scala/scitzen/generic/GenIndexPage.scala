@@ -1,8 +1,8 @@
 package scitzen.generic
 
-import scitzen.generic.Sast.{Parsed, SBlock, SMacro, Section, Text}
+import scitzen.parser.Sast.{Parsed, SBlock, SMacro, Section, Text}
 import scitzen.parser.MacroCommand.Ref
-import scitzen.parser.{Attribute, Attributes, InlineText, Macro}
+import scitzen.parser.{Attribute, Attributes, InlineText, Macro, Sast}
 
 object GenIndexPage {
 

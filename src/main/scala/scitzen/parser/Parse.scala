@@ -4,11 +4,6 @@ import cats.implicits._
 import fastparse.NoWhitespace._
 import fastparse.Parsed.{Failure, Success, TracedFailure}
 import fastparse._
-import scitzen.generic.Sast
-
-object DocumentParsers {
-  def document[_: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
-}
 
 case class ParsingAnnotation(content: String, failure: TracedFailure) extends Exception
 
@@ -29,14 +24,23 @@ object Parse {
     }
   }
 
-  def document(blockContent: String, prov: Prov): Result[Seq[Sast]] =
-    parseResult(blockContent, scitzen.parser.DocumentParsers.document(_), prov)
+  def parserDocument[_: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
 
-  def paragraph(paragraphString: String, prov: Prov): Result[Seq[Inline]] =
+
+  def document(blockContent: String, prov: Prov): Result[Seq[Sast]] =
+    parseResult(blockContent, parserDocument(_), prov)
+
+  def inline(paragraphString: String, prov: Prov): Result[Seq[Inline]] =
     parseResult(paragraphString, scitzen.parser.InlineParsers.fullParagraph(_), prov)
 
-  def valueOrThrow[T](result: Result[T]): T = result match {
-    case Right(value) => value
-    case Left(pa) => throw pa
+  def documentUnwrap(blockContent: String, prov: Prov): Seq[Sast] = {
+    Parse.document(blockContent, prov) match {
+      case Left(parsingAnnotation) => throw parsingAnnotation
+      case Right(res)              => res.toList
+    }
+  }
+
+  def inlineUnwrap(paragraphString: String, prov: Prov): Seq[Inline] = {
+    Parse.inline(paragraphString, prov).toTry.get
   }
 }

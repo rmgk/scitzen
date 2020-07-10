@@ -2,9 +2,9 @@ package scitzen.extern
 
 import better.files.File
 import scitzen.generic.RegexContext.regexStringContext
-import scitzen.generic.Sast.{Fenced, SBlock, SMacro}
-import scitzen.generic.{ConversionContext, Project, Sast}
-import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand}
+import scitzen.parser.Sast.{Fenced, SBlock, SMacro}
+import scitzen.generic.{ConversionContext, Project}
+import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand, Sast}
 
 import scala.jdk.CollectionConverters._
 

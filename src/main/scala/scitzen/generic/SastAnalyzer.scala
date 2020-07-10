@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.generic.Sast._
+import scitzen.parser.Sast._
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser._
 

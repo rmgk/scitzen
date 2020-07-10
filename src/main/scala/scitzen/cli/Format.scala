@@ -3,9 +3,10 @@ package scitzen.cli
 import java.nio.charset.{Charset, StandardCharsets}
 
 import better.files.File
-import scitzen.generic.{AnalyzedDoc, Project, Sast}
+import scitzen.generic.{AnalyzedDoc, Project}
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.MacroCommand.Image
+import scitzen.parser.Sast
 
 object Format {
 

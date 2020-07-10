@@ -1,8 +1,7 @@
 package scitzen.outputs
 
-import scitzen.generic.Sast
-import scitzen.generic.Sast._
-import scitzen.parser.{Inline, InlineText, Macro}
+import scitzen.parser.Sast._
+import scitzen.parser.{Inline, InlineText, Macro, Sast}
 
 object SastToTextConverter {
 

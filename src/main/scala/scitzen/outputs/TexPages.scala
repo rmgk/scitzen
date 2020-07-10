@@ -145,7 +145,7 @@ object TexPages {
 
   def wrap(content: Chain[String], authorsStr: String, layout: String, bibliography: Option[String], raw: String): String = {
     val authors       = Chain.fromSeq {
-      Parse.paragraph(authorsStr, Prov()).toTry.get.collect {
+      Parse.inline(authorsStr, Prov()).toTry.get.collect {
         case Macro(Other("author"), attributes) => (attributes.positional.head, attributes.positional.tail)
       }
     }

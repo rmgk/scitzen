@@ -3,10 +3,10 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.extern.ImageConverter
-import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, Project, Reporter, Sast, SastRef, _}
+import scitzen.parser.Sast._
+import scitzen.generic.{ConversionContext, Project, Reporter, SastRef, _}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
-import scitzen.parser.{Attribute, Inline, InlineText, Macro}
+import scitzen.parser.{Attribute, Inline, InlineText, Macro, Sast}
 
 object SastToSastConverter {
   def preprocessRecursive(

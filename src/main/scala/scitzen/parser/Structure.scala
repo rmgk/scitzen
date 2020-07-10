@@ -1,6 +1,6 @@
 package scitzen.parser
 
-import scitzen.generic.Sast.SBlock
+import Sast.SBlock
 import scitzen.outputs.AttributesToScim
 
 case class Attributes(raw: Seq[Attribute], prov: Prov) {

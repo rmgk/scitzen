@@ -2,7 +2,7 @@ package scitzen.generic
 
 import better.files.File
 import cats.data.Chain
-import scitzen.parser.Macro
+import scitzen.parser.{Macro, Sast}
 
 case class FullDoc(parsed: ParsedDocument, analyzed: AnalyzedDoc) {
   def sast: List[Sast] = analyzed.sast

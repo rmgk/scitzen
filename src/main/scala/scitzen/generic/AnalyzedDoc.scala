@@ -2,11 +2,11 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.generic.Sast.Section
+import scitzen.parser.Sast.Section
 import scitzen.generic.SastAnalyzer.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
-import scitzen.parser.{Attributes, DateParsingHelper, Macro, Prov, ScitzenDateTime}
+import scitzen.parser.{Attributes, DateParsingHelper, Macro, Parse, Prov, Sast, ScitzenDateTime}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
@@ -57,7 +57,7 @@ object ParsedDocument {
   def apply(file: File): ParsedDocument = {
     val content = file.contentAsString
     try {
-      val sast = SastConverter().documentString(content, Prov(0, content.length))
+      val sast = Parse.documentUnwrap(content, Prov(0, content.length))
       ParsedDocument(file, content, sast.toList)
     } catch {
       case NonFatal(e) =>

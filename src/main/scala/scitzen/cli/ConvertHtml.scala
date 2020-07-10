@@ -11,6 +11,7 @@ import scitzen.extern.{Bibliography, ImageConverter}
 import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.MacroCommand.Cite
+import scitzen.parser.Sast
 
 import scala.util.Try
 

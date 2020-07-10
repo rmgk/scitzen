@@ -2,10 +2,10 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.generic.Sast._
-import scitzen.generic.{ConversionContext, Project, Reporter, Sast}
+import scitzen.parser.Sast._
+import scitzen.generic.{ConversionContext, Project, Reporter}
 import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
-import scitzen.parser.{Attributes, Inline, InlineText, Macro}
+import scitzen.parser.{Attributes, Inline, InlineText, Macro, Sast}
 
 class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: Map[File, Seq[Sast]]) {
 

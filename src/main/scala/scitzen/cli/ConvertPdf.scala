@@ -7,8 +7,9 @@ import cats.data.Chain
 import cats.implicits._
 import scitzen.extern.ImageConverter
 import scitzen.extern.TexTikz.latexmk
-import scitzen.generic.{ConversionContext, ParsedDocument, Project, Sast}
+import scitzen.generic.{ConversionContext, ParsedDocument, Project}
 import scitzen.outputs.{SastToSastConverter, SastToTexConverter, TexPages}
+import scitzen.parser.Sast
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
