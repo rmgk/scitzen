@@ -7,10 +7,8 @@ sealed trait Sast
 
 object Sast {
 
-  case object NoContent extends Sast
-
   case class Slist(children: Seq[ListItem]) extends Sast
-  case class ListItem(marker: String, text: Text, content: Sast)
+  case class ListItem(marker: String, text: Text, content: Option[Sast])
   case class Text(inline: Seq[Inline]) {
     lazy val str = {
       inline.map {

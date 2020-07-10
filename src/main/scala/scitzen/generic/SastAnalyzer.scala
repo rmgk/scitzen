@@ -49,11 +49,9 @@ class SastAnalyzer(val macroReporter: Reporter) {
 
   def analyzeRSast(input: Sast, acc: AnalyzeResult): AnalyzeResult =
     input match {
-      case NoContent => acc
-
       case Slist(children) => children.foldLeft(acc) { (cacc, sli) =>
           val tacc = analyzeText(sli.text, cacc)
-          analyzeRSast(sli.content, tacc)
+        sli.content.fold(tacc)(analyzeRSast(_, tacc))
         }
 
       case sec @ Section(level, title, attributes) =>

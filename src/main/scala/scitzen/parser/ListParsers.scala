@@ -3,7 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.Sast.{Block, ListItem, NoContent, Slist, Text}
+import scitzen.parser.Sast.{Block, ListItem, Slist, Text}
 
 object ListParsers {
 
@@ -31,8 +31,9 @@ object ListParsers {
       }
 
   def list[_: P]: P[Slist] =
-    P((descriptionListItem | simpleListItem).rep(1)).map { listItems =>
-      ListConverter.listtoSast(listItems)
+    P(withProv((descriptionListItem | simpleListItem).rep(1))).map {
+      case (listItems, prov) =>
+        ListConverter.listtoSast(listItems)
     }
 
   case class ParsedListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
@@ -62,7 +63,7 @@ object ListParsers {
           val itemSast    = Parse.inlineUnwrap(item.itemText, item.prov)
           val contentSast = item.content
           val childSasts  = if (children.isEmpty) None else Some(listtoSast(children))
-          ListItem(item.marker, Text(itemSast), contentSast.orElse(childSasts).getOrElse(NoContent))
+          ListItem(item.marker, Text(itemSast), contentSast.orElse(childSasts))
       }
       Slist(listItems)
     }

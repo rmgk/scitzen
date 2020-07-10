@@ -36,7 +36,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF = {
     val textCtx = inlineValuesToHTML(child.text.inline)(ctx)
-    textCtx.data ++: convertSingle(child.content)(textCtx)
+    textCtx.data ++: child.content.fold(textCtx)(convertSingle(_)(textCtx))
   }
 
   def categoriesSpan(analyzedDoc: AnalyzedDoc): Option[Tag] = {
@@ -62,9 +62,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
   def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
     singleSast match {
-
-      case NoContent => ctx.empty
-
       case sec @ Section(title, level, _) =>
         val inner = (if (ctx.stack.isEmpty) Chain(tMeta()) else Chain.nil)
         inlineValuesToHTML(title.inline)(ctx).map { innerFrags =>
@@ -73,7 +70,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Slist(Nil) => ctx.empty
       case Slist(children) => children.head.content match {
-          case NoContent | Slist(_) =>
+          case None | Some(Slist(_)) =>
             val listTag = if (children.head.marker.contains(".")) ol else ul
             ctx.fold[ListItem, Frag](children) { (ctx, c) =>
               listItemToHtml(c)(ctx).map(i => Chain(li(i.toList)))
@@ -81,7 +78,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case _ =>
             ctx.fold[ListItem, Frag](children) { (ctx, c) =>
               val inlinesCtx = inlineValuesToHTML(c.text.inline)(ctx)
-              convertSingle(c.content)(inlinesCtx).map { innerFrags =>
+              c.content.fold(inlinesCtx)(convertSingle(_)(inlinesCtx)).map { innerFrags =>
                 Chain(dt(inlinesCtx.data.toList: _*), dd(innerFrags.toList))
               }
             }.map(i => Chain(dl(i.toList)))

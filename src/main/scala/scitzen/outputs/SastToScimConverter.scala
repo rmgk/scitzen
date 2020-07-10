@@ -28,18 +28,16 @@ case class SastToScimConverter() {
 
   def toScim(sast: Sast): Chain[String] =
     sast match {
-      case NoContent => Chain.empty
-
       case Section(title, prefix, attributes) =>
         (prefix + " " + inlineToScim(title.inline)) +:
           attributesToScim(attributes, spacy = true, force = false, light = true)
 
       case Slist(children) => Chain.fromSeq(children).flatMap {
-          case ListItem(marker, inner, NoContent) =>
+          case ListItem(marker, inner, None) =>
             Chain(marker + inlineToScim(inner.inline))
 
           case ListItem(marker, Text(inl), rest) =>
-            (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
+            (s"$marker" + inlineToScim(inl) + (if (rest.nonEmpty) "" else ":")) +: rest.map(toScim).getOrElse(Chain.empty)
         }
 
       case mcro@ Macro(_, _) => Chain(macroToScim(mcro))

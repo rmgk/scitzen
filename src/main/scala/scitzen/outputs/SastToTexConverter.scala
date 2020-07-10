@@ -57,9 +57,6 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
   def sastToTex(sast: Sast)(implicit ctx: Cta): CtxCS =
     sast match {
-
-      case NoContent => ctx.empty
-
       case tlBlock: Block => blockToTex(tlBlock)
 
       case section @ Section(title, prefix, attr) =>
@@ -84,20 +81,19 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         children match {
           case Nil => ctx.ret(Chain.nil)
 
-          case ListItem(m, text, NoContent | Slist(_)) :: _ =>
+          case ListItem(m, text, None | Some(Slist(_))) :: _ =>
             "\\begin{itemize}" +:
               ctx.fold[ListItem, String](children) { (ctx, child) =>
                 val inlineCtx  = inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item{$s}"))
-                val contentCtx = sastToTex(child.content)(inlineCtx)
+                val contentCtx = child.content.fold(inlineCtx)(sastToTex(_)(inlineCtx))
                 inlineCtx.data ++: contentCtx
               } :+
               "\\end{itemize}"
 
           case ListItem(m, _, _) :: _ =>
             ctx.fold[ListItem, String](children) { (ctx, child) =>
-              val inlines = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]{}")
-
-              inlines.data +: sastToTex(child.content)(inlines)
+              val inlinesCtx = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]{}")
+              inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])(sastToTex(_)(inlinesCtx))
             }.map { content =>
               "\\begin{description}" +: content :+ "\\end{description}"
             }

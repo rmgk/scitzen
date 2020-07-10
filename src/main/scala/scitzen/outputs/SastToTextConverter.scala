@@ -11,15 +11,13 @@ object SastToTextConverter {
 
   def convertSast(b: Seq[Sast]): Seq[String] = {
     b.flatMap {
-      case NoContent => Nil
-
       case Section(title, level, _) =>
         List(convertInline(title.inline))
 
       case Slist(children) => children.flatMap {
-          case ListItem(marker, Text(inl), NoContent) =>
+          case ListItem(marker, Text(inl), None) =>
             List(convertInline(inl))
-          case ListItem(marker, text, inner)          =>
+          case ListItem(marker, text, Some(inner))          =>
             convertInline(text.inline) +: convertSast(List(inner))
         }
 
