@@ -11,17 +11,20 @@ object AttributesParser {
   val close = "}"
 
   def terminator[_: P] = P(";" | close | eol)
-  def unquotedValue[_: P]: P[String] = P(untilE(terminator)).map(_.trim)
+  def unquotedValue[_: P]: P[String] = P(untilE(terminator)).map(_.strip())
+
+  /** value is in the general form of ""[content]"" where all of the quoting is optional,
+   * but the closing quote must match the opening quote */
   def value[_: P]: P[String] = {
     P(anySpaces ~ "\"".rep.!.flatMap { quotes =>
-      (("[" ~ untilI("]" ~ quotes ~ &(terminator)))
+      (("[" ~ untilI("]" ~ quotes ~ verticalSpaces ~ &(terminator)))
        | (if (quotes.isEmpty) unquotedValue
-          else untilI(quotes ~ &(terminator))))
+          else untilI(quotes ~ verticalSpaces ~ &(terminator))))
     })
   }
 
   def namedAttribute[_: P]: P[Attribute] =
-    P(anySpaces ~ identifier.! ~ verticalSpaces ~ "=" ~ value)
+    P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~ value)
     .map { case (id, v) => Attribute(id, v) }
 
   def positionalAttribute[_: P]: P[Attribute] = P(value).map(v => Attribute("", v))
