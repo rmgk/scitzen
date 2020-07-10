@@ -16,8 +16,8 @@ object DelimitedBlockParsers {
         (withProv(untilE(closing, min = 0)) ~ closing)
           .map {
             case (text, prov) =>
-              val strippedText = stripIfPossible(text, delimiter.length)
-              val rawAttr      = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
+              val (isStripped, strippedText) = stripIfPossible(text, delimiter.length)
+              val rawAttr                    = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
               val blockContent =
                 delimiter(0) match {
                   case '`' => Fenced(strippedText)
@@ -25,7 +25,7 @@ object DelimitedBlockParsers {
                     val sast: Seq[Sast] = Parse.documentUnwrap(strippedText, prov)
                     Parsed(delimiter, sast)
                 }
-              Block(Attributes(rawAttr, prov.copy(indent = delimiter.length)), blockContent)
+              Block(Attributes(rawAttr, if (!isStripped) prov else prov.copy(indent = delimiter.length)), blockContent)
           }
     }
 
@@ -33,12 +33,12 @@ object DelimitedBlockParsers {
 
   val spaceNewline = " *\\n?$".r
 
-  def stripIfPossible(str: String, i: Int): String = {
+  def stripIfPossible(str: String, i: Int): (Boolean, String) = {
     val prefix = " ".repeat(i)
-    str.linesWithSeparators.map { l =>
+    true -> str.linesWithSeparators.map { l =>
       if (l.startsWith(prefix)) l.substring(i)
       else if (spaceNewline.matches(l)) l
-      else return str
+      else return (false, str)
     }.mkString
   }
 
