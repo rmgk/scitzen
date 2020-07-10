@@ -10,8 +10,8 @@ object ListParsers {
   def simpleMarker[_: P]: P[String] =
     P(verticalSpaces
       ~ ("-" | "•"
-        | "*".rep(1)
-        | (digits.? ~ ".".rep(1)))
+        | "*"
+        | (digits.? ~ "."))
       ~ verticalSpace).!
 
   def listContent[_: P]: P[Block] =
@@ -41,6 +41,12 @@ object ListParsers {
       ListConverter.listtoSast(listItems)
     }
 
+}
+
+
+case class ListItem(marker: String, text: Block, content: Option[Block])
+case object ListItem {
+  def apply(mc: (String, Block)): ListItem = ListItem(mc._1, mc._2, None)
 }
 
 object ListConverter {

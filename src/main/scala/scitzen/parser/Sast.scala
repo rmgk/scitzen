@@ -2,7 +2,6 @@ package scitzen.parser
 
 import scitzen.outputs.AttributesToScim
 import scitzen.parser.MacroCommand.{Emph, Strong}
-import scitzen.parser.Sast.Block
 
 sealed trait Sast {
   def attributes: Attributes
@@ -64,17 +63,11 @@ object Attributes {
   def target(string: String, prov: Prov): Attributes = Attribute("", string).toAttributes(prov)
 }
 
-case class ListItem(marker: String, text: Block, content: Option[Block])
-case object ListItem {
-  def apply(mc: (String, Block)): ListItem = ListItem(mc._1, mc._2, None)
-}
-
 case class Attribute(id: String, value: String) {
   def toAttributes(prov: Prov): Attributes = Attributes(List(this), prov)
 }
 
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
-
 
 
 sealed trait Inline
