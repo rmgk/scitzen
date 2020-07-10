@@ -2,9 +2,10 @@ package scitzen.outputs
 
 import cats.data.Chain
 import cats.implicits._
+import fastparse.P
 import scitzen.generic.Sast
 import scitzen.generic.Sast._
-import scitzen.parser.MacroCommand.{Comment, Def}
+import scitzen.parser.MacroCommand.Comment
 import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineText, Macro, MacroCommand}
 
 import scala.collection.immutable.ArraySeq
@@ -40,7 +41,6 @@ case class SastToScimConverter() {
         (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
     }
 
-    case SMacro(m @ Macro(Def, attributes)) => Chain(macroToScimRaw(m, spacy = true))
     case SMacro(mcro)                       => Chain(macroToScim(mcro))
 
     case tlb: SBlock => convertBlock(tlb)
@@ -97,8 +97,11 @@ case class SastToScimConverter() {
   }
 
 
-  def macroToScimRaw(mcro: Macro, spacy: Boolean = false): String = {
-    s":${MacroCommand.print(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
+  def macroToScim(mcro: Macro, spacy: Boolean = false): String = {
+    mcro match {
+      case Macro(Comment, attributes) => s":%${attributes.target}"
+      case other => s":${MacroCommand.print(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
+    }
   }
 
   def inlineToScim(inners: Seq[Inline]): String = inners.map {
@@ -106,22 +109,17 @@ case class SastToScimConverter() {
     case m: Macro        => macroToScim(m)
   }.mkString("")
 
-  def macroToScim(m: Macro): String = m match {
-    case Macro(Comment, attributes)                  => s":%${attributes.target}"
-    case other                                       => macroToScimRaw(other)
-  }
 }
 
 object AttributesToScim {
-  //val attributeEscapes = """[;=\]}\n]|^[\s"\[]|\s$""".r
   val countQuotes: Regex = """(]"*)""".r
 
   def encodeValue(value: String, isNamed: Boolean): String = {
-    def parses(quoted: String) = {
-      val res = fastparse.parse(quoted,
-                                if (isNamed)
-                                  AttributesParser.positionalAttribute(_)
-                                else AttributesParser.attribute(_))
+    def parses(quoted: String): Boolean = {
+      def parser[_: P]: P[Attribute] = if (isNamed) AttributesParser.positionalAttribute
+                                       else AttributesParser.attribute
+
+      val res = fastparse.parse(quoted, parser(_))
       res.get.value.value == value
     }
 
