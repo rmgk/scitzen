@@ -2,11 +2,11 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.parser.Sast.Section
 import scitzen.generic.SastAnalyzer.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
-import scitzen.parser.{Attributes, DateParsingHelper, Macro, Parse, Prov, Sast, ScitzenDateTime}
+import scitzen.parser.Sast.{SMacro, Section}
+import scitzen.parser.{Attributes, DateParsingHelper, Parse, Prov, Sast, ScitzenDateTime}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
@@ -68,7 +68,7 @@ object ParsedDocument {
 }
 
 trait Reporter {
-  def apply(im: Macro): String = apply(im.attributes.prov)
+  def apply(im: SMacro): String = apply(im.attributes.prov)
   def apply(prov: Prov): String
 }
 

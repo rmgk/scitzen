@@ -6,7 +6,7 @@ import scitzen.extern.ImageConverter
 import scitzen.parser.Sast._
 import scitzen.generic.{ConversionContext, Project, Reporter, SastRef, _}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
-import scitzen.parser.{Attribute, Inline, InlineText, Macro, Sast}
+import scitzen.parser.{Attribute, Inline, InlineText, Sast}
 
 object SastToSastConverter {
   def preprocessRecursive(
@@ -64,8 +64,8 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
           Chain(Slist(cs.iterator.toSeq))
         }
 
-      case SMacro(mcro) =>
-        convertMacro(mcro).map(SMacro(_): Sast).single
+      case mcro @ SMacro(_, _) =>
+        convertMacro(mcro).map(identity(_): Sast).single
     }
 
   def addRefTargetMakeUnique(ctx: Cta, sec: Section): Ctx[SastRef] = {
@@ -122,21 +122,21 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
     ctx.fold(inners) { (ctx, inline) =>
       inline match {
         case inlineText: InlineText => ctx.retc(inlineText)
-        case m: Macro               => convertMacro(m)(ctx).map(identity[Inline]).single
+        case m: SMacro              => convertMacro(m)(ctx).map(identity[Inline]).single
       }
     }
 
-  def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] =
+  def convertMacro(mcro: SMacro)(implicit ctx: Cta): Ctx[SMacro] =
     mcro match {
-      case Macro(Image, attributes) if attributes.named.contains("converter") =>
+      case SMacro(Image, attributes) if attributes.named.contains("converter") =>
         val resctx = converter.convert(cwd, mcro).schedule(ctx)
         convertMacro(resctx.data)(resctx)
 
-      case Macro(Image, attributes) if converter.requiresConversion(attributes.target) =>
+      case SMacro(Image, attributes) if converter.requiresConversion(attributes.target) =>
         project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
           val resctx    = converter.applyConversion(file).schedule(ctx)
           val reltarget = cwd.relativize(resctx.data)
-          convertMacro(Macro(
+          convertMacro(SMacro(
             Image,
             attributes.copy(
               raw = attributes.raw.init :+ Attribute("", reltarget.toString)
@@ -144,10 +144,10 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
           ))(resctx)
         }
 
-      case Macro(Label, attributes) =>
+      case SMacro(Label, attributes) =>
         ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head)).ret(mcro)
 
-      case Macro(Include, attributes) if attributes.arguments.isEmpty =>
+      case SMacro(Include, attributes) if attributes.arguments.isEmpty =>
         project.resolve(cwd, attributes.target) match {
           case None =>
             scribe.error(s"unknown include ${attributes.target}" + reporter(mcro))

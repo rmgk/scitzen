@@ -2,10 +2,10 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.parser.Sast._
 import scitzen.generic.{ConversionContext, Project, Reporter}
 import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
-import scitzen.parser.{Attributes, Inline, InlineText, Macro, Sast}
+import scitzen.parser.Sast._
+import scitzen.parser.{Attributes, Inline, InlineText, Sast}
 
 class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: Map[File, Seq[Sast]]) {
 
@@ -104,8 +104,8 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
         }
 
-      case SMacro(mcro) => mcro match {
-          case Macro(Image, attributes) =>
+      case mcro @ SMacro(_, _) => mcro match {
+          case SMacro(Image, attributes) =>
             val target = attributes.target
 
             project.resolve(cwd, target) match {
@@ -116,7 +116,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
                 ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
             }
 
-          case Macro(Include, attributes) =>
+          case SMacro(Include, attributes) =>
             project.findDoc(cwd, attributes.target) match {
               case Some(doc) =>
                 val included = includeResolver(doc.parsed.file)
@@ -210,46 +210,46 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] =
     ctx.ret(inners.map {
-      case InlineText(str)                    => latexencode(str)
-      case Macro(Cite, attr)                  => s"${nbrs(attr)}\\cite{${attr.target}}"
-      case Macro(Code, attrs)                 => s"\\texttt{${latexencode(attrs.target)}}"
-      case Macro(Comment, attr)               => ""
-      case Macro(Def, _)                      => ""
-      case Macro(Emph, attrs)                 => s"\\emph{${latexencode(attrs.target)}}"
-      case Macro(Label, attr)                 => s"\\label{${attr.target}}"
-      case Macro(Math, attrs)                 => s"$$${attrs.target}$$"
-      case Macro(Other("break"), attrs)       => s"\\clearpage{}"
-      case Macro(Other("subparagraph"), attr) => s"\\subparagraph{${attr.target}}"
-      case Macro(Other("textsc"), attr)       => s"\\textsc{${attr.target}}"
-      case Macro(Other("todo"), attr)         => s"{\\color{red}TODO:${attr.target}}"
-      case Macro(Ref, attr)                   => s"${nbrs(attr)}\\ref{${attr.target}}"
-      case Macro(Strong, attrs)               => s"\\textbf{${latexencode(attrs.target)}}"
+      case InlineText(str)                     => latexencode(str)
+      case SMacro(Cite, attr)                  => s"${nbrs(attr)}\\cite{${attr.target}}"
+      case SMacro(Code, attrs)                 => s"\\texttt{${latexencode(attrs.target)}}"
+      case SMacro(Comment, attr)               => ""
+      case SMacro(Def, _)                      => ""
+      case SMacro(Emph, attrs)                 => s"\\emph{${latexencode(attrs.target)}}"
+      case SMacro(Label, attr)                 => s"\\label{${attr.target}}"
+      case SMacro(Math, attrs)                 => s"$$${attrs.target}$$"
+      case SMacro(Other("break"), attrs)       => s"\\clearpage{}"
+      case SMacro(Other("subparagraph"), attr) => s"\\subparagraph{${attr.target}}"
+      case SMacro(Other("textsc"), attr)       => s"\\textsc{${attr.target}}"
+      case SMacro(Other("todo"), attr)         => s"{\\color{red}TODO:${attr.target}}"
+      case SMacro(Ref, attr)                   => s"${nbrs(attr)}\\ref{${attr.target}}"
+      case SMacro(Strong, attrs)               => s"\\textbf{${latexencode(attrs.target)}}"
 
-      case Macro(Link, attributes) =>
+      case SMacro(Link, attributes) =>
         val target = attributes.target
         if (attributes.positional.size > 1) {
           val name = """{"""" + attributes.positional.head + """"}"""
           s"\\href{$target}{$name}"
         } else s"\\url{$target}"
 
-      case Macro(Lookup, attributes) =>
+      case SMacro(Lookup, attributes) =>
         if (project.config.definitions.contains(attributes.target))
           project.config.definitions(attributes.target)
         else scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
 
-      case Macro(Other("footnote"), attributes) =>
+      case SMacro(Other("footnote"), attributes) =>
         val target = latexencode(attributes.target)
         s"\\footnote{$target}"
 
-      case Macro(Other("tableofcontents"), attributes) =>
+      case SMacro(Other("tableofcontents"), attributes) =>
         List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
 
-      case im @ Macro(Other(command), attributes) =>
+      case im @ SMacro(Other(command), attributes) =>
         val str = SastToScimConverter().macroToScim(im)
         scribe.warn(s"unknown macro “$str”" + reporter(im))
         str
 
-      case im @ Macro(Image | Include, attributes) =>
+      case im @ SMacro(Image | Include, attributes) =>
         val str = SastToScimConverter().macroToScim(im)
         scribe.warn(s"tex backend does not allow inline images or includes" + reporter(im))
         str

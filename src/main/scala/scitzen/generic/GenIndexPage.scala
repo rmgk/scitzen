@@ -1,8 +1,8 @@
 package scitzen.generic
 
-import scitzen.parser.Sast.{Parsed, SBlock, SMacro, Section, Text}
 import scitzen.parser.MacroCommand.Ref
-import scitzen.parser.{Attribute, Attributes, InlineText, Macro, Sast}
+import scitzen.parser.Sast.{Parsed, SBlock, SMacro, Section, Text}
+import scitzen.parser.{Attribute, Attributes, InlineText, Sast}
 
 object GenIndexPage {
 
@@ -55,18 +55,18 @@ object GenIndexPage {
     sectionBy(dm.fulldocs)(_.analyzed.date.fold("Drafts")(_.year)) { docs =>
       sectionBy(docs)(secmon) { idocs =>
         idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
-          List(SMacro(Macro(
+          List(SMacro(
             Ref,
             Attributes.synthetic(
               Attribute("", project.root.relativize(doc.parsed.file).toString),
               Attribute("type", "article")
             )
-          )),
-          //Paragraph(Text(
-          //  nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
-          //    case (word, prob) => InlineText(s"$word ")
-          //  })))
-          )
+          ),
+               //Paragraph(Text(
+               //  nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
+               //    case (word, prob) => InlineText(s"$word ")
+               //  })))
+               )
         }
       }
     }

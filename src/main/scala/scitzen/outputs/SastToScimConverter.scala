@@ -3,9 +3,9 @@ package scitzen.outputs
 import cats.data.Chain
 import cats.implicits._
 import fastparse.P
-import scitzen.parser.Sast._
 import scitzen.parser.MacroCommand.Comment
-import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineText, Macro, MacroCommand, Sast}
+import scitzen.parser.Sast._
+import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineText, MacroCommand, Sast}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex
@@ -42,7 +42,7 @@ case class SastToScimConverter() {
             (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
         }
 
-      case SMacro(mcro) => Chain(macroToScim(mcro))
+      case mcro@ SMacro(_, _) => Chain(macroToScim(mcro))
 
       case tlb: SBlock => convertBlock(tlb)
     }
@@ -102,10 +102,10 @@ case class SastToScimConverter() {
     }
   }
 
-  def macroToScim(mcro: Macro, spacy: Boolean = false): String = {
+  def macroToScim(mcro: SMacro, spacy: Boolean = false): String = {
     mcro match {
-      case Macro(Comment, attributes) => s":%${attributes.target}"
-      case other =>
+      case SMacro(Comment, attributes) => s":%${attributes.target}"
+      case other                       =>
         s":${MacroCommand.print(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
     }
   }
@@ -113,7 +113,7 @@ case class SastToScimConverter() {
   def inlineToScim(inners: Seq[Inline]): String =
     inners.map {
       case InlineText(str) => str
-      case m: Macro        => macroToScim(m)
+      case m: SMacro       => macroToScim(m)
     }.mkString("")
 
 }

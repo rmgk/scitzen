@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import scitzen.parser.Sast._
-import scitzen.parser.{Inline, InlineText, Macro, Sast}
+import scitzen.parser.{Inline, InlineText, Sast}
 
 object SastToTextConverter {
 
@@ -23,7 +23,7 @@ object SastToTextConverter {
             convertInline(text.inline) +: convertSast(List(inner))
         }
 
-      case SMacro(_) => Nil
+      case SMacro(_, _) => Nil
 
       case SBlock(_, blockType) => blockType match {
           case Paragraph(content)      => List(convertInline(content.inline))
@@ -38,6 +38,6 @@ object SastToTextConverter {
   def convertInline(inners: Seq[Inline]): String =
     inners.map {
       case InlineText(str) => str
-      case m: Macro        => ""
+      case m: SMacro       => ""
     }.mkString("")
 }

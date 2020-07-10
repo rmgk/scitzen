@@ -2,9 +2,9 @@ package scitzen.extern
 
 import better.files.File
 import scitzen.generic.RegexContext.regexStringContext
-import scitzen.parser.Sast.{Fenced, SBlock, SMacro}
 import scitzen.generic.{ConversionContext, Project}
-import scitzen.parser.{Attribute, Attributes, Macro, MacroCommand, Sast}
+import scitzen.parser.Sast.{Fenced, SBlock, SMacro}
+import scitzen.parser.{Attribute, Attributes, MacroCommand, Sast}
 
 import scala.jdk.CollectionConverters._
 
@@ -26,7 +26,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
-  def convert(cwd: File, mcro: Macro): ConvertSchedulable[Macro] = {
+  def convert(cwd: File, mcro: SMacro): ConvertSchedulable[SMacro] = {
     val converter = mcro.attributes.named("converter")
     project.resolve(cwd, mcro.attributes.target) flatMap { file =>
       val content = file.contentAsString
@@ -51,7 +51,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
     doConversion(converter, tlb.attributes, content) match {
       case None =>
         new ConvertSchedulable(tlb.copy(attributes = tlb.attributes.remove("converter")), None)
-      case Some(res) => res.map(SMacro)
+      case Some(res) => res.map(identity)
 
     }
   }
@@ -132,11 +132,11 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
   //  out
   //}
 
-  def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {
+  def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[SMacro]] = {
 
-    def makeImageMacro(file: File): Macro = {
+    def makeImageMacro(file: File): SMacro = {
       val relTarget = project.root.relativize(file)
-      Macro(MacroCommand.Image, attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
+      SMacro(MacroCommand.Image, attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
     }
 
     def applyConversion(data: (String, File, Option[ConvertTask])) = {

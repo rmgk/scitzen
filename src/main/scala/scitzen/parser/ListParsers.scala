@@ -2,7 +2,7 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import Sast.{Paragraph, SBlock, Slist, Text}
+import Sast.{NoContent, Paragraph, SBlock, Slist, SlistItem, Text}
 import scitzen.parser.CommonParsers._
 
 object ListParsers {
@@ -41,4 +41,35 @@ object ListParsers {
       ListConverter.listtoSast(listItems)
     }
 
+}
+
+object ListConverter {
+
+  def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] =
+    items.toList match {
+      case Nil => Nil
+      case (marker, item) :: tail =>
+        val (take, drop) = tail.span { case (c, _) => marker != c }
+        (item -> take.map(_._2)) +: splitted(drop)
+    }
+
+  def listtoSast(items: Seq[ListItem]): Slist = {
+    /* defines which characters are distinguishing list levels */
+    def norm(m: String) = m.replaceAll("""[^\s\*\.•\-]""", "")
+
+    val split = splitted(items.map(i => (norm(i.marker), i)))
+
+    if (split.isEmpty) Slist(Nil) else otherList(split)
+  }
+
+  private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
+    val listItems = split.map {
+      case (item, children) =>
+        val itemSast    = item.text.content.asInstanceOf[Paragraph].content
+        val contentSast = item.content
+        val childSasts  = if (children.isEmpty) None else Some(listtoSast(children))
+        SlistItem(item.marker, itemSast, contentSast.orElse(childSasts).getOrElse(NoContent))
+    }
+    Slist(listItems)
+  }
 }

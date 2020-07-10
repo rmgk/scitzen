@@ -7,8 +7,8 @@ import scitzen.parser._
 import scala.util.control.NonFatal
 
 object SastAnalyzer {
-  case class AnalyzeResult(macros: List[Macro], rawBlocks: List[SBlock], sections: List[Section]) {
-    def +(m: Macro): AnalyzeResult   = copy(macros = m :: macros)
+  case class AnalyzeResult(macros: List[SMacro], rawBlocks: List[SBlock], sections: List[Section]) {
+    def +(m: SMacro): AnalyzeResult   = copy(macros = m :: macros)
     def +(m: SBlock): AnalyzeResult  = copy(rawBlocks = m :: rawBlocks)
     def +(m: Section): AnalyzeResult = copy(sections = m :: sections)
   }
@@ -18,7 +18,7 @@ class SastAnalyzer(val macroReporter: Reporter) {
 
   import scitzen.generic.SastAnalyzer._
 
-  def reportTarget(mcr: Macro): String =
+  def reportTarget(mcr: SMacro): String =
     try {
       mcr.attributes.target
     } catch {
@@ -59,7 +59,7 @@ class SastAnalyzer(val macroReporter: Reporter) {
       case sec @ Section(level, title, attributes) =>
         acc + sec
 
-      case SMacro(imacro) =>
+      case imacro @ SMacro(_, _) =>
         acc + imacro
 
       case SBlock(attr, content) => analyzeSBlockType(content, acc)
@@ -75,7 +75,7 @@ class SastAnalyzer(val macroReporter: Reporter) {
   def analyzeText(text: Text, acc: AnalyzeResult): AnalyzeResult = {
     text.inline.foldLeft(acc) { (cacc, inline) =>
       inline match {
-        case m: Macro        => cacc + m
+        case m: SMacro       => cacc + m
         case InlineText(str) => cacc
       }
     }

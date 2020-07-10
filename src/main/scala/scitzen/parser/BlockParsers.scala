@@ -2,8 +2,8 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import Sast.{Paragraph, SBlock, SMacro, Section, SpaceComment, Text}
 import scitzen.parser.CommonParsers._
+import scitzen.parser.Sast.{Paragraph, SBlock, Section, SpaceComment, Text}
 
 object BlockParsers {
 
@@ -42,7 +42,7 @@ object BlockParsers {
       ListParsers.list |
       DelimitedBlockParsers.anyDelimited |
       sectionTitle |
-      MacroParsers.full.map(SMacro.apply) ~ spaceLine |
+      MacroParsers.full ~ spaceLine |
       paragraph)
 
 }
