@@ -14,20 +14,20 @@ object ListParsers {
         | (digits.? ~ "."))
       ~ verticalSpace).!
 
-  def simpleListItem[_: P]: P[ListItem] =
+  def simpleListItem[_: P]: P[ParsedListItem] =
     P(simpleMarker ~ withProv(untilE(eol ~ (spaceLine | simpleMarker).map(_ => ()))) ~ eol).map {
       case (marker, (content, prov)) =>
-        ListItem(marker, content, prov, None)
+        ParsedListItem(marker, content, prov, None)
     }
 
   def descriptionListContent[_: P]: P[(String, Prov)] =
     P(withProv(untilE(":" ~ verticalSpaces ~ eol | eol) ~ ":" ~ verticalSpaces ~ eol))
-  def descriptionListItem[_: P]: P[ListItem] =
+  def descriptionListItem[_: P]: P[ParsedListItem] =
     P(simpleMarker ~ descriptionListContent ~
       DelimitedBlockParsers.whitespaceLiteral.?)
       .map {
         case (marker, (str, prov), innerBlock) =>
-          ListItem(marker, str, prov, innerBlock)
+          ParsedListItem(marker, str, prov, innerBlock)
       }
 
   def list[_: P]: P[Slist] =
@@ -35,7 +35,7 @@ object ListParsers {
       ListConverter.listtoSast(listItems)
     }
 
-  case class ListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
+  case class ParsedListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
 
   object ListConverter {
 
@@ -47,7 +47,7 @@ object ListParsers {
           (item -> take.map(_._2)) +: splitted(drop)
       }
 
-    def listtoSast(items: Seq[ListItem]): Slist = {
+    def listtoSast(items: Seq[ParsedListItem]): Slist = {
       /* defines which characters are distinguishing list levels */
       def norm(m: String) = m.replaceAll("""[^\s\*\.•\-]""", "")
 
@@ -56,7 +56,7 @@ object ListParsers {
       if (split.isEmpty) Slist(Nil) else otherList(split)
     }
 
-    private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
+    private def otherList(split: Seq[(ParsedListItem, Seq[ParsedListItem])]): Slist = {
       val listItems = split.map {
         case (item, children) =>
           val itemSast    = Parse.inlineUnwrap(item.itemText, item.prov)
