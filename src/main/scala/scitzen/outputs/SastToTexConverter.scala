@@ -84,17 +84,17 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         children match {
           case Nil => ctx.ret(Chain.nil)
 
-          case SlistItem(m, text, NoContent | Slist(_)) :: _ =>
+          case ListItem(m, text, NoContent | Slist(_)) :: _ =>
             "\\begin{itemize}" +:
-              ctx.fold[SlistItem, String](children) { (ctx, child) =>
+              ctx.fold[ListItem, String](children) { (ctx, child) =>
                 val inlineCtx  = inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item{$s}"))
                 val contentCtx = sastToTex(child.content)(inlineCtx)
                 inlineCtx.data ++: contentCtx
               } :+
               "\\end{itemize}"
 
-          case SlistItem(m, _, _) :: _ =>
-            ctx.fold[SlistItem, String](children) { (ctx, child) =>
+          case ListItem(m, _, _) :: _ =>
+            ctx.fold[ListItem, String](children) { (ctx, child) =>
               val inlines = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]{}")
 
               inlines.data +: sastToTex(child.content)(inlines)

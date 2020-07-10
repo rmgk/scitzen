@@ -35,10 +35,10 @@ case class SastToScimConverter() {
           attributesToScim(attributes, spacy = true, force = false, light = true)
 
       case Slist(children) => Chain.fromSeq(children).flatMap {
-          case SlistItem(marker, inner, NoContent) =>
+          case ListItem(marker, inner, NoContent) =>
             Chain(marker + inlineToScim(inner.inline))
 
-          case SlistItem(marker, Text(inl), rest) =>
+          case ListItem(marker, Text(inl), rest) =>
             (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
         }
 

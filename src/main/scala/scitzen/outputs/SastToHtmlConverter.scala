@@ -34,7 +34,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     if (sync.exists(_._1 == pathManager.cwf)) sync.get._2
     else Int.MaxValue
 
-  def listItemToHtml(child: SlistItem)(implicit ctx: Cta): CtxCF = {
+  def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF = {
     val textCtx = inlineValuesToHTML(child.text.inline)(ctx)
     textCtx.data ++: convertSingle(child.content)(textCtx)
   }
@@ -75,11 +75,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case Slist(children) => children.head.content match {
           case NoContent | Slist(_) =>
             val listTag = if (children.head.marker.contains(".")) ol else ul
-            ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
+            ctx.fold[ListItem, Frag](children) { (ctx, c) =>
               listItemToHtml(c)(ctx).map(i => Chain(li(i.toList)))
             }.map(i => Chain(listTag(i.toList)))
           case _ =>
-            ctx.fold[SlistItem, Frag](children) { (ctx, c) =>
+            ctx.fold[ListItem, Frag](children) { (ctx, c) =>
               val inlinesCtx = inlineValuesToHTML(c.text.inline)(ctx)
               convertSingle(c.content)(inlinesCtx).map { innerFrags =>
                 Chain(dt(inlinesCtx.data.toList: _*), dd(innerFrags.toList))

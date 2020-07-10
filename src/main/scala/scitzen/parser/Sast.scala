@@ -13,10 +13,10 @@ object Sast {
     override def attributes: Attributes = Attributes.synthetic()
   }
 
-  case class Slist(children: Seq[SlistItem]) extends Sast {
+  case class Slist(children: Seq[ListItem]) extends Sast {
     override def attributes: Attributes = Attributes.synthetic()
   }
-  case class SlistItem(marker: String, text: Text, content: Sast)
+  case class ListItem(marker: String, text: Text, content: Sast)
   case class Text(inline: Seq[Inline]) {
     lazy val str = {
       inline.map {

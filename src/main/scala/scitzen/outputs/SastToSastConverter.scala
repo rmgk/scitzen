@@ -55,10 +55,10 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
         }
 
       case Slist(children) =>
-        ctx.fold[SlistItem, SlistItem](children) { (ctx, child) =>
+        ctx.fold[ListItem, ListItem](children) { (ctx, child) =>
           convertSingle(child.content)(ctx).map { con =>
             if (con.size > 1) throw new IllegalStateException("list contained more that one child")
-            Chain(SlistItem(child.marker, child.text, con.headOption.getOrElse(NoContent)))
+            Chain(ListItem(child.marker, child.text, con.headOption.getOrElse(NoContent)))
           }
         }.map { cs =>
           Chain(Slist(cs.iterator.toSeq))
