@@ -1,7 +1,8 @@
-package scitzen.generic
+package scitzen.outputs
 
+import scitzen.generic.{DocumentManager, FullDoc, NLP, Project}
 import scitzen.parser.MacroCommand.Ref
-import scitzen.parser.Sast.{Parsed, Block, Macro, Section, Text}
+import scitzen.parser.Sast.{Block, Macro, Parsed, Section, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Sast}
 
 object GenIndexPage {
