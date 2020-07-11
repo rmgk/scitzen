@@ -9,8 +9,6 @@ case class NLP(stopwords: Map[String, Set[String]]) {
 
   def noStop(s: String) = stopwords.valuesIterator.forall(stops => !stops.contains(s))
 
-
-
   def tfidf(wordlist: List[String], dm: DocumentManager) = {
 
     val totalDocuments = dm.documents.size.toDouble
@@ -21,7 +19,7 @@ case class NLP(stopwords: Map[String, Set[String]]) {
 
     val size = wordlist.size.toDouble
     wordlist.map(_.toLowerCase()).filter(noStop).foldMap(w => Map(w -> 1))
-            .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
+      .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
   }
 
   def language(sast: Seq[Sast]): String = {
