@@ -36,7 +36,8 @@ object ConvertHtml {
     val cssfile = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
 
-    val nlp: Option[NLP] = if (project.nlpdir.isDirectory) Some(NLP.loadFrom(project.nlpdir, unprocessedDocuments)) else None
+    val nlp: Option[NLP] =
+      if (project.nlpdir.isDirectory) Some(NLP.loadFrom(project.nlpdir, unprocessedDocuments)) else None
 
     val katexmapfile    = project.cacheDir / "katexmap.json"
     val initialKatexMap = loadKatex(katexmapfile)
@@ -51,6 +52,10 @@ object ConvertHtml {
     val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
     val preprocessedCtx       = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
     val articles = preprocessedDocuments.documents.flatMap(Article.articles)
+      .map { article =>
+        val add = Article.recursiveIncludes(article, project, preprocessedDocuments)
+        article.copy(includes = add)
+      }
     writeKatex(katexmapfile, preprocessedCtx)
 
     val articleOutput = project.outputdir / "articles"
