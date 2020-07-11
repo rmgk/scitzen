@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scitzen.generic.{Article, Project}
+import scitzen.generic.{Article, HtmlPathManager}
 import scitzen.parser.MacroCommand.Other
 import scitzen.parser.Sast.{Block, Macro, Parsed, Section, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Prov, Sast}
@@ -24,7 +24,7 @@ object GenIndexPage {
 
   def makeIndex(
       articles: List[Article],
-      project: Project,
+      htmlPathManager: HtmlPathManager,
       reverse: Boolean = false
   ): List[Sast] = {
     def ordering[T: Ordering]: Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
@@ -57,7 +57,7 @@ object GenIndexPage {
           Attributes(
             List(
               Some(Attribute("", doc.header.title.str)),
-              Some(Attribute("target", project.root.relativize(doc.sourceDoc.file).toString)),
+              Some(Attribute("target", htmlPathManager.articleOutputPath(doc).toString)),
               doc.date.map(date => Attribute("datetime", date.monthDayTime))
             ).flatten ++ categories.map(Attribute("category", _)),
             Prov()

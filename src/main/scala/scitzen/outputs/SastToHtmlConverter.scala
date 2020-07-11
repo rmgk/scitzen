@@ -112,14 +112,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 case None       => time("00-00 00:00")
               }
 
-            val aref = pathManager.relativePostTarget(File(attributes.named("target"))).toString
+            val aref = attributes.named("target")
 
             ctx.ret(Chain(a(
               href := aref,
               article(
                 timeShort(attributes.named.get("datetime")),
                 span(cls := "title", attributes.target),
-                  categoriesSpan(attributes.raw.filter(_.id == "category").map(_.value))
+                categoriesSpan(attributes.raw.filter(_.id == "category").map(_.value))
               )
             )))
 
@@ -283,45 +283,34 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         ctx.retc(linkTo(attributes, target))
 
       case macroRef @ Macro(Ref, attributes) =>
-        pathManager.findDoc(attributes.target) match {
-          case Some(fd) =>
-            val targetpath = pathManager.relativePostTarget(fd.parsed.file).toString
-            val name       = attributes.arguments.headOption.getOrElse(fd.parsed.file.nameWithoutExtension)
-            ctx.retc(
-              a(href := targetpath, name)
-            )
+        val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
+        val candidates = filterCandidates(scope, ctx.resolveRef(attributes.target))
 
-          case None =>
-            val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
-            val candidates = filterCandidates(scope, ctx.resolveRef(attributes.target))
+        if (candidates.sizeIs > 1)
+          scribe.error(
+            s"multiple resolutions for ${attributes.target}" +
+              reporter(attributes.prov) +
+              s"\n\tresolutinos are in: ${candidates.map(c => pathManager.relativizeToProject(c.file)).mkString("\n\t", "\n\t", "\n\t")}"
+          )
 
-            if (candidates.sizeIs > 1)
-              scribe.error(
-                s"multiple resolutions for ${attributes.target}" +
-                  reporter(attributes.prov) +
-                  s"\n\tresolutinos are in: ${candidates.map(c => pathManager.relativizeToProject(c.file)).mkString("\n\t", "\n\t", "\n\t")}"
-              )
-
-            candidates.headOption.map[CtxCF] { target =>
-              target.sast match {
-                case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
-                    Chain(a(href := s"#${sec.ref}", inner.toList))
-                  }
-                case block @ Block(attr, content) =>
-                  val label = attr.named("label")
-                  val name =
-                    attributes.arguments.headOption
-                      .fold(label)(n => s"$n $label")
-                  ctx.retc(a(href := s"#${label}", name))
-
-                case other =>
-                  scribe.error(s"can not refer to $other")
-                  ctx.empty
+        candidates.headOption.map[CtxCF] { target =>
+          val nameOpt = attributes.arguments.headOption
+          target.sast match {
+            case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
+                Chain(a(href := s"#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
               }
-            }.getOrElse {
-              scribe.error(s"no resolutions for »${attributes.target}«${reporter(attributes.prov)}")
-              ctx.retc(unknownMacroOutput(macroRef))
-            }
+            case block @ Block(attr, content) =>
+              val label = attr.named("label")
+              val name = nameOpt.fold(label)(n => s"$n $label")
+              ctx.retc(a(href := s"#${label}", name))
+
+            case other =>
+              scribe.error(s"can not refer to $other")
+              ctx.empty
+          }
+        }.getOrElse {
+          scribe.error(s"no resolutions for »${attributes.target}«${reporter(attributes.prov)}")
+          ctx.retc(unknownMacroOutput(macroRef))
         }
 
       case Macro(Lookup, attributes) =>

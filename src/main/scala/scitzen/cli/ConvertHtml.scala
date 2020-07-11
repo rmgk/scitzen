@@ -71,7 +71,7 @@ object ConvertHtml {
       cctx.resourceMap
     }
 
-    val generatedIndex = GenIndexPage.makeIndex(articles, project, reverse = true)
+    val generatedIndex = GenIndexPage.makeIndex(articles, pathManager, reverse = true)
     val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,
@@ -144,7 +144,7 @@ object ConvertHtml {
       includeResolver = preprocessed
     )
     val toc        = HtmlToc.tableOfContents(article.content)
-    val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
+    val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 
     val convertedArticleCtx = converter.convertSeq(article.content)(preprocessedCtx)
     val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
@@ -156,7 +156,7 @@ object ConvertHtml {
         .orElse(nlp.map(_.language(article.content)))
         .getOrElse("")
     )
-    val target = pathManager.translatePost(article.sourceDoc.file)
+    val target = pathManager.articleOutputPath(article)
     target.write(res)
     convertedArticleCtx
   }

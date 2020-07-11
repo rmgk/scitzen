@@ -3,18 +3,16 @@ package scitzen.generic
 import java.nio.file.{Path, Paths}
 
 import better.files._
+import scitzen.cli.Format
 
-case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
+case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File) {
 
   val cwd = if (cwf.isDirectory) cwf else cwf.parent
 
-  val currentTargetDir = translatePost(cwf).parent
-
   def resolve(path: String) = project.resolve(cwd, path)
 
-  def translatePost(post: File): File = {
-    if (post.isDirectory) project.outputdir / "index.html"
-    else outputDir / post.name.toString.replace(".scim", ".html")
+  def articleOutputPath(article: Article): File = {
+    articleOutputDir / Format.sluggify(s"${article.date.map(_.full).getOrElse("")} ${article.title}.html")
   }
   def translateImage(image: File): File = {
     (project.outputdir / "images").path.resolve(project.root.relativize(image))
@@ -25,11 +23,11 @@ case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
   }
 
   def relativizeImage(targetFile: File): Path = {
-    currentTargetDir.relativize(translateImage(targetFile))
+    articleOutputDir.relativize(translateImage(targetFile))
   }
 
-  def relativePostTarget(targetPost: File): Path = {
-    currentTargetDir.relativize(translatePost(targetPost))
+  def relativeArticleTarget(targetPost: Article): Path = {
+    articleOutputDir.relativize(articleOutputPath(targetPost))
   }
 
   def findDoc(pathString: String): Option[FullDoc] =
@@ -40,7 +38,7 @@ case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
   def copyResources(resources: Iterable[(File, Path)]) =
     resources.foreach {
       case (img, path) =>
-        val target = File(outputDir.path.resolve(path))
+        val target = File(articleOutputDir.path.resolve(path))
         if (!target.exists) {
           scribe.info(s"hardlink $img to $target")
           target.parent.createDirectoryIfNotExists()
