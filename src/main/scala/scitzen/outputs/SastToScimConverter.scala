@@ -36,8 +36,8 @@ case class SastToScimConverter() {
           case ListItem(marker, inner, None) =>
             Chain(marker + inlineToScim(inner.inline))
 
-          case ListItem(marker, Text(inl), rest) =>
-            (s"$marker" + inlineToScim(inl) + (if (rest.nonEmpty) "" else ":")) +: rest.map(toScim).getOrElse(Chain.empty)
+          case ListItem(marker, Text(inl), Some(rest)) =>
+            (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
         }
 
       case mcro@ Macro(_, _) => Chain(macroToScim(mcro))
