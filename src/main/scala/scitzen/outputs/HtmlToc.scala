@@ -6,15 +6,8 @@ import scitzen.parser.Sast
 
 object HtmlToc {
 
-  def tableOfContents(document: Seq[Sast], tocDepth: Int): Option[Frag] = {
-    tableOfContentsS(document, tocDepth)
-  }
-
-  def tableOfContentsS(document: Seq[Sast], tocDepth: Int): Option[Frag] = {
-
-    //if (tocDepth != 2) scribe.warn(s"toc with more then one level of depth currently unsuported")
-
-    def makeToc(cont: Seq[Sast], depth: Int): Option[Tag] = {
+  def tableOfContents(document: Seq[Sast]): Option[Frag] = {
+    def makeToc(cont: Seq[Sast]): Option[Tag] = {
       val allSections          = getSections(cont).filterNot(_.prefix == "=")
       val firstStructuralLevel = allSections.filter(_.prefix.contains('='))
       val sections =
@@ -31,7 +24,7 @@ object HtmlToc {
     }
 
     document match {
-      case other => makeToc(other, tocDepth)
+      case other => makeToc(other)
     }
   }
 

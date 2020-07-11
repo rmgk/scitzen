@@ -81,12 +81,12 @@ object ConvertHtml {
         resCtx.map(doc -> _)
       }.iterator().asScala.toList
 
-    val (preprocessed, articles)    = {
+    val (preprocessed, articles) = {
       preprocessedCtxs.map { ctx =>
         val pd      = ctx.data._1
         val content = ctx.data._2.toList
         (pd.file -> content, Article.articles(pd, content))
-      }.unzip.pipe{t => t._1.toMap -> t._2.flatten}
+      }.unzip.pipe { t => t._1.toMap -> t._2.flatten }
     }
     val preprocessedCtx = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
 
@@ -111,7 +111,7 @@ object ConvertHtml {
         reporter = article.sourceDoc.reporter,
         includeResolver = preprocessed
       )
-      val toc        = HtmlToc.tableOfContents(article.content, 2)
+      val toc        = HtmlToc.tableOfContents(article.content)
       val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
 
       val converted = converter.convertSeq(preprocessed(article.sourceDoc.file))(preprocessedCtx)
@@ -146,14 +146,12 @@ object ConvertHtml {
       reporter = m => "",
       includeResolver = preprocessed
     )
-    val toc = HtmlToc.tableOfContents(generatedIndex, 2)
-
     val convertedCtx = converter.convertSeq(generatedIndex)(preprocessedCtx)
 
     pathManager.copyResources(convertedCtx.resourceMap)
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
-      .wrapContentHtml(convertedCtx.data.toList, "index", toc, "")
+      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(generatedIndex), "")
     project.outputdir./("index.html").write(res)
 
     convertedCtx.execTasks()
