@@ -58,6 +58,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     if (metalist.nonEmpty) div(cls := "metadata")(metalist.toSeq: _*) else frag()
   }
 
+  def articleHeader(article: Article)(ctx: Cta) = {
+    inlineValuesToHTML(article.header.title.inline)(ctx).map { innerFrags =>
+      frag(h1(id := article.header.ref, innerFrags.toList), tMeta(article))
+    }
+  }
+
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
   def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
     singleSast match {

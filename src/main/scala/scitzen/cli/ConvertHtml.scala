@@ -144,9 +144,10 @@ object ConvertHtml {
     val toc        = HtmlToc.tableOfContents(article.content)
     val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
 
-    val converted = converter.convertSeq(preprocessed(article.sourceDoc.file))(preprocessedCtx)
+    val convertedArticle = converter.convertSeq(article.content)(preprocessedCtx)
+    val headerCtx = converter.articleHeader(article)(convertedArticle.empty)
     val res = HtmlPages(cssrelpath).wrapContentHtml(
-      converted.data.toList ++ citations,
+      headerCtx.data +: convertedArticle.data.toList ++: citations,
       "fullpost",
       toc,
       article.language

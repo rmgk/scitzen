@@ -14,7 +14,7 @@ object HtmlPages {
 
 class HtmlPages(cssPath: String) {
 
-  val tHead = {
+  val tHead: Tag = {
     head(
       title := "Scitzen",
       link(href := cssPath, rel := "stylesheet", `type` := "text/css"),
