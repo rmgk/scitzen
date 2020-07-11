@@ -8,11 +8,11 @@ import scitzen.parser.Sast.Macro
 
 object MacroParsers {
   def detectStart[_: P]: P[Unit]    = P(":" ~ identifier.? ~ AttributesParser.start)
-  def macroCommand[_: P]: P[String] = P(identifier.?.!)
+  def macroCommand[_: P]: P[String] = P(identifier.!)
 
   def full[_: P]: P[Macro] =
-    P(withProv(":" ~ macroCommand ~ AttributesParser.braces)).map {
-      case ((name, attributes), prov) => Macro(MacroCommand.parse(name), Attributes(attributes, prov))
+    P(withProv(":" ~ macroCommand.? ~ AttributesParser.braces)).map {
+      case ((name, attributes), prov) => Macro(MacroCommand.parse(name.getOrElse("")), Attributes(attributes, prov))
     }
 
   def commentStart[_: P]: P[Unit] = P(":%")
