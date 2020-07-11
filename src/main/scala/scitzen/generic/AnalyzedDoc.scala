@@ -2,8 +2,6 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.generic.AnalyzeResult
-import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
 import scitzen.parser.Sast.{Macro, Section}
 import scitzen.parser.{Attributes, DateParsingHelper, Parse, Prov, Sast, ScitzenDateTime}
@@ -62,12 +60,6 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
     .map(v => DateParsingHelper.parseDate(v.trim))
 
   lazy val title: Option[String] = sast.headOption.collect { case s: Section => s }.map(_.title.str)
-
-  lazy val words: List[String] = SastToTextConverter.convert(sast)
-    .flatMap(_.split("[^\\p{L}]+")).toList
-
-  lazy val wordcount: Map[String, Int] =
-    words.foldMap(s => Map(s.toLowerCase() -> 1))
 }
 
 object AnalyzedDoc {

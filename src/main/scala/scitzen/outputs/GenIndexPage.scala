@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scitzen.generic.{DocumentManager, FullDoc, NLP, Project}
+import scitzen.generic.{DocumentManager, FullDoc, Project}
 import scitzen.parser.MacroCommand.Ref
 import scitzen.parser.Sast.{Block, Macro, Parsed, Section, Text}
 import scitzen.parser.{Attribute, Attributes, InlineText, Sast}
@@ -25,8 +25,7 @@ object GenIndexPage {
   def makeIndex(
       dm: DocumentManager,
       project: Project,
-      reverse: Boolean = false,
-      nlp: Option[NLP] = None
+      reverse: Boolean = false
   ): List[Sast] = {
     def ordering[T: Ordering]: Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
@@ -42,7 +41,7 @@ object GenIndexPage {
           List[Sast](
             Section(Text(List(InlineText(key))), prefix = "#", Attributes.synthetic(Attribute("label", key))),
             Block(Attributes.synthetic(), Parsed("", inner))
-            )
+          )
       }
     }
 
@@ -62,12 +61,7 @@ object GenIndexPage {
               Attribute("", project.root.relativize(doc.parsed.file).toString),
               Attribute("type", "article")
             )
-          ),
-               //Paragraph(Text(
-               //  nlp.toList.flatMap(nl => nl.tfidf(doc.sdoc.words).take(8).map{
-               //    case (word, prob) => InlineText(s"$word ")
-               //  })))
-               )
+          ))
         }
       }
     }

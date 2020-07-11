@@ -37,7 +37,7 @@ object ConvertHtml {
     val cssfile = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
 
-    val nlp = if (project.nlpdir.isDirectory) Some(NLP.loadFrom(project.nlpdir, documentManager)) else None
+    val nlp: Option[NLP] = if (project.nlpdir.isDirectory) Some(NLP.loadFrom(project.nlpdir, documentManager)) else None
 
     val katexmapfile    = project.cacheDir / "katexmap.json"
     val initialKatexMap = loadKatex(katexmapfile)
@@ -64,11 +64,12 @@ object ConvertHtml {
         cssfile,
         sync,
         preprocessed,
-        preprocessedCtx
+        preprocessedCtx,
+        nlp
       )
     }
 
-    val generatedIndex = GenIndexPage.makeIndex(documentManager, project, reverse = true, nlp = nlp)
+    val generatedIndex = GenIndexPage.makeIndex(documentManager, project, reverse = true)
     val convertedCtx =  new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,
@@ -118,7 +119,8 @@ object ConvertHtml {
       cssfile: File,
       sync: Option[(File, Int)],
       preprocessed: Map[File, List[Sast]],
-      preprocessedCtx: ConversionContext[_]
+      preprocessedCtx: ConversionContext[_],
+      nlp: Option[NLP]
   ): Unit = {
 
     val (bibEntries: Seq[Bibliography.BibEntry], biblio) = makeBib(project, article)
@@ -148,7 +150,7 @@ object ConvertHtml {
       "fullpost",
       toc,
       article.language
-        //.orElse(nlp.map(_.language(analyzedDoc)))
+        .orElse(nlp.map(_.language(article.content)))
         .getOrElse("")
     )
     val target = pathManager.translatePost(article.sourceDoc.file)
