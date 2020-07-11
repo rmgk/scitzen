@@ -109,9 +109,3 @@ case class ConversionContext[T](
   }
 
 }
-
-class Scope(val level: Int) extends AnyVal {
-  def inc: Scope = {
-    new Scope(level + 1)
-  }
-}
