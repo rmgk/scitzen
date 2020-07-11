@@ -9,43 +9,6 @@ import scitzen.parser.{Attributes, DateParsingHelper, Parse, Prov, Sast, Scitzen
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-case class Article(header: Section, content: List[Sast], sourceDoc: ParsedDocument) {
-
-  lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
-
-  lazy val date: Option[ScitzenDateTime] = header.attributes.named.get("date")
-    .map(v => DateParsingHelper.parseDate(v.trim))
-
-  lazy val title: String = header.title.str
-
-  lazy val named: Map[String, String] = header.attributes.named
-
-  lazy val analyzed: AnalyzeResult = {
-    new SastAnalyzer(sourceDoc.reporter).analyze(content)
-  }
-}
-
-object Article {
-  def notArticleHeader(sast: Sast): Boolean =
-    sast match {
-      case Section(title, "=", attributes) => false
-      case other                           => true
-    }
-
-  def articles(parsedDocument: ParsedDocument, content: List[Sast]): List[Article] = {
-    @scala.annotation.tailrec
-    def rec(rem: List[Sast], acc: List[Article]): List[Article] = {
-      rem.dropWhile(notArticleHeader) match {
-        case (sec @ Section(title, "=", attributes)) :: rest =>
-          val (cont, other) = rest.span(notArticleHeader)
-          rec(other, Article(sec, cont, parsedDocument) :: acc)
-        case other => acc
-      }
-    }
-    rec(content, Nil)
-  }
-}
-
 case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 
   lazy val analyzeResult: AnalyzeResult = analyzer.analyze(sast)
