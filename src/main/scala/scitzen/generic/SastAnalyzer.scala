@@ -3,17 +3,16 @@ package scitzen.generic
 import scitzen.parser.Sast._
 import scitzen.parser._
 
-object SastAnalyzer {
-  case class AnalyzeResult(macros: List[Macro], rawBlocks: List[Block], sections: List[Section]) {
-    def +(m: Macro): AnalyzeResult   = copy(macros = m :: macros)
-    def +(m: Block): AnalyzeResult   = copy(rawBlocks = m :: rawBlocks)
-    def +(m: Section): AnalyzeResult = copy(sections = m :: sections)
-  }
+case class AnalyzeResult(macros: List[Macro], rawBlocks: List[Block], sections: List[Section]) {
+  def +(m: Macro): AnalyzeResult   = copy(macros = m :: macros)
+  def +(m: Block): AnalyzeResult   = copy(rawBlocks = m :: rawBlocks)
+  def +(m: Section): AnalyzeResult = copy(sections = m :: sections)
+
+  def append(other: AnalyzeResult) =
+    AnalyzeResult(macros ++ other.macros, rawBlocks ++ other.rawBlocks, sections ++ other.sections)
 }
 
 class SastAnalyzer(val macroReporter: Reporter) {
-
-  import scitzen.generic.SastAnalyzer._
 
   def analyze(input: Seq[Sast]): AnalyzeResult = {
     val AnalyzeResult(m, b, s) = analyzeAllSast(input, AnalyzeResult(Nil, Nil, Nil))

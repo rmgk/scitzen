@@ -2,7 +2,7 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.generic.SastAnalyzer.AnalyzeResult
+import scitzen.generic.AnalyzeResult
 import scitzen.outputs.SastToTextConverter
 import scitzen.parser.MacroCommand.Def
 import scitzen.parser.Sast.{Macro, Section}
@@ -21,6 +21,10 @@ case class Article(header: Section, content: List[Sast], sourceDoc: ParsedDocume
   lazy val title: String = header.title.str
 
   lazy val named: Map[String, String] = header.attributes.named
+
+  lazy val analyzed: AnalyzeResult = {
+    new SastAnalyzer(sourceDoc.reporter).analyze(content)
+  }
 }
 
 object Article {
