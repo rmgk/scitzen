@@ -237,7 +237,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         val searchScope = scope.path.iterator().asScala.toList
         val sorted = multiple.map { c =>
           c ->
-            c.file.path.iterator().asScala.toList.zip(searchScope).takeWhile {
+            c.scope.path.iterator().asScala.toList.zip(searchScope).takeWhile {
               case (l, r) => l == r
             }.size
         }.sortBy(_._2).reverse
@@ -290,7 +290,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           scribe.error(
             s"multiple resolutions for ${attributes.target}" +
               reporter(attributes.prov) +
-              s"\n\tresolutinos are in: ${candidates.map(c => pathManager.relativizeToProject(c.file)).mkString("\n\t", "\n\t", "\n\t")}"
+              s"\n\tresolutinos are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
           )
 
         candidates.headOption.map[CtxCF] { target =>

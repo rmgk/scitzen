@@ -8,7 +8,7 @@ import scitzen.extern.ConvertTask
 import scitzen.parser.Sast
 import scitzen.parser.Sast.Section
 
-case class SastRef(file: File, sast: Sast)
+case class SastRef(scope: File, sast: Sast)
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T](
