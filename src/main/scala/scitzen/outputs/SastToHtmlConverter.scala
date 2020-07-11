@@ -17,7 +17,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     bibliography: Map[String, String],
     sync: Option[(File, Int)],
     reporter: Reporter,
-    includeResolver: DocumentDirectory
+    includeResolver: DocumentDirectory,
+    articles: List[Article]
 ) {
 
   import bundle.all._
@@ -134,14 +135,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 pathManager.resolve(attributes.target) match {
                   case Some(file) =>
                     val stack = ctx.stack
-                    val doc  = includeResolver.byPath(file)
+                    val doc   = includeResolver.byPath(file)
                     new SastToHtmlConverter(
                       bundle,
                       pathManager.changeWorkingFile(file),
                       bibliography,
                       sync,
                       doc.reporter,
-                      includeResolver
+                      includeResolver,
+                      articles
                     ).convertSeq(doc.sast)(ctx.push(singleSast))
                       .copy(stack = stack)
                   case None =>
@@ -293,14 +295,26 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
         candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
           val nameOpt = attributes.arguments.headOption
+          val articleOpt = targetDocument.directArticle.orElse(articles.find(a => a.includes.byPath.contains(targetDocument.scope)))
+          val fileRef = articleOpt match {
+            case Some(article) if !article.includes.byPath.contains(pathManager.cwf) =>
+              pathManager.relativeArticleTarget(article).toString
+            case None => ""
+          }
+
+          scribe.info(s"found ref to ${attributes.target}")
+          scribe.info(s"current path is ${pathManager.cwf}")
+          scribe.info(s"target scope is ${targetDocument.scope}")
+          scribe.info(s"article opt is ${articleOpt}")
+
           targetDocument.sast match {
             case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
-                Chain(a(href := s"#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
+                Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
               }
             case block @ Block(attr, content) =>
               val label = attr.named("label")
-              val name = nameOpt.fold(label)(n => s"$n $label")
-              ctx.retc(a(href := s"#${label}", name))
+              val name  = nameOpt.fold(label)(n => s"$n $label")
+              ctx.retc(a(href := s"$fileRef#${label}", name))
 
             case other =>
               scribe.error(s"can not refer to $other")

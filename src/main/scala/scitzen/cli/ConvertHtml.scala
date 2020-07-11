@@ -70,7 +70,8 @@ object ConvertHtml {
         sync,
         preprocessedDocuments,
         preprocessedCtx,
-        nlp
+        nlp,
+        articles
       )
       cctx.execTasks()
       cctx.resourceMap
@@ -83,7 +84,8 @@ object ConvertHtml {
       bibliography = Map(),
       sync = None,
       reporter = m => "",
-      includeResolver = preprocessedDocuments
+      includeResolver = preprocessedDocuments,
+      articles = articles
     ).convertSeq(generatedIndex)(preprocessedCtx)
 
     pathManager.copyResources(resources)
@@ -126,7 +128,8 @@ object ConvertHtml {
       sync: Option[(File, Int)],
       preprocessed: DocumentDirectory,
       preprocessedCtx: ConversionContext[_],
-      nlp: Option[NLP]
+      nlp: Option[NLP],
+      articles: List[Article]
   ): ConversionContext[_] = {
 
     val (bibEntries: Seq[Bibliography.BibEntry], biblio) = makeBib(project, article)
@@ -145,7 +148,8 @@ object ConvertHtml {
       bibliography = biblio,
       sync = sync,
       reporter = article.sourceDoc.reporter,
-      includeResolver = preprocessed
+      includeResolver = preprocessed,
+      articles = articles
     )
     val toc        = HtmlToc.tableOfContents(article.content)
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString

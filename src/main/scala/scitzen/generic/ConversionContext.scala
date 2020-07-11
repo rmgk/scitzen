@@ -8,7 +8,7 @@ import scitzen.extern.ConvertTask
 import scitzen.parser.Sast
 import scitzen.parser.Sast.Section
 
-case class SastRef(scope: File, sast: Sast)
+case class SastRef(scope: File, sast: Sast, directArticle: Option[Article])
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T](
@@ -21,6 +21,11 @@ case class ConversionContext[T](
     stack: List[Sast] = Nil,
     includes: List[File] = Nil
 ) {
+  def artOpt(cwf: File, self: Option[Section] = None) = {
+    (self ++: stack).find(!Article.notArticleHeader(_)).collect {
+      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil, Nil), DocumentDirectory(Nil))
+    }
+  }
 
   def merge(other: ConversionContext[_]): ConversionContext[T] = {
     val labelledMerge = (labelledThings.keySet ++ other.labelledThings.keySet).map { key =>
@@ -83,8 +88,8 @@ case class ConversionContext[T](
   def :++[I](value: Chain[I])(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => data ++ value)
 
-  def empty[U]: ConversionContext[Chain[U]] = ret(Chain.empty[U])
-  def single[U >: T]: ConversionContext[Chain[U]]   = ret(Chain.one(data))
+  def empty[U]: ConversionContext[Chain[U]]       = ret(Chain.empty[U])
+  def single[U >: T]: ConversionContext[Chain[U]] = ret(Chain.one(data))
 
   def fold[U, V](seq: Seq[U])(f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])
       : ConversionContext[Chain[V]] =

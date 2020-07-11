@@ -54,13 +54,15 @@ class SastToSastConverter(
   def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Attributes, Ctx[SastRef]) = {
     val ref1 = sec.ref
     val attr = sec.attributes
+    val artOpt = ctx.artOpt(cwf, Some(sec))
     if (ctx.labelledThings.contains(ref1)) {
       val ctr    = ctx.nextId
       val cp     = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
-      val secref = SastRef(cwf, cp)
+
+      val secref = SastRef(cwf, cp, artOpt)
       (cp.attributes, ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
     } else {
-      (sec.attributes, ctx.addRefTarget(ref1, SastRef(cwf, sec)))
+      (sec.attributes, ctx.addRefTarget(ref1, SastRef(cwf, sec, artOpt)))
     }
   }
 
@@ -68,7 +70,7 @@ class SastToSastConverter(
     // make all blocks labellable
     val refctx = tlblock.attributes.named.get("label") match {
       case None      => ctx
-      case Some(ref) => ctx.addRefTarget(ref, SastRef(cwf, tlblock))
+      case Some(ref) => ctx.addRefTarget(ref, SastRef(cwf, tlblock, ctx.artOpt(cwf)))
     }
     tlblock.content match {
       case Paragraph(content) =>
@@ -88,7 +90,7 @@ class SastToSastConverter(
             case None => ctx.retc(tlblock)
             case Some(ref) =>
               val matches = """:§([^§]*?)§""".r.findAllMatchIn(text).map(_.group(1)).toList
-              val target  = SastRef(cwf, tlblock)
+              val target  = SastRef(cwf, tlblock, ctx.artOpt(cwf))
               matches.foldLeft(ctx.ret(target)) { (cx, group) => cx.addRefTarget(ref + group, target) }.retc(tlblock)
           }
 
@@ -126,7 +128,7 @@ class SastToSastConverter(
         }
 
       case Macro(Label, attributes) =>
-        ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head)).ret(mcro)
+        ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head, ctx.artOpt(cwf))).ret(mcro)
 
       case Macro(Include, attributes) if attributes.arguments.isEmpty =>
         project.resolve(cwd, attributes.target) match {
