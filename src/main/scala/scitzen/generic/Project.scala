@@ -7,9 +7,9 @@ import scitzen.generic.Project.ProjectConfig
 
 case class Project(root: File, config: ProjectConfig) {
 
-  val cacheDir: File                          = root / config.cache
-  val outputdir: File                         = root / config.output
-  val nlpdir: File                            = root / config.stopwords
+  val cacheDir: File  = root / config.cache
+  val outputdir: File = root / config.output
+  val nlpdir: File    = root / config.stopwords
 
   def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File = {
     val rawPath = Paths.get(pathString)
@@ -63,7 +63,6 @@ object Project {
   }
 
   def fromConfig(file: File): Option[Project] = {
-    import toml.Codecs._
     toml.Toml.parseAs[ProjectConfig]((file / scitzenconfig).contentAsString) match {
       case Right(value) => Some(Project(file, value))
       case Left((addr, mesg)) =>
