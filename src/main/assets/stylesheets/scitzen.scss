@@ -79,6 +79,7 @@ time {
   main {
     // use grid to have text centered, but allow oversized image content
     display: grid;
+    grid-row-gap: 0.75em;
     // the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
     // but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
     // causing the thing to widen in case the content is large,
@@ -91,8 +92,8 @@ time {
 }
 
 // usually these should collapse, but because of grid they dont.
-main > p , main > section > p {
-  margin-top: 0;
+main > * , main > section > * {
+  margin: 0;
 }
 
 main {
@@ -239,8 +240,6 @@ del {
 
 
 a > article {
-  margin: .25em 0;
-
   display: flex;
 
   @media screen and (max-width: $main-content-width) {
