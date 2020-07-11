@@ -3,7 +3,7 @@ package scitzen.cli
 import java.nio.charset.{Charset, StandardCharsets}
 
 import better.files.File
-import scitzen.generic.{Article, Project}
+import scitzen.generic.{Article, DocumentDirectory, Project}
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.Sast
 
@@ -13,13 +13,13 @@ object Format {
 
   def formatContents(project: Project): Unit = {
 
-    project.documentManager.documents.foreach { pd =>
+    DocumentDirectory(project.root).documents.foreach { pd =>
       formatContent(pd.file, pd.content, pd.sast)
     }
   }
 
   def formatRename(project: Project): Unit = {
-    project.documentManager.documents.foreach { parsed =>
+    DocumentDirectory(project.root).documents.foreach { parsed =>
       Article.articles(parsed) match {
         case List(article) if (article.date.isDefined) =>
           renameFileFromHeader(parsed.file, article)

@@ -4,18 +4,12 @@ import java.nio.file.Paths
 
 import better.files.File
 import scitzen.generic.Project.ProjectConfig
-import toml.Codecs._
 
 case class Project(root: File, config: ProjectConfig) {
 
   val cacheDir: File                          = root / config.cache
-  lazy val documentManager: DocumentDirectory = DocumentDirectory(root)
   val outputdir: File                         = root / config.output
   val nlpdir: File                            = root / config.stopwords
-
-  def findDoc(currentWorkingDirectory: File, pathString: String): Option[Document] = {
-    documentManager.byPath.get(resolveUnchecked(currentWorkingDirectory, pathString))
-  }
 
   def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File = {
     val rawPath = Paths.get(pathString)
@@ -69,6 +63,7 @@ object Project {
   }
 
   def fromConfig(file: File): Option[Project] = {
+    import toml.Codecs._
     toml.Toml.parseAs[ProjectConfig]((file / scitzenconfig).contentAsString) match {
       case Right(value) => Some(Project(file, value))
       case Left((addr, mesg)) =>

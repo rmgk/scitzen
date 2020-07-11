@@ -28,15 +28,15 @@ object ConvertHtml {
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
 
-    val documentManager = project.documentManager
-    scribe.info(s"found ${documentManager.documents.size} documents")
+    val unprocessedDocuments = DocumentDirectory(project.root)
+    scribe.info(s"found ${unprocessedDocuments.documents.size} documents")
 
     project.outputdir.createDirectories()
 
     val cssfile = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
 
-    val nlp: Option[NLP] = if (project.nlpdir.isDirectory) Some(NLP.loadFrom(project.nlpdir, documentManager)) else None
+    val nlp: Option[NLP] = if (project.nlpdir.isDirectory) Some(NLP.loadFrom(project.nlpdir, unprocessedDocuments)) else None
 
     val katexmapfile    = project.cacheDir / "katexmap.json"
     val initialKatexMap = loadKatex(katexmapfile)
@@ -45,7 +45,7 @@ object ConvertHtml {
 
     import scala.jdk.CollectionConverters._
     val preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]] =
-      documentManager.documents.asJava.parallelStream().map {
+      unprocessedDocuments.documents.asJava.parallelStream().map {
         preprocess(project, Some(KatexConverter(Some(katexmapfile))), initialCtx)
       }.iterator().asScala.toList
     val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)

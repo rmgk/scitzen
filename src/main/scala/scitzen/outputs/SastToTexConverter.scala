@@ -114,7 +114,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
             }
 
           case Macro(Include, attributes) =>
-            project.findDoc(cwd, attributes.target) match {
+            project.resolve(cwd, attributes.target).flatMap(includeResolver.byPath.get) match {
               case Some(doc) =>
                 val included = includeResolver.byPath(doc.file)
                 val stack    = ctx.stack
