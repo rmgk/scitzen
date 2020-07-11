@@ -4,6 +4,7 @@ import java.nio.file.Paths
 
 import better.files.File
 import scitzen.generic.Project.ProjectConfig
+import toml.Codecs._
 
 case class Project(root: File, config: ProjectConfig) {
 
@@ -63,6 +64,7 @@ object Project {
   }
 
   def fromConfig(file: File): Option[Project] = {
+    locally(stringCodec) // make tools believe the import is used
     toml.Toml.parseAs[ProjectConfig]((file / scitzenconfig).contentAsString) match {
       case Right(value) => Some(Project(file, value))
       case Left((addr, mesg)) =>
