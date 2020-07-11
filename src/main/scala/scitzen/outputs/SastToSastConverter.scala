@@ -103,7 +103,7 @@ class SastToSastConverter(
     ctx.fold(inners) { (ctx, inline) =>
       inline match {
         case inlineText: InlineText => ctx.retc(inlineText)
-        case m: Macro               => convertMacro(m)(ctx).map(identity[Inline]).single
+        case m: Macro               => convertMacro(m)(ctx).single
       }
     }
 

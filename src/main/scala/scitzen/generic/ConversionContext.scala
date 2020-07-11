@@ -84,7 +84,7 @@ case class ConversionContext[T](
     map(data => data ++ value)
 
   def empty[U]: ConversionContext[Chain[U]] = ret(Chain.empty[U])
-  def single: ConversionContext[Chain[T]]   = ret(Chain.one(data))
+  def single[U >: T]: ConversionContext[Chain[U]]   = ret(Chain.one(data))
 
   def fold[U, V](seq: Seq[U])(f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])
       : ConversionContext[Chain[V]] =
