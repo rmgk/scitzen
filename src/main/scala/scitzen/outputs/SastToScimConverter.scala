@@ -104,7 +104,7 @@ case class SastToScimConverter() {
     mcro match {
       case Macro(Comment, attributes) => s":%${attributes.target}"
       case other =>
-        s":${MacroCommand.print(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
+        s":${MacroCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
     }
   }
 
