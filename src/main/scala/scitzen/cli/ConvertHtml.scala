@@ -88,8 +88,8 @@ object ConvertHtml {
         val content = ctx.data._2.toList
 
         def notArticleHeader(sast: Sast) = sast match {
-          case Section(title, "=", attributes) => true
-          case other => false
+          case Section(title, "=", attributes) => false
+          case other => true
         }
         def rec(rem: List[Sast]): List[Article] = {
           rem.dropWhile(notArticleHeader) match {
