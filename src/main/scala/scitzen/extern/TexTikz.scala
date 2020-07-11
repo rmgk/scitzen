@@ -13,6 +13,7 @@ object TexTikz {
   val header: String = """
     |\documentclass{standalone}
     |\usepackage{tikz}
+    |\usepackage{booktabs}
     |\usetikzlibrary{shapes,backgrounds,calc,positioning}
     """.stripMargin + TexPages.xelatexFont.mkString("\n") + """
     |
@@ -22,22 +23,30 @@ object TexTikz {
     |\end{document}
     |""".stripMargin
 
-  def latexmk(outputdir: File, jobname: String, sourceFile: File): File = {
+  def latexmk(outputdir: File, jobname: String, sourceFile: File): Option[File] = {
     val start = System.nanoTime()
     outputdir.createDirectories()
-    new ProcessBuilder("latexmk",
+    val errorFile = (outputdir/"latexmk.err")
+    val returnCode = new ProcessBuilder("latexmk",
                        "-cd",
-                       "-f",
+                       "-halt-on-error",
                        "-xelatex",
                        "-interaction=nonstopmode",
                        //"-synctex=1",
                        "--output-directory=" + outputdir,
                        "--jobname=" + jobname,
-                       sourceFile.pathAsString).inheritIO()
+                       sourceFile.pathAsString)
                                                .redirectOutput((outputdir / "latexmk.out").toJava)
+                                               .redirectError(errorFile.toJava)
                                                .start().waitFor()
-    scribe.info(s"tex compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-    outputdir / (jobname + ".pdf")
+    if (returnCode == 0) {
+      scribe.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
+      Some(outputdir / (jobname + ".pdf"))
+    }
+    else {
+      scribe.error(s"error tex compiling »$sourceFile« see »$errorFile«")
+      None
+    }
   }
 
   def pdfcrop(input: File, output: File): Unit = {

@@ -80,7 +80,7 @@ object ConvertPdf {
     val temptexfile = cacheDir / (jobname + ".tex")
     val temptexdir  = cacheDir / "tex"
     temptexfile.write(TexPages.wrap(content, authors, "memoir", bibliography, macros))
-    latexmk(temptexdir, jobname, temptexfile).copyTo(targetfile, overwrite = true)
+    latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
   }
 
 }
