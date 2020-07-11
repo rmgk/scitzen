@@ -12,10 +12,9 @@ import scitzen.generic._
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.MacroCommand.Cite
 import scitzen.parser.Sast
-import scitzen.parser.Sast.Section
-import scala.util.chaining._
 
 import scala.util.Try
+import scala.util.chaining._
 
 object ConvertHtml {
 
@@ -86,21 +85,7 @@ object ConvertHtml {
       preprocessedCtxs.map { ctx =>
         val pd      = ctx.data._1
         val content = ctx.data._2.toList
-
-        def notArticleHeader(sast: Sast) = sast match {
-          case Section(title, "=", attributes) => false
-          case other => true
-        }
-        def rec(rem: List[Sast]): List[Article] = {
-          rem.dropWhile(notArticleHeader) match {
-            case (sec @ Section(title, "=", attributes)) :: rest =>
-              val (cont, other) = rest.span(notArticleHeader)
-              Article(sec, cont, pd) :: rec(other)
-            case other => Nil
-          }
-        }
-
-        (pd.file -> content, rec(content))
+        (pd.file -> content, Article.articles(pd, content))
       }.unzip.pipe{t => t._1.toMap -> t._2.flatten}
     }
     val preprocessedCtx = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
