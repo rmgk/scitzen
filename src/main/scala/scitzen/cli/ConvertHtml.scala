@@ -56,8 +56,8 @@ object ConvertHtml {
     val articleOutput = project.outputdir / "articles"
     articleOutput.createDirectories()
     val pathManager = HtmlPathManager(project.root, project, articleOutput)
-    articles.foreach { article =>
-      convertArticle(
+    val resources = articles.flatMap { article =>
+      val cctx = convertArticle(
         article,
         pathManager.changeWorkingFile(article.sourceDoc.file),
         project,
@@ -66,7 +66,9 @@ object ConvertHtml {
         preprocessed,
         preprocessedCtx,
         nlp
-      )
+        )
+      cctx.execTasks()
+      cctx.resourceMap
     }
 
     val generatedIndex = GenIndexPage.makeIndex(articles, project, reverse = true)
@@ -79,7 +81,7 @@ object ConvertHtml {
       includeResolver = preprocessed
     ).convertSeq(generatedIndex)(preprocessedCtx)
 
-    pathManager.copyResources(convertedCtx.resourceMap)
+    pathManager.copyResources(resources)
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
       .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(generatedIndex), "")
@@ -121,7 +123,7 @@ object ConvertHtml {
       preprocessed: Map[File, List[Sast]],
       preprocessedCtx: ConversionContext[_],
       nlp: Option[NLP]
-  ): Unit = {
+  ): ConversionContext[_] = {
 
     val (bibEntries: Seq[Bibliography.BibEntry], biblio) = makeBib(project, article)
 
@@ -144,10 +146,10 @@ object ConvertHtml {
     val toc        = HtmlToc.tableOfContents(article.content)
     val cssrelpath = pathManager.outputDir.relativize(cssfile).toString
 
-    val convertedArticle = converter.convertSeq(article.content)(preprocessedCtx)
-    val headerCtx = converter.articleHeader(article)(convertedArticle.empty)
+    val convertedArticleCtx = converter.convertSeq(article.content)(preprocessedCtx)
+    val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
     val res = HtmlPages(cssrelpath).wrapContentHtml(
-      headerCtx.data +: convertedArticle.data.toList ++: citations,
+      headerCtx.data +: convertedArticleCtx.data.toList ++: citations,
       "fullpost",
       toc,
       article.language
@@ -156,6 +158,7 @@ object ConvertHtml {
     )
     val target = pathManager.translatePost(article.sourceDoc.file)
     target.write(res)
+    convertedArticleCtx
   }
 
   def preprocess(

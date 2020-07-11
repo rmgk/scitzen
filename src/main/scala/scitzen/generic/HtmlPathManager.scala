@@ -37,7 +37,7 @@ case class HtmlPathManager(cwf: File, project: Project, outputDir: File) {
 
   def changeWorkingFile(parent: File): HtmlPathManager = copy(cwf = parent)
 
-  def copyResources(resources: Map[File, Path]) =
+  def copyResources(resources: Iterable[(File, Path)]) =
     resources.foreach {
       case (img, path) =>
         val target = File(outputDir.path.resolve(path))
