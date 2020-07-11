@@ -1,10 +1,9 @@
 package scitzen.generic
 
-import better.files.File
 import scitzen.parser.Sast.Section
 import scitzen.parser.{DateParsingHelper, Sast, ScitzenDateTime}
 
-case class Article(header: Section, content: List[Sast], sourceDoc: Document, includes: Map[File, Document]) {
+case class Article(header: Section, content: List[Sast], sourceDoc: Document, includes: DocumentDirectory) {
 
   lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
 
@@ -33,7 +32,7 @@ object Article {
       rem.dropWhile(notArticleHeader) match {
         case (sec @ Section(title, "=", attributes)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
-          rec(other, Article(sec, cont, document, Map.empty) :: acc)
+          rec(other, Article(sec, cont, document, DocumentDirectory(Nil)) :: acc)
         case other => acc
       }
     }
