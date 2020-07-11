@@ -9,11 +9,11 @@ case class NLP(stopwords: Map[String, Set[String]]) {
 
   def noStop(s: String) = stopwords.valuesIterator.forall(stops => !stops.contains(s))
 
-  def tfidf(wordlist: List[String], dm: DocumentManager) = {
+  def tfidf(wordlist: List[String], dm: DocumentDirectory) = {
 
     val totalDocuments = dm.documents.size.toDouble
 
-    lazy val idf = dm.analyzed.map { doc =>
+    lazy val idf = dm.documents.map { doc =>
       words(doc.sast).map(_.toLowerCase()).distinct.foldMap(w => Map(w -> 1))
     }.foldMap(identity).view.mapValues(docWithTerm => Math.log(totalDocuments / docWithTerm))
 
@@ -42,7 +42,7 @@ case class NLP(stopwords: Map[String, Set[String]]) {
 }
 
 object NLP {
-  def loadFrom(dir: File, dm: DocumentManager) = {
+  def loadFrom(dir: File, dm: DocumentDirectory) = {
     val stopwords = dir.glob("stopwords.*").map { sw =>
       val lang  = sw.extension(includeDot = false).getOrElse("unknown")
       val words = sw.lines.toSet

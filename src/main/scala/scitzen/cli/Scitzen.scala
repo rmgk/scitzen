@@ -72,9 +72,9 @@ object ConvertProject {
                 //if (project.config.outputType.contains("pdf")) {
                 //  ConvertPdf.convertToPdf(project)
                 //}
-                if (imageFileMap) {
-                  ImageReferences.listAll(project)
-                }
+                //if (imageFileMap) {
+                //  ImageReferences.listAll(project)
+                //}
             }
         }
     }

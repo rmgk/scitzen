@@ -8,12 +8,12 @@ import toml.Codecs._
 
 case class Project(root: File, config: ProjectConfig) {
 
-  val cacheDir: File                        = root / config.cache
-  lazy val documentManager: DocumentManager = new DocumentManager(root)
-  val outputdir: File                       = root / config.output
-  val nlpdir: File                          = root / config.stopwords
+  val cacheDir: File                          = root / config.cache
+  lazy val documentManager: DocumentDirectory = DocumentDirectory(root)
+  val outputdir: File                         = root / config.output
+  val nlpdir: File                            = root / config.stopwords
 
-  def findDoc(currentWorkingDirectory: File, pathString: String): Option[FullDoc] = {
+  def findDoc(currentWorkingDirectory: File, pathString: String): Option[Document] = {
     documentManager.byPath.get(resolveUnchecked(currentWorkingDirectory, pathString))
   }
 

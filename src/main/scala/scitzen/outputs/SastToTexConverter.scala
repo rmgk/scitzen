@@ -2,21 +2,20 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.generic.{ConversionContext, Project, Reporter}
-import scitzen.parser.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
-}
+import scitzen.generic.{ConversionContext, DocumentDirectory, Project, Reporter}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.parser.Sast._
 import scitzen.parser.{Attributes, Inline, InlineText, Sast}
 
-class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: Map[File, Seq[Sast]]) {
+class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: DocumentDirectory) {
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[_]
 
   def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = {
-    project.documentManager.macros.find(_.command == Other("tableofcontents"))
+    //project.documentManager.macros.find(_.command == Other("tableofcontents"))
+    Option(null)
       .fold(Chain.empty[String])(_ => Chain("\\frontmatter")) ++:
       (mainSast match {
         case (section @ Section(title, _, _)) :: rest =>
@@ -117,11 +116,11 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
           case Macro(Include, attributes) =>
             project.findDoc(cwd, attributes.target) match {
               case Some(doc) =>
-                val included = includeResolver(doc.parsed.file)
+                val included = includeResolver.byPath(doc.file)
                 val stack    = ctx.stack
 
-                new SastToTexConverter(project, doc.parsed.file.parent, doc.parsed.reporter, includeResolver)
-                  .sastSeqToTex(included)(ctx.push(sast)).copy(stack = stack)
+                new SastToTexConverter(project, doc.file.parent, doc.reporter, includeResolver)
+                  .sastSeqToTex(included.sast)(ctx.push(sast)).copy(stack = stack)
 
               case None =>
                 scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))

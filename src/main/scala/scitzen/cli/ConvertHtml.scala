@@ -14,7 +14,6 @@ import scitzen.parser.MacroCommand.Cite
 import scitzen.parser.Sast
 
 import scala.util.Try
-import scala.util.chaining._
 
 object ConvertHtml {
 
@@ -45,12 +44,13 @@ object ConvertHtml {
     val initialCtx = ConversionContext(Chain.empty[String], katexMap = initialKatexMap)
 
     import scala.jdk.CollectionConverters._
-    val preprocessedCtxs: List[ConversionContext[(ParsedDocument, Chain[Sast])]] =
+    val preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]] =
       documentManager.documents.asJava.parallelStream().map {
         preprocess(project, Some(KatexConverter(Some(katexmapfile))), initialCtx)
       }.iterator().asScala.toList
-    val (preprocessed, articles) = splitPreprocessed(preprocessedCtxs)
-    val preprocessedCtx          = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
+    val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
+    val preprocessedCtx       = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
+    val articles = preprocessedDocuments.documents.flatMap(Article.articles)
     writeKatex(katexmapfile, preprocessedCtx)
 
     val articleOutput = project.outputdir / "articles"
@@ -63,10 +63,10 @@ object ConvertHtml {
         project,
         cssfile,
         sync,
-        preprocessed,
+        preprocessedDocuments,
         preprocessedCtx,
         nlp
-        )
+      )
       cctx.execTasks()
       cctx.resourceMap
     }
@@ -78,7 +78,7 @@ object ConvertHtml {
       bibliography = Map(),
       sync = None,
       reporter = m => "",
-      includeResolver = preprocessed
+      includeResolver = preprocessedDocuments
     ).convertSeq(generatedIndex)(preprocessedCtx)
 
     pathManager.copyResources(resources)
@@ -91,13 +91,12 @@ object ConvertHtml {
 
   }
 
-  private def splitPreprocessed(preprocessedCtxs: List[ConversionContext[(ParsedDocument, Chain[Sast])]])
-      : (Map[File, List[Sast]], List[Article]) = {
-    preprocessedCtxs.map { ctx =>
+  def splitPreprocessed(preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]]): DocumentDirectory = {
+    DocumentDirectory(preprocessedCtxs.map { ctx =>
       val pd      = ctx.data._1
       val content = ctx.data._2.toList
-      (pd.file -> content, Article.articles(pd, content))
-    }.unzip.pipe { t => t._1.toMap -> t._2.flatten }
+      pd.copy(sast = content)
+    })
   }
 
   private def loadKatex(katexmapfile: File): Map[String, String] = {
@@ -120,7 +119,7 @@ object ConvertHtml {
       project: Project,
       cssfile: File,
       sync: Option[(File, Int)],
-      preprocessed: Map[File, List[Sast]],
+      preprocessed: DocumentDirectory,
       preprocessedCtx: ConversionContext[_],
       nlp: Option[NLP]
   ): ConversionContext[_] = {
@@ -147,7 +146,7 @@ object ConvertHtml {
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 
     val convertedArticleCtx = converter.convertSeq(article.content)(preprocessedCtx)
-    val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
+    val headerCtx           = converter.articleHeader(article)(convertedArticleCtx.empty)
     val res = HtmlPages(cssrelpath).wrapContentHtml(
       headerCtx.data +: convertedArticleCtx.data.toList ++: citations,
       "fullpost",
@@ -165,7 +164,7 @@ object ConvertHtml {
       project: Project,
       katexConverter: Option[KatexConverter],
       initialCtx: ConversionContext[Chain[String]]
-  )(doc: ParsedDocument): ConversionContext[(ParsedDocument, Chain[Sast])] = {
+  )(doc: Document): ConversionContext[(Document, Chain[Sast])] = {
     val resCtx = new SastToSastConverter(
       project,
       doc.file,

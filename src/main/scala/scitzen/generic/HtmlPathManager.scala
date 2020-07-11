@@ -30,7 +30,7 @@ case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File) 
     articleOutputDir.relativize(articleOutputPath(targetPost))
   }
 
-  def findDoc(pathString: String): Option[FullDoc] =
+  def findDoc(pathString: String): Option[Document] =
     project.findDoc(cwd, pathString)
 
   def changeWorkingFile(parent: File): HtmlPathManager = copy(cwf = parent)

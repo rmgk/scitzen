@@ -1,9 +1,10 @@
 package scitzen.generic
 
+import better.files.File
 import scitzen.parser.Sast.Section
 import scitzen.parser.{DateParsingHelper, Sast, ScitzenDateTime}
 
-case class Article(header: Section, content: List[Sast], sourceDoc: ParsedDocument) {
+case class Article(header: Section, content: List[Sast], sourceDoc: Document, includes: Map[File, Document]) {
 
   lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
 
@@ -26,16 +27,16 @@ object Article {
       case other                           => true
     }
 
-  def articles(parsedDocument: ParsedDocument, content: List[Sast]): List[Article] = {
+  def articles(document: Document): List[Article] = {
     @scala.annotation.tailrec
     def rec(rem: List[Sast], acc: List[Article]): List[Article] = {
       rem.dropWhile(notArticleHeader) match {
         case (sec @ Section(title, "=", attributes)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
-          rec(other, Article(sec, cont, parsedDocument) :: acc)
+          rec(other, Article(sec, cont, document, Map.empty) :: acc)
         case other => acc
       }
     }
-    rec(content, Nil)
+    rec(document.sast, Nil)
   }
 }

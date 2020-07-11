@@ -4,10 +4,8 @@ import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scalatags.generic.Bundle
-import scitzen.generic.{Article, ConversionContext, HtmlPathManager, Reporter, SastRef}
-import scitzen.parser.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
-}
+import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, Reporter, SastRef}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.parser.Sast._
 import scitzen.parser.{Attributes, Inline, InlineText, Sast, ScitzenDateTime}
 
@@ -19,7 +17,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     bibliography: Map[String, String],
     sync: Option[(File, Int)],
     reporter: Reporter,
-    includeResolver: Map[File, Seq[Sast]]
+    includeResolver: DocumentDirectory
 ) {
 
   import bundle.all._
@@ -133,18 +131,18 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 }
 
               case None =>
-                pathManager.findDoc(attributes.target) match {
-                  case Some(doc) =>
+                pathManager.resolve(attributes.target) match {
+                  case Some(file) =>
                     val stack = ctx.stack
-                    val sast  = includeResolver(doc.parsed.file)
+                    val doc  = includeResolver.byPath(file)
                     new SastToHtmlConverter(
                       bundle,
-                      pathManager.changeWorkingFile(doc.parsed.file),
+                      pathManager.changeWorkingFile(file),
                       bibliography,
                       sync,
-                      doc.parsed.reporter,
+                      doc.reporter,
                       includeResolver
-                    ).convertSeq(sast)(ctx.push(singleSast))
+                    ).convertSeq(doc.sast)(ctx.push(singleSast))
                       .copy(stack = stack)
                   case None =>
                     scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))

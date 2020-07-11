@@ -2,46 +2,22 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.parser.MacroCommand.Def
-import scitzen.parser.Sast.{Macro, Section}
-import scitzen.parser.{Attributes, DateParsingHelper, Parse, Prov, Sast, ScitzenDateTime}
+import scitzen.parser.Sast.Macro
+import scitzen.parser.{Parse, Prov, Sast}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
-
-  lazy val analyzeResult: AnalyzeResult = analyzer.analyze(sast)
-
-  lazy val named: Map[String, String] = {
-    val sectionattrs = analyzeResult.sections.flatMap(_.attributes.raw)
-    val macroattrs = analyzeResult.macros.filter(_.command == Def)
-      .flatMap(m => m.attributes.raw)
-    Attributes(macroattrs ++ sectionattrs, Prov()).named
-  }
-
-  lazy val date: Option[ScitzenDateTime] = named.get("date")
-    .map(v => DateParsingHelper.parseDate(v.trim))
-
-  lazy val title: Option[String] = sast.headOption.collect { case s: Section => s }.map(_.title.str)
-}
-
-object AnalyzedDoc {
-  def apply(parsedDocument: ParsedDocument): AnalyzedDoc = {
-    new AnalyzedDoc(parsedDocument.sast, new SastAnalyzer(parsedDocument.reporter))
-  }
-}
-
-final case class ParsedDocument(file: File, content: String, sast: List[Sast]) {
+case class Document(file: File, content: String, sast: List[Sast]) {
   lazy val reporter: FileReporter = new FileReporter(file, content)
 }
 
-object ParsedDocument {
-  def apply(file: File): ParsedDocument = {
+object Document {
+  def apply(file: File): Document = {
     val content = file.contentAsString
     try {
       val sast = Parse.documentUnwrap(content, Prov(0, content.length))
-      ParsedDocument(file, content, sast.toList)
+      Document(file, content, sast.toList)
     } catch {
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")

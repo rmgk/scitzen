@@ -3,9 +3,8 @@ package scitzen.cli
 import java.nio.charset.{Charset, StandardCharsets}
 
 import better.files.File
-import scitzen.generic.{AnalyzedDoc, Project}
+import scitzen.generic.{Article, Project}
 import scitzen.outputs.SastToScimConverter
-import scitzen.parser.MacroCommand.Image
 import scitzen.parser.Sast
 
 object Format {
@@ -14,29 +13,20 @@ object Format {
 
   def formatContents(project: Project): Unit = {
 
-    project.documentManager.fulldocs.foreach { pd =>
-      formatContent(pd.parsed.file, pd.parsed.content, pd.sast)
+    project.documentManager.documents.foreach { pd =>
+      formatContent(pd.file, pd.content, pd.sast)
     }
   }
 
   def formatRename(project: Project): Unit = {
-    project.documentManager.fulldocs.foreach { fd =>
-      if (renamePossible(fd.analyzed)) renameFileFromHeader(fd.parsed.file, fd.analyzed)
-      else
-        scribe.info(
-          s"could not format ${fd.parsed.file}, header was ${fd.analyzed.title}, date was ${fd.analyzed.date}"
-        )
-    }
-  }
-
-  def checkReferences(file: File, sdoc: AnalyzedDoc): Unit = {
-    sdoc.analyzeResult.macros.foreach { mcro =>
-      mcro.command match {
-        case Image =>
-          val path = file.parent./(mcro.attributes.target.trim)
-          if (!path.isRegularFile) scribe.warn(s"${file} references nonexisting $path")
-          if (!file.parent.isParentOf(path)) scribe.warn(s"${file} is not a parent of referenced $path")
-        case other => ()
+    project.documentManager.documents.foreach { parsed =>
+      Article.articles(parsed) match {
+        case List(article) if (article.date.isDefined) =>
+          renameFileFromHeader(parsed.file, article)
+        case other =>
+          scribe.info(
+            s"could not format ${parsed.file}, did not contain a single article with a date"
+          )
       }
     }
   }
@@ -50,7 +40,7 @@ object Format {
     }
   }
 
-  def renameFileFromHeader(f: File, sdoc: AnalyzedDoc): Unit = {
+  def renameFileFromHeader(f: File, sdoc: Article): Unit = {
     val newName: String = canonicalName(sdoc)
 
     if (newName != f.name) {
@@ -59,10 +49,8 @@ object Format {
     }
   }
 
-  def renamePossible(header: AnalyzedDoc): Boolean = header.title.isDefined && header.date.isDefined
-
-  def canonicalName(header: AnalyzedDoc): String = {
-    val title = sluggify(header.title.get) + ".scim"
+  def canonicalName(header: Article): String = {
+    val title = sluggify(header.title) + ".scim"
     header.date.get.date.full + " " + title
   }
 
