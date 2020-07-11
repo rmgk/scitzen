@@ -1,15 +1,12 @@
 package scitzen.generic
 
 import scitzen.parser.Sast._
-import scitzen.outputs.SastToScimConverter
 import scitzen.parser._
-
-import scala.util.control.NonFatal
 
 object SastAnalyzer {
   case class AnalyzeResult(macros: List[Macro], rawBlocks: List[Block], sections: List[Section]) {
     def +(m: Macro): AnalyzeResult   = copy(macros = m :: macros)
-    def +(m: Block): AnalyzeResult  = copy(rawBlocks = m :: rawBlocks)
+    def +(m: Block): AnalyzeResult   = copy(rawBlocks = m :: rawBlocks)
     def +(m: Section): AnalyzeResult = copy(sections = m :: sections)
   }
 }
@@ -18,30 +15,9 @@ class SastAnalyzer(val macroReporter: Reporter) {
 
   import scitzen.generic.SastAnalyzer._
 
-  def reportTarget(mcr: Macro): String =
-    try {
-      mcr.attributes.target
-    } catch {
-      case NonFatal(e) =>
-        scribe.error(s"${new SastToScimConverter().macroToScim(mcr)} had no target" + macroReporter(
-          mcr
-        ))
-        throw e
-    }
-
   def analyze(input: Seq[Sast]): AnalyzeResult = {
     val AnalyzeResult(m, b, s) = analyzeAllSast(input, AnalyzeResult(Nil, Nil, Nil))
     AnalyzeResult(m.reverse, b.reverse, s.reverse)
-  }
-
-  def analyzeAll(inputs: Seq[Block], acc: AnalyzeResult): AnalyzeResult =
-    inputs.foldLeft(acc)((cacc, sast) => analyzeR(sast, cacc))
-
-  def analyzeR(input: Block, acc: AnalyzeResult): AnalyzeResult = {
-    input.content match {
-      case rb: Fenced => acc + input
-      case other      => analyzeSBlockType(other, acc)
-    }
   }
 
   def analyzeAllSast(inputs: Seq[Sast], acc: AnalyzeResult): AnalyzeResult =
@@ -51,7 +27,7 @@ class SastAnalyzer(val macroReporter: Reporter) {
     input match {
       case Slist(children) => children.foldLeft(acc) { (cacc, sli) =>
           val tacc = analyzeText(sli.text, cacc)
-        sli.content.fold(tacc)(analyzeRSast(_, tacc))
+          sli.content.fold(tacc)(analyzeRSast(_, tacc))
         }
 
       case sec @ Section(level, title, attributes) =>
