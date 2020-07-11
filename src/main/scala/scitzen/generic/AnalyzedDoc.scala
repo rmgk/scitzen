@@ -39,7 +39,7 @@ object Article {
         case (sec @ Section(title, "=", attributes)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
           rec(other, Article(sec, cont, parsedDocument) :: acc)
-        case other => acc.reverse
+        case other => acc
       }
     }
     rec(content, Nil)
