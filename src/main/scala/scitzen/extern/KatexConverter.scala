@@ -12,8 +12,8 @@ case class KatexConverter(katexdefs: Option[File]) {
       case Some(file) => new ProcessBuilder("katex", "--macro-file", file.pathAsString)
     }
     val process = pb.redirectInput(Redirect.PIPE)
-                    .redirectOutput(Redirect.PIPE)
-                    .start()
+      .redirectOutput(Redirect.PIPE)
+      .start()
     process.getOutputStream.writeAndClose(str)
     process.waitFor()
     process.getInputStream.asString()

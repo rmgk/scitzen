@@ -26,7 +26,16 @@ case class ConversionContext[T](
     val labelledMerge = (labelledThings.keySet ++ other.labelledThings.keySet).map { key =>
       key -> (labelledThings.get(key) ++ other.labelledThings.get(key)).toList.flatten
     }.toMap
-    ConversionContext[T](data, katexMap ++ other.katexMap, resourceMap ++ other.resourceMap, tasks ++ other.tasks, labelledMerge, 0, Nil, includes ++ other.includes)
+    ConversionContext[T](
+      data,
+      katexMap ++ other.katexMap,
+      resourceMap ++ other.resourceMap,
+      tasks ++ other.tasks,
+      labelledMerge,
+      0,
+      Nil,
+      includes ++ other.includes
+    )
   }
 
   def resolveRef(ref: String): List[SastRef] =

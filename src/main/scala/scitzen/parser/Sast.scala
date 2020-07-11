@@ -61,6 +61,5 @@ case class Attribute(id: String, value: String) {
 
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
 
-
 sealed trait Inline
 case class InlineText(str: String) extends Inline

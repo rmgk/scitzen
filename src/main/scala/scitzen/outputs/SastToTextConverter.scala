@@ -17,7 +17,7 @@ object SastToTextConverter {
       case Slist(children) => children.flatMap {
           case ListItem(marker, Text(inl), None) =>
             List(convertInline(inl))
-          case ListItem(marker, text, Some(inner))          =>
+          case ListItem(marker, text, Some(inner)) =>
             convertInline(text.inline) +: convertSast(List(inner))
         }
 

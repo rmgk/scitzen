@@ -3,7 +3,9 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.{ConversionContext, Project, Reporter}
-import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.parser.MacroCommand.{
+  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
+}
 import scitzen.parser.Sast._
 import scitzen.parser.{Attributes, Inline, InlineText, Sast}
 
@@ -152,7 +154,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
                     case Some(inner @ Block(_, Paragraph(content))) =>
                       val captionstr = inlineValuesToTex(content.inline).data
                       (blockContent.init, s"\\caption{$captionstr}")
-                    case other                                      =>
+                    case other =>
                       scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
                       (blockContent, "")
                   }

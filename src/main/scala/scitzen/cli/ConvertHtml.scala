@@ -70,7 +70,7 @@ object ConvertHtml {
     }
 
     val generatedIndex = GenIndexPage.makeIndex(documentManager, project, reverse = true)
-    val convertedCtx =  new SastToHtmlConverter(
+    val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,
       bibliography = Map(),

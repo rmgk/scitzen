@@ -6,20 +6,7 @@ import cats.implicits._
 import scalatags.generic.Bundle
 import scitzen.generic.{Article, ConversionContext, HtmlPathManager, Reporter, SastRef}
 import scitzen.parser.MacroCommand.{
-  Cite,
-  Code,
-  Comment,
-  Def,
-  Emph,
-  Image,
-  Include,
-  Label,
-  Link,
-  Lookup,
-  Math,
-  Other,
-  Ref,
-  Strong
+  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
 }
 import scitzen.parser.Sast._
 import scitzen.parser.{Attributes, Inline, InlineText, Sast, ScitzenDateTime}

@@ -40,7 +40,7 @@ case class SastToScimConverter() {
             (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
         }
 
-      case mcro@ Macro(_, _) => Chain(macroToScim(mcro))
+      case mcro @ Macro(_, _) => Chain(macroToScim(mcro))
 
       case tlb: Block => convertBlock(tlb)
     }
@@ -103,7 +103,7 @@ case class SastToScimConverter() {
   def macroToScim(mcro: Macro, spacy: Boolean = false): String = {
     mcro match {
       case Macro(Comment, attributes) => s":%${attributes.target}"
-      case other                      =>
+      case other =>
         s":${MacroCommand.print(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
     }
   }
