@@ -95,7 +95,7 @@ object ConvertHtml {
     DocumentDirectory(preprocessedCtxs.map { ctx =>
       val pd      = ctx.data._1
       val content = ctx.data._2.toList
-      pd.copy(sast = content)
+      pd.copy(sast = content, includes = ctx.includes)
     })
   }
 

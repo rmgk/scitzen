@@ -8,7 +8,7 @@ import scitzen.parser.{Parse, Prov, Sast}
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-case class Document(file: File, content: String, sast: List[Sast]) {
+case class Document(file: File, content: String, sast: List[Sast], includes: List[File]) {
   lazy val reporter: FileReporter = new FileReporter(file, content)
 }
 
@@ -17,7 +17,7 @@ object Document {
     val content = file.contentAsString
     try {
       val sast = Parse.documentUnwrap(content, Prov(0, content.length))
-      Document(file, content, sast.toList)
+      Document(file, content, sast.toList, Nil)
     } catch {
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")
