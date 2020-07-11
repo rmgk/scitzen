@@ -291,9 +291,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               s"\n\tresolutinos are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
           )
 
-        candidates.headOption.map[CtxCF] { target =>
+        candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
           val nameOpt = attributes.arguments.headOption
-          target.sast match {
+          targetDocument.sast match {
             case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
                 Chain(a(href := s"#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
               }
