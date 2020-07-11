@@ -13,8 +13,6 @@ case class Project(root: File, config: ProjectConfig) {
   val outputdir: File                       = root / config.output
   val nlpdir: File                          = root / config.stopwords
 
-  val main: Option[File] = config.main.map(root / _).filter(Project.isScim)
-
   def findDoc(currentWorkingDirectory: File, pathString: String): Option[FullDoc] = {
     documentManager.byPath.get(resolveUnchecked(currentWorkingDirectory, pathString))
   }
@@ -44,7 +42,6 @@ object Project {
       output: String = "out",
       cache: String = "cache",
       stopwords: String = "scitzen",
-      main: Option[String] = None,
       format: List[String] = Nil,
       outputType: List[String] = Nil,
       revealTemplate: Option[String] = None,
@@ -61,7 +58,7 @@ object Project {
   def fromSource(file: File): Option[Project] = {
     if (isScim(file)) {
       findRoot(file) match {
-        case None       => Some(Project(file.parent, ProjectConfig(main = Some(file.name))))
+        case None       => Some(Project(file.parent, ProjectConfig()))
         case Some(file) => fromConfig(file)
       }
     } else if (file.isDirectory) {

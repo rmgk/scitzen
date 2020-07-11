@@ -24,7 +24,8 @@ object ImageReferences {
         project,
         doc.file,
         doc.reporter,
-        new ImageConverter(project, preferredFormat = "png", unsupportedFormat = List("pdf", "svg"))
+        new ImageConverter(project, preferredFormat = "png", unsupportedFormat = List("pdf", "svg")),
+        None
       ).convertSeq(fd.sast)(ConversionContext(Chain.empty[Sast]))
 
       import scala.jdk.CollectionConverters._

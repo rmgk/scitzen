@@ -36,7 +36,7 @@ object ConvertRevealPresentation {
     //val scitzenconfdir = project.nlpdir
     //val nlp            = if (scitzenconfdir.isDirectory) Some(NLP.loadFrom(scitzenconfdir, dm)) else None
 
-    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = {
+    val biblio = {
       val doc = dm.fulldocs.find(_.analyzed.named.contains("bibliography"))
       val bibPath = doc.flatMap(doc =>
         doc.analyzed.named.get("bibliography").map { p =>
@@ -49,8 +49,7 @@ object ConvertRevealPresentation {
           .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim))
       }.toSet
       val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.familyName))
-      val biblio     = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
-      bibEntries -> biblio
+      bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
     }
 
     val katexmapfile = project.cacheDir / "katexmap.json"

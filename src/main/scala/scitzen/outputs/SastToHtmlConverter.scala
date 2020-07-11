@@ -1,13 +1,26 @@
 package scitzen.outputs
 
-import java.lang.ProcessBuilder.Redirect
-
 import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scalatags.generic.Bundle
-import scitzen.generic.{AnalyzedDoc, ConversionContext, HtmlPathManager, Reporter, SastRef}
-import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.generic.{Article, ConversionContext, HtmlPathManager, Reporter, SastRef}
+import scitzen.parser.MacroCommand.{
+  Cite,
+  Code,
+  Comment,
+  Def,
+  Emph,
+  Image,
+  Include,
+  Label,
+  Link,
+  Lookup,
+  Math,
+  Other,
+  Ref,
+  Strong
+}
 import scitzen.parser.Sast._
 import scitzen.parser.{Attributes, Inline, InlineText, Sast, ScitzenDateTime}
 
@@ -17,7 +30,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
     pathManager: HtmlPathManager,
     bibliography: Map[String, String],
-    sdoc: AnalyzedDoc,
     sync: Option[(File, Int)],
     reporter: Reporter,
     includeResolver: Map[File, Seq[Sast]]
@@ -39,22 +51,22 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     textCtx.data ++: child.content.fold(textCtx)(convertSingle(_)(textCtx))
   }
 
-  def categoriesSpan(analyzedDoc: AnalyzedDoc): Option[Tag] = {
-    val categories = List("categories", "people").flatMap(analyzedDoc.named.get)
+  def categoriesSpan(article: Article): Option[Tag] = {
+    val categories = List("categories", "people").flatMap(article.named.get)
       .flatMap(_.split(","))
     Option.when(categories.nonEmpty)(
       span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
     )
   }
 
-  def tMeta() = {
+  def tMeta(article: Article) = {
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
     val metalist =
-      sdoc.date.map(timeFull) ++
-        categoriesSpan(sdoc) ++
-        sdoc.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
+      article.date.map(timeFull) ++
+        categoriesSpan(article) ++
+        article.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
 
     if (metalist.nonEmpty) div(cls := "metadata")(metalist.toSeq: _*) else frag()
   }
@@ -63,9 +75,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
     singleSast match {
       case sec @ Section(title, level, _) =>
-        val inner = (if (ctx.stack.isEmpty) Chain(tMeta()) else Chain.nil)
         inlineValuesToHTML(title.inline)(ctx).map { innerFrags =>
-          tag(s"h${level.length + ctx.stacklevel}")(id := sec.ref, innerFrags.toList) +: inner
+          Chain[Frag](tag(s"h${level.length + ctx.stacklevel}")(id := sec.ref, innerFrags.toList))
         }.push(sec)
 
       case Slist(Nil) => ctx.empty
@@ -115,9 +126,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             ctx.ret(Chain(a(
               href := aref,
               article(
-                timeShort(post.analyzed.date),
-                span(cls := "title", post.analyzed.title),
-                categoriesSpan(post.analyzed)
+                timeShort(None),
+                span(cls := "title", attributes.target)
+                //categoriesSpan(Nil)
               )
             )))
 
@@ -139,12 +150,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       bundle,
                       pathManager.changeWorkingFile(doc.parsed.file),
                       bibliography,
-                      doc.analyzed,
                       sync,
                       doc.parsed.reporter,
                       includeResolver
-                    )
-                      .convertSeq(sast)(ctx.push(singleSast))
+                    ).convertSeq(sast)(ctx.push(singleSast))
                       .copy(stack = stack)
                   case None =>
                     scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
@@ -258,24 +267,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case Macro(Code, attrs)   => ctx.retc(code(attrs.target))
 
       case Macro(Math, attrs) =>
-        val katexdefs = sdoc.named.get("katexTemplate")
-          .flatMap(path => pathManager.project.resolve(pathManager.cwd, path))
         val inner = attrs.target
-        val (mathml, ictx) = ctx.katex(
-          inner, {
-            val pb = katexdefs match {
-              case None       => new ProcessBuilder("katex")
-              case Some(file) => new ProcessBuilder("katex", "--macro-file", file.pathAsString)
-            }
-            val process = pb.redirectInput(Redirect.PIPE)
-              .redirectOutput(Redirect.PIPE)
-              .start()
-            process.getOutputStream.writeAndClose(inner)
-            process.waitFor()
-            process.getInputStream.asString()
-          }
-        )
-        ictx.retc(span(raw(mathml)))
+        ctx.retc(span(raw(ctx.katexMap(inner))))
 
       case Macro(Comment, attributes) => ctx.empty
 
@@ -320,7 +313,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
             candidates.headOption.map[CtxCF] { target =>
               target.sast match {
-                case sec @ Section(title, _, _)   => inlineValuesToHTML(title.inline).map { inner =>
+                case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
                     Chain(a(href := s"#${sec.ref}", inner.toList))
                   }
                 case block @ Block(attr, content) =>

@@ -7,7 +7,6 @@ import scitzen.parser.Sast.Macro
 
 case class FullDoc(parsed: ParsedDocument, analyzed: AnalyzedDoc) {
   def sast: List[Sast] = analyzed.sast
-
 }
 
 class DocumentManager(root: File) {

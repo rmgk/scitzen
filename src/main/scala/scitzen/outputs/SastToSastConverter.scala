@@ -2,33 +2,19 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.extern.ImageConverter
-import scitzen.parser.Sast._
-import scitzen.generic.{ConversionContext, Project, Reporter, SastRef, _}
+import scitzen.extern.{ImageConverter, KatexConverter}
+import scitzen.generic.{ConversionContext, Project, Reporter, SastRef}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
+import scitzen.parser.Sast._
 import scitzen.parser.{Attribute, Attributes, Inline, InlineText, Sast}
 
-object SastToSastConverter {
-  def preprocessRecursive(
-      doc: FullDoc,
-      ctx: ConversionContext[Map[File, List[Sast]]],
-      documentManager: DocumentManager,
-      conversionPreproc: ParsedDocument => SastToSastConverter
-  ): ConversionContext[Map[File, List[Sast]]] = {
-    val acc = ctx.data
-    if (acc.contains(doc.parsed.file)) return ctx.ret(acc)
-    val preprocessed = conversionPreproc(doc.parsed).convertSeq(doc.sast)(ctx)
-    val newctx       = preprocessed.copy(includes = Nil).ret(acc.updated(doc.parsed.file, preprocessed.data.toList))
-    preprocessed.includes
-      .filter(f => !acc.contains(f))
-      .map(f => documentManager.byPath(f))
-      .foldLeft(newctx) { (ctx, fd) =>
-        preprocessRecursive(fd, ctx, documentManager, conversionPreproc)
-      }
-  }
-}
-
-class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, converter: ImageConverter) {
+class SastToSastConverter(
+    project: Project,
+    cwf: File,
+    reporter: Reporter,
+    converter: ImageConverter,
+    katexConv: Option[KatexConverter]
+) {
 
   type CtxCS  = ConversionContext[Chain[Sast]]
   type Ctx[T] = ConversionContext[T]
@@ -46,7 +32,7 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
 
       case sec @ Section(title, level, _) =>
         val (newAttr, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
-        val conCtx     = ctxWithRef.push(ctxWithRef.data.sast)
+        val conCtx                = ctxWithRef.push(ctxWithRef.data.sast)
         convertInlines(title.inline)(conCtx).map { title =>
           Chain(Section(Text(title.toList), level, newAttr))
         }
@@ -87,12 +73,10 @@ class SastToSastConverter(project: Project, cwf: File, reporter: Reporter, conve
     tlblock.content match {
       case Paragraph(content) =>
         convertInlines(content.inline)(refctx)
-        .map(il => Block(tlblock.attributes, Paragraph(Text(il.toList))): Sast).single
+          .map(il => Block(tlblock.attributes, Paragraph(Text(il.toList))): Sast).single
 
       case Parsed(delimiter, blockContent) =>
-        convertSeq(blockContent)(refctx).map(bc =>
-                                               Block(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast
-        ).single
+        convertSeq(blockContent)(refctx).map(bc => Block(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast).single
 
       case Fenced(text) =>
         if (tlblock.attributes.named.contains("converter")) {

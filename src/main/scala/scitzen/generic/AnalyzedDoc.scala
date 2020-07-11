@@ -11,6 +11,18 @@ import scitzen.parser.{Attributes, DateParsingHelper, Parse, Prov, Sast, Scitzen
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
+case class Article(header: Section, content: List[Sast], sourceDoc: ParsedDocument) {
+
+  lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
+
+  lazy val date: Option[ScitzenDateTime] = header.attributes.named.get("date")
+                                                .map(v => DateParsingHelper.parseDate(v.trim))
+
+  lazy val title: String = header.title.str
+
+  lazy val named: Map[String, String] = header.attributes.named
+}
+
 case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 
   lazy val analyzeResult: AnalyzeResult = analyzer.analyze(sast)
@@ -22,8 +34,6 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
     Attributes(macroattrs ++ sectionattrs, Prov()).named
   }
 
-  lazy val language: Option[String] = named.get("language").map(_.trim)
-
   lazy val date: Option[ScitzenDateTime] = named.get("date")
     .map(v => DateParsingHelper.parseDate(v.trim))
 
@@ -34,13 +44,6 @@ case class AnalyzedDoc(sast: List[Sast], analyzer: SastAnalyzer) {
 
   lazy val wordcount: Map[String, Int] =
     words.foldMap(s => Map(s.toLowerCase() -> 1))
-
-  lazy val bigrams: Map[(String, String), Int] = {
-    words.sliding(2, 1).toList.foldMap {
-      case List(a, b) => Map((a.toLowerCase(), b.toLowerCase()) -> 1)
-      case _          => Map()
-    }
-  }
 }
 
 object AnalyzedDoc {
