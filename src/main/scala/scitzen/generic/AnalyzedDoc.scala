@@ -33,15 +33,16 @@ object Article {
     }
 
   def articles(parsedDocument: ParsedDocument, content: List[Sast]): List[Article] = {
-    def rec(rem: List[Sast]): List[Article] = {
+    @scala.annotation.tailrec
+    def rec(rem: List[Sast], acc: List[Article]): List[Article] = {
       rem.dropWhile(notArticleHeader) match {
         case (sec @ Section(title, "=", attributes)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
-          Article(sec, cont, parsedDocument) :: rec(other)
-        case other => Nil
+          rec(other, Article(sec, cont, parsedDocument) :: acc)
+        case other => acc.reverse
       }
     }
-    rec(content)
+    rec(content, Nil)
   }
 }
 
