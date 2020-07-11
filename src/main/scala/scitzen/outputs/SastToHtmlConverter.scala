@@ -68,7 +68,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     singleSast match {
       case sec @ Section(title, level, _) =>
         inlineValuesToHTML(title.inline)(ctx).map { innerFrags =>
-          Chain[Frag](tag(s"h${level.length + ctx.stacklevel}")(id := sec.ref, innerFrags.toList))
+          Chain[Frag](tag(s"h${level.length + ctx.stacklevel + 1}")(id := sec.ref, innerFrags.toList))
         }.push(sec)
 
       case Slist(Nil) => ctx.empty
