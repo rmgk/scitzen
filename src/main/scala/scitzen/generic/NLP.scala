@@ -25,10 +25,12 @@ case class NLP(stopwords: Map[String, Set[String]]) {
   }
 
   def language(sast: Seq[Sast]): String = {
-    val candidates =
+    val counts = wordcount(sast)
+    val candidates = {
       stopwords.view.mapValues {
-        _.toList.foldMap(wordcount(sast).getOrElse(_, 0))
+        _.toList.foldMap(counts.getOrElse(_, 0))
       }.iterator
+    }
     (List("" -> 0).iterator ++ candidates).maxBy(_._2)._1
   }
 
