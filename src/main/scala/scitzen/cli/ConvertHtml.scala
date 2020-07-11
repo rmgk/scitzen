@@ -21,7 +21,7 @@ object ConvertHtml {
 
   // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] = {
-    Resource.asStream("scitzen.css").fold(File("scicltzen.css").byteArray)(_.byteArray)
+    Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
   }
 
   val mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
