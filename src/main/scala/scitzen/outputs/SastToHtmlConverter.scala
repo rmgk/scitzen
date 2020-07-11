@@ -38,9 +38,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     textCtx.data ++: child.content.fold(textCtx)(convertSingle(_)(textCtx))
   }
 
-  def categoriesSpan(article: Article): Option[Tag] = {
-    val categories = List("categories", "people").flatMap(article.named.get)
-      .flatMap(_.split(","))
+  def categoriesSpan(categories: Seq[String]): Option[Tag] = {
     Option.when(categories.nonEmpty)(
       span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
     )
@@ -50,9 +48,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
+    val categories = List("categories", "people").flatMap(article.named.get)
+      .flatMap(_.split(","))
+
     val metalist =
       article.date.map(timeFull) ++
-        categoriesSpan(article) ++
+        categoriesSpan(categories) ++
         article.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
 
     if (metalist.nonEmpty) div(cls := "metadata")(metalist.toSeq: _*) else frag()
@@ -104,24 +105,21 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Macro(Other("break"), attributes) =>
             ctx.ret(Chain(hr))
 
-          case Macro(Ref, attributes) if attributes.named.get("type").contains("article") =>
-            val foundDoc = pathManager.findDoc(attributes.target)
-            val post     = foundDoc.get
-
-            def timeShort(date: Option[ScitzenDateTime]) =
+          case Macro(Other("article"), attributes) =>
+            def timeShort(date: Option[String]) =
               date match {
-                case Some(date) => time(stringFrag(date.monthDayTime + " "))
+                case Some(date) => time(stringFrag(date + " "))
                 case None       => time("00-00 00:00")
               }
 
-            val aref = pathManager.relativePostTarget(post.parsed.file).toString
+            val aref = pathManager.relativePostTarget(File(attributes.named("target"))).toString
 
             ctx.ret(Chain(a(
               href := aref,
               article(
-                timeShort(None),
-                span(cls := "title", attributes.target)
-                //categoriesSpan(Nil)
+                timeShort(attributes.named.get("datetime")),
+                span(cls := "title", attributes.target),
+                  categoriesSpan(attributes.raw.filter(_.id == "category").map(_.value))
               )
             )))
 

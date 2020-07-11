@@ -1,9 +1,9 @@
 package scitzen.outputs
 
-import scitzen.generic.{DocumentManager, FullDoc, Project}
-import scitzen.parser.MacroCommand.Ref
+import scitzen.generic.{Article, Project}
+import scitzen.parser.MacroCommand.Other
 import scitzen.parser.Sast.{Block, Macro, Parsed, Section, Text}
-import scitzen.parser.{Attribute, Attributes, InlineText, Sast}
+import scitzen.parser.{Attribute, Attributes, InlineText, Prov, Sast}
 
 object GenIndexPage {
 
@@ -23,21 +23,17 @@ object GenIndexPage {
   )
 
   def makeIndex(
-      dm: DocumentManager,
+      articles: List[Article],
       project: Project,
       reverse: Boolean = false
   ): List[Sast] = {
     def ordering[T: Ordering]: Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
 
-    def sectionBy(pdocs: List[FullDoc])(f: FullDoc => String)(cont: List[FullDoc] => List[Sast]): List[Sast] = {
+    def sectionBy(pdocs: List[Article])(f: Article => String)(cont: List[Article] => List[Sast]): List[Sast] = {
       val sectionTitle = pdocs.groupBy(f)
       sectionTitle.toList.sortBy(_._1)(ordering).flatMap {
         case (key, docs) =>
-          val inner = cont(docs).map {
-            case s: Section =>
-              s.copy(attributes = Attributes.synthetic(Attribute("label", s"$key " + s.attributes.named("label"))))
-            case other => other
-          }
+          val inner = cont(docs)
           List[Sast](
             Section(Text(List(InlineText(key))), prefix = "#", Attributes.synthetic(Attribute("label", key))),
             Block(Attributes.synthetic(), Parsed("", inner))
@@ -45,24 +41,28 @@ object GenIndexPage {
       }
     }
 
-    def secmon(fd: FullDoc): String = {
-      fd.analyzed.date.fold("") { date =>
+    def secmon(fd: Article): String = {
+      fd.date.fold("") { date =>
         val m = date.date.month
-        m + " " + months(m.toInt - 1)
+        s"${date.year}-$m " + months(m.toInt - 1)
       }
     }
 
-    sectionBy(dm.fulldocs)(_.analyzed.date.fold("Drafts")(_.year)) { docs =>
-      sectionBy(docs)(secmon) { idocs =>
-        idocs.sortBy(_.analyzed.date)(ordering).flatMap { doc =>
-          List(Macro(
-            Ref,
-            Attributes.synthetic(
-              Attribute("", project.root.relativize(doc.parsed.file).toString),
-              Attribute("type", "article")
-            )
-          ))
-        }
+    sectionBy(articles)(secmon) { idocs =>
+      idocs.sortBy(_.date)(ordering).flatMap { doc =>
+        val categories =
+          List("categories", "people").flatMap(doc.named.get).flatMap(_.split(","))
+        List(Macro(
+          Other("article"),
+          Attributes(
+            List(
+              Some(Attribute("", doc.header.title.str)),
+              Some(Attribute("target", project.root.relativize(doc.sourceDoc.file).toString)),
+              doc.date.map(date => Attribute("datetime", date.monthDayTime))
+            ).flatten ++ categories.map(Attribute("category", _)),
+            Prov()
+          )
+        ))
       }
     }
   }
