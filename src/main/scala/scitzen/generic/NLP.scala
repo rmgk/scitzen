@@ -14,7 +14,7 @@ case class NLP(stopwords: Map[String, Set[String]]) {
     val totalDocuments = dm.documents.size.toDouble
 
     lazy val idf = dm.documents.map { doc =>
-      words(doc.sast).map(_.toLowerCase()).distinct.foldMap(w => Map(w -> 1))
+      words(doc.sast).distinct.foldMap(w => Map(w -> 1))
     }.foldMap(identity).view.mapValues(docWithTerm => Math.log(totalDocuments / docWithTerm))
 
     val size = wordlist.size.toDouble
@@ -22,22 +22,22 @@ case class NLP(stopwords: Map[String, Set[String]]) {
       .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
   }
 
-  def language(sast: Seq[Sast]): String = {
+  def language(sast: Seq[Sast]): Option[String] = {
     val counts = wordcount(sast)
     val candidates = {
       stopwords.view.mapValues {
         _.toList.foldMap(counts.getOrElse(_, 0))
       }.iterator
     }
-    (List("" -> 0).iterator ++ candidates).maxBy(_._2)._1
+    candidates.maxByOption(_._2).map(_._1)
   }
 
   def words(sast: Seq[Sast]): List[String] =
-    SastToTextConverter().convert(sast)
-      .flatMap(_.split("[^\\p{L}]+")).toList
+    SastToTextConverter().convert(sast).iterator
+      .flatMap(_.split("[^\\p{L}]+")).map(_.toLowerCase).toList
 
   def wordcount(sast: Seq[Sast]): Map[String, Int] =
-    words(sast).foldMap(s => Map(s.toLowerCase() -> 1))
+    words(sast).groupBy(identity).view.mapValues(_.length).toMap
 
 }
 

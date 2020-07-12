@@ -157,7 +157,7 @@ object ConvertHtml {
       "fullpost",
       toc,
       article.language
-        .orElse(nlp.map(_.language(article.content)))
+        .orElse(nlp.flatMap(_.language(article.content)))
     )
     val target = pathManager.articleOutputPath(article)
     target.write(res)
