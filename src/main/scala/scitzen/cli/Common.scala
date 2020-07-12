@@ -2,23 +2,24 @@ package scitzen.cli
 
 import cats.data.Chain
 import scitzen.cli.ConvertHtml.preprocess
-import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, RecursiveArticleIncludeResolver}
+import scitzen.generic.{
+  Article, ConversionContext, Document, DocumentDirectory, Project, RecursiveArticleIncludeResolver, SastRef
+}
 import scitzen.parser.Sast
 
 object Common {
 
   class PreprocessedResults(
-                             val preprocessedDocuments: DocumentDirectory,
-                             val preprocessedCtx: ConversionContext[_],
-                             val articles: List[Article]
-                           )
+      val directory: DocumentDirectory,
+      val labels: Map[String, List[SastRef]],
+      val articles: List[Article]
+  )
 
   def preprocessDocuments(project: Project): PreprocessedResults = {
     val unprocessedDocuments = DocumentDirectory(project.root)
     scribe.info(s"found ${unprocessedDocuments.documents.size} documents")
 
     project.outputdir.createDirectories()
-
 
     val initialCtx = ConversionContext(())
 
@@ -28,15 +29,19 @@ object Common {
         preprocess(project, initialCtx)
       }.iterator().asScala.toList
     val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
-    val preprocessedCtx       = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
+    val preprocessedCtx = preprocessedCtxs.map(_.labelledThings).fold(initialCtx.labelledThings) {
+      case (l, r) =>
+        (l.keySet ++ r.keySet).map { key =>
+          key -> (l.get(key) ++ r.get(key)).toList.flatten
+        }.toMap
+    }
     val articles = preprocessedDocuments.documents.flatMap(Article.articles)
-                                        .map { article =>
-                                          val add = RecursiveArticleIncludeResolver.recursiveIncludes(article, project, preprocessedDocuments)
-                                          article.copy(includes = add)
-                                        }
+      .map { article =>
+        val add = RecursiveArticleIncludeResolver.recursiveIncludes(article, project, preprocessedDocuments)
+        article.copy(includes = add)
+      }
     new PreprocessedResults(preprocessedDocuments, preprocessedCtx, articles)
   }
-
 
   def splitPreprocessed(preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]]): DocumentDirectory = {
     DocumentDirectory(preprocessedCtxs.map { ctx =>

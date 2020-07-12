@@ -32,23 +32,6 @@ case class ConversionContext[T](
     }
   }
 
-  def merge(other: ConversionContext[_]): ConversionContext[T] = {
-    val labelledMerge = (labelledThings.keySet ++ other.labelledThings.keySet).map { key =>
-      key -> (labelledThings.get(key) ++ other.labelledThings.get(key)).toList.flatten
-    }.toMap
-    ConversionContext[T](
-      data,
-      katexConverter.copy(cache =  katexConverter.cache ++ other.katexConverter.cache),
-      resourceMap ++ other.resourceMap,
-      tasks ++ other.tasks,
-      labelledMerge,
-      0,
-      Nil,
-      includes ++ other.includes,
-      usedCitations ++ other.usedCitations,
-      imageMacros ++ other.imageMacros
-    )
-  }
 
   def resolveRef(ref: String): List[SastRef] =
     labelledThings.getOrElse(ref, Nil)

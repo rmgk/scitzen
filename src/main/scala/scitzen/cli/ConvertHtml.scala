@@ -28,11 +28,7 @@ object ConvertHtml {
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
 
-    val preprocessDocumentsResult =
-      Common.preprocessDocuments(project)
-    val preprocessedDocuments: DocumentDirectory = preprocessDocumentsResult.preprocessedDocuments
-    val preprocessedCtx: ConversionContext[_]    = preprocessDocumentsResult.preprocessedCtx
-    val articles: List[Article]                  = preprocessDocumentsResult.articles
+    val preprocessed = Common.preprocessDocuments(project)
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
@@ -40,7 +36,7 @@ object ConvertHtml {
 
     val nlp: Option[NLP] =
       Option.when(project.nlpdir.isDirectory) {
-        NLP.loadFrom(project.nlpdir, preprocessedDocuments)
+        NLP.loadFrom(project.nlpdir, preprocessed.directory)
       }
 
     val pathManager = {
@@ -65,30 +61,30 @@ object ConvertHtml {
             project,
             cssfile,
             sync,
-            preprocessedDocuments,
-            ConversionContext((), katexConverter = kc),
+            preprocessed.directory,
+            ConversionContext((), labelledThings = preprocessed.labels, katexConverter = kc),
             nlp,
-            articles
+            preprocessed.articles
           )
           cctx.execTasks()
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
       }
     }
 
-    val (katexRes, resources) = procRec(articles, loadKatex(katexmapfile), Map.empty)
+    val (katexRes, resources) = procRec(preprocessed.articles, loadKatex(katexmapfile), Map.empty)
 
     writeKatex(katexmapfile, katexRes)
 
-    val generatedIndex = GenIndexPage.makeIndex(articles, pathManager, reverse = true)
+    val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager, reverse = true)
     val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,
       bibliography = Map(),
       sync = None,
       reporter = m => "",
-      includeResolver = preprocessedDocuments,
-      articles = articles
-    ).convertSeq(generatedIndex)(preprocessedCtx)
+      includeResolver = preprocessed.directory,
+      articles = preprocessed.articles
+    ).convertSeq(generatedIndex)(ConversionContext((), labelledThings = preprocessed.labels))
 
     pathManager.copyResources(resources)
 
