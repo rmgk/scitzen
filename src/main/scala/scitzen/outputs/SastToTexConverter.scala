@@ -82,7 +82,6 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
               ctx.fold[ListItem, String](children) { (ctx, child) =>
                 val inlineCtx  = inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item{$s}"))
                 val contentCtx = child.content.fold(inlineCtx.empty[String])(sastToTex(_)(inlineCtx))
-                scribe.info(s"inline data was ${inlineCtx.data}, content data was ${contentCtx.data}")
                 inlineCtx.data ++: contentCtx
               } :+
               "\\end{itemize}"
