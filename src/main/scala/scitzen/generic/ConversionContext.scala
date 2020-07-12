@@ -22,7 +22,7 @@ case class ConversionContext[T](
     stack: List[Sast] = Nil,
     includes: List[File] = Nil,
     usedCitations: List[BibEntry] = Nil,
-    imageMacros: List[Macro] = Nil
+    partialMacros: List[Macro] = Nil
 ) {
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
 
@@ -32,13 +32,14 @@ case class ConversionContext[T](
     }
   }
 
-
   def resolveRef(ref: String): List[SastRef] =
     labelledThings.getOrElse(ref, Nil)
 
   def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
     copy(resourceMap = resourceMap.updated(source, relative))
   }
+
+  def addMacro(mcro: Macro): ConversionContext[T] = copy(partialMacros = mcro :: partialMacros)
 
   def nextId: ConversionContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
 

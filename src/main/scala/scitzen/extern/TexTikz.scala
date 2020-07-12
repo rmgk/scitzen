@@ -25,6 +25,7 @@ object TexTikz {
 
   def latexmk(outputdir: File, jobname: String, sourceFile: File): Option[File] = {
     val start = System.nanoTime()
+    scribe.info(s"compiling $sourceFile")
     outputdir.createDirectories()
     val errorFile = (outputdir/"latexmk.err")
     val returnCode = new ProcessBuilder("latexmk",

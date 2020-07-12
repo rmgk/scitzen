@@ -6,7 +6,7 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.ImageConverter
 import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.parser.Sast
+import scitzen.parser.{MacroCommand, Sast}
 
 object ImageReferences {
 
@@ -31,7 +31,7 @@ object ImageReferences {
         ct.run()
       }
 
-      val images = convertedCtx.imageMacros.flatMap { mcro =>
+      val images = convertedCtx.partialMacros.filter(_.command == MacroCommand.Image).flatMap { mcro =>
         val path = mcro.attributes.target
         project.resolve(cwd, path) match {
           case Some(target) =>

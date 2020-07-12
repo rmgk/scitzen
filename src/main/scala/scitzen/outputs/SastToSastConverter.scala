@@ -130,7 +130,7 @@ class SastToSastConverter(
         }
 
       // collect image macros
-      case mcro @ Macro(Image, attributes) =>ctx.copy(imageMacros = mcro :: ctx.imageMacros).ret(mcro)
+      case mcro @ Macro(Image, attributes) =>ctx.addMacro(mcro).ret(mcro)
 
       case Macro(Label, attributes) =>
         ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head, ctx.artOpt(cwf))).ret(mcro)

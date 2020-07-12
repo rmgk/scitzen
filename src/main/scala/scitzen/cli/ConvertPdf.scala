@@ -16,18 +16,21 @@ object ConvertPdf {
     val preprocessed = Common.preprocessDocuments(project, new ImageConverter(project, "pdf", List("svg")))
 
     preprocessed.articles.foreach { article =>
-      val resultContext = new SastToTexConverter(
+      val converter = new SastToTexConverter(
         project,
         article.sourceDoc.file.parent,
         article.sourceDoc.reporter,
         preprocessed.directory
-      ).convert(
-        article.content
-      )(ConversionContext((), labelledThings = preprocessed.labels))
+      )
 
-      val content = resultContext.data
+      val resultContext =
+        converter.convert(article.content)(ConversionContext((), labelledThings = preprocessed.labels))
 
-      resultContext.execTasks()
+      val headerres = converter.articleHeader(article, resultContext)
+
+      val content = headerres.data ++ resultContext.data
+
+      headerres.execTasks()
 
       val articlename = Format.canonicalName(article)
 
@@ -37,7 +40,7 @@ object ConvertPdf {
       val targetfile = outputdir / s"$articlename.pdf"
 
       def fileFromParam(param: String): Option[File] = {
-          article.named.get(param).map(s => article.sourceDoc.file.parent / s.trim)
+        article.named.get(param).map(s => article.sourceDoc.file.parent / s.trim)
       }
 
       val bibliography = fileFromParam("bibliography").map(_.pathAsString)

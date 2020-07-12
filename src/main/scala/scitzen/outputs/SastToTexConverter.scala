@@ -2,10 +2,10 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.generic.{ConversionContext, DocumentDirectory, Project, Reporter}
+import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, Reporter}
 import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.parser.Sast._
-import scitzen.parser.{Attributes, Inline, InlineText, Sast}
+import scitzen.parser.{Attributes, Inline, InlineText, MacroCommand, Sast}
 
 class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: DocumentDirectory) {
 
@@ -13,18 +13,18 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[_]
 
-  def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = {
-    //project.documentManager.macros.find(_.command == Other("tableofcontents"))
-    Option(null)
-      .fold(Chain.empty[String])(_ => Chain("\\frontmatter")) ++:
-      (mainSast match {
-        case (section @ Section(title, _, _)) :: rest =>
-          val ilc = inlineValuesToTex(title.inline)
-          s"\\title{${ilc.data}}\\maketitle{}" +: sastSeqToTex(rest)(ilc.push(section))
+  def articleHeader(article: Article, cta: Cta): CtxCS = {
+    val hasToc = cta.partialMacros.exists(_.command == MacroCommand.Other("tableofcontents"))
+    val fm = if (hasToc) Chain("\\frontmatter") else Chain.empty
 
-        case list =>
-          sastSeqToTex(mainSast)(ctx)
-      })
+
+    val ilc = inlineValuesToTex(article.header.title.inline)(cta)
+    ilc.ret(fm :+ s"\\title{${ilc.data}}\\maketitle{}")
+
+  }
+
+  def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS = {
+    sastSeqToTex(mainSast)(ctx)
   }
 
   def latexencode(input: String): String = {
@@ -206,49 +206,59 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
   }
 
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] =
-    ctx.ret(inners.map {
-      case InlineText(str)                    => latexencode(str)
-      case Macro(Cite, attr)                  => s"${nbrs(attr)}\\cite{${attr.target}}"
-      case Macro(Code, attrs)                 => s"\\texttt{${latexencode(attrs.target)}}"
-      case Macro(Comment, attr)               => ""
-      case Macro(Def, _)                      => ""
-      case Macro(Emph, attrs)                 => s"\\emph{${latexencode(attrs.target)}}"
-      case Macro(Label, attr)                 => s"\\label{${attr.target}}"
-      case Macro(Math, attrs)                 => s"$$${attrs.target}$$"
-      case Macro(Other("break"), attrs)       => s"\\clearpage{}"
-      case Macro(Other("subparagraph"), attr) => s"\\subparagraph{${attr.target}}"
-      case Macro(Other("textsc"), attr)       => s"\\textsc{${attr.target}}"
-      case Macro(Other("todo"), attr)         => s"{\\color{red}TODO:${attr.target}}"
-      case Macro(Ref, attr)                   => s"${nbrs(attr)}\\ref{${attr.target}}"
-      case Macro(Strong, attrs)               => s"\\textbf{${latexencode(attrs.target)}}"
+    ctx.fold(inners) { (ctx: Ctx[Chain[String]], inline) => inlineToHTML(inline)(ctx) }.map(_.toList.mkString(""))
+
+  def inlineToHTML(inline: Inline)(implicit ctx: Cta): CtxCS =
+    inline match {
+      case InlineText(str)                    => ctx.retc(latexencode(str))
+      case Macro(Cite, attr)                  => ctx.retc(s"${nbrs(attr)}\\cite{${attr.target}}")
+      case Macro(Code, attrs)                 => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
+      case Macro(Comment, attr)               => ctx.retc("")
+      case Macro(Def, _)                      => ctx.retc("")
+      case Macro(Emph, attrs)                 => ctx.retc(s"\\emph{${latexencode(attrs.target)}}")
+      case Macro(Label, attr)                 => ctx.retc(s"\\label{${attr.target}}")
+      case Macro(Math, attrs)                 => ctx.retc(s"$$${attrs.target}$$")
+      case Macro(Other("break"), attrs)       => ctx.retc(s"\\clearpage{}")
+      case Macro(Other("subparagraph"), attr) => ctx.retc(s"\\subparagraph{${attr.target}}")
+      case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
+      case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
+      case Macro(Ref, attr)                   => ctx.retc(s"${nbrs(attr)}\\ref{${attr.target}}")
+      case Macro(Strong, attrs)               => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
 
       case Macro(Link, attributes) =>
-        val target = attributes.target
-        if (attributes.positional.size > 1) {
-          val name = """{"""" + attributes.positional.head + """"}"""
-          s"\\href{$target}{$name}"
-        } else s"\\url{$target}"
+        ctx.retc {
+          val target = attributes.target
+          if (attributes.positional.size > 1) {
+            val name = """{"""" + attributes.positional.head + """"}"""
+            s"\\href{$target}{$name}"
+          } else s"\\url{$target}"
+        }
 
       case Macro(Lookup, attributes) =>
-        if (project.config.definitions.contains(attributes.target))
-          project.config.definitions(attributes.target)
-        else scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
+        ctx.retc {
+          project.config.definitions.getOrElse(attributes.target, {
+            scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
+            attributes.target
+          })
+        }
 
       case Macro(Other("footnote"), attributes) =>
         val target = latexencode(attributes.target)
-        s"\\footnote{$target}"
+        ctx.retc(s"\\footnote{$target}")
 
-      case Macro(Other("tableofcontents"), attributes) =>
-        List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
+      case toc @ Macro(Other("tableofcontents"), attributes) =>
+        ctx.addMacro(toc).retc(
+          List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
+        )
 
       case im @ Macro(Other(command), attributes) =>
         val str = SastToScimConverter().macroToScim(im)
         scribe.warn(s"unknown macro “$str”" + reporter(im))
-        str
+        ctx.retc(str)
 
       case im @ Macro(Image | Include, attributes) =>
         val str = SastToScimConverter().macroToScim(im)
         scribe.warn(s"tex backend does not allow inline images or includes" + reporter(im))
-        str
-    }.mkString(""))
+        ctx.retc(str)
+    }
 }
