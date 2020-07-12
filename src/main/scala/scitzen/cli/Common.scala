@@ -16,8 +16,7 @@ object Common {
       val articles: List[Article]
   )
 
-  def preprocessDocuments(project: Project, imageConverter: ImageConverter, documentDirectory: DocumentDirectory): PreprocessedResults = {
-    val unprocessedDocuments = DocumentDirectory(project.root)
+  def preprocessDocuments(project: Project, imageConverter: ImageConverter, unprocessedDocuments: DocumentDirectory): PreprocessedResults = {
 
     project.cacheDir.createDirectories()
 
