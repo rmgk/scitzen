@@ -22,10 +22,10 @@ class SastToSastConverter(
   val cwd = if (cwf.isDirectory) cwf else cwf.parent
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
-    ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx) }
+    ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
   }
 
-  def convertSingle(sast: Sast)(implicit ctx: Cta): CtxCS =
+  def convertSingle(sast: Sast)(implicit ctx: Cta): Ctx[Sast] =
     sast match {
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
@@ -33,21 +33,24 @@ class SastToSastConverter(
         val (newAttr, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
         val conCtx                = ctxWithRef.push(ctxWithRef.data.sast)
         convertInlines(title.inline)(conCtx).map { title =>
-          Chain(Section(Text(title.toList), level, newAttr))
+          Section(Text(title.toList), level, newAttr)
         }
 
       case Slist(children) =>
         ctx.fold[ListItem, ListItem](children) { (ctx, child) =>
-          child.content.fold(ctx.empty[Sast])(convertSingle(_)(ctx)).map { con =>
-            if (con.size > 1) throw new IllegalStateException("list contained more that one child")
-            Chain(ListItem(child.marker, child.text, con.headOption))
+          child.content match {
+            case None => ctx.retc(child)
+            case Some(content) =>
+              convertSingle(content)(ctx).map { con =>
+                Chain(ListItem(child.marker, child.text, Some(con)))
+              }
           }
         }.map { cs =>
-          Chain(Slist(cs.iterator.toSeq))
+          Slist(cs.iterator.toSeq)
         }
 
       case mcro @ Macro(_, _) =>
-        convertMacro(mcro).map(identity(_): Sast).single
+        convertMacro(mcro).map(identity(_): Sast)
     }
 
   def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Attributes, Ctx[SastRef]) = {
@@ -65,7 +68,7 @@ class SastToSastConverter(
     }
   }
 
-  def convertBlock(tlblock: Block)(ctx: Cta): CtxCS = {
+  def convertBlock(tlblock: Block)(ctx: Cta): Ctx[Sast] = {
     // make all blocks labellable
     val refctx = tlblock.attributes.named.get("label") match {
       case None      => ctx
@@ -74,10 +77,10 @@ class SastToSastConverter(
     tlblock.content match {
       case Paragraph(content) =>
         convertInlines(content.inline)(refctx)
-          .map(il => Block(tlblock.attributes, Paragraph(Text(il.toList))): Sast).single
+          .map(il => Block(tlblock.attributes, Paragraph(Text(il.toList))): Sast)
 
       case Parsed(delimiter, blockContent) =>
-        convertSeq(blockContent)(refctx).map(bc => Block(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast).single
+        convertSeq(blockContent)(refctx).map(bc => Block(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast)
 
       case Fenced(text) =>
         if (tlblock.attributes.named.contains("converter")) {
@@ -86,16 +89,16 @@ class SastToSastConverter(
         } else {
           // fenced blocks allow line labels
           tlblock.attributes.named.get("label") match {
-            case None => ctx.retc(tlblock)
+            case None => ctx.ret(tlblock)
             case Some(ref) =>
               val matches = """:§([^§]*?)§""".r.findAllMatchIn(text).map(_.group(1)).toList
               val target  = SastRef(cwf, tlblock, ctx.artOpt(cwf))
-              matches.foldLeft(ctx.ret(target)) { (cx, group) => cx.addRefTarget(ref + group, target) }.retc(tlblock)
+              matches.foldLeft(ctx.ret(target)) { (cx, group) => cx.addRefTarget(ref + group, target) }.ret(tlblock)
           }
 
         }
 
-      case SpaceComment(content) => ctx.retc(tlblock)
+      case SpaceComment(content) => ctx.ret(tlblock)
 
     }
   }
