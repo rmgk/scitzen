@@ -174,14 +174,16 @@ pre > code {
 }
 
 // quote links and code in paragraphs to clarify their borders
-p > a, p > code {
-  &:before {
-    // ⸢ ⸣ ⸤ ⸥
-    content: "⸢";
-  }
+p , li {
+  &>a , &>code {
+    &:before {
+      // ⸢ ⸣ ⸤ ⸥
+      content: "⸢";
+    }
 
-  &:after {
-    content: "⸥";
+    &:after {
+      content: "⸥";
+    }
   }
 }
 
