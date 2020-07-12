@@ -1,13 +1,14 @@
 package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.file.Path
 
 import better.files._
 import cats.data.Chain
 import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
+import scitzen.extern.{Bibliography, ImageConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.Sast
@@ -27,54 +28,57 @@ object ConvertHtml {
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
 
-    val unprocessedDocuments = DocumentDirectory(project.root)
-    scribe.info(s"found ${unprocessedDocuments.documents.size} documents")
 
-    project.outputdir.createDirectories()
 
+    val preprocessDocumentsResult =
+      Common.preprocessDocuments(project)
+    val preprocessedDocuments: DocumentDirectory          = preprocessDocumentsResult.preprocessedDocuments
+    val preprocessedCtx: ConversionContext[_] = preprocessDocumentsResult.preprocessedCtx
+    val articles: List[Article]                           = preprocessDocumentsResult.articles
+
+
+
+    val katexmapfile    = project.cacheDir / "katexmap.json"
     val cssfile = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
 
     val nlp: Option[NLP] =
-      if (project.nlpdir.isDirectory) Some(NLP.loadFrom(project.nlpdir, unprocessedDocuments)) else None
-
-    val katexmapfile    = project.cacheDir / "katexmap.json"
-    val initialKatexMap = loadKatex(katexmapfile)
-
-    val initialCtx = ConversionContext(Chain.empty[String], katexMap = initialKatexMap)
-
-    import scala.jdk.CollectionConverters._
-    val preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]] =
-      unprocessedDocuments.documents.asJava.parallelStream().map {
-        preprocess(project, Some(KatexConverter(Some(katexmapfile))), initialCtx)
-      }.iterator().asScala.toList
-    val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
-    val preprocessedCtx       = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
-    val articles = preprocessedDocuments.documents.flatMap(Article.articles)
-      .map { article =>
-        val add = RecursiveArticleIncludeResolver.recursiveIncludes(article, project, preprocessedDocuments)
-        article.copy(includes = add)
+      Option.when(project.nlpdir.isDirectory) {
+        NLP.loadFrom(project.nlpdir, preprocessedDocuments)
       }
-    writeKatex(katexmapfile, preprocessedCtx)
 
-    val articleOutput = project.outputdir / "articles"
-    articleOutput.createDirectories()
-    val pathManager = HtmlPathManager(project.root, project, articleOutput)
-    val resources = articles.flatMap { article =>
-      val cctx = convertArticle(
-        article,
-        pathManager.changeWorkingFile(article.sourceDoc.file),
-        project,
-        cssfile,
-        sync,
-        preprocessedDocuments,
-        preprocessedCtx,
-        nlp,
-        articles
-      )
-      cctx.execTasks()
-      cctx.resourceMap
+
+
+    val pathManager = {
+      val articleOutput = project.outputdir / "articles"
+      articleOutput.createDirectories()
+      HtmlPathManager(project.root, project, articleOutput)
     }
+
+    def procRec(rem: List[Article], katexmap: Map[String, String], resourcemap: Map[File, Path]): (Map[String, String],Map[File, Path]) = {
+      rem match {
+        case Nil => (katexmap, resourcemap)
+        case article :: rest =>
+          val cctx = convertArticle(
+            article,
+            pathManager.changeWorkingFile(article.sourceDoc.file),
+            project,
+            cssfile,
+            sync,
+            preprocessedDocuments,
+            ConversionContext((), katexMap = katexmap),
+            nlp,
+            articles
+            )
+          cctx.execTasks()
+          procRec(rest, katexmap ++ cctx.katexMap, resourcemap ++ cctx.resourceMap)
+      }
+    }
+
+    val (katexRes, resources) = procRec(articles, loadKatex(katexmapfile), Map.empty)
+
+    writeKatex(katexmapfile, katexRes)
+
 
     val generatedIndex = GenIndexPage.makeIndex(articles, pathManager, reverse = true)
     val convertedCtx = new SastToHtmlConverter(
@@ -97,24 +101,16 @@ object ConvertHtml {
 
   }
 
-  def splitPreprocessed(preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]]): DocumentDirectory = {
-    DocumentDirectory(preprocessedCtxs.map { ctx =>
-      val pd      = ctx.data._1
-      val content = ctx.data._2.toList
-      pd.copy(sast = content, includes = ctx.includes)
-    })
-  }
-
   private def loadKatex(katexmapfile: File): Map[String, String] = {
     Try {
       readFromStream[Map[String, String]](katexmapfile.newInputStream)(mapCodec)
     }.getOrElse(Map())
   }
-  private def writeKatex(katexmapfile: File, preprocessedCtx: ConversionContext[Chain[String]]): Any = {
-    if (preprocessedCtx.katexMap.nonEmpty) {
+  private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any = {
+    if (katexMap.nonEmpty) {
       katexmapfile.parent.createDirectories()
       katexmapfile.writeByteArray(writeToArray[Map[String, String]](
-        preprocessedCtx.katexMap,
+        katexMap,
         WriterConfig.withIndentionStep(2)
       )(mapCodec))
     }
@@ -152,7 +148,7 @@ object ConvertHtml {
     val citations =
       if (bibEntries.isEmpty) Nil
       else {
-        import scalatags.Text.all.{id, li, ol, stringAttr, SeqFrag}
+        import scalatags.Text.all.{SeqFrag, id, li, ol, stringAttr}
         List(ol(bibEntries.map { be => li(id := be.id, be.format) }))
       }
 
@@ -171,15 +167,13 @@ object ConvertHtml {
 
   def preprocess(
       project: Project,
-      katexConverter: Option[KatexConverter],
-      initialCtx: ConversionContext[Chain[String]]
+      initialCtx: ConversionContext[_]
   )(doc: Document): ConversionContext[(Document, Chain[Sast])] = {
     val resCtx = new SastToSastConverter(
       project,
       doc.file,
       doc.reporter,
-      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf")),
-      katexConverter
+      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"))
     ).convertSeq(doc.sast)(initialCtx)
     resCtx.execTasks()
     resCtx.map(doc -> _)

@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.extern.{ImageConverter, KatexConverter}
+import scitzen.extern.ImageConverter
 import scitzen.generic.{ConversionContext, Project, Reporter, SastRef}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
 import scitzen.parser.Sast._
@@ -12,8 +12,7 @@ class SastToSastConverter(
     project: Project,
     cwf: File,
     reporter: Reporter,
-    converter: ImageConverter,
-    katexConv: Option[KatexConverter]
+    converter: ImageConverter
 ) {
 
   type CtxCS  = ConversionContext[Chain[Sast]]

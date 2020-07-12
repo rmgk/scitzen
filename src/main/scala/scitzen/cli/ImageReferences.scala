@@ -23,16 +23,13 @@ object ImageReferences {
         project,
         doc.file,
         doc.reporter,
-        new ImageConverter(project, preferredFormat = "png", unsupportedFormat = List("pdf", "svg")),
-        None
+        new ImageConverter(project, preferredFormat = "png", unsupportedFormat = List("pdf", "svg"))
       ).convertSeq(doc.sast)(ConversionContext(Chain.empty[Sast]))
 
       import scala.jdk.CollectionConverters._
       convertedCtx.tasks.asJava.parallelStream().forEach { ct =>
         ct.run()
       }
-
-
 
       val images = convertedCtx.imageMacros.flatMap { mcro =>
         val path = mcro.attributes.target
