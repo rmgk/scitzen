@@ -29,18 +29,19 @@ object Common {
       }.iterator().asScala.toList
 
     val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
-    val preprocessedCtx = preprocessedCtxs.map(_.labelledThings).fold(initialCtx.labelledThings) {
-      case (l, r) =>
-        (l.keySet ++ r.keySet).map { key =>
-          key -> (l.get(key) ++ r.get(key)).toList.flatten
-        }.toMap
+    val labels = {
+      val all = initialCtx.labelledThings :: preprocessedCtxs.map(_.labelledThings)
+      val allKeys = all.iterator.flatMap(_.keysIterator).toSet
+      allKeys.iterator.map { key =>
+        key -> all.flatMap(_.getOrElse(key, Nil))
+      }.toMap
     }
     val articles = preprocessedDocuments.documents.flatMap(Article.articles)
       .map { article =>
         val add = RecursiveArticleIncludeResolver.recursiveIncludes(article, project, preprocessedDocuments)
         article.copy(includes = add)
       }
-    new PreprocessedResults(preprocessedDocuments, preprocessedCtx, articles)
+    new PreprocessedResults(preprocessedDocuments, labels, articles)
   }
 
   def preprocess(
