@@ -92,7 +92,7 @@ time {
 }
 
 // usually these should collapse, but because of grid they dont.
-main > * , main > section > * {
+main > *, main > section > * {
   margin: 0;
 }
 
@@ -174,15 +174,17 @@ pre > code {
 }
 
 // quote links and code in paragraphs to clarify their borders
-p , li {
-  &>a , &>code {
-    &:before {
-      // ⸢ ⸣ ⸤ ⸥
-      content: "⸢";
-    }
+.fullpost main {
+  p, li {
+    & > a, & > code {
+      &:before {
+        // ⸢ ⸣ ⸤ ⸥
+        content: "⸢";
+      }
 
-    &:after {
-      content: "⸥";
+      &:after {
+        content: "⸥";
+      }
     }
   }
 }
