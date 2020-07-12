@@ -165,7 +165,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
 
     converter match {
       case "tex" =>
-        Some(applyConversion(TexTikz.convert(templatedContent, project.cacheDir)))
+        Some(applyConversion(TexConverter.convert(templatedContent, project.cacheDir)))
 
       case gr @ rex"graphviz.*" =>
         Some(Graphviz.convert(content, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat)

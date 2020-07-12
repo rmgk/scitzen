@@ -3,24 +3,9 @@ package scitzen.extern
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import scitzen.outputs.TexPages
 
 
-object TexTikz {
-
-
-  val header: String = """
-    |\documentclass{standalone}
-    |\usepackage{tikz}
-    |\usepackage{booktabs}
-    |\usetikzlibrary{shapes,backgrounds,calc,positioning}
-    """.stripMargin + TexPages.xelatexFont.mkString("\n") + """
-    |
-    |\begin{document}
-    |""".stripMargin
-  val footer: String = """
-    |\end{document}
-    |""".stripMargin
+object TexConverter {
 
   def latexmk(outputdir: File, jobname: String, sourceFile: File): Option[File] = {
     val start = System.nanoTime()
@@ -70,10 +55,6 @@ object TexTikz {
         }
       })
     })
-  }
-
-  def convertTikz(content: String, working: File): (String, File, Option[ConvertTask]) = {
-    convert(header + content + footer, working)
   }
 
 

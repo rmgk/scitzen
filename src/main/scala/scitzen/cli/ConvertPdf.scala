@@ -4,7 +4,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 
 import better.files.File
 import scitzen.extern.ImageConverter
-import scitzen.extern.TexTikz.latexmk
+import scitzen.extern.TexConverter.latexmk
 import scitzen.generic.{ConversionContext, Project}
 import scitzen.outputs.{SastToTexConverter, SastToTextConverter}
 import scitzen.parser.{Parse, Prov}
