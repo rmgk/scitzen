@@ -125,13 +125,6 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
     )
   }
 
-  //def pdfToSvg(in: File): File = {
-  //  val out = in.sibling(in.name + ".svg")
-  //  if (out.exists) return out
-  //  Process(List("inkscape", in.pathAsString, "--export-plain-svg", out.pathAsString)).!
-  //  out
-  //}
-
   def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {
 
     def makeImageMacro(file: File): Macro = {
