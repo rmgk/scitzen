@@ -44,12 +44,12 @@ class HtmlPages(cssPath: String) {
       )
     )
 
-  def wrapContentHtml(content: Seq[Frag], bodyClass: String, sidebar: Option[Frag], language: String = ""): String = {
+  def wrapContentHtml(content: Seq[Frag], bodyClass: String, sidebar: Option[Frag], language: Option[String] = None): String = {
 
     htmlDocument(html(tHead)(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,
-      main(content)(lang := language)
+      main(content)(language.map(lang := _).toSeq: _*)
     )))
   }
 

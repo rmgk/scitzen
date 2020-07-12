@@ -93,7 +93,7 @@ object ConvertHtml {
     pathManager.copyResources(resources)
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
-      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(generatedIndex), "")
+      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(generatedIndex), None)
     project.outputdir./("index.html").write(res)
 
     convertedCtx.execTasks()
@@ -158,7 +158,6 @@ object ConvertHtml {
       toc,
       article.language
         .orElse(nlp.map(_.language(article.content)))
-        .getOrElse("")
     )
     val target = pathManager.articleOutputPath(article)
     target.write(res)
