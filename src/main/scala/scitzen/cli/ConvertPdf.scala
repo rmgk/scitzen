@@ -45,7 +45,7 @@ object ConvertPdf {
       }
 
       val bibliography = fileFromParam("bibliography").map(_.pathAsString)
-      scribe.info(s"bib is $bibliography")
+      scribe.debug(s"bib is $bibliography")
 
       val jobname     = targetfile.nameWithoutExtension(includeAll = false)
       val temptexfile = project.cacheDir / (jobname + ".tex")
