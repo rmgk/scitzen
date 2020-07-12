@@ -143,12 +143,12 @@ object ConvertHtml {
     val convertedArticleCtx = converter.convertSeq(article.content)(preprocessedCtx)
     val headerCtx           = converter.articleHeader(article)(convertedArticleCtx.empty)
 
-    val bibEntries = convertedArticleCtx.usedCitations
+    val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
     val citations =
       if (bibEntries.isEmpty) Nil
       else {
-        import scalatags.Text.all.{SeqFrag, id, li, ol, stringAttr}
-        List(ol(bibEntries.map { be => li(id := be.id, be.format) }))
+        import scalatags.Text.all.{SeqFrag, h1, id, li, stringAttr, stringFrag, ul}
+        List(h1("Bibliography"), ul(bibEntries.map { be => li(id := be.id, be.format) }))
       }
 
     val res = HtmlPages(cssrelpath).wrapContentHtml(
