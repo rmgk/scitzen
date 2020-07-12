@@ -4,6 +4,7 @@ import better.files._
 import cats.data.Chain
 import cats.implicits._
 import scalatags.generic.Bundle
+import scitzen.extern.Bibliography.BibEntry
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, Reporter, SastRef}
 import scitzen.parser.MacroCommand._
 import scitzen.parser.Sast._
@@ -14,7 +15,7 @@ import scala.jdk.CollectionConverters._
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
     pathManager: HtmlPathManager,
-    bibliography: Map[String, String],
+    bibliography: Map[String, BibEntry],
     sync: Option[(File, Int)],
     reporter: Reporter,
     includeResolver: DocumentDirectory,
@@ -264,17 +265,19 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case Macro(Comment, attributes) => ctx.empty
 
       case mcro @ Macro(Cite, attributes) =>
-        val anchors = attributes.target.split(",").toList.map { bibid =>
-          bibid -> bibliography.getOrElse(
-            bibid.trim, {
-              scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
-              bibid
-            }
-          )
-        }.sortBy(_._2).map { case (bibid, bib) => a(href := s"#$bibid", bib) }
+        val citations = attributes.target.split(",").toList.map { bibid =>
+          bibid -> bibliography.get(bibid.trim)
+        }
+        val anchors = citations.sortBy(_._2.map(_.citekey)).map {
+          case (bibid, Some(bib)) => a(href := s"#$bibid", bib.citekey)
+          case (bibid, None) =>
+            scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
+            code(bibid.trim)
+        }
+        val cctx = ctx.cite(citations.flatMap(_._2))
         if (attributes.arguments.nonEmpty) {
-          ctx.retc(frag(s"${attributes.arguments.head}\u00A0", anchors))
-        } else ctx.retc(anchors)
+          cctx.retc(frag(s"${attributes.arguments.head}\u00A0", anchors))
+        } else cctx.retc(anchors)
 
       case Macro(Label, _) => ctx.empty
 
@@ -295,17 +298,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
         candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
           val nameOpt = attributes.arguments.headOption
-          val articleOpt = targetDocument.directArticle.orElse(articles.find(a => a.includes.byPath.contains(targetDocument.scope)))
+          val articleOpt =
+            targetDocument.directArticle.orElse(articles.find(a => a.includes.byPath.contains(targetDocument.scope)))
           val fileRef = articleOpt match {
             case Some(article) if !article.includes.byPath.contains(pathManager.cwf) =>
               pathManager.relativeArticleTarget(article).toString
-            case None => ""
+            case other => ""
           }
-
-          scribe.info(s"found ref to ${attributes.target}")
-          scribe.info(s"current path is ${pathManager.cwf}")
-          scribe.info(s"target scope is ${targetDocument.scope}")
-          scribe.info(s"article opt is ${articleOpt}")
 
           targetDocument.sast match {
             case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>

@@ -19,7 +19,8 @@ object Bibliography {
       title: Option[String],
       year: Option[Int],
       container: Option[String],
-      `type`: String
+      `type`: String,
+      citekey: Option[String] = None
   ) {
     def formatAuthors: Option[String] = {
       val res = authors.map(_.full).mkString(", ")

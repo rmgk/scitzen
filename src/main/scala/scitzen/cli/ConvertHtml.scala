@@ -10,7 +10,6 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
-import scitzen.parser.MacroCommand.Cite
 import scitzen.parser.Sast
 
 import scala.util.Try
@@ -132,15 +131,7 @@ object ConvertHtml {
       articles: List[Article]
   ): ConversionContext[_] = {
 
-    val (bibEntries: Seq[Bibliography.BibEntry], biblio) = makeBib(project, article)
-
-    val citations =
-      if (bibEntries.isEmpty) Nil
-      else {
-        import scalatags.Text.all.{id, li, ol}
-        import scalatags.Text.short._
-        List(ol(bibEntries.zipWithIndex.map { case (be, i) => li(id := be.id, be.format) }))
-      }
+    val biblio = makeBib(project, article)
 
     val converter = new SastToHtmlConverter(
       bundle = scalatags.Text,
@@ -156,6 +147,15 @@ object ConvertHtml {
 
     val convertedArticleCtx = converter.convertSeq(article.content)(preprocessedCtx)
     val headerCtx           = converter.articleHeader(article)(convertedArticleCtx.empty)
+
+    val bibEntries = convertedArticleCtx.usedCitations
+    val citations =
+      if (bibEntries.isEmpty) Nil
+      else {
+        import scalatags.Text.all.{id, li, ol, stringAttr, SeqFrag}
+        List(ol(bibEntries.map { be => li(id := be.id, be.format) }))
+      }
+
     val res = HtmlPages(cssrelpath).wrapContentHtml(
       headerCtx.data +: convertedArticleCtx.data.toList ++: citations,
       "fullpost",
@@ -185,21 +185,12 @@ object ConvertHtml {
     resCtx.map(doc -> _)
   }
 
-  def makeBib(
-      project: Project,
-      article: Article
-  ): (List[Bibliography.BibEntry], Map[String, String]) = {
-
-    val bibPath =
-      article.named.get("bibliography").map { p =>
-        article.sourceDoc.file.parent
-      }
-
-    val bib = bibPath.toList.flatMap(Bibliography.parse(project.cacheDir))
-    val cited = article.analyzed.macros.filter(_.command == Cite)
-      .flatMap(_.attributes.positional.flatMap(_.split(",")).map(_.trim)).toSet
-    val bibEntries = bib.filter(be => cited.contains(be.id)).sortBy(be => be.authors.map(_.familyName))
-    val biblio     = bibEntries.zipWithIndex.map { case (be, i) => be.id -> (i + 1).toString }.toMap
-    bibEntries -> biblio
+  def makeBib(project: Project, article: Article): Map[String, Bibliography.BibEntry] = {
+    article.named.get("bibliography").map { p =>
+      val path = article.sourceDoc.file.parent / p
+      Bibliography.parse(project.cacheDir)(path)
+    }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
+      case (be, i) => be.id -> be.copy(citekey = Some((i + 1).toString))
+    }.toMap
   }
 }

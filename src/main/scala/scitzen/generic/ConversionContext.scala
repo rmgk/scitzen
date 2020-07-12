@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import better.files.File
 import cats.data.Chain
+import scitzen.extern.Bibliography.BibEntry
 import scitzen.extern.ConvertTask
 import scitzen.parser.Sast
 import scitzen.parser.Sast.Section
@@ -19,8 +20,11 @@ case class ConversionContext[T](
     labelledThings: Map[String, List[SastRef]] = Map.empty,
     uniquectr: Int = 0,
     stack: List[Sast] = Nil,
-    includes: List[File] = Nil
+    includes: List[File] = Nil,
+    usedCitations: List[BibEntry] = Nil
 ) {
+  def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
+
   def artOpt(cwf: File, self: Option[Section] = None) = {
     (self ++: stack).find(!Article.notArticleHeader(_)).collect {
       case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil, Nil), DocumentDirectory(Nil))
@@ -39,7 +43,8 @@ case class ConversionContext[T](
       labelledMerge,
       0,
       Nil,
-      includes ++ other.includes
+      includes ++ other.includes,
+      usedCitations ++ other.usedCitations
     )
   }
 
