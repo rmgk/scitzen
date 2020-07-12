@@ -10,7 +10,7 @@ import scalatags.Text.all._
 object Bibliography {
 
   case class Author(givenName: Option[String], familyName: Option[String]) {
-    def full = givenName.fold("")(_ + " ") + familyName.getOrElse("")
+    def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")
   }
 
   case class BibEntry(
