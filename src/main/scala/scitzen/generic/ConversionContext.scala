@@ -45,7 +45,8 @@ case class ConversionContext[T](
       0,
       Nil,
       includes ++ other.includes,
-      usedCitations ++ other.usedCitations
+      usedCitations ++ other.usedCitations,
+      imageMacros ++ other.imageMacros
     )
   }
 
