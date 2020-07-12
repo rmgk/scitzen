@@ -33,7 +33,7 @@ case class NLP(stopwords: Map[String, Set[String]]) {
   }
 
   def words(sast: Seq[Sast]): List[String] =
-    SastToTextConverter.convert(sast)
+    SastToTextConverter().convert(sast)
       .flatMap(_.split("[^\\p{L}]+")).toList
 
   def wordcount(sast: Seq[Sast]): Map[String, Int] =

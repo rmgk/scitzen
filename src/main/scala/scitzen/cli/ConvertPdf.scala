@@ -6,7 +6,8 @@ import better.files.File
 import scitzen.extern.ImageConverter
 import scitzen.extern.TexTikz.latexmk
 import scitzen.generic.{ConversionContext, Project}
-import scitzen.outputs.{SastToTexConverter, TexPages}
+import scitzen.outputs.{SastToTexConverter, SastToTextConverter}
+import scitzen.parser.{Parse, Prov}
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
@@ -44,15 +45,21 @@ object ConvertPdf {
       }
 
       val bibliography = fileFromParam("bibliography").map(_.pathAsString)
-      scribe.debug(s"bib is $bibliography")
-      val authors = article.named.get("authors").getOrElse("")
-
-      val macros = fileFromParam("texMathMacroFile").map(_.contentAsString).getOrElse("")
+      scribe.info(s"bib is $bibliography")
 
       val jobname     = targetfile.nameWithoutExtension(includeAll = false)
       val temptexfile = project.cacheDir / (jobname + ".tex")
       val temptexdir  = project.cacheDir / s"$articlename.out"
-      temptexfile.write(TexPages.wrap(content, authors, "memoir", bibliography, macros))
+
+      val template = article.named("texTemplate")
+      val templateContent = project.resolve(project.root, template).get.contentAsString
+      val templateSast = Parse.documentUnwrap(templateContent, Prov(0, templateContent.length))
+      val templateSettings = project.config.definitions ++ List(
+        "template content" -> content.iterator.mkString("\n"),
+        "bibliography path" -> bibliography.getOrElse("")
+      )
+
+      temptexfile.write(SastToTextConverter(templateSettings).convert(templateSast).mkString("\n"))
       latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
     }
   }

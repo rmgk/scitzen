@@ -52,7 +52,7 @@ object ConvertProject {
             Project.fromSource(File(sourcedirRel)) match {
               case None => scribe.error(s"could not find project for $sourcedirRel")
               case Some(project) =>
-                scribe.info(s"$project")
+                scribe.info(s"found project in ${project.root}")
                 if (project.config.format.contains("content")) {
                   scribe.info(s"format contents")
                   Format.formatContents(project)

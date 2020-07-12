@@ -1,9 +1,10 @@
 package scitzen.outputs
 
+import scitzen.parser.MacroCommand.Lookup
 import scitzen.parser.Sast._
 import scitzen.parser.{Inline, InlineText, Sast}
 
-object SastToTextConverter {
+case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
 
   def convert(b: Seq[Sast]): Seq[String] = {
     convertSast(b)
@@ -21,6 +22,8 @@ object SastToTextConverter {
             convertInline(text.inline) +: convertSast(List(inner))
         }
 
+      case Macro(Lookup, attr) =>
+        List(definitions(attr.target))
       case Macro(_, _) => Nil
 
       case Block(_, blockType) => blockType match {
@@ -36,6 +39,8 @@ object SastToTextConverter {
   def convertInline(inners: Seq[Inline]): String =
     inners.map {
       case InlineText(str) => str
+      case Macro(Lookup, attr) =>
+        definitions(attr.target)
       case m: Macro        => ""
     }.mkString("")
 }
