@@ -12,7 +12,7 @@ class SastToSastConverter(
     project: Project,
     cwf: File,
     reporter: Reporter,
-    converter: ImageConverter
+    converter: Option[ImageConverter]
 ) {
 
   type CtxCS  = ConversionContext[Chain[Sast]]
@@ -83,8 +83,8 @@ class SastToSastConverter(
         convertSeq(blockContent)(refctx).map(bc => Block(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast)
 
       case Fenced(text) =>
-        if (tlblock.attributes.named.contains("converter")) {
-          val resctx = converter.convert(tlblock).schedule(refctx)
+        if (tlblock.attributes.named.contains("converter") && converter.isDefined) {
+          val resctx = converter.get.convert(tlblock).schedule(refctx)
           convertSingle(resctx.data)(resctx)
         } else {
           // fenced blocks allow line labels
@@ -115,14 +115,14 @@ class SastToSastConverter(
     mcro match {
 
       // explicit image conversions
-      case Macro(Image, attributes) if attributes.named.contains("converter") =>
-        val resctx = converter.convert(cwd, mcro).schedule(ctx)
+      case Macro(Image, attributes) if attributes.named.contains("converter") && converter.isDefined =>
+        val resctx = converter.get.convert(cwd, mcro).schedule(ctx)
         convertMacro(resctx.data)(resctx)
 
       // unsupported image format conversions
-      case Macro(Image, attributes) if converter.requiresConversion(attributes.target) =>
+      case Macro(Image, attributes) if converter.isDefined && converter.get.requiresConversion(attributes.target) =>
         project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
-          val resctx    = converter.applyConversion(file).schedule(ctx)
+          val resctx    = converter.get.applyConversion(file).schedule(ctx)
           val reltarget = cwd.relativize(resctx.data)
           convertMacro(Macro(
             Image,

@@ -54,7 +54,7 @@ object Common {
       project,
       doc.file,
       doc.reporter,
-      imageConverter
+      Some(imageConverter)
     ).convertSeq(doc.sast)(initialCtx)
     resCtx.execTasks()
     resCtx.map(doc -> _)
