@@ -51,12 +51,12 @@ class SastToSastConverter(
     }
 
   def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Attributes, Ctx[SastRef]) = {
-    val ref1 = sec.ref
-    val attr = sec.attributes
+    val ref1   = sec.ref
+    val attr   = sec.attributes
     val artOpt = ctx.artOpt(cwf, Some(sec))
     if (ctx.labelledThings.contains(ref1)) {
-      val ctr    = ctx.nextId
-      val cp     = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
+      val ctr = ctx.nextId
+      val cp  = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
 
       val secref = SastRef(cwf, cp, artOpt)
       (cp.attributes, ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
@@ -130,7 +130,7 @@ class SastToSastConverter(
         }
 
       // collect image macros
-      case mcro @ Macro(Image, attributes) =>ctx.addMacro(mcro).ret(mcro)
+      case mcro @ Macro(Image, attributes) => ctx.addMacro(mcro).ret(mcro)
 
       case Macro(Label, attributes) =>
         ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head, ctx.artOpt(cwf))).ret(mcro)

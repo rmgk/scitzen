@@ -3,7 +3,9 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, Reporter}
-import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.parser.MacroCommand.{
+  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
+}
 import scitzen.parser.Sast._
 import scitzen.parser.{Attributes, Inline, InlineText, MacroCommand, Sast}
 
@@ -15,8 +17,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
   def articleHeader(article: Article, cta: Cta): CtxCS = {
     val hasToc = cta.partialMacros.exists(_.command == MacroCommand.Other("tableofcontents"))
-    val fm = if (hasToc) Chain("\\frontmatter") else Chain.empty
-
+    val fm     = if (hasToc) Chain("\\frontmatter") else Chain.empty
 
     val ilc = inlineValuesToTex(article.header.title.inline)(cta)
     ilc.ret(fm :+ s"\\title{${ilc.data}}\\maketitle{}")
@@ -230,10 +231,12 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
       case Macro(Lookup, attributes) =>
         ctx.retc {
-          project.config.definitions.getOrElse(attributes.target, {
-            scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
-            attributes.target
-          })
+          project.config.definitions.getOrElse(
+            attributes.target, {
+              scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
+              attributes.target
+            }
+          )
         }
 
       case Macro(Other("footnote"), attributes) =>

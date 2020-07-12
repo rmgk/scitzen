@@ -12,7 +12,8 @@ object MacroParsers {
 
   def full[_: P]: P[Macro] =
     P(withProv(":" ~ macroCommand.? ~ AttributesParser.braces)).map {
-      case ((name, attributes), prov) => Macro(MacroCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes, prov))
+      case ((name, attributes), prov) =>
+        Macro(MacroCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes, prov))
     }
 
   def commentStart[_: P]: P[Unit] = P(":%")

@@ -41,7 +41,7 @@ object Format {
   }
 
   def renameFileFromHeader(f: File, sdoc: Article): Unit = {
-    val newName: String = canonicalName(sdoc)  + ".scim"
+    val newName: String = canonicalName(sdoc) + ".scim"
 
     if (newName != f.name) {
       scribe.info(s"rename ${f.name} to $newName")
