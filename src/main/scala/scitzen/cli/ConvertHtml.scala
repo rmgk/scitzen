@@ -8,7 +8,7 @@ import cats.data.Chain
 import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.extern.{Bibliography, ImageConverter}
+import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
 import scitzen.parser.Sast
@@ -28,18 +28,14 @@ object ConvertHtml {
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
 
-
-
     val preprocessDocumentsResult =
       Common.preprocessDocuments(project)
-    val preprocessedDocuments: DocumentDirectory          = preprocessDocumentsResult.preprocessedDocuments
-    val preprocessedCtx: ConversionContext[_] = preprocessDocumentsResult.preprocessedCtx
-    val articles: List[Article]                           = preprocessDocumentsResult.articles
+    val preprocessedDocuments: DocumentDirectory = preprocessDocumentsResult.preprocessedDocuments
+    val preprocessedCtx: ConversionContext[_]    = preprocessDocumentsResult.preprocessedCtx
+    val articles: List[Article]                  = preprocessDocumentsResult.articles
 
-
-
-    val katexmapfile    = project.cacheDir / "katexmap.json"
-    val cssfile = project.outputdir / "scitzen.css"
+    val katexmapfile = project.cacheDir / "katexmap.json"
+    val cssfile      = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
 
     val nlp: Option[NLP] =
@@ -47,18 +43,22 @@ object ConvertHtml {
         NLP.loadFrom(project.nlpdir, preprocessedDocuments)
       }
 
-
-
     val pathManager = {
       val articleOutput = project.outputdir / "articles"
       articleOutput.createDirectories()
       HtmlPathManager(project.root, project, articleOutput)
     }
 
-    def procRec(rem: List[Article], katexmap: Map[String, String], resourcemap: Map[File, Path]): (Map[String, String],Map[File, Path]) = {
+    def procRec(
+        rem: List[Article],
+        katexmap: Map[String, String],
+        resourcemap: Map[File, Path]
+    ): (Map[String, String], Map[File, Path]) = {
       rem match {
         case Nil => (katexmap, resourcemap)
         case article :: rest =>
+          val kc =
+            KatexConverter(katexmap, article.named.get("katexDefinitions").flatMap(project.resolve(project.root, _)))
           val cctx = convertArticle(
             article,
             pathManager.changeWorkingFile(article.sourceDoc.file),
@@ -66,19 +66,18 @@ object ConvertHtml {
             cssfile,
             sync,
             preprocessedDocuments,
-            ConversionContext((), katexMap = katexmap),
+            ConversionContext((), katexConverter = kc),
             nlp,
             articles
-            )
+          )
           cctx.execTasks()
-          procRec(rest, katexmap ++ cctx.katexMap, resourcemap ++ cctx.resourceMap)
+          procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
       }
     }
 
     val (katexRes, resources) = procRec(articles, loadKatex(katexmapfile), Map.empty)
 
     writeKatex(katexmapfile, katexRes)
-
 
     val generatedIndex = GenIndexPage.makeIndex(articles, pathManager, reverse = true)
     val convertedCtx = new SastToHtmlConverter(

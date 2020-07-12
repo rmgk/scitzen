@@ -5,7 +5,7 @@ import java.nio.file.Path
 import better.files.File
 import cats.data.Chain
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.extern.ConvertTask
+import scitzen.extern.{ConvertTask, KatexConverter}
 import scitzen.parser.Sast
 import scitzen.parser.Sast.{Macro, Section}
 
@@ -14,7 +14,7 @@ case class SastRef(scope: File, sast: Sast, directArticle: Option[Article])
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T](
     data: T,
-    katexMap: Map[String, String] = Map.empty,
+    katexConverter: KatexConverter = KatexConverter(Map.empty, None),
     resourceMap: Map[File, Path] = Map.empty,
     tasks: List[ConvertTask] = Nil,
     labelledThings: Map[String, List[SastRef]] = Map.empty,
@@ -38,7 +38,7 @@ case class ConversionContext[T](
     }.toMap
     ConversionContext[T](
       data,
-      katexMap ++ other.katexMap,
+      katexConverter.copy(cache =  katexConverter.cache ++ other.katexConverter.cache),
       resourceMap ++ other.resourceMap,
       tasks ++ other.tasks,
       labelledMerge,
@@ -105,13 +105,9 @@ case class ConversionContext[T](
       nctx.map(data => ctx.data ++ data)
     }
 
-  def katex(key: String, default: => String): (String, ConversionContext[T]) = {
-    katexMap.get(key) match {
-      case None =>
-        val computed = default
-        (computed, copy(katexMap = katexMap.updated(key, computed)))
-      case Some(value) => (value, this)
-    }
+  def katex(key: String): ConversionContext[String] = {
+    val (res, kconv) = katexConverter.convert(key)
+    kconv.fold(this)(kc => copy(katexConverter = kc)).ret(res)
   }
 
   def execTasks(): ConversionContext[T] = {

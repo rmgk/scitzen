@@ -6,9 +6,9 @@ import better.files._
 
 case class KatexConverter(cache: Map[String, String], katexdefs: Option[File]) {
 
-  def convert(str: String): (String, KatexConverter) = {
+  def convert(str: String): (String, Option[KatexConverter]) = {
     cache.get(str) match {
-      case Some(res) => (res, this)
+      case Some(res) => (res, None)
       case None =>
         val pb = katexdefs match {
           case None       => new ProcessBuilder("katex")
@@ -20,7 +20,7 @@ case class KatexConverter(cache: Map[String, String], katexdefs: Option[File]) {
         process.getOutputStream.writeAndClose(str)
         process.waitFor()
         val res = process.getInputStream.asString()
-        (res, copy(cache = cache.updated(str, res)))
+        (res, Some(copy(cache = cache.updated(str, res))))
     }
   }
 

@@ -260,7 +260,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Macro(Math, attrs) =>
         val inner = attrs.target
-        ctx.retc(span(raw(ctx.katexMap(inner))))
+        ctx.katex(inner).map(res => Chain(span(raw(res))))
 
       case Macro(Comment, attributes) => ctx.empty
 
