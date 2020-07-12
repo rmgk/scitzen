@@ -63,16 +63,10 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
       case section @ Section(title, prefix, attr) =>
         val ilc = inlineValuesToTex(title.inline)(ctx)
 
-        val header = attr.positional.headOption match {
-          case None =>
-            val sec = sectioning(prefix.length)
-            s"\\$sec{${ilc.data}}"
-          case Some("title") =>
-            s"\\title{${ilc.data}}\\maketitle{}"
-          case Some("chapter" | "part" | "book") =>
-            s"\\${attr.positional.head}{${ilc.data}}"
+        val header = prefix match {
+          case "==" =>
+            s"\\chapter{${ilc.data}}"
           case other =>
-            scribe.warn(s"invalid section type: ${other.get}" + reporter(attr.prov))
             val sec = sectioning(prefix.length)
             s"\\$sec{${ilc.data}}"
         }
