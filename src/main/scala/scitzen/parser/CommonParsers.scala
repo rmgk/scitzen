@@ -25,6 +25,9 @@ object CommonParsers {
       }
   }
 
+  def untilParagraphEnd[_ :P] = {
+    P((!(eol ~ spaceLine) ~ AnyChar ~ CharsWhile(c => c != '\n', 0)).rep(1).!)
+  }
   def untilE[_: P](closing: => P[Unit], min: Int = 1): P[String] =
     P(((!closing) ~ AnyChar).rep(min).!)
 

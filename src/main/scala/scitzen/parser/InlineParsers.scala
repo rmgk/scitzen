@@ -2,11 +2,14 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import scitzen.parser.CommonParsers._
 
 object InlineParsers {
 
-  private def notSyntax[_: P]: P[String] = P(untilE(End | MacroParsers.syntaxStart))
+  private def notSyntax[_: P]: P[String] =
+    P((CharsWhile(_ != ':') ~ (!MacroParsers.syntaxStart ~ ":").rep(0)).rep(
+      min = 1,
+      sep = !MacroParsers.syntaxStart
+    ).!)
 
   def simpleText[_: P]: P[InlineText] = {
     P(notSyntax.!).map(InlineText)

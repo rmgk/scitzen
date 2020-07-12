@@ -10,7 +10,7 @@ object BlockParsers {
   def paragraph[_: P]: P[Block] =
     P((
       (AttributesParser.braces ~ spaceLine).? ~
-        (withProv((untilE(eol ~ spaceLine) ~ eol).!) ~ spaceLine)
+        (withProv((untilParagraphEnd ~ eol).!) ~ spaceLine)
     ).map {
       case (attrOpt, (text, prov)) =>
         val inlines = Parse.inlineUnwrap(text, prov)
