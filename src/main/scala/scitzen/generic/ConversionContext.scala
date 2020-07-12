@@ -7,7 +7,7 @@ import cats.data.Chain
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.extern.ConvertTask
 import scitzen.parser.Sast
-import scitzen.parser.Sast.Section
+import scitzen.parser.Sast.{Macro, Section}
 
 case class SastRef(scope: File, sast: Sast, directArticle: Option[Article])
 
@@ -21,7 +21,8 @@ case class ConversionContext[T](
     uniquectr: Int = 0,
     stack: List[Sast] = Nil,
     includes: List[File] = Nil,
-    usedCitations: List[BibEntry] = Nil
+    usedCitations: List[BibEntry] = Nil,
+    imageMacros: List[Macro] = Nil
 ) {
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
 

@@ -111,10 +111,13 @@ class SastToSastConverter(
 
   def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] =
     mcro match {
+
+      // explicit image conversions
       case Macro(Image, attributes) if attributes.named.contains("converter") =>
         val resctx = converter.convert(cwd, mcro).schedule(ctx)
         convertMacro(resctx.data)(resctx)
 
+      // unsupported image format conversions
       case Macro(Image, attributes) if converter.requiresConversion(attributes.target) =>
         project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
           val resctx    = converter.applyConversion(file).schedule(ctx)
@@ -126,6 +129,9 @@ class SastToSastConverter(
             )
           ))(resctx)
         }
+
+      // collect image macros
+      case mcro @ Macro(Image, attributes) =>ctx.copy(imageMacros = mcro :: ctx.imageMacros).ret(mcro)
 
       case Macro(Label, attributes) =>
         ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head, ctx.artOpt(cwf))).ret(mcro)

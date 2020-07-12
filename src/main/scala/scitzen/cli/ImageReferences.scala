@@ -4,9 +4,9 @@ import cats.data.Chain
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.ImageConverter
-import scitzen.generic.{ConversionContext, Project}
+import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.parser.{MacroCommand, Sast}
+import scitzen.parser.Sast
 
 object ImageReferences {
 
@@ -15,7 +15,7 @@ object ImageReferences {
   implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
   def listAll(project: Project) = {
-    val fileImageMap: Map[String, List[Reference]] = project.documentManager.documents.map { doc =>
+    val fileImageMap: Map[String, List[Reference]] = DocumentDirectory(project.root).documents.map { doc =>
       val cwf = doc.file
       val cwd = cwf.parent
 
@@ -32,9 +32,9 @@ object ImageReferences {
         ct.run()
       }
 
-      val analyzed = fd.analyzed.analyzer.analyze(convertedCtx.data.toList)
 
-      val images = analyzed.macros.filter(_.command == MacroCommand.Image).flatMap { mcro =>
+
+      val images = convertedCtx.imageMacros.flatMap { mcro =>
         val path = mcro.attributes.target
         project.resolve(cwd, path) match {
           case Some(target) =>

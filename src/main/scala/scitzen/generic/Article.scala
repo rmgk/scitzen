@@ -1,8 +1,7 @@
 package scitzen.generic
 
-import better.files.File
-import scitzen.parser.Sast.{Macro, Section}
-import scitzen.parser.{DateParsingHelper, MacroCommand, Sast, ScitzenDateTime}
+import scitzen.parser.Sast.Section
+import scitzen.parser.{DateParsingHelper, Sast, ScitzenDateTime}
 
 case class Article(header: Section, content: List[Sast], sourceDoc: Document, includes: DocumentDirectory) {
 
@@ -14,10 +13,6 @@ case class Article(header: Section, content: List[Sast], sourceDoc: Document, in
   lazy val title: String = header.title.str
 
   lazy val named: Map[String, String] = header.attributes.named
-
-  lazy val analyzed: AnalyzeResult = {
-    new SastAnalyzer(sourceDoc.reporter).analyze(content)
-  }
 }
 
 object Article {
@@ -26,32 +21,6 @@ object Article {
       case Section(title, "=", attributes) => false
       case other                           => true
     }
-
-  def recursiveIncludes(article: Article, project: Project, documentDirectory: DocumentDirectory): DocumentDirectory = {
-
-    @scala.annotation.tailrec
-    def rec(toCheck: List[File], knownIncludes: List[File]): List[File] = {
-      val newKnown = toCheck reverse_::: knownIncludes
-      val newIncludes =
-        toCheck.iterator
-          .flatMap(documentDirectory.byPath.get)
-          .flatMap(_.includes)
-          .filterNot(f => newKnown.contains(f)).toList
-      if (newIncludes.isEmpty) newKnown
-      else rec(newIncludes, newKnown)
-    }
-
-    val initialIncludes: List[File] =
-      new SastAnalyzer(article.sourceDoc.reporter).analyze(article.content).macros.collect {
-        case Macro(MacroCommand.Include, attributes) =>
-          project.resolve(article.sourceDoc.file.parent, attributes.target)
-      }.flatten
-
-    val includes = rec(initialIncludes, Nil)
-    val incd  = documentDirectory.documents.filter(d => includes.contains(d.file))
-    DocumentDirectory(incd)
-
-  }
 
   def articles(document: Document): List[Article] = {
     @scala.annotation.tailrec

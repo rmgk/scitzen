@@ -52,7 +52,7 @@ object ConvertHtml {
     val preprocessedCtx       = preprocessedCtxs.foldLeft(initialCtx) { case (prev, next) => prev.merge(next) }
     val articles = preprocessedDocuments.documents.flatMap(Article.articles)
       .map { article =>
-        val add = Article.recursiveIncludes(article, project, preprocessedDocuments)
+        val add = RecursiveArticleIncludeResolver.recursiveIncludes(article, project, preprocessedDocuments)
         article.copy(includes = add)
       }
     writeKatex(katexmapfile, preprocessedCtx)
