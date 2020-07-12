@@ -16,9 +16,8 @@ object Common {
       val articles: List[Article]
   )
 
-  def preprocessDocuments(project: Project, imageConverter: ImageConverter): PreprocessedResults = {
+  def preprocessDocuments(project: Project, imageConverter: ImageConverter, documentDirectory: DocumentDirectory): PreprocessedResults = {
     val unprocessedDocuments = DocumentDirectory(project.root)
-    scribe.info(s"found ${unprocessedDocuments.documents.size} documents")
 
     project.cacheDir.createDirectories()
 

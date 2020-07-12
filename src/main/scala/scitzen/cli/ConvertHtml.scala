@@ -24,11 +24,12 @@ object ConvertHtml {
 
   val mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
 
-  def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
+  def convertToHtml(project: Project, sync: Option[(File, Int)], documentDirectory: DocumentDirectory): Unit = {
 
     val preprocessed = Common.preprocessDocuments(
       project,
-      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"))
+      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf")),
+      documentDirectory
     )
 
     project.outputdir.createDirectories()

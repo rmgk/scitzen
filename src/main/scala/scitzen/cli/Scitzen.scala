@@ -6,7 +6,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
-import scitzen.generic.Project
+import scitzen.generic.{DocumentDirectory, Project}
 import scribe.Logger
 
 object Scitzen
@@ -46,30 +46,44 @@ object ConvertProject {
   val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
+        val starttime = System.nanoTime()
+        var lasttime = starttime
+        def timediff: String = {
+          val now = System.nanoTime()
+          def diff(t: Long) = (now - t)/1000000
+          val res = s"(${diff(starttime)}ms|${diff(lasttime)}ms)"
+          lasttime = now
+          res
+        }
         printJson match {
           case Some(path) => println(JsonSast.jsonFor(File(path)))
           case None =>
             Project.fromSource(File(sourcedirRel)) match {
               case None => scribe.error(s"could not find project for $sourcedirRel")
               case Some(project) =>
-                scribe.info(s"found project in ${project.root}")
+                scribe.info(s"found project in ${project.root} $timediff")
+                val documentDirectory = DocumentDirectory(project.root)
+                scribe.info(s"parsed ${documentDirectory.documents.size} documents $timediff")
                 if (project.config.format.contains("content")) {
-                  scribe.info(s"format contents")
-                  Format.formatContents(project)
+                  Format.formatContents(documentDirectory)
+                  scribe.info(s"formatted contents $timediff")
                 }
                 if (project.config.format.contains("filename")) {
-                  scribe.info(s"format filenames")
-                  Format.formatRename(project)
+                  Format.formatRename(documentDirectory)
+                  scribe.info(s"formatted filenames $timediff")
                 }
                 if (project.config.outputType.contains("html")) {
                   val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-                  ConvertHtml.convertToHtml(project, sync)
+                  ConvertHtml.convertToHtml(project, sync, documentDirectory)
+                  scribe.info(s"generated html $timediff")
                 }
                 if (project.config.outputType.contains("pdf")) {
-                  ConvertPdf.convertToPdf(project)
+                  ConvertPdf.convertToPdf(project, documentDirectory)
+                  scribe.info(s"generated pdfs $timediff")
                 }
                 if (imageFileMap) {
-                  ImageReferences.listAll(project)
+                  ImageReferences.listAll(project, documentDirectory)
+                  scribe.info(s"generated imagemap $timediff")
                 }
             }
         }

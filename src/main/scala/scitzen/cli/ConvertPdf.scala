@@ -5,16 +5,20 @@ import java.nio.charset.{Charset, StandardCharsets}
 import better.files.File
 import scitzen.extern.ImageConverter
 import scitzen.extern.TexConverter.latexmk
-import scitzen.generic.{ConversionContext, Project}
+import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
 import scitzen.outputs.{SastToTexConverter, SastToTextConverter}
 import scitzen.parser.{Parse, Prov}
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  def convertToPdf(project: Project): Unit = {
+  def convertToPdf(project: Project, documentDirectory: DocumentDirectory): Unit = {
 
-    val preprocessed = Common.preprocessDocuments(project, new ImageConverter(project, "pdf", List("svg")))
+    val preprocessed = Common.preprocessDocuments(
+      project,
+      new ImageConverter(project, "pdf", List("svg")),
+      documentDirectory
+    )
 
     preprocessed.articles.foreach { article =>
       val converter = new SastToTexConverter(
@@ -51,11 +55,11 @@ object ConvertPdf {
       val temptexfile = project.cacheDir / (jobname + ".tex")
       val temptexdir  = project.cacheDir / s"$articlename.out"
 
-      val template = article.named("texTemplate")
+      val template        = article.named("texTemplate")
       val templateContent = project.resolve(project.root, template).get.contentAsString
-      val templateSast = Parse.documentUnwrap(templateContent, Prov(0, templateContent.length))
+      val templateSast    = Parse.documentUnwrap(templateContent, Prov(0, templateContent.length))
       val templateSettings = project.config.definitions ++ List(
-        "template content" -> content.iterator.mkString("\n"),
+        "template content"  -> content.iterator.mkString("\n"),
         "bibliography path" -> bibliography.getOrElse("")
       )
 

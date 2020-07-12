@@ -3,7 +3,7 @@ package scitzen.cli
 import java.nio.charset.{Charset, StandardCharsets}
 
 import better.files.File
-import scitzen.generic.{Article, DocumentDirectory, Project}
+import scitzen.generic.{Article, DocumentDirectory}
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.Sast
 
@@ -11,15 +11,14 @@ object Format {
 
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
-  def formatContents(project: Project): Unit = {
-
-    DocumentDirectory(project.root).documents.foreach { pd =>
+  def formatContents(documentDirectory: DocumentDirectory): Unit = {
+    documentDirectory.documents.foreach { pd =>
       formatContent(pd.file, pd.content, pd.sast)
     }
   }
 
-  def formatRename(project: Project): Unit = {
-    DocumentDirectory(project.root).documents.foreach { parsed =>
+  def formatRename(documentDirectory: DocumentDirectory): Unit = {
+    documentDirectory.documents.foreach { parsed =>
       Article.articles(parsed) match {
         case List(article) if (article.date.isDefined) =>
           renameFileFromHeader(parsed.file, article)
