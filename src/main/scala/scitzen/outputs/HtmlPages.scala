@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import org.jsoup.Jsoup
 import scalatags.Text.Frag
-import scalatags.Text.all.{SeqFrag, frag}
+import scalatags.Text.all.SeqFrag
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel, title}
 import scalatags.Text.implicits.{Tag, raw, stringAttr}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
@@ -49,7 +49,7 @@ class HtmlPages(cssPath: String) {
     htmlDocument(html(tHead)(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,
-      main(content)(if (language.nonEmpty) lang := language else frag()),
+      main(content)(lang := language)
     )))
   }
 
