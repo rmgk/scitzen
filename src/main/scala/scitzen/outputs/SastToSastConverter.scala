@@ -84,7 +84,7 @@ class SastToSastConverter(
 
       case Fenced(text) =>
         if (tlblock.attributes.named.contains("converter") && converter.isDefined) {
-          val resctx = converter.get.convert(tlblock).schedule(refctx)
+          val resctx = converter.get.convertBlock(cwd, tlblock).schedule(refctx)
           convertSingle(resctx.data)(resctx)
         } else {
           // fenced blocks allow line labels
@@ -116,7 +116,7 @@ class SastToSastConverter(
 
       // explicit image conversions
       case Macro(Image, attributes) if attributes.named.contains("converter") && converter.isDefined =>
-        val resctx = converter.get.convert(cwd, mcro).schedule(ctx)
+        val resctx = converter.get.convertMacroTargetFile(cwd, mcro).schedule(ctx)
         convertMacro(resctx.data)(resctx)
 
       // unsupported image format conversions

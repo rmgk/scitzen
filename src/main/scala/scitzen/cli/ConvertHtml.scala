@@ -31,6 +31,8 @@ object ConvertHtml {
       new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"))
     )
 
+    project.outputdir.createDirectories()
+
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
     cssfile.writeByteArray(stylesheet)
@@ -55,7 +57,7 @@ object ConvertHtml {
         case Nil => (katexmap, resourcemap)
         case article :: rest =>
           val kc =
-            KatexConverter(katexmap, article.named.get("katexDefinitions").flatMap(project.resolve(project.root, _)))
+            KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
           val cctx = convertArticle(
             article,
             pathManager.changeWorkingFile(article.sourceDoc.file),

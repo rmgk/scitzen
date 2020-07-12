@@ -7,7 +7,6 @@ import scitzen.outputs.TexPages
 
 
 object TexTikz {
-  def wrap(content: String) = header + content + footer
 
 
   val header: String = """

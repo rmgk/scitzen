@@ -3,8 +3,9 @@ package scitzen.extern
 import better.files.File
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.{ConversionContext, Project}
-import scitzen.parser.Sast.{Fenced, Block, Macro}
-import scitzen.parser.{Attribute, Attributes, MacroCommand, Sast}
+import scitzen.outputs.SastToTextConverter
+import scitzen.parser.Sast.{Block, Fenced, Macro}
+import scitzen.parser.{Attribute, Attributes, MacroCommand, Parse, Prov, Sast}
 
 import scala.jdk.CollectionConverters._
 
@@ -26,11 +27,11 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
-  def convert(cwd: File, mcro: Macro): ConvertSchedulable[Macro] = {
+  def convertMacroTargetFile(cwd: File, mcro: Macro): ConvertSchedulable[Macro] = {
     val converter = mcro.attributes.named("converter")
     project.resolve(cwd, mcro.attributes.target) flatMap { file =>
       val content = file.contentAsString
-      doConversion(converter, mcro.attributes, content)
+      convertString(converter, mcro.attributes, content, cwd)
     } match {
       case None =>
         new ConvertSchedulable(
@@ -45,10 +46,10 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
     }
   }
 
-  def convert(tlb: Block): ConvertSchedulable[Sast] = {
+  def convertBlock(cwd: File, tlb: Block): ConvertSchedulable[Sast] = {
     val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
-    doConversion(converter, tlb.attributes, content) match {
+    convertString(converter, tlb.attributes, content, cwd) match {
       case None =>
         new ConvertSchedulable(tlb.copy(attributes = tlb.attributes.remove("converter")), None)
       case Some(res) => res.map(identity)
@@ -125,7 +126,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
     )
   }
 
-  def doConversion(converter: String, attributes: Attributes, content: String): Option[ConvertSchedulable[Macro]] = {
+  def convertString(converter: String, attributes: Attributes, content: String, cwd: File): Option[ConvertSchedulable[Macro]] = {
 
     def makeImageMacro(file: File): Macro = {
       val relTarget = project.root.relativize(file)
@@ -152,15 +153,19 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
       new ConvertSchedulable(mcro, combinedTask)
     }
 
+    val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match {
+      case None               => content
+      case Some(templateFile) =>
+        val tc = templateFile.contentAsString
+        val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
+        SastToTextConverter(project.config.definitions ++ attributes.named + (
+          "template content" -> content
+        )).convert(sast).mkString("\n")
+    }
+
     converter match {
       case "tex" =>
-        val header =
-          attributes.named.get("header")
-            .flatMap(p => project.resolve(project.root, p))
-            .map(_.contentAsString).getOrElse("")
-        Some(applyConversion(TexTikz.convert(header + content, project.cacheDir)))
-      case "tikz" =>
-        Some(applyConversion(TexTikz.convertTikz(content, project.cacheDir)))
+        Some(applyConversion(TexTikz.convert(templatedContent, project.cacheDir)))
 
       case gr @ rex"graphviz.*" =>
         Some(Graphviz.convert(content, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat)

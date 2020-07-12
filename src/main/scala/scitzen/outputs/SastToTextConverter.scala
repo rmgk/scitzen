@@ -7,10 +7,6 @@ import scitzen.parser.{Inline, InlineText, Sast}
 case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
 
   def convert(b: Seq[Sast]): Seq[String] = {
-    convertSast(b)
-  }
-
-  def convertSast(b: Seq[Sast]): Seq[String] = {
     b.flatMap {
       case Section(title, level, _) =>
         List(convertInline(title.inline))
@@ -19,10 +15,11 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
           case ListItem(marker, Text(inl), None) =>
             List(convertInline(inl))
           case ListItem(marker, text, Some(inner)) =>
-            convertInline(text.inline) +: convertSast(List(inner))
+            convertInline(text.inline) +: convert(List(inner))
         }
 
       case Macro(Lookup, attr) =>
+        if (!definitions.contains(attr.target)) scribe.error(s"could not resolve ${attr.target}")
         List(definitions(attr.target))
       case Macro(_, _) => Nil
 
