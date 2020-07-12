@@ -4,14 +4,12 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
 
 import better.files._
-import cats.data.Chain
 import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
-import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter, SastToSastConverter}
-import scitzen.parser.Sast
+import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 
 import scala.util.Try
 
@@ -28,7 +26,10 @@ object ConvertHtml {
 
   def convertToHtml(project: Project, sync: Option[(File, Int)]): Unit = {
 
-    val preprocessed = Common.preprocessDocuments(project)
+    val preprocessed = Common.preprocessDocuments(
+      project,
+      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"))
+    )
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
@@ -110,6 +111,7 @@ object ConvertHtml {
       )(mapCodec))
     }
   }
+
   def convertArticle(
       article: Article,
       pathManager: HtmlPathManager,
@@ -158,20 +160,6 @@ object ConvertHtml {
     val target = pathManager.articleOutputPath(article)
     target.write(res)
     convertedArticleCtx
-  }
-
-  def preprocess(
-      project: Project,
-      initialCtx: ConversionContext[_]
-  )(doc: Document): ConversionContext[(Document, Chain[Sast])] = {
-    val resCtx = new SastToSastConverter(
-      project,
-      doc.file,
-      doc.reporter,
-      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"))
-    ).convertSeq(doc.sast)(initialCtx)
-    resCtx.execTasks()
-    resCtx.map(doc -> _)
   }
 
   def makeBib(project: Project, article: Article): Map[String, Bibliography.BibEntry] = {

@@ -1,10 +1,11 @@
 package scitzen.cli
 
 import cats.data.Chain
-import scitzen.cli.ConvertHtml.preprocess
+import scitzen.extern.ImageConverter
 import scitzen.generic.{
   Article, ConversionContext, Document, DocumentDirectory, Project, RecursiveArticleIncludeResolver, SastRef
 }
+import scitzen.outputs.SastToSastConverter
 import scitzen.parser.Sast
 
 object Common {
@@ -15,19 +16,20 @@ object Common {
       val articles: List[Article]
   )
 
-  def preprocessDocuments(project: Project): PreprocessedResults = {
+  def preprocessDocuments(project: Project, imageConverter: ImageConverter): PreprocessedResults = {
     val unprocessedDocuments = DocumentDirectory(project.root)
     scribe.info(s"found ${unprocessedDocuments.documents.size} documents")
 
-    project.outputdir.createDirectories()
+    project.cacheDir.createDirectories()
 
     val initialCtx = ConversionContext(())
 
     import scala.jdk.CollectionConverters._
     val preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]] =
       unprocessedDocuments.documents.asJava.parallelStream().map {
-        preprocess(project, initialCtx)
+        preprocess(project, initialCtx, imageConverter)
       }.iterator().asScala.toList
+
     val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
     val preprocessedCtx = preprocessedCtxs.map(_.labelledThings).fold(initialCtx.labelledThings) {
       case (l, r) =>
@@ -41,6 +43,21 @@ object Common {
         article.copy(includes = add)
       }
     new PreprocessedResults(preprocessedDocuments, preprocessedCtx, articles)
+  }
+
+  def preprocess(
+      project: Project,
+      initialCtx: ConversionContext[_],
+      imageConverter: ImageConverter
+  )(doc: Document): ConversionContext[(Document, Chain[Sast])] = {
+    val resCtx = new SastToSastConverter(
+      project,
+      doc.file,
+      doc.reporter,
+      imageConverter
+    ).convertSeq(doc.sast)(initialCtx)
+    resCtx.execTasks()
+    resCtx.map(doc -> _)
   }
 
   def splitPreprocessed(preprocessedCtxs: List[ConversionContext[(Document, Chain[Sast])]]): DocumentDirectory = {
