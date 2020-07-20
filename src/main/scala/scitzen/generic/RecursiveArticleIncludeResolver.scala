@@ -1,8 +1,8 @@
 package scitzen.generic
 
 import better.files.File
-import scitzen.parser.MacroCommand
-import scitzen.parser.Sast.Macro
+import scitzen.parser.Sast._
+import scitzen.parser.{InlineText, MacroCommand, Sast}
 
 /* The only thing the includes are used for is to figure out reference targets.
  * This somehow should be much easier … */
@@ -32,9 +32,6 @@ object RecursiveArticleIncludeResolver {
     DocumentDirectory(incd)
 
   }
-
-  import scitzen.parser.Sast._
-  import scitzen.parser._
 
   case class AnalyzeResult(macros: List[Macro]) {
     def +(m: Macro): AnalyzeResult = copy(macros = m :: macros)
