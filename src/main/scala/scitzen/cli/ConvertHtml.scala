@@ -9,7 +9,7 @@ import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
-import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.outputs.{GenIndexPage, GenRss, HtmlPages, HtmlToc, SastToHtmlConverter}
 
 import scala.util.Try
 
@@ -49,6 +49,7 @@ object ConvertHtml {
       HtmlPathManager(project.root, project, articleOutput)
     }
 
+    @scala.annotation.tailrec
     def procRec(
         rem: List[Article],
         katexmap: Map[String, String],
@@ -76,9 +77,18 @@ object ConvertHtml {
     }
 
     val (katexRes, resources) = procRec(preprocessed.articles, loadKatex(katexmapfile), Map.empty)
-
+    pathManager.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
 
+    makeindex(project, preprocessed, cssfile, pathManager)
+  }
+
+  private def makeindex(
+      project: Project,
+      preprocessed: Common.PreprocessedResults,
+      cssfile: File,
+      pathManager: HtmlPathManager
+  ): Unit = {
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager, reverse = true)
     val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
@@ -90,14 +100,11 @@ object ConvertHtml {
       articles = preprocessed.articles
     ).convertSeq(generatedIndex)(ConversionContext((), labelledThings = preprocessed.labels))
 
-    pathManager.copyResources(resources)
-
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
       .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(generatedIndex), None)
     project.outputdir./("index.html").write(res)
 
     convertedCtx.execTasks()
-
   }
 
   private def loadKatex(katexmapfile: File): Map[String, String] = {
@@ -105,6 +112,7 @@ object ConvertHtml {
       readFromStream[Map[String, String]](katexmapfile.newInputStream)(mapCodec)
     }.getOrElse(Map())
   }
+
   private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any = {
     if (katexMap.nonEmpty) {
       katexmapfile.parent.createDirectories()
