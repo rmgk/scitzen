@@ -9,7 +9,7 @@ import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
-import scitzen.outputs.{GenIndexPage, GenRss, HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 
 import scala.util.Try
 
