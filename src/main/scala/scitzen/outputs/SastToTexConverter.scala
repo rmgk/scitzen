@@ -105,7 +105,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
                 scribe.error(s"Not relative path: $mcro")
                 ctx.empty
               case Some(data) =>
-                ctx.ret(Chain(s"\\noindent{}\\includegraphics[width=\\columnwidth]{$data}\n"))
+                ctx.ret(Chain(s"\\noindent{}\\includegraphics[max width=\\columnwidth]{$data}\n"))
             }
 
           case Macro(Include, attributes) =>
@@ -154,6 +154,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
                   }
                 }
                 "\\begin{figure}" +:
+                  "\\centerfloat" +:
                   sastSeqToTex(figContent) :++
                   Chain(
                     caption,
