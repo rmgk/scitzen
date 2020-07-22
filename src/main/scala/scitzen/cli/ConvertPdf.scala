@@ -53,7 +53,7 @@ object ConvertPdf {
 
       val jobname     = targetfile.nameWithoutExtension(includeAll = false)
       val temptexfile = project.cacheDir / (jobname + ".tex")
-      val temptexdir  = project.cacheDir / s"$articlename.out"
+      val temptexdir  = project.cacheDir / s"$articlename.outdir"
 
       val template        = article.named("texTemplate")
       val templateContent = project.resolve(project.root, template).get.contentAsString
