@@ -50,10 +50,10 @@ case class ConversionContext[T](
 
   def push(sast: Sast): ConversionContext[T] = {
     val droppedStack = sast match {
-      case Section(_, level, _) =>
+      case so @ Section(_, _, _) =>
         stack.dropWhile {
-          case Section(_, l, _) => l >= level
-          case other            => false
+          case si @ Section(_, _, _) => so.compare(si) <= 0
+          case other                 => false
         }
       case other => stack
     }

@@ -52,7 +52,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",
-    val secs = Array("", "section", "subsection", "paragraph")
+    val secs = Array("chapter", "section", "subsection", "paragraph")
     val sec  = secs.lift(nesting).getOrElse("paragraph")
     sec
   }
@@ -64,14 +64,17 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
       case section @ Section(title, prefix, attr) =>
         val ilc = inlineValuesToTex(title.inline)(ctx)
 
+        val pushed = ilc.push(section)
         val header = prefix match {
           case "==" =>
             s"\\chapter{${ilc.data}}"
           case other =>
-            val sec = sectioning(prefix.length)
+            val shift = 1 - pushed.stack.collectFirst { case Section(_, "==", _) => () }.size
+            val sec   = sectioning(prefix.length - shift)
             s"\\$sec{${ilc.data}}"
         }
-        ilc.push(section).retc(header)
+
+        pushed.retc(header)
 
       case Slist(children) =>
         children match {

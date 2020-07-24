@@ -18,8 +18,12 @@ object Sast {
       }.mkString("").trim
     }
   }
-  case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast {
+  case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast with Ordered[Section] {
     def ref: String = attributes.named.getOrElse("label", title.str)
+    override def compare(that: Section): Int = {
+      def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
+      Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))
+    }
   }
   case class Macro(command: MacroCommand, attributes: Attributes) extends Inline with Sast
   case class Block(attributes: Attributes, content: BlockType) extends Sast {
