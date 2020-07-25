@@ -32,7 +32,8 @@ lazy val scitzen = project.in(file("."))
                      normalizecss,
                      graalVMNativeImageOptions ++= Seq(
                        "--initialize-at-build-time",
-                       "--no-fallback"
+                       "--no-fallback",
+                       "--no-server"
                      ),
                      toml,
                      jsoup,
