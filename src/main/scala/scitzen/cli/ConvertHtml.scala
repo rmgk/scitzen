@@ -95,7 +95,7 @@ object ConvertHtml {
       pathManager = pathManager,
       bibliography = Map(),
       sync = None,
-      reporter = m => "",
+      reporter = _ => "",
       includeResolver = preprocessed.directory,
       articles = preprocessed.articles
     ).convertSeq(generatedIndex)(ConversionContext((), labelledThings = preprocessed.labels))

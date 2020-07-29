@@ -57,7 +57,7 @@ object GenIndexPage {
           Attributes(
             List(
               Some(Attribute("", doc.header.title.str)),
-              Some(Attribute("target", htmlPathManager.articleOutputPath(doc).toString)),
+              Some(Attribute("target", htmlPathManager.project.outputdir.relativize(htmlPathManager.articleOutputPath(doc)).toString)),
               doc.date.map(date => Attribute("datetime", date.monthDayTime))
             ).flatten ++ categories.map(Attribute("category", _)),
             Prov()
