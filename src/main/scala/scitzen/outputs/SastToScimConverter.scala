@@ -64,7 +64,7 @@ case class SastToScimConverter() {
   def convertBlock(sb: Block): Chain[String] = {
     val (remattr, command) = sb.attributes.raw.headOption match {
       case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
-      case _                            => (sb.attributes, "")
+      case _                            => (sb.attributes, Text(Nil))
     }
     sb.content match {
 
@@ -76,7 +76,7 @@ case class SastToScimConverter() {
         val content = toScimS(blockContent)
         delimiter.charAt(0) match {
           case ':' =>
-            ("::" + command +
+            ("::" + command.str +
               AttributesToScim.convert(remattr, force = false, spacy = false)) +:
               content.map(addIndent(_, "  ")) :+
               "::"
@@ -93,7 +93,7 @@ case class SastToScimConverter() {
       case Fenced(text) =>
         val delimiter = "``"
         Chain(
-          delimiter + command + AttributesToScim.convert(remattr, spacy = false, force = false),
+          delimiter + command.str + AttributesToScim.convert(remattr, spacy = false, force = false),
           addIndent(text, " ".repeat(delimiter.length)),
           delimiter
         )
@@ -119,7 +119,8 @@ case class SastToScimConverter() {
 object AttributesToScim {
   val countQuotes: Regex = """(]"*)""".r
 
-  def encodeValue(value: String, isNamed: Boolean): String = {
+  def encodeValue(text: Text, isNamed: Boolean): String = {
+    val value = text.str
     def parses(quoted: String): Boolean = {
       def parser[_: P]: P[Attribute] =
         if (isNamed) AttributesParser.positionalAttribute
