@@ -139,7 +139,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
   def blockToTex(tlblock: Block)(implicit ctx: Cta): CtxCS =
     tlblock.content match {
-      case Paragraph(content) => inlineValuesToTex(content.inline).single :+ ""
+      case Paragraph(content) => inlineValuesToTex(content.inline).single :+ "" :+ ""
 
       case Parsed(delimiter, blockContent) =>
         tlblock.attributes.positional.headOption match {

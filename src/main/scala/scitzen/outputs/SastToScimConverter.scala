@@ -37,7 +37,10 @@ case class SastToScimConverter() {
             Chain(marker + inlineToScim(inner.inline))
 
           case ListItem(marker, Text(inl), Some(rest)) =>
-            (s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":")) +: toScim(rest)
+            Chain(
+              s"$marker" + inlineToScim(inl) + (if (rest.isInstanceOf[Slist]) "" else ":"),
+              toScim(rest).iterator.mkString("\n").stripTrailing
+            )
         }
 
       case mcro @ Macro(_, _) => Chain(macroToScim(mcro))
@@ -70,16 +73,18 @@ case class SastToScimConverter() {
 
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        attrres :+ inlineToScim(content.inline)
+        attrres :+ inlineToScim(content.inline) :+ ""
 
       case Parsed(delimiter, blockContent) =>
         val content = toScimS(blockContent)
         delimiter.charAt(0) match {
           case ':' =>
-            ("::" + command.str +
-              AttributesToScim.convert(remattr, force = false, spacy = false)) +:
-              content.map(addIndent(_, "  ")) :+
+            Chain(
+              "::" + command.str +
+                AttributesToScim.convert(remattr, force = false, spacy = false),
+              content.map(addIndent(_, "  ")).iterator.mkString("\n").stripTrailing(),
               "::"
+            )
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' | '\t' =>
