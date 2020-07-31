@@ -55,10 +55,10 @@ object ConvertPdf {
       val temptexfile = project.cacheDir / (jobname + ".tex")
       val temptexdir  = project.cacheDir / s"$articlename.outdir"
 
-      val template        = article.named("texTemplate")
+      val template        = article.named.get("texTemplate").orElse(project.config.texTemplate).get
       val templateContent = project.resolve(project.root, template).get.contentAsString
       val templateSast    = Parse.documentUnwrap(templateContent, Prov(0, templateContent.length))
-      val templateSettings = project.config.definitions ++ List(
+      val templateSettings = project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
         "template content"  -> content.iterator.mkString("\n"),
         "bibliography path" -> bibliography.getOrElse("")
       )
