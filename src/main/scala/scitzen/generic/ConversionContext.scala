@@ -61,8 +61,8 @@ case class ConversionContext[T](
   }
   def pop(): ConversionContext[T] = copy(stack = stack.tail)
 
-  lazy val stacklevel: Int = stack.dropWhile(_.isInstanceOf[Section])
-    .collectFirst { case Section(_, level, _) => level.size }
+  lazy val stacklevel: Int = stack
+    .collectFirst { case Section(_, level, _) if level.contains('=') => level.length }
     .getOrElse(0)
 
   def ret[U](d: U): ConversionContext[U]         = copy(data = d)
