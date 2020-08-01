@@ -40,7 +40,7 @@ object ConvertHtml {
 
     val nlp: Option[NLP] =
       Option.when(project.nlpdir.isDirectory) {
-        NLP.loadFrom(project.nlpdir, preprocessed.directory)
+        NLP.loadFrom(project.nlpdir)
       }
 
     val pathManager = {

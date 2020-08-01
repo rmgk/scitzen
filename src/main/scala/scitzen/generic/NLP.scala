@@ -42,7 +42,7 @@ case class NLP(stopwords: Map[String, Set[String]]) {
 }
 
 object NLP {
-  def loadFrom(dir: File, dm: DocumentDirectory) = {
+  def loadFrom(dir: File): NLP = {
     val stopwords = dir.glob("stopwords.*").map { sw =>
       val lang  = sw.extension(includeDot = false).getOrElse("unknown")
       val words = sw.lines.toSet
