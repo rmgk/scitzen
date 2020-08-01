@@ -30,11 +30,11 @@ object BlockParsers {
   def sectionStart[_: P]: P[String] = P(CharsWhileIn("=#").! ~ " ")
   def sectionTitle[_: P]: P[Section] =
     P(sectionStart
-      ~ withProv(untilI(eol))
+      ~ withProv(sectionInlines.full)
       ~ (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
       .map {
-        case (prefix, (str, prov), attrl) =>
-          val inlines = Parse.inlineUnwrap(str, prov)
+        case (prefix, ((inlines, elo), prov), attrl) =>
+          //val inlines = Parse.inlineUnwrap(inl, prov)
           Section(Text(inlines), prefix, Attributes(attrl.getOrElse(Nil), prov))
       }
 
