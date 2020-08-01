@@ -205,9 +205,9 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
   }
 
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] =
-    ctx.fold(inners) { (ctx: Ctx[Chain[String]], inline) => inlineToHTML(inline)(ctx) }.map(_.toList.mkString(""))
+    ctx.fold(inners) { (ctx: Ctx[Chain[String]], inline) => inlineToTex(inline)(ctx) }.map(_.toList.mkString(""))
 
-  def inlineToHTML(inline: Inline)(implicit ctx: Cta): CtxCS =
+  def inlineToTex(inline: Inline)(implicit ctx: Cta): CtxCS =
     inline match {
       case InlineText(str)                    => ctx.retc(latexencode(str))
       case Macro(Cite, attr)                  => ctx.retc(s"${nbrs(attr)}\\cite{${attr.target}}")
@@ -244,8 +244,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         }
 
       case Macro(Other("footnote"), attributes) =>
-        val target = latexencode(attributes.target)
-        ctx.retc(s"\\footnote{$target}")
+        inlineValuesToTex(attributes.targetT.inl).map(target =>s"\\footnote{$target}").single
 
       case toc @ Macro(Other("tableofcontents"), attributes) =>
         ctx.addMacro(toc).retc(

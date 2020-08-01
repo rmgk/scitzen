@@ -41,12 +41,19 @@ object Sast {
 }
 
 case class Attributes(raw: Seq[Attribute], prov: Prov) {
-  lazy val positional: Seq[String] = raw.collect { case Attribute("", value) => value.str }
-  lazy val arguments: Seq[String]  = positional.dropRight(1)
-  lazy val target: String          = positional.last
-  lazy val named: Map[String, String] = raw.collect {
-    case Attribute(id, value) if id.nonEmpty => (id, value.str)
+
+  lazy val positionalT: Seq[Text] = raw.collect { case Attribute("", value) => value }
+  lazy val argumentsT: Seq[Text]  = positionalT.dropRight(1)
+  lazy val targetT: Text          = positionalT.last
+  lazy val namedT: Map[String, Text] = raw.collect {
+    case Attribute(id, value) if id.nonEmpty => (id, value)
   }.toMap
+
+  lazy val positional: Seq[String]    = positionalT.map(_.str)
+  lazy val arguments: Seq[String]     = positional.dropRight(1)
+  lazy val target: String             = positional.last
+  lazy val named: Map[String, String] = namedT.view.mapValues(_.str).toMap
+
   def append(other: Seq[Attribute]): Attributes  = Attributes(raw ++ other, prov)
   def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw, prov)
   def remove(key: String): Attributes            = Attributes(raw.filterNot(_.id == key), prov)
