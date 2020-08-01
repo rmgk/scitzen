@@ -222,8 +222,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case SpaceComment(content) => ctx.empty
     }
 
-    sBlock.attributes.named.get("note").fold(innerCtx) { note =>
-      innerCtx :+ p(`class` := "marginnote", sBlock.attributes.named("note"))
+    sBlock.attributes.namedT.get("note").fold(innerCtx) { note =>
+      inlineValuesToHTML(note.inl)(innerCtx).map { content =>
+        innerCtx.data :+ p(`class` := "marginnote", content.toList)
+      }
     }
   }
 
