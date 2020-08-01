@@ -32,7 +32,7 @@ class SastToSastConverter(
       case sec @ Section(title, level, _) =>
         val (newAttr, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
         val conCtx                = ctxWithRef.push(ctxWithRef.data.sast)
-        convertInlines(title.inline)(conCtx).map { title =>
+        convertInlines(title.inl)(conCtx).map { title =>
           Section(Text(title.toList), level, newAttr)
         }
 
@@ -76,7 +76,7 @@ class SastToSastConverter(
     }
     tlblock.content match {
       case Paragraph(content) =>
-        convertInlines(content.inline)(refctx)
+        convertInlines(content.inl)(refctx)
           .map(il => Block(tlblock.attributes, Paragraph(Text(il.toList))): Sast)
 
       case Parsed(delimiter, blockContent) =>

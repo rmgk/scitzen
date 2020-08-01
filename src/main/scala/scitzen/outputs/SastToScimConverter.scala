@@ -29,12 +29,12 @@ case class SastToScimConverter() {
   def toScim(sast: Sast): Chain[String] =
     sast match {
       case Section(title, prefix, attributes) =>
-        (prefix + " " + inlineToScim(title.inline)) +:
+        (prefix + " " + inlineToScim(title.inl)) +:
           attributesToScim(attributes, spacy = true, force = false, light = true)
 
       case Slist(children) => Chain.fromSeq(children).flatMap {
           case ListItem(marker, inner, None) =>
-            Chain(marker + inlineToScim(inner.inline))
+            Chain(marker + inlineToScim(inner.inl))
 
           case ListItem(marker, Text(inl), Some(rest)) =>
             Chain(
@@ -73,7 +73,7 @@ case class SastToScimConverter() {
 
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        attrres :+ inlineToScim(content.inline) :+ ""
+        attrres :+ inlineToScim(content.inl) :+ ""
 
       case Parsed(delimiter, blockContent) =>
         val content = toScimS(blockContent)

@@ -10,9 +10,9 @@ object Sast {
 
   case class Slist(children: Seq[ListItem]) extends Sast
   case class ListItem(marker: String, text: Text, content: Option[Sast])
-  case class Text(inline: Seq[Inline]) {
+  case class Text(inl: Seq[Inline]) {
     lazy val str = {
-      inline.map {
+      inl.map {
         case Macro(Strong | Emph, attributes) => attributes.target
         case Macro(command, attributes)       => ""
         case InlineText(string)               => string

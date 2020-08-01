@@ -71,7 +71,7 @@ object RecursiveArticleIncludeResolver {
       }
 
     def analyzeText(text: Text, acc: AnalyzeResult): AnalyzeResult = {
-      text.inline.foldLeft(acc) { (cacc, inline) =>
+      text.inl.foldLeft(acc) { (cacc, inline) =>
         inline match {
           case m: Macro        => cacc + m
           case InlineText(str) => cacc

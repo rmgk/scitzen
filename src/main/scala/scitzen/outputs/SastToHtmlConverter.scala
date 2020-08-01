@@ -34,7 +34,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     else Int.MaxValue
 
   def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF = {
-    val textCtx = inlineValuesToHTML(child.text.inline)(ctx)
+    val textCtx = inlineValuesToHTML(child.text.inl)(ctx)
     textCtx.data ++: child.content.fold(textCtx)(convertSingle(_)(textCtx))
   }
 
@@ -60,7 +60,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   }
 
   def articleHeader(article: Article)(ctx: Cta) = {
-    inlineValuesToHTML(article.header.title.inline)(ctx).map { innerFrags =>
+    inlineValuesToHTML(article.header.title.inl)(ctx).map { innerFrags =>
       frag(h1(id := article.header.ref, innerFrags.toList), tMeta(article))
     }
   }
@@ -69,7 +69,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
     singleSast match {
       case sec @ Section(title, level, _) =>
-        inlineValuesToHTML(title.inline)(ctx).map { innerFrags =>
+        inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
           Chain[Frag](tag(s"h${level.length + ctx.stacklevel}")(id := sec.ref, innerFrags.toList))
         }.push(sec)
 
@@ -82,7 +82,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }.map(i => Chain(listTag(i.toList)))
           case _ =>
             ctx.fold[ListItem, Frag](children) { (ctx, c) =>
-              val inlinesCtx = inlineValuesToHTML(c.text.inline)(ctx)
+              val inlinesCtx = inlineValuesToHTML(c.text.inl)(ctx)
               c.content.fold(inlinesCtx.empty[Frag])(convertSingle(_)(inlinesCtx)).map { innerFrags =>
                 Chain(dt(inlinesCtx.data.toList: _*), dd(innerFrags.toList))
               }
@@ -189,7 +189,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def convertBlock(sBlock: Block)(implicit ctx: Cta): CtxCF = {
     val innerCtx: CtxCF = sBlock.content match {
 
-      case Paragraph(text) => inlineValuesToHTML(text.inline).map(cf => Chain(p(cf.toList)))
+      case Paragraph(text) => inlineValuesToHTML(text.inl).map(cf => Chain(p(cf.toList)))
 
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent).map { blockContent =>
@@ -307,7 +307,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           }
 
           targetDocument.sast match {
-            case sec @ Section(title, _, _) => inlineValuesToHTML(title.inline).map { inner =>
+            case sec @ Section(title, _, _) => inlineValuesToHTML(title.inl).map { inner =>
                 Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
               }
             case block @ Block(attr, content) =>

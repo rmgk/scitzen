@@ -7,7 +7,7 @@ import scitzen.parser.Sast.{Block, Paragraph, Section, SpaceComment, Text}
 
 object BlockParsers {
 
-  val InlineParser = EndedInlineParsers(
+  val paragraphInlines = EndedInlineParsers(
     "\n",
     { tp =>
       implicit val p: P[_] = tp
@@ -15,10 +15,12 @@ object BlockParsers {
     }
   )
 
+  val sectionInlines = EndedInlineParsers("\n", eol(_))
+
   def paragraph[_: P]: P[Block] =
     P((
       (AttributesParser.braces ~ spaceLine).? ~
-        withProv(InlineParser.full)
+        withProv(paragraphInlines.full)
     ).map {
       case (attrOpt, ((inlines, end), prov)) =>
         //val endline = if (end.contains('\n')) inlines :+ InlineText("\n") else inlines

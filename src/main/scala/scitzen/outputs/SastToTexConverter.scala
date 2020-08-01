@@ -19,7 +19,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
     val hasToc = cta.partialMacros.exists(_.command == MacroCommand.Other("tableofcontents"))
     val fm     = if (hasToc) Chain("\\frontmatter") else Chain.empty
 
-    val ilc = inlineValuesToTex(article.header.title.inline)(cta)
+    val ilc = inlineValuesToTex(article.header.title.inl)(cta)
     ilc.ret(fm :+ s"\\title{${ilc.data}}\\maketitle{}")
 
   }
@@ -62,7 +62,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
       case tlBlock: Block => blockToTex(tlBlock)
 
       case section @ Section(title, prefix, attr) =>
-        val ilc = inlineValuesToTex(title.inline)(ctx)
+        val ilc = inlineValuesToTex(title.inl)(ctx)
 
         val pushed = ilc.push(section)
         val header = prefix match {
@@ -83,7 +83,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
           case ListItem(m, _, None | Some(Slist(_))) :: _ =>
             "\\begin{itemize}" +:
               ctx.fold[ListItem, String](children) { (ctx, child) =>
-                val inlineCtx  = inlineValuesToTex(child.text.inline)(ctx).map(s => Chain(s"\\item{$s}"))
+                val inlineCtx  = inlineValuesToTex(child.text.inl)(ctx).map(s => Chain(s"\\item{$s}"))
                 val contentCtx = child.content.fold(inlineCtx.empty[String])(sastToTex(_)(inlineCtx))
                 inlineCtx.data ++: contentCtx
               } :+
@@ -91,7 +91,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
           case ListItem(m, _, _) :: _ =>
             ctx.fold[ListItem, String](children) { (ctx, child) =>
-              val inlinesCtx = inlineValuesToTex(child.text.inline)(ctx).map(s => s"\\item[$s]{}")
+              val inlinesCtx = inlineValuesToTex(child.text.inl)(ctx).map(s => s"\\item[$s]{}")
               inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])(sastToTex(_)(inlinesCtx))
             }.map { content =>
               "\\begin{description}" +: content :+ "\\end{description}"
@@ -139,7 +139,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
 
   def blockToTex(tlblock: Block)(implicit ctx: Cta): CtxCS =
     tlblock.content match {
-      case Paragraph(content) => inlineValuesToTex(content.inline).single :+ "" :+ ""
+      case Paragraph(content) => inlineValuesToTex(content.inl).single :+ "" :+ ""
 
       case Parsed(delimiter, blockContent) =>
         tlblock.attributes.positional.headOption match {
@@ -149,7 +149,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
                 val (figContent, caption) = {
                   blockContent.lastOption match {
                     case Some(inner @ Block(_, Paragraph(content))) =>
-                      val captionstr = inlineValuesToTex(content.inline).data
+                      val captionstr = inlineValuesToTex(content.inl).data
                       (blockContent.init, s"\\caption{$captionstr}")
                     case other =>
                       scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
