@@ -7,23 +7,7 @@ import scitzen.parser.MacroCommand.Comment
 import scitzen.parser.MacroParsers.commentStart
 import scitzen.parser.Sast.Macro
 
-object InlineParsers {
-
-  private def notSyntax[_: P]: P[String] =
-    P((CharsWhile(_ != ':') | (!MacroParsers.syntaxStart ~ ":")).rep(1).!)
-
-  def simpleText[_: P]: P[InlineText] = {
-    P(notSyntax.!).map(InlineText)
-  }
-
-  def inlineSequence[_: P]: P[Seq[Inline]] =
-    P((MacroParsers.comment | MacroParsers.full | simpleText).rep(0))
-
-  def fullParagraph[_: P]: P[Seq[Inline]] =
-    P(inlineSequence ~ End)
-}
-
-case class EndedInlineParsers(endChars: String, endingFun: P[_] => P[Unit]) {
+case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit]) {
 
   def ending[_: P]: P[Unit] = endingFun(implicitly)
 
@@ -33,7 +17,7 @@ case class EndedInlineParsers(endChars: String, endingFun: P[_] => P[Unit]) {
 
   private def notSyntax[_: P]: P[String] =
     P((
-      CharsWhile(c => c != ':' && !endChars.contains(c)) | (!MacroParsers.syntaxStart ~ ":") | (!ending ~ endChars)
+      CharsWhile(c => c != ':' && !endChars.contains(c)) | (!MacroParsers.syntaxStart ~ ":") | (!ending ~ CharPred(endChars.contains(_)))
     ).rep(1).!)
 
   def simpleText[_: P]: P[InlineText] = {

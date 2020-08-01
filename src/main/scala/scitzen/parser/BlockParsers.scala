@@ -7,7 +7,7 @@ import scitzen.parser.Sast.{Block, Paragraph, Section, SpaceComment, Text}
 
 object BlockParsers {
 
-  val paragraphInlines = EndedInlineParsers(
+  val paragraphInlines = InlineParsers(
     "\n",
     { tp =>
       implicit val p: P[_] = tp
@@ -15,7 +15,7 @@ object BlockParsers {
     }
   )
 
-  val sectionInlines = EndedInlineParsers("\n", eol(_))
+  val sectionInlines = InlineParsers("\n", eol(_))
 
   def paragraph[_: P]: P[Block] =
     P((

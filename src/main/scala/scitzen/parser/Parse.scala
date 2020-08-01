@@ -26,20 +26,16 @@ object Parse {
 
   def parserDocument[_: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
 
-  def document(blockContent: String, prov: Prov): Result[Seq[Sast]] =
-    parseResult(blockContent, parserDocument(_), prov)
-
-  def inline(paragraphString: String, prov: Prov): Result[Seq[Inline]] =
-    parseResult(paragraphString, scitzen.parser.InlineParsers.fullParagraph(_), prov)
-
   def documentUnwrap(blockContent: String, prov: Prov): Seq[Sast] = {
-    Parse.document(blockContent, prov) match {
+    parseResult(blockContent, parserDocument(_), prov) match {
       case Left(parsingAnnotation) => throw parsingAnnotation
       case Right(res)              => res.toList
     }
   }
 
+  val allInlines = InlineParsers("", End(_))
+
   def inlineUnwrap(paragraphString: String, prov: Prov): Seq[Inline] = {
-    Parse.inline(paragraphString, prov).toTry.get
+    parseResult(paragraphString, allInlines.full(_), prov).toTry.get._1
   }
 }
