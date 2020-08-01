@@ -10,7 +10,7 @@ import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineTe
 import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex
 
-case class SastToScimConverter() {
+object SastToScimConverter {
 
   def attributesToScim(
       attributes: Attributes,
@@ -125,14 +125,15 @@ object AttributesToScim {
   val countQuotes: Regex = """(]"*)""".r
 
   def encodeValue(text: Text, isNamed: Boolean): String = {
-    val value = text.str
+    val value = SastToScimConverter.inlineToScim(text.inl)
     def parses(quoted: String): Boolean = {
       def parser[_: P]: P[Attribute] =
         if (isNamed) AttributesParser.positionalAttribute
         else AttributesParser.attribute
 
-      val res = fastparse.parse(quoted, parser(_))
-      res.get.value.value == value
+      val parsedAttr  = fastparse.parse(quoted, parser(_))
+      val reformatted = SastToScimConverter.inlineToScim(parsedAttr.get.value.text.inl)
+      reformatted == value
     }
 
     def pickFirst(candidate: (() => String)*): Option[String] = {

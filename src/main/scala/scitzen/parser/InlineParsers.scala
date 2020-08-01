@@ -7,7 +7,7 @@ import scitzen.parser.MacroCommand.Comment
 import scitzen.parser.MacroParsers.commentStart
 import scitzen.parser.Sast.Macro
 
-case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit]) {
+case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit], allowEmpty: Boolean = false) {
 
   def ending[_: P]: P[Unit] = endingFun(implicitly)
 
@@ -25,7 +25,7 @@ case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit]) {
   }
 
   def inlineSequence[_: P]: P[Seq[Inline]] =
-    P((comment | MacroParsers.full | simpleText).rep(1))
+    P((comment | MacroParsers.full | simpleText).rep(if (allowEmpty) 0 else 1))
 
   def full[_: P]: P[(Seq[Inline], String)] =
     P(inlineSequence ~ ending.!)

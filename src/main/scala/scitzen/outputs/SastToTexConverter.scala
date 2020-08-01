@@ -253,12 +253,12 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         )
 
       case im @ Macro(Other(command), attributes) =>
-        val str = SastToScimConverter().macroToScim(im)
+        val str = SastToScimConverter.macroToScim(im)
         scribe.warn(s"unknown macro “$str”" + reporter(im))
         ctx.retc(str)
 
       case im @ Macro(Image | Include, attributes) =>
-        val str = SastToScimConverter().macroToScim(im)
+        val str = SastToScimConverter.macroToScim(im)
         scribe.warn(s"tex backend does not allow inline images or includes" + reporter(im))
         ctx.retc(str)
     }

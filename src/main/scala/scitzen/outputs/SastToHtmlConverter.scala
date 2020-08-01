@@ -350,7 +350,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
           case "subparagraph" => ctx.retc(b(`class` := "paragraphtitle", attributes.target))
 
-          case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter().macroToScim(mcro)))
+          case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
 
           case "tableofcontents" => ctx.empty
 
@@ -368,7 +368,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def reportPos(m: Macro): String = reporter(m)
 
   def unknownMacroOutput(im: Macro): Tag = {
-    val str = SastToScimConverter().macroToScim(im)
+    val str = SastToScimConverter.macroToScim(im)
     scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)
   }

@@ -62,8 +62,8 @@ object Attributes {
   def target(string: String, prov: Prov): Attributes = Attribute("", string).toAttributes(prov)
 }
 
-case class Attribute(id: String, inlines: Text) {
-  lazy val value: String                   = inlines.str
+case class Attribute(id: String, text: Text) {
+  lazy val value: String                   = text.str
   def toAttributes(prov: Prov): Attributes = Attributes(List(this), prov)
 }
 object Attribute {

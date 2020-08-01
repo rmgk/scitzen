@@ -31,7 +31,7 @@ object Format {
   }
 
   def formatContent(file: File, originalContent: String, sast: Seq[Sast]): Unit = {
-    val result    = SastToScimConverter().toScimS(sast)
+    val result    = SastToScimConverter.toScimS(sast)
     val resultStr = result.iterator.mkString("", "\n", "\n")
     if (resultStr != originalContent) {
       scribe.info(s"formatting ${file.name}")

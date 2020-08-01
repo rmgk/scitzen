@@ -3,6 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
+import scitzen.parser.Sast.Text
 
 object AttributesParser {
   def start[_: P]: P[Unit] = P(open)
@@ -10,18 +11,22 @@ object AttributesParser {
   val open  = "{"
   val close = "}"
 
-  def terminator[_: P]               = P(";" | close | eol)
-  def unquotedValue[_: P]: P[String] = P(untilE(terminator)).map(_.strip())
+  def terminationCheck[_: P]                        = P(&(";" | close | eol))
+  val unquotedInlines                               = InlineParsers(s";\n$close", terminationCheck(_), allowEmpty = true)
+  def unquotedValue[_: P]: P[(Seq[Inline], String)] = P(unquotedInlines.full)
 
   /** value is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
     */
-  def value[_: P]: P[String] = {
-    P(anySpaces ~ "\"".rep.!.flatMap { quotes =>
-      (("[" ~ untilI("]" ~ quotes ~ verticalSpaces ~ &(terminator)))
-        | (if (quotes.isEmpty) unquotedValue
-           else untilI(quotes ~ verticalSpaces ~ &(terminator))))
-    })
+  def value[_: P]: P[Text] = {
+    P(anySpaces ~ ("\"".rep.! ~ "[".!.?).flatMap {
+      case ("", None)        => unquotedValue
+      case (quotes, Some(_)) => InlineParsers("]", p => s"]$quotes" ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
+      case (quotes, None)    => InlineParsers("\"", p => quotes ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
+      //(("[" ~ untilI("]" ~ quotes ~ verticalSpaces ~ &(terminator)))
+      //  | (if (quotes.isEmpty) unquotedValue
+      //     else untilI(quotes ~ verticalSpaces ~ &(terminator))))
+    }).map(r => Text(r._1))
   }
 
   def namedAttribute[_: P]: P[Attribute] =
