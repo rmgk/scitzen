@@ -38,6 +38,6 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
       case InlineText(str) => str
       case Macro(Lookup, attr) =>
         definitions(attr.target)
-      case m: Macro        => ""
+      case m: Macro => ""
     }.mkString("")
 }

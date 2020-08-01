@@ -28,7 +28,7 @@ case class EndedInlineParsers(endChars: String, endingFun: P[_] => P[Unit]) {
   def ending[_: P]: P[Unit] = endingFun(implicitly)
 
   def comment[_: P]: P[Macro] =
-    P(withProv(commentStart ~ (untilE(eol, min = 0)  ~ (&(ending) | eol)).!))
+    P(withProv(commentStart ~ (untilE(eol, min = 0) ~ (&(ending) | eol)).!))
       .map { case (text, prov) => Macro(Comment, Attribute("", text).toAttributes(prov)) }
 
   private def notSyntax[_: P]: P[String] =

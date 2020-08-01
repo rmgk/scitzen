@@ -4,31 +4,31 @@ import java.nio.charset.StandardCharsets
 
 import better.files.File
 
-
 object TexConverter {
 
   def latexmk(outputdir: File, jobname: String, sourceFile: File): Option[File] = {
     val start = System.nanoTime()
     scribe.info(s"compiling $sourceFile")
     outputdir.createDirectories()
-    val errorFile = (outputdir/"latexmk.err")
-    val returnCode = new ProcessBuilder("latexmk",
-                       "-cd",
-                       "-halt-on-error",
-                       "-xelatex",
-                       "-interaction=nonstopmode",
-                       //"-synctex=1",
-                       "--output-directory=" + outputdir,
-                       "--jobname=" + jobname,
-                       sourceFile.pathAsString)
-                                               .redirectOutput((outputdir / "latexmk.out").toJava)
-                                               .redirectError(errorFile.toJava)
-                                               .start().waitFor()
+    val errorFile = (outputdir / "latexmk.err")
+    val returnCode = new ProcessBuilder(
+      "latexmk",
+      "-cd",
+      "-halt-on-error",
+      "-xelatex",
+      "-interaction=nonstopmode",
+      //"-synctex=1",
+      "--output-directory=" + outputdir,
+      "--jobname=" + jobname,
+      sourceFile.pathAsString
+    )
+      .redirectOutput((outputdir / "latexmk.out").toJava)
+      .redirectError(errorFile.toJava)
+      .start().waitFor()
     if (returnCode == 0) {
       scribe.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
       Some(outputdir / (jobname + ".pdf"))
-    }
-    else {
+    } else {
       scribe.error(s"error tex compiling »$sourceFile« see »$errorFile«")
       None
     }
@@ -38,24 +38,27 @@ object TexConverter {
     new ProcessBuilder("pdfcrop", input.toString(), output.toString()).inheritIO().start().waitFor()
   }
 
-
   def convert(content: String, working: File): (String, File, Option[ConvertTask]) = {
     val hash   = Hashes.sha1hex(content)
     val dir    = working / hash
     val target = dir / (hash + ".pdf")
-    (hash, target, if (target.exists) None else {
-      Some(new ConvertTask {
-        override def run(): Unit = {
-          val texbytes = content.getBytes(StandardCharsets.UTF_8)
-          val dir      = target.parent
-          dir.createDirectories()
-          val texfile = dir / (hash + ".tex")
-          texfile.writeByteArray(texbytes)
-          latexmk(dir, hash, texfile)
-        }
-      })
-    })
+    (
+      hash,
+      target,
+      if (target.exists) None
+      else {
+        Some(new ConvertTask {
+          override def run(): Unit = {
+            val texbytes = content.getBytes(StandardCharsets.UTF_8)
+            val dir      = target.parent
+            dir.createDirectories()
+            val texfile = dir / (hash + ".tex")
+            texfile.writeByteArray(texbytes)
+            latexmk(dir, hash, texfile)
+          }
+        })
+      }
+    )
   }
-
 
 }

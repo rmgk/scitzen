@@ -16,7 +16,11 @@ object Common {
       val articles: List[Article]
   )
 
-  def preprocessDocuments(project: Project, imageConverter: ImageConverter, unprocessedDocuments: DocumentDirectory): PreprocessedResults = {
+  def preprocessDocuments(
+      project: Project,
+      imageConverter: ImageConverter,
+      unprocessedDocuments: DocumentDirectory
+  ): PreprocessedResults = {
 
     project.cacheDir.createDirectories()
 
@@ -30,7 +34,7 @@ object Common {
 
     val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
     val labels = {
-      val all = initialCtx.labelledThings :: preprocessedCtxs.map(_.labelledThings)
+      val all     = initialCtx.labelledThings :: preprocessedCtxs.map(_.labelledThings)
       val allKeys = all.iterator.flatMap(_.keysIterator).toSet
       allKeys.iterator.map { key =>
         key -> all.flatMap(_.getOrElse(key, Nil))

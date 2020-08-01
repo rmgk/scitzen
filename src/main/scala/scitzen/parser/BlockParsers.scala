@@ -7,10 +7,13 @@ import scitzen.parser.Sast.{Block, Paragraph, Section, SpaceComment, Text}
 
 object BlockParsers {
 
-  val InlineParser = EndedInlineParsers("\n", { tp =>
-    implicit val p: P[_] = tp
-     eol ~ spaceLine
-  })
+  val InlineParser = EndedInlineParsers(
+    "\n",
+    { tp =>
+      implicit val p: P[_] = tp
+      eol ~ spaceLine
+    }
+  )
 
   def paragraph[_: P]: P[Block] =
     P((
@@ -36,7 +39,7 @@ object BlockParsers {
   def extendedWhitespace[_: P]: P[Block] =
     P(withProv(
       (significantSpaceLine.rep(1) |
-       MacroParsers.comment.rep(1)).rep(1).!
+        MacroParsers.comment.rep(1)).rep(1).!
     )).map {
       case (str, prov) =>
         Block(Attributes(Nil, prov), SpaceComment(str))

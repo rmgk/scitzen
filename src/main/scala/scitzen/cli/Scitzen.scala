@@ -47,11 +47,11 @@ object ConvertProject {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
         val starttime = System.nanoTime()
-        var lasttime = starttime
+        var lasttime  = starttime
         def timediff: String = {
-          val now = System.nanoTime()
-          def diff(t: Long) = (now - t)/1000000
-          val res = s"(${diff(starttime)}ms|${diff(lasttime)}ms)"
+          val now           = System.nanoTime()
+          def diff(t: Long) = (now - t) / 1000000
+          val res           = s"(${diff(starttime)}ms|${diff(lasttime)}ms)"
           lasttime = now
           res
         }

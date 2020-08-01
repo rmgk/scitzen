@@ -26,7 +26,8 @@ object Bibliography {
       val res = authors.map(_.full).mkString(", ")
       if (res.nonEmpty) Some(res) else None
     }
-    def format: Frag = frag(code(citekey)," ", formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
+    def format: Frag =
+      frag(code(citekey), " ", formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
   }
 
   case class CiteprocDate(`date-parts`: List[List[Int]]) {

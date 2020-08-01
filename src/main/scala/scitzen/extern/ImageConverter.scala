@@ -126,7 +126,12 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
     )
   }
 
-  def convertString(converter: String, attributes: Attributes, content: String, cwd: File): Option[ConvertSchedulable[Macro]] = {
+  def convertString(
+      converter: String,
+      attributes: Attributes,
+      content: String,
+      cwd: File
+  ): Option[ConvertSchedulable[Macro]] = {
 
     def makeImageMacro(file: File): Macro = {
       val relTarget = project.root.relativize(file)
@@ -154,9 +159,9 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
     }
 
     val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match {
-      case None               => content
+      case None => content
       case Some(templateFile) =>
-        val tc = templateFile.contentAsString
+        val tc   = templateFile.contentAsString
         val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
         SastToTextConverter(project.config.definitions ++ attributes.named + (
           "template content" -> content
