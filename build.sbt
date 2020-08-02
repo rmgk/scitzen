@@ -30,7 +30,6 @@ lazy val scitzen = project.in(file("."))
       "--no-server"
     ),
     toml,
-    jsoup,
     libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value))
   )
 
