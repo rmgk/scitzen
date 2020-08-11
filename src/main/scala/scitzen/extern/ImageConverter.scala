@@ -173,10 +173,10 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
         Some(applyConversion(TexConverter.convert(templatedContent, project.cacheDir)))
 
       case gr @ rex"graphviz.*" =>
-        Some(Graphviz.convert(content, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat)
+        Some(Graphviz.convert(templatedContent, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat)
           .map(img => makeImageMacro(img)))
       case gr @ rex"mermaid" =>
-        Some(Mermaid.convert(content, project.cacheDir, preferredFormat)
+        Some(Mermaid.convert(templatedContent, project.cacheDir, preferredFormat)
           .map { img =>
             val m = makeImageMacro(img)
             m.copy(attributes = m.attributes.updated("style", "background-color: white"))
