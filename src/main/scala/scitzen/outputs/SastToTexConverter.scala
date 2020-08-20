@@ -74,7 +74,9 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
             s"\\$sec{${ilc.data}}"
         }
 
-        pushed.retc(header)
+        val label = attr.named.get("label").map(l => s"\\label{$l}").toList
+
+        pushed.retc(header) :++ Chain.fromSeq(label)
 
       case Slist(children) =>
         children match {
