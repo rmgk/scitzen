@@ -19,9 +19,10 @@ class SastToSastConverter(
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[_]
 
+  val uid = Integer.toHexString(cwf.hashCode())
 
   def artOpt(ctx: Cta, self: Option[Section] = None): Option[Article] = {
-    ( self ++: ctx.sections).find(!Article.notArticleHeader(_)).collect {
+    (self ++: ctx.sections).find(!Article.notArticleHeader(_)).collect {
       case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil, Nil), DocumentDirectory(Nil))
     }
   }
@@ -38,7 +39,7 @@ class SastToSastConverter(
 
       case sec @ Section(title, level, _) =>
         val (newSection, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
-        val conCtx                = ctxWithRef.push(newSection)
+        val conCtx                   = ctxWithRef.push(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
           Section(Text(title.toList), level, newSection.attributes)
         }
@@ -61,17 +62,18 @@ class SastToSastConverter(
     }
 
   def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Section, Ctx[SastRef]) = {
-    val ref1   = sec.ref
-    val attr   = sec.attributes
-    if (ctx.labelledThings.contains(ref1)) {
-      val ctr = ctx.nextId
-      val cp  = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
+    val ref1 = sec.ref
+    val attr = sec.attributes
+    val counter =
+      if (ctx.labelledThings.contains(ref1)) {
+        ctx.nextId.map(_.toString)
+      } else {
+        ctx.ret("")
+      }
 
-      val secref = SastRef(cwf, cp, artOpt(ctx, Some(cp)))
-      (cp, ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
-    } else {
-      (sec, ctx.addRefTarget(ref1, SastRef(cwf, sec, artOpt(ctx, Some(sec)))))
-    }
+    val cp: Section = sec.copy(attributes = attr.updated("label", s"$ref1 ($uid${counter.data})"))
+    val secref      = SastRef(cwf, cp, artOpt(ctx, Some(cp)))
+    (cp, counter.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
   }
 
   def convertBlock(tlblock: Block)(ctx: Cta): Ctx[Sast] = {
