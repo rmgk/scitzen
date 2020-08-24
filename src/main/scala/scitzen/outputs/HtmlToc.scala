@@ -4,19 +4,25 @@ import scalatags.Text.all._
 import scitzen.parser.Sast.Section
 
 object HtmlToc {
-  def tableOfContents(docsections: Seq[Section]): Option[Frag] = {
-    val allSections          = docsections.filterNot(_.prefix == "=")
-    val firstStructuralLevel = allSections.filter(_.prefix.contains('='))
-    val sections =
-      if (firstStructuralLevel.sizeIs > 1) firstStructuralLevel
-      else allSections
-    if (sections.length <= 1) None
-    else {
-      Some(ol(sections.map {
-        case Section(title, level, attr) =>
-          val label = attr.named.getOrElse("label", title.str)
-          li(a(href := s"#$label", title.str))
-      }))
+
+  val maxdepth = 2
+
+  def tableOfContents(docsections: List[Section]): Option[Frag] = {
+
+    def recurse(remaining: List[Section], depth: Int): Option[Frag] = {
+      remaining match {
+        case Nil => None
+        case (head @ Section(title, level, attr)) :: rest =>
+          val (sub, other) = rest.span(e => e > head)
+          val subtags       = if (depth < maxdepth) recurse(sub, depth + 1) else None
+          val label        = attr.named.getOrElse("label", title.str)
+          val thistag = li(a(href := s"#$label", title.str), subtags.map(ol(_)))
+          val nexttag = recurse(other, depth)
+          Some(SeqFrag(thistag :: nexttag.toList))
+      }
     }
+
+    recurse(docsections, 1).map(ol(_))
   }
 }
+
