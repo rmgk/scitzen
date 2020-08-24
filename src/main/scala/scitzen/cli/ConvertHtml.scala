@@ -101,7 +101,7 @@ object ConvertHtml {
     ).convertSeq(generatedIndex)(ConversionContext((), labelledThings = preprocessed.labels))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
-      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(generatedIndex), None)
+      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), None)
     project.outputdir./("index.html").write(res)
 
     convertedCtx.execTasks()
@@ -146,7 +146,6 @@ object ConvertHtml {
       includeResolver = preprocessed,
       articles = articles
     )
-    val toc        = HtmlToc.tableOfContents(article.content)
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 
     val convertedArticleCtx = converter.convertSeq(article.content)(preprocessedCtx)
@@ -159,6 +158,8 @@ object ConvertHtml {
         import scalatags.Text.all.{SeqFrag, h1, id, li, stringAttr, stringFrag, ul}
         List(h1("Bibliography"), ul(bibEntries.map { be => li(id := be.id, be.format) }))
       }
+
+    val toc        = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 
     val res = HtmlPages(cssrelpath).wrapContentHtml(
       headerCtx.data +: convertedArticleCtx.data.toList ++: citations,
