@@ -69,7 +69,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
           case "==" =>
             s"\\chapter{${ilc.data}}"
           case other =>
-            val shift = 1 - pushed.stack.collectFirst { case Section(_, "==", _) => () }.size
+            val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
             val sec   = sectioning(prefix.length - shift)
             s"\\$sec{${ilc.data}}"
         }
@@ -117,10 +117,9 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
             project.resolve(cwd, attributes.target).flatMap(includeResolver.byPath.get) match {
               case Some(doc) =>
                 val included = includeResolver.byPath(doc.file)
-                val stack    = ctx.stack
 
                 new SastToTexConverter(project, doc.file.parent, doc.reporter, includeResolver)
-                  .sastSeqToTex(included.sast)(ctx.push(sast)).copy(stack = stack)
+                  .sastSeqToTex(included.sast)(ctx)
 
               case None =>
                 scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))

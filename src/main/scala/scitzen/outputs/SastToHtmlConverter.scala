@@ -70,7 +70,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     singleSast match {
       case sec @ Section(title, level, _) =>
         inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
-          Chain[Frag](tag(s"h${level.length + ctx.stacklevel}")(id := sec.ref, innerFrags.toList))
+          Chain[Frag](tag(s"h${level.length}")(id := sec.ref, innerFrags.toList))
         }.push(sec)
 
       case Slist(Nil) => ctx.empty
@@ -135,7 +135,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               case None =>
                 pathManager.resolve(attributes.target) match {
                   case Some(file) =>
-                    val stack = ctx.stack
                     val doc   = includeResolver.byPath(file)
                     new SastToHtmlConverter(
                       bundle,
@@ -145,8 +144,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       doc.reporter,
                       includeResolver,
                       articles
-                    ).convertSeq(doc.sast)(ctx.push(singleSast))
-                      .copy(stack = stack)
+                    ).convertSeq(doc.sast)(ctx)
                   case None =>
                     scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
                     ctx.empty

@@ -19,18 +19,12 @@ case class ConversionContext[T](
     tasks: List[ConvertTask] = Nil,
     labelledThings: Map[String, List[SastRef]] = Map.empty,
     uniquectr: Int = 0,
-    stack: List[Sast] = Nil,
     includes: List[File] = Nil,
     usedCitations: List[BibEntry] = Nil,
-    partialMacros: List[Macro] = Nil
+    partialMacros: List[Macro] = Nil,
+    sections: List[Section] = Nil
 ) {
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
-
-  def artOpt(cwf: File, self: Option[Section] = None) = {
-    (self ++: stack).find(!Article.notArticleHeader(_)).collect {
-      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil, Nil), DocumentDirectory(Nil))
-    }
-  }
 
   def resolveRef(ref: String): List[SastRef] =
     labelledThings.getOrElse(ref, Nil)
@@ -48,22 +42,7 @@ case class ConversionContext[T](
     copy(labelledThings = labelledThings.updated(ref, secref :: old), data = secref)
   }
 
-  def push(sast: Sast): ConversionContext[T] = {
-    val droppedStack = sast match {
-      case so @ Section(_, _, _) =>
-        stack.dropWhile {
-          case si @ Section(_, _, _) => so.compare(si) <= 0
-          case other                 => false
-        }
-      case other => stack
-    }
-    copy(stack = sast :: droppedStack)
-  }
-  def pop(): ConversionContext[T] = copy(stack = stack.tail)
-
-  lazy val stacklevel: Int = stack
-    .collectFirst { case Section(_, level, _) if level.contains('=') => level.length }
-    .getOrElse(0)
+  def push(section: Section): ConversionContext[T] = copy(sections = section :: sections)
 
   def ret[U](d: U): ConversionContext[U]         = copy(data = d)
   def retc[U](d: U): ConversionContext[Chain[U]] = copy(data = Chain(d))

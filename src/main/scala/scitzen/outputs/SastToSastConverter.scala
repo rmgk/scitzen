@@ -3,10 +3,10 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.extern.ImageConverter
-import scitzen.generic.{ConversionContext, Project, Reporter, SastRef}
+import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, Reporter, SastRef}
 import scitzen.parser.MacroCommand.{Image, Include, Label}
 import scitzen.parser.Sast._
-import scitzen.parser.{Attribute, Attributes, Inline, InlineText, Sast}
+import scitzen.parser.{Attribute, Inline, InlineText, Sast}
 
 class SastToSastConverter(
     project: Project,
@@ -19,6 +19,13 @@ class SastToSastConverter(
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[_]
 
+
+  def artOpt(ctx: Cta, self: Option[Section] = None): Option[Article] = {
+    ( self ++: ctx.sections).find(!Article.notArticleHeader(_)).collect {
+      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil, Nil), DocumentDirectory(Nil))
+    }
+  }
+
   val cwd = if (cwf.isDirectory) cwf else cwf.parent
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
@@ -30,10 +37,10 @@ class SastToSastConverter(
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _) =>
-        val (newAttr, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
-        val conCtx                = ctxWithRef.push(ctxWithRef.data.sast)
+        val (newSection, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
+        val conCtx                = ctxWithRef.push(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
-          Section(Text(title.toList), level, newAttr)
+          Section(Text(title.toList), level, newSection.attributes)
         }
 
       case Slist(children) =>
@@ -53,18 +60,17 @@ class SastToSastConverter(
         convertMacro(mcro).map(identity(_): Sast)
     }
 
-  def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Attributes, Ctx[SastRef]) = {
+  def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Section, Ctx[SastRef]) = {
     val ref1   = sec.ref
     val attr   = sec.attributes
-    val artOpt = ctx.artOpt(cwf, Some(sec))
     if (ctx.labelledThings.contains(ref1)) {
       val ctr = ctx.nextId
       val cp  = sec.copy(attributes = attr.updated("label", s"$ref1 (${ctr.data})"))
 
-      val secref = SastRef(cwf, cp, artOpt)
-      (cp.attributes, ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
+      val secref = SastRef(cwf, cp, artOpt(ctx, Some(cp)))
+      (cp, ctr.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
     } else {
-      (sec.attributes, ctx.addRefTarget(ref1, SastRef(cwf, sec, artOpt)))
+      (sec, ctx.addRefTarget(ref1, SastRef(cwf, sec, artOpt(ctx, Some(sec)))))
     }
   }
 
@@ -72,7 +78,7 @@ class SastToSastConverter(
     // make all blocks labellable
     val refctx = tlblock.attributes.named.get("label") match {
       case None      => ctx
-      case Some(ref) => ctx.addRefTarget(ref, SastRef(cwf, tlblock, ctx.artOpt(cwf)))
+      case Some(ref) => ctx.addRefTarget(ref, SastRef(cwf, tlblock, artOpt(ctx)))
     }
     tlblock.content match {
       case Paragraph(content) =>
@@ -92,7 +98,7 @@ class SastToSastConverter(
             case None => ctx.ret(tlblock)
             case Some(ref) =>
               val matches = """:§([^§]*?)§""".r.findAllMatchIn(text).map(_.group(1)).toList
-              val target  = SastRef(cwf, tlblock, ctx.artOpt(cwf))
+              val target  = SastRef(cwf, tlblock, artOpt(ctx))
               matches.foldLeft(ctx.ret(target)) { (cx, group) => cx.addRefTarget(ref + group, target) }.ret(tlblock)
           }
 
@@ -136,7 +142,7 @@ class SastToSastConverter(
       case mcro @ Macro(Image, attributes) => ctx.addMacro(mcro).ret(mcro)
 
       case Macro(Label, attributes) =>
-        ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.stack.head, ctx.artOpt(cwf))).ret(mcro)
+        ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.sections.head, artOpt(ctx))).ret(mcro)
 
       case Macro(Include, attributes) if attributes.arguments.isEmpty =>
         project.resolve(cwd, attributes.target) match {
