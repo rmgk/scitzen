@@ -70,7 +70,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     singleSast match {
       case sec @ Section(title, level, _) =>
         inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
-          Chain[Frag](tag(s"h${level.length}")(id := sec.ref, innerFrags.toList))
+          val addDepth: Int =
+            if (level.contains("=")) 0
+            else
+              ctx.sections.iterator
+                .map(_.prefix)
+                .find(_.contains("="))
+                .fold(0)(s => s.length)
+          Chain[Frag](tag(s"h${level.length + addDepth}")(id := sec.ref, innerFrags.toList))
         }.push(sec)
 
       case Slist(Nil) => ctx.empty
@@ -135,7 +142,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               case None =>
                 pathManager.resolve(attributes.target) match {
                   case Some(file) =>
-                    val doc   = includeResolver.byPath(file)
+                    val doc = includeResolver.byPath(file)
                     new SastToHtmlConverter(
                       bundle,
                       pathManager.changeWorkingFile(file),
