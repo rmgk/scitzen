@@ -18,18 +18,18 @@ case class Article(header: Section, content: List[Sast], sourceDoc: Document, in
 object Article {
   def notArticleHeader(sast: Sast): Boolean =
     sast match {
-      case Section(title, "=", attributes) => false
-      case other                           => true
+      case Section(_, "=", _) => false
+      case _                  => true
     }
 
   def articles(document: Document): List[Article] = {
     @scala.annotation.tailrec
     def rec(rem: List[Sast], acc: List[Article]): List[Article] = {
       rem.dropWhile(notArticleHeader) match {
-        case (sec @ Section(title, "=", attributes)) :: rest =>
+        case (sec @ Section(_, "=", _)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
           rec(other, Article(sec, cont, document, DocumentDirectory(Nil)) :: acc)
-        case other => acc
+        case _                                  => acc
       }
     }
     rec(document.sast, Nil)

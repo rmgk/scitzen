@@ -54,27 +54,27 @@ object RecursiveArticleIncludeResolver {
             sli.content.fold(tacc)(analyzeRSast(_, tacc))
           }
 
-        case sec @ Section(level, title, attributes) =>
+        case Section(_, _, _) =>
           acc
 
         case imacro @ Macro(_, _) =>
           acc + imacro
 
-        case Block(attr, content) => analyzeSBlockType(content, acc)
+        case Block(_, content) => analyzeSBlockType(content, acc)
       }
     def analyzeSBlockType(input: BlockType, acc: AnalyzeResult): AnalyzeResult =
       input match {
-        case Paragraph(content)         => analyzeText(content, acc)
-        case Parsed(delimiter, content) => analyzeAllSast(content, acc)
-        case Fenced(_)                  => acc
+        case Paragraph(content) => analyzeText(content, acc)
+        case Parsed(_, content) => analyzeAllSast(content, acc)
+        case Fenced(_)          => acc
         case SpaceComment(_)            => acc
       }
 
     def analyzeText(text: Text, acc: AnalyzeResult): AnalyzeResult = {
       text.inl.foldLeft(acc) { (cacc, inline) =>
         inline match {
-          case m: Macro        => cacc + m
-          case InlineText(str) => cacc
+          case m: Macro      => cacc + m
+          case InlineText(_) => cacc
         }
       }
 

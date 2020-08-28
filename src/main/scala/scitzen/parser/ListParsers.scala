@@ -32,7 +32,7 @@ object ListParsers {
 
   def list[_: P]: P[Slist] =
     P(withProv((descriptionListItem | simpleListItem).rep(1))).map {
-      case (listItems, prov) =>
+      case (listItems, _) =>
         ListConverter.listtoSast(listItems)
     }
 

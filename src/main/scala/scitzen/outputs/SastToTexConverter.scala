@@ -66,7 +66,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         val header = prefix match {
           case "==" =>
             s"\\chapter{${ilc.data}}"
-          case other =>
+          case _    =>
             val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
             val sec   = sectioning(prefix.length - shift)
             s"\\$sec{${ilc.data}}"
@@ -80,7 +80,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         children match {
           case Nil => ctx.ret(Chain.nil)
 
-          case ListItem(m, _, None | Some(Slist(_))) :: _ =>
+          case ListItem(_, _, None | Some(Slist(_))) :: _ =>
             "\\begin{itemize}" +:
               ctx.fold[ListItem, String](children) { (ctx, child) =>
                 val inlineCtx  = inlineValuesToTex(child.text.inl)(ctx).map(s => Chain(s"\\item{$s}"))
@@ -89,7 +89,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
               } :+
               "\\end{itemize}"
 
-          case ListItem(m, _, _) :: _ =>
+          case ListItem(_, _, _) :: _ =>
             ctx.fold[ListItem, String](children) { (ctx, child) =>
               val inlinesCtx = inlineValuesToTex(child.text.inl)(ctx).map(s => s"\\item[$s]{}")
               inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])(sastToTex(_)(inlinesCtx))
@@ -140,17 +140,17 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
     tlblock.content match {
       case Paragraph(content) => inlineValuesToTex(content.inl).single :+ "" :+ ""
 
-      case Parsed(delimiter, blockContent) =>
+      case Parsed(_, blockContent) =>
         tlblock.attributes.positional.headOption match {
           case Some(blockname) =>
             blockname match {
               case "figure" =>
                 val (figContent, caption) = {
                   blockContent.lastOption match {
-                    case Some(inner @ Block(_, Paragraph(content))) =>
+                    case Some(Block(_, Paragraph(content))) =>
                       val captionstr = inlineValuesToTex(content.inl).data
                       (blockContent.init, s"\\caption{$captionstr}")
-                    case other =>
+                    case _                                  =>
                       scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
                       (blockContent, "")
                   }
@@ -167,7 +167,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
               case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example" | "abstract") =>
                 texbox(name, tlblock.attributes.positional.tail, blockContent)
 
-              case other =>
+              case _ =>
                 sastSeqToTex(blockContent)
             }
 
@@ -184,7 +184,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
               .replace("\n", "\\newline{}\n")
             ctx.ret(Chain("\\noindent", latexenc))
 
-          case other =>
+          case _ =>
             val restext = tlblock.attributes.named.get("label") match {
               case None => text
               case Some(label) =>
@@ -210,13 +210,13 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
     inline match {
       case InlineText(str)                    => ctx.retc(latexencode(str))
       case Macro(Cite, attr)                  => ctx.retc(s"${nbrs(attr)}\\cite{${attr.target}}")
-      case Macro(Code, attrs)                 => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
-      case Macro(Comment, attr)               => ctx.retc("")
-      case Macro(Def, _)                      => ctx.retc("")
+      case Macro(Code, attrs) => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
+      case Macro(Comment, _) => ctx.retc("")
+      case Macro(Def, _) => ctx.retc("")
       case Macro(Emph, attrs)                 => ctx.retc(s"\\emph{${latexencode(attrs.target)}}")
       case Macro(Label, attr)                 => ctx.retc(s"\\label{${attr.target}}")
       case Macro(Math, attrs)                 => ctx.retc(s"$$${attrs.target}$$")
-      case Macro(Other("break"), attrs)       => ctx.retc(s"\\clearpage{}")
+      case Macro(Other("break"), _)           => ctx.retc(s"\\clearpage{}")
       case Macro(Other("subparagraph"), attr) => ctx.retc(s"\\subparagraph{${attr.target}}")
       case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
       case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
@@ -245,17 +245,17 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
       case Macro(Other("footnote"), attributes) =>
         inlineValuesToTex(attributes.targetT.inl).map(target =>s"\\footnote{$target}").single
 
-      case toc @ Macro(Other("tableofcontents"), attributes) =>
+      case toc @ Macro(Other("tableofcontents"), _) =>
         ctx.addMacro(toc).retc(
           List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
         )
 
-      case im @ Macro(Other(command), attributes) =>
+      case im @ Macro(Other(_), _) =>
         val str = SastToScimConverter.macroToScim(im)
         scribe.warn(s"unknown macro “$str”" + reporter(im))
         ctx.retc(str)
 
-      case im @ Macro(Image | Include, attributes) =>
+      case im @ Macro(Image | Include, _) =>
         val str = SastToScimConverter.macroToScim(im)
         scribe.warn(s"tex backend does not allow inline images or includes" + reporter(im))
         ctx.retc(str)

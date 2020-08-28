@@ -7,13 +7,13 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
 
   def convert(b: Seq[Sast]): Seq[String] = {
     b.flatMap {
-      case Section(title, level, _) =>
+      case Section(title, _, _) =>
         List(convertInline(title.inl))
 
       case Slist(children) => children.flatMap {
-          case ListItem(marker, Text(inl), None) =>
+          case ListItem(_, Text(inl), None)   =>
             List(convertInline(inl))
-          case ListItem(marker, text, Some(inner)) =>
+          case ListItem(_, text, Some(inner)) =>
             convertInline(text.inl) +: convert(List(inner))
         }
 
@@ -37,6 +37,6 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
       case InlineText(str) => str
       case Macro(Lookup, attr) =>
         definitions(attr.target)
-      case m: Macro => ""
+      case _: Macro            => ""
     }.mkString("")
 }

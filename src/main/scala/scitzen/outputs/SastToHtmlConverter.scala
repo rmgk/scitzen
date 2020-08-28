@@ -3,6 +3,7 @@ package scitzen.outputs
 import better.files._
 import cats.data.Chain
 import cats.implicits._
+import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, Reporter, SastRef}
@@ -43,7 +44,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     )
   }
 
-  def tMeta(article: Article) = {
+  def tMeta(article: Article): generic.Frag[Builder, FragT] = {
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
@@ -58,7 +59,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     if (metalist.nonEmpty) div(cls := "metadata")(metalist.toSeq: _*) else frag()
   }
 
-  def articleHeader(article: Article)(ctx: Cta) = {
+  def articleHeader(article: Article)(ctx: Cta): Ctx[Frag] = {
     inlineValuesToHTML(article.header.title.inl)(ctx).map { innerFrags =>
       frag(h1(id := article.header.ref, innerFrags.toList), tMeta(article))
     }
@@ -108,7 +109,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 ctx.empty
             }
 
-          case Macro(Other("break"), attributes) =>
+          case Macro(Other("break"), _) =>
             ctx.ret(Chain(hr))
 
           case Macro(Other("article"), attributes) =>
@@ -157,7 +158,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 }
 
               case Some(other) =>
-                scribe.error(s"unknown include type ${other}" + reporter(attributes.prov))
+                scribe.error(s"unknown include type $other" + reporter(attributes.prov))
                 ctx.empty
             }
 
@@ -212,7 +213,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           // Code listing
           // Use this for monospace, space preserving, line preserving text
           // It may wrap to fit the screen content
-          case other =>
+          case _ =>
             val txt =
               if (!sBlock.attributes.named.contains("label")) text
               else {
@@ -223,7 +224,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             ctx.retc(res)
         }
 
-      case SpaceComment(content) => ctx.empty
+      case SpaceComment(_) => ctx.empty
     }
 
     sBlock.attributes.namedT.get("note").fold(innerCtx) { note =>
@@ -238,8 +239,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   def filterCandidates(scope: File, candidates: List[SastRef]): List[SastRef] = {
     candidates match {
-      case Nil       => candidates
-      case List(one) => candidates
+      case Nil      => candidates
+      case List(_)  => candidates
       case multiple =>
         val searchScope = scope.path.iterator().asScala.toList
         val sorted = multiple.map { c =>
@@ -268,7 +269,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         val inner = attrs.target
         ctx.katex(inner).map(res => Chain(span(raw(res))))
 
-      case Macro(Comment, attributes) => ctx.empty
+      case Macro(Comment, _) => ctx.empty
 
       case mcro @ Macro(Cite, attributes) =>
         val citations = attributes.target.split(",").toList.map { bibid =>
@@ -299,7 +300,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           scribe.error(
             s"multiple resolutions for ${attributes.target}" +
               reporter(attributes.prov) +
-              s"\n\tresolutinos are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+              s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
           )
 
         candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
@@ -309,17 +310,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           val fileRef = articleOpt match {
             case Some(article) if !article.includes.byPath.contains(pathManager.cwf) =>
               pathManager.relativeArticleTarget(article).toString
-            case other => ""
+            case _                                                                   => ""
           }
 
           targetDocument.sast match {
             case sec @ Section(title, _, _) => inlineValuesToHTML(title.inl).map { inner =>
                 Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
               }
-            case block @ Block(attr, content) =>
+            case Block(attr, _)             =>
               val label = attr.named("label")
               val name  = nameOpt.fold(label)(n => s"$n $label")
-              ctx.retc(a(href := s"$fileRef#${label}", name))
+              ctx.retc(a(href := s"$fileRef#$label", name))
 
             case other =>
               scribe.error(s"can not refer to $other")
@@ -338,8 +339,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           ctx.retc(code(attributes.target))
         }
 
-      case mcro @ Macro(Other(othercommand), attributes) =>
-        othercommand match {
+      case mcro @ Macro(Other(otherCommand), attributes) =>
+        otherCommand match {
           case "footnote" =>
             val target =
               SastToTextConverter(pathManager.project.config.definitions).convertInline(attributes.targetT.inl)
@@ -361,13 +362,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
           case "tableofcontents" => ctx.empty
 
-          case other => ctx.retc(unknownMacroOutput(mcro))
+          case _ => ctx.retc(unknownMacroOutput(mcro))
 
         }
 
       case Macro(Def, _) => ctx.empty
 
-      case mcro @ Macro(Image | Include, attributes) =>
+      case mcro @ Macro(Image | Include, _) =>
         ctx.retc(unknownMacroOutput(mcro))
 
     }
@@ -380,7 +381,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     code(str)
   }
 
-  def linkTo(attributes: Attributes, linktarget: String) = {
+  def linkTo(attributes: Attributes, linktarget: String): Tag = {
     a(href := linktarget)(attributes.positional.headOption.getOrElse[String](linktarget))
   }
 }

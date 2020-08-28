@@ -105,7 +105,7 @@ class SastToSastConverter(
 
         }
 
-      case SpaceComment(content) => ctx.ret(tlblock)
+      case SpaceComment(_) => ctx.ret(tlblock)
 
     }
   }
@@ -140,7 +140,7 @@ class SastToSastConverter(
         }
 
       // collect image macros
-      case mcro @ Macro(Image, attributes) => ctx.addMacro(mcro).ret(mcro)
+      case mcro @ Macro(Image, _) => ctx.addMacro(mcro).ret(mcro)
 
       case Macro(Label, attributes) =>
         ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.sections.head, artOpt(ctx))).ret(mcro)

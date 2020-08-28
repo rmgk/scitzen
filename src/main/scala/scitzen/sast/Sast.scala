@@ -17,7 +17,7 @@ case class Text(inl: Seq[Inline]) {
   lazy val str = {
     inl.map {
       case Macro(Strong | Emph, attributes) => attributes.target
-      case Macro(command, attributes)       => ""
+      case Macro(_, _)                      => ""
       case InlineText(string)               => string
     }.mkString("")
   }

@@ -22,7 +22,7 @@ object BlockParsers {
       (AttributesParser.braces ~ spaceLine).? ~
         withProv(paragraphInlines.full)
     ).map {
-      case (attrOpt, ((inlines, end), prov)) =>
+      case (attrOpt, ((inlines, _), prov)) =>
         //val endline = if (end.contains('\n')) inlines :+ InlineText("\n") else inlines
         Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil), prov), Paragraph(Text(inlines)))
     })
@@ -33,7 +33,7 @@ object BlockParsers {
       ~ withProv(sectionInlines.full)
       ~ (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
       .map {
-        case (prefix, ((inlines, elo), prov), attrl) =>
+        case (prefix, ((inlines, _), prov), attrl) =>
           //val inlines = Parse.inlineUnwrap(inl, prov)
           Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil), prov))
       }
