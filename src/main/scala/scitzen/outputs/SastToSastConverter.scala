@@ -101,9 +101,8 @@ class SastToSastConverter(
           tlblock.attributes.named.get("label") match {
             case None => ctx.ret(tlblock)
             case Some(ref) =>
-              val matches = """:§([^§]*?)§""".r.findAllMatchIn(text).map(_.group(1)).toList
               val target  = SastRef(cwf, tlblock, artOpt(ctx))
-              matches.foldLeft(ctx.ret(target)) { (cx, group) => cx.addRefTarget(ref + group, target) }.ret(tlblock)
+              ctx.addRefTarget(ref, target).ret(tlblock)
           }
         }
 

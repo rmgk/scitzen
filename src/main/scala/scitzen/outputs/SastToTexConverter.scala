@@ -225,7 +225,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
       case Macro(Strong, attrs)               => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
 
-      case Macro(Ref, attr) => {
+      case Macro(Ref, attr) =>
         val scope      = attr.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
         val candidates = References.filterCandidates(scope, ctx.resolveRef(attr.target))
 
@@ -241,12 +241,9 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
             scribe.error(s"no resolution found for ${attr.target}" + reporter(attr.prov))
             ctx.empty
           case Some(candidate) =>
-            val label = if (candidate.sast.isInstanceOf[Section]) References.getLabel(candidate).get else attr.target
+            val label = References.getLabel(candidate).get + attr.named.getOrElse("line", "")
             ctx.retc(s"${nbrs(attr)}\\ref{${label}}")
-
         }
-
-      }
 
       case Macro(Link, attributes) =>
         ctx.retc {

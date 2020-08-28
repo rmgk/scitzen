@@ -306,7 +306,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           }
         }.getOrElse {
           scribe.error(s"no resolutions for »${attributes.target}«${reporter(attributes.prov)}")
-          ctx.retc(unknownMacroOutput(macroRef))
+          ctx.retc(code(SastToScimConverter.macroToScim(macroRef)))
         }
 
       case Macro(Lookup, attributes) =>
