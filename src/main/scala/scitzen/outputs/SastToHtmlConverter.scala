@@ -6,11 +6,9 @@ import cats.implicits._
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, Reporter, SastRef}
+import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, References, Reporter, SastRef}
 import scitzen.sast.MacroCommand._
 import scitzen.sast._
-
-import scala.jdk.CollectionConverters._
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
@@ -237,26 +235,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def inlineValuesToHTML(inlines: Seq[Inline])(implicit ctx: Cta): CtxCF =
     ctx.fold(inlines) { (ctx, inline) => inlineToHTML(inline)(ctx) }
 
-  def filterCandidates(scope: File, candidates: List[SastRef]): List[SastRef] = {
-    candidates match {
-      case Nil     => candidates
-      case List(_) => candidates
-      case multiple =>
-        val searchScope = scope.path.iterator().asScala.toList
-        val sorted = multiple.map { c =>
-          c ->
-            c.scope.path.iterator().asScala.toList.zip(searchScope).takeWhile {
-              case (l, r) => l == r
-            }.size
-        }.sortBy(_._2).reverse
-
-        val best     = sorted.head._2
-        val bestOnly = sorted.takeWhile(_._2 == best)
-        (if (bestOnly.size == 1) bestOnly else sorted).map(_._1)
-    }
-
-  }
-
   def inlineToHTML(inlineSast: Inline)(implicit ctx: Cta): CtxCF =
     inlineSast match {
       case InlineText(str) => ctx.retc(stringFrag(str))
@@ -294,7 +272,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case macroRef @ Macro(Ref, attributes) =>
         val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
-        val candidates = filterCandidates(scope, ctx.resolveRef(attributes.target))
+        val candidates = References.filterCandidates(scope, ctx.resolveRef(attributes.target))
 
         if (candidates.sizeIs > 1)
           scribe.error(

@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 import better.files.File
 import scitzen.generic.Project.ProjectConfig
@@ -11,6 +11,11 @@ case class Project(root: File, config: ProjectConfig) {
   val cacheDir: File  = root / config.cache
   val outputdir: File = root / config.output
   val nlpdir: File    = root / config.stopwords
+
+  def relativizeToProject(target: File): Path = {
+    Paths.get("/").resolve(root.relativize(target))
+  }
+
 
   def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File = {
     val rawPath = Paths.get(pathString)

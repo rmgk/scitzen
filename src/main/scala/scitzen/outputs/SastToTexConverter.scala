@@ -2,16 +2,15 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, Reporter}
+import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, References, Reporter}
 import scitzen.sast.MacroCommand.{
   Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
 }
-import scitzen.sast.MacroCommand
-import scitzen.sast.{
-  Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment
-}
+import scitzen.sast._
 
-class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: DocumentDirectory) {
+class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includeResolver: DocumentDirectory) {
+
+  val cwd = cwf.parent
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
@@ -120,7 +119,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
               case Some(doc) =>
                 val included = includeResolver.byPath(doc.file)
 
-                new SastToTexConverter(project, doc.file.parent, doc.reporter, includeResolver)
+                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver)
                   .sastSeqToTex(included.sast)(ctx)
 
               case None =>
@@ -210,8 +209,8 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] =
     ctx.fold(inners) { (ctx: Ctx[Chain[String]], inline) => inlineToTex(inline)(ctx) }.map(_.toList.mkString(""))
 
-  def inlineToTex(inline: Inline)(implicit ctx: Cta): CtxCS =
-    inline match {
+  def inlineToTex(inln: Inline)(implicit ctx: Cta): CtxCS =
+    inln match {
       case InlineText(str)                    => ctx.retc(latexencode(str))
       case Macro(Cite, attr)                  => ctx.retc(s"${nbrs(attr)}\\cite{${attr.target}}")
       case Macro(Code, attrs)                 => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
@@ -224,8 +223,30 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
       case Macro(Other("subparagraph"), attr) => ctx.retc(s"\\subparagraph{${attr.target}}")
       case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
       case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
-      case Macro(Ref, attr)                   => ctx.retc(s"${nbrs(attr)}\\ref{${attr.target}}")
       case Macro(Strong, attrs)               => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
+
+      case Macro(Ref, attr) => {
+        val scope      = attr.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
+        val candidates = References.filterCandidates(scope, ctx.resolveRef(attr.target))
+
+        if (candidates.sizeIs > 1)
+          scribe.error(
+            s"multiple resolutions for ${attr.target}" +
+              reporter(attr.prov) +
+              s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+          )
+
+        candidates.headOption match {
+          case None =>
+            scribe.error(s"no resolution found for ${attr.target}" + reporter(attr.prov))
+            ctx.empty
+          case Some(candidate) =>
+            val label = References.getLabel(candidates.head).get
+            ctx.retc(s"${nbrs(attr)}\\ref{${label}}")
+
+        }
+
+      }
 
       case Macro(Link, attributes) =>
         ctx.retc {

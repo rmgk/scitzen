@@ -24,7 +24,7 @@ object ConvertPdf {
     preprocessed.articles.foreach { article =>
       val converter = new SastToTexConverter(
         project,
-        article.sourceDoc.file.parent,
+        article.sourceDoc.file,
         article.sourceDoc.reporter,
         preprocessed.directory
       )
