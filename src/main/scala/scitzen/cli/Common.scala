@@ -2,7 +2,9 @@ package scitzen.cli
 
 import cats.data.Chain
 import scitzen.extern.ImageConverter
-import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, RecursiveArticleIncludeResolver, SastRef}
+import scitzen.generic.{
+  Article, ConversionContext, Document, DocumentDirectory, Project, RecursiveArticleIncludeResolver, SastRef
+}
 import scitzen.outputs.SastToSastConverter
 import scitzen.sast.Sast
 

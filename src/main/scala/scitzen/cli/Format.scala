@@ -22,7 +22,7 @@ object Format {
       Article.articles(parsed) match {
         case List(article) if (article.date.isDefined) =>
           renameFileFromHeader(parsed.file, article)
-        case _                                         =>
+        case _ =>
           scribe.info(
             s"could not format ${parsed.file}, did not contain a single article with a date"
           )

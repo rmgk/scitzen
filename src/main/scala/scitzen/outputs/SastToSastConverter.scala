@@ -5,7 +5,10 @@ import cats.data.Chain
 import scitzen.extern.ImageConverter
 import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, Reporter, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include, Label}
-import scitzen.sast.{Attribute, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment,
+  Text
+}
 
 class SastToSastConverter(
     project: Project,

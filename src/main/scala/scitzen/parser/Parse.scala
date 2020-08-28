@@ -16,7 +16,7 @@ object Parse {
     val parsed = fastparse.parse(content, { p: P[_] => p.misc("provenanceOffset") = prov; parser(p) })
     parsed match {
       case Success(value, _) => value.asRight
-      case f: Failure        =>
+      case f: Failure =>
         val traced = f.trace()
         scribe.error(
           s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(0, math.min(80, content.length))}..."

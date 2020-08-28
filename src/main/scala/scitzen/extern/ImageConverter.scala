@@ -175,7 +175,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
       case gr @ rex"graphviz.*" =>
         Some(Graphviz.convert(templatedContent, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat)
           .map(img => makeImageMacro(img)))
-      case rex"mermaid"         =>
+      case rex"mermaid" =>
         Some(Mermaid.convert(templatedContent, project.cacheDir, preferredFormat)
           .map { img =>
             val m = makeImageMacro(img)

@@ -3,9 +3,13 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, Reporter}
-import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.sast.MacroCommand.{
+  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
+}
 import scitzen.sast.MacroCommand
-import scitzen.sast.{Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment}
+import scitzen.sast.{
+  Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment
+}
 
 class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: DocumentDirectory) {
 
@@ -66,7 +70,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         val header = prefix match {
           case "==" =>
             s"\\chapter{${ilc.data}}"
-          case _    =>
+          case _ =>
             val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
             val sec   = sectioning(prefix.length - shift)
             s"\\$sec{${ilc.data}}"
@@ -150,7 +154,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
                     case Some(Block(_, Paragraph(content))) =>
                       val captionstr = inlineValuesToTex(content.inl).data
                       (blockContent.init, s"\\caption{$captionstr}")
-                    case _                                  =>
+                    case _ =>
                       scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
                       (blockContent, "")
                   }
@@ -210,9 +214,9 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
     inline match {
       case InlineText(str)                    => ctx.retc(latexencode(str))
       case Macro(Cite, attr)                  => ctx.retc(s"${nbrs(attr)}\\cite{${attr.target}}")
-      case Macro(Code, attrs) => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
-      case Macro(Comment, _) => ctx.retc("")
-      case Macro(Def, _) => ctx.retc("")
+      case Macro(Code, attrs)                 => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
+      case Macro(Comment, _)                  => ctx.retc("")
+      case Macro(Def, _)                      => ctx.retc("")
       case Macro(Emph, attrs)                 => ctx.retc(s"\\emph{${latexencode(attrs.target)}}")
       case Macro(Label, attr)                 => ctx.retc(s"\\label{${attr.target}}")
       case Macro(Math, attrs)                 => ctx.retc(s"$$${attrs.target}$$")
@@ -243,7 +247,7 @@ class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includ
         }
 
       case Macro(Other("footnote"), attributes) =>
-        inlineValuesToTex(attributes.targetT.inl).map(target =>s"\\footnote{$target}").single
+        inlineValuesToTex(attributes.targetT.inl).map(target => s"\\footnote{$target}").single
 
       case toc @ Macro(Other("tableofcontents"), _) =>
         ctx.addMacro(toc).retc(

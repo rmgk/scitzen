@@ -2,7 +2,9 @@ package scitzen.generic
 
 import better.files.File
 import scitzen.sast.MacroCommand
-import scitzen.sast.{Block, BlockType, Fenced, InlineText, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Block, BlockType, Fenced, InlineText, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
+}
 
 /* The only thing the includes are used for is to figure out reference targets.
  * This somehow should be much easier … */
@@ -67,7 +69,7 @@ object RecursiveArticleIncludeResolver {
         case Paragraph(content) => analyzeText(content, acc)
         case Parsed(_, content) => analyzeAllSast(content, acc)
         case Fenced(_)          => acc
-        case SpaceComment(_)            => acc
+        case SpaceComment(_)    => acc
       }
 
     def analyzeText(text: Text, acc: AnalyzeResult): AnalyzeResult = {

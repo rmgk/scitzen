@@ -17,7 +17,9 @@ case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit], allowEmpt
 
   private def notSyntax[_: P]: P[String] =
     P((
-      CharsWhile(c => c != ':' && !endChars.contains(c)) | (!MacroParsers.syntaxStart ~ ":") | (!ending ~ CharPred(endChars.contains(_)))
+      CharsWhile(c => c != ':' && !endChars.contains(c)) | (!MacroParsers.syntaxStart ~ ":") | (!ending ~ CharPred(
+        endChars.contains(_)
+      ))
     ).rep(1).!)
 
   def simpleText[_: P]: P[InlineText] = {

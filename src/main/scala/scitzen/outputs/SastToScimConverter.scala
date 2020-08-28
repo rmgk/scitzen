@@ -108,7 +108,7 @@ object SastToScimConverter {
   def macroToScim(mcro: Macro, spacy: Boolean = false): String = {
     mcro match {
       case Macro(Comment, attributes) => s":%${attributes.target}"
-      case _                          =>
+      case _ =>
         s":${MacroCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
     }
   }

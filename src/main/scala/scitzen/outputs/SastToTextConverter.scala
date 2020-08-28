@@ -1,7 +1,9 @@
 package scitzen.outputs
 
 import scitzen.sast.MacroCommand.Lookup
-import scitzen.sast.{Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
+}
 
 case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
 
@@ -11,7 +13,7 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
         List(convertInline(title.inl))
 
       case Slist(children) => children.flatMap {
-          case ListItem(_, Text(inl), None)   =>
+          case ListItem(_, Text(inl), None) =>
             List(convertInline(inl))
           case ListItem(_, text, Some(inner)) =>
             convertInline(text.inl) +: convert(List(inner))
@@ -37,6 +39,6 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
       case InlineText(str) => str
       case Macro(Lookup, attr) =>
         definitions(attr.target)
-      case _: Macro            => ""
+      case _: Macro => ""
     }.mkString("")
 }

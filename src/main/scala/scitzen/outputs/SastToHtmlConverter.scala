@@ -239,8 +239,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   def filterCandidates(scope: File, candidates: List[SastRef]): List[SastRef] = {
     candidates match {
-      case Nil      => candidates
-      case List(_)  => candidates
+      case Nil     => candidates
+      case List(_) => candidates
       case multiple =>
         val searchScope = scope.path.iterator().asScala.toList
         val sorted = multiple.map { c =>
@@ -310,14 +310,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           val fileRef = articleOpt match {
             case Some(article) if !article.includes.byPath.contains(pathManager.cwf) =>
               pathManager.relativeArticleTarget(article).toString
-            case _                                                                   => ""
+            case _ => ""
           }
 
           targetDocument.sast match {
             case sec @ Section(title, _, _) => inlineValuesToHTML(title.inl).map { inner =>
                 Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
               }
-            case Block(attr, _)             =>
+            case Block(attr, _) =>
               val label = attr.named("label")
               val name  = nameOpt.fold(label)(n => s"$n $label")
               ctx.retc(a(href := s"$fileRef#$label", name))

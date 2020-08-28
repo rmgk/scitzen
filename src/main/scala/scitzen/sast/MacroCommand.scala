@@ -1,6 +1,5 @@
 package scitzen.sast
 
-
 sealed trait MacroCommand
 object MacroCommand {
   val (parseMap, printMap) = {
@@ -18,7 +17,7 @@ object MacroCommand {
       "strong"  -> Strong,
       "math"    -> Math,
       ""        -> Lookup
-      )
+    )
     val aliases = Map(
       "fence" -> Include,
       "_"     -> Emph,
@@ -26,7 +25,7 @@ object MacroCommand {
       "*"     -> Strong,
       "$"     -> Math,
       "n"     -> Lookup
-      )
+    )
 
     (standard.toMap ++ aliases, standard.map(p => p._2 -> p._1).toMap)
   }

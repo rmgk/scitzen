@@ -29,7 +29,7 @@ object Article {
         case (sec @ Section(_, "=", _)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
           rec(other, Article(sec, cont, document, DocumentDirectory(Nil)) :: acc)
-        case _                                  => acc
+        case _ => acc
       }
     }
     rec(document.sast, Nil)

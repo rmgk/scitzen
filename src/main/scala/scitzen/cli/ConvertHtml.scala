@@ -159,7 +159,7 @@ object ConvertHtml {
         List(h1("Bibliography"), ul(bibEntries.map { be => li(id := be.id, be.format) }))
       }
 
-    val toc        = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
+    val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 
     val res = HtmlPages(cssrelpath).wrapContentHtml(
       headerCtx.data +: convertedArticleCtx.data.toList ++: citations,

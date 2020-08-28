@@ -25,7 +25,10 @@ object DelimitedBlockParsers {
                     val sast: Seq[Sast] = Parse.documentUnwrap(strippedText, prov)
                     scitzen.sast.Parsed(delimiter, sast)
                 }
-              scitzen.sast.Block(Attributes(rawAttr, if (!isStripped) prov else prov.copy(indent = delimiter.length)), blockContent)
+              scitzen.sast.Block(
+                Attributes(rawAttr, if (!isStripped) prov else prov.copy(indent = delimiter.length)),
+                blockContent
+              )
           }
     }
 

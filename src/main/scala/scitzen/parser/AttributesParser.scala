@@ -20,9 +20,11 @@ object AttributesParser {
     */
   def value[_: P]: P[Text] = {
     P(anySpaces ~ ("\"".rep.! ~ "[".!.?).flatMap {
-      case ("", None)        => unquotedValue
-      case (quotes, Some(_)) => InlineParsers("]", _ => s"]$quotes" ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
-      case (quotes, None)    => InlineParsers("\"", _ => quotes ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
+      case ("", None) => unquotedValue
+      case (quotes, Some(_)) =>
+        InlineParsers("]", _ => s"]$quotes" ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
+      case (quotes, None) =>
+        InlineParsers("\"", _ => quotes ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
       //(("[" ~ untilI("]" ~ quotes ~ verticalSpaces ~ &(terminator)))
       //  | (if (quotes.isEmpty) unquotedValue
       //     else untilI(quotes ~ verticalSpaces ~ &(terminator))))
