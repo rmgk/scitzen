@@ -1,8 +1,8 @@
 package scitzen.outputs
 
 import scitzen.parser.MacroCommand.Lookup
-import scitzen.parser.Sast._
-import scitzen.parser.{Inline, InlineText, Sast}
+import scitzen.parser.sast._
+import scitzen.parser.sast.Sast
 
 case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
 

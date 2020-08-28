@@ -4,7 +4,8 @@ import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
 import scitzen.parser.MacroCommand.Comment
-import scitzen.parser.Sast.Macro
+import scitzen.parser.sast.{Attribute, Attributes}
+import scitzen.parser.sast.Macro
 
 object MacroParsers {
   def detectStart[_: P]: P[Unit]    = P(":" ~ identifier.? ~ AttributesParser.start)

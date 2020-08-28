@@ -1,44 +1,44 @@
-package scitzen.parser
+package scitzen.parser.sast
 
 import scitzen.outputs.AttributesToScim
+import scitzen.parser.MacroCommand
 import scitzen.parser.MacroCommand.{Emph, Strong}
-import scitzen.parser.Sast.Text
 
 sealed trait Sast
 
-object Sast {
+case class Slist(children: Seq[ListItem]) extends Sast
+case class ListItem(marker: String, text: Text, content: Option[Sast])
 
-  case class Slist(children: Seq[ListItem]) extends Sast
-  case class ListItem(marker: String, text: Text, content: Option[Sast])
-  case class Text(inl: Seq[Inline]) {
-    lazy val str = {
-      inl.map {
-        case Macro(Strong | Emph, attributes) => attributes.target
-        case Macro(command, attributes)       => ""
-        case InlineText(string)               => string
-      }.mkString("")
-    }
-  }
-  case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast with Ordered[Section] {
-    def ref: String = attributes.named.getOrElse("label", title.str)
-    override def compare(that: Section): Int = {
-      def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
-      Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))
-    }
-  }
-  case class Macro(command: MacroCommand, attributes: Attributes) extends Inline with Sast
-  case class Block(attributes: Attributes, content: BlockType) extends Sast {
-    override def toString: String = s"SBlock(${content.getClass.getSimpleName}, $attributes)"
-    def command: String           = attributes.positional.headOption.getOrElse("")
-  }
+sealed trait Inline
+case class InlineText(str: String)                              extends Inline
+case class Macro(command: MacroCommand, attributes: Attributes) extends Inline with Sast
 
-  sealed trait BlockType
-  case class Paragraph(content: Text)                      extends BlockType
-  case class Fenced(content: String)                       extends BlockType
-  case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
-  case class SpaceComment(content: String)                 extends BlockType
-
+case class Text(inl: Seq[Inline]) {
+  lazy val str = {
+    inl.map {
+      case Macro(Strong | Emph, attributes) => attributes.target
+      case Macro(command, attributes)       => ""
+      case InlineText(string)               => string
+    }.mkString("")
+  }
 }
+case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast with Ordered[Section] {
+  def ref: String = attributes.named.getOrElse("label", title.str)
+  override def compare(that: Section): Int = {
+    def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
+    Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))
+  }
+}
+case class Block(attributes: Attributes, content: BlockType) extends Sast {
+  override def toString: String = s"SBlock(${content.getClass.getSimpleName}, $attributes)"
+  def command: String           = attributes.positional.headOption.getOrElse("")
+}
+
+sealed trait BlockType
+case class Paragraph(content: Text)                      extends BlockType
+case class Fenced(content: String)                       extends BlockType
+case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
+case class SpaceComment(content: String)                 extends BlockType
 
 case class Attributes(raw: Seq[Attribute], prov: Prov) {
 
@@ -78,6 +78,3 @@ object Attribute {
 }
 
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
-
-sealed trait Inline
-case class InlineText(str: String) extends Inline

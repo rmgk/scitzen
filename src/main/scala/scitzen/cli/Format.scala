@@ -5,7 +5,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import better.files.File
 import scitzen.generic.{Article, DocumentDirectory}
 import scitzen.outputs.SastToScimConverter
-import scitzen.parser.Sast
+import scitzen.parser.sast.Sast
 
 object Format {
 

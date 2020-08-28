@@ -3,7 +3,8 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.Sast.{Block, Fenced, Parsed}
+import scitzen.parser.sast.{Attribute, Attributes, Prov, Sast}
+import scitzen.parser.sast.{Block, Fenced, Parsed}
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text

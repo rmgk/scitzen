@@ -5,7 +5,8 @@ import fastparse._
 import scitzen.parser.CommonParsers.{eol, untilE, withProv}
 import scitzen.parser.MacroCommand.Comment
 import scitzen.parser.MacroParsers.commentStart
-import scitzen.parser.Sast.Macro
+import scitzen.parser.sast.Attribute
+import scitzen.parser.sast.{Inline, InlineText, Macro}
 
 case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit], allowEmpty: Boolean = false) {
 

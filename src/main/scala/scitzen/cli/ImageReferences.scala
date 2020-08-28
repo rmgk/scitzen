@@ -6,7 +6,8 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.ImageConverter
 import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.parser.{MacroCommand, Sast}
+import scitzen.parser.MacroCommand
+import scitzen.parser.sast.Sast
 
 object ImageReferences {
 

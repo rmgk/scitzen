@@ -3,7 +3,8 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.Sast.{Block, Paragraph, Section, SpaceComment, Text}
+import scitzen.parser.sast.{Attributes, Sast}
+import scitzen.parser.sast.{Block, Paragraph, Section, SpaceComment, Text}
 
 object BlockParsers {
 
@@ -35,7 +36,7 @@ object BlockParsers {
       .map {
         case (prefix, ((inlines, elo), prov), attrl) =>
           //val inlines = Parse.inlineUnwrap(inl, prov)
-          Section(Text(inlines), prefix, Attributes(attrl.getOrElse(Nil), prov))
+          Section(Text(inlines), prefix, scitzen.parser.sast.Attributes(attrl.getOrElse(Nil), prov))
       }
 
   def extendedWhitespace[_: P]: P[Block] =
@@ -44,7 +45,7 @@ object BlockParsers {
         MacroParsers.comment.rep(1)).rep(1).!
     )).map {
       case (str, prov) =>
-        Block(Attributes(Nil, prov), SpaceComment(str))
+        Block(scitzen.parser.sast.Attributes(Nil, prov), SpaceComment(str))
     }
 
   def alternatives[_: P]: P[Sast] =

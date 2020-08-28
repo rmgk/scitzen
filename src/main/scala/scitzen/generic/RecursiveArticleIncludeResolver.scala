@@ -1,8 +1,9 @@
 package scitzen.generic
 
 import better.files.File
-import scitzen.parser.Sast._
-import scitzen.parser.{InlineText, MacroCommand, Sast}
+import scitzen.parser.sast._
+import scitzen.parser.MacroCommand
+import scitzen.parser.sast.Sast
 
 /* The only thing the includes are used for is to figure out reference targets.
  * This somehow should be much easier … */

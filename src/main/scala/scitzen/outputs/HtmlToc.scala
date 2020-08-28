@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import scalatags.Text.all._
-import scitzen.parser.Sast.Section
+import scitzen.parser.sast.Section
 
 object HtmlToc {
 

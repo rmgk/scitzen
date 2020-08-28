@@ -7,8 +7,9 @@ import scalatags.generic.Bundle
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, Reporter, SastRef}
 import scitzen.parser.MacroCommand._
-import scitzen.parser.Sast._
-import scitzen.parser.{Attributes, Inline, InlineText, Sast, ScitzenDateTime}
+import scitzen.parser.sast._
+import scitzen.parser.ScitzenDateTime
+import scitzen.parser.sast.{Attributes, Sast}
 
 import scala.jdk.CollectionConverters._
 
@@ -257,8 +258,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   }
 
-  def inlineToHTML(inline: Inline)(implicit ctx: Cta): CtxCF =
-    inline match {
+  def inlineToHTML(inlineSast: Inline)(implicit ctx: Cta): CtxCF =
+    inlineSast match {
       case InlineText(str) => ctx.retc(stringFrag(str))
 
       case Macro(Strong, attrs) => ctx.retc(strong(attrs.target))

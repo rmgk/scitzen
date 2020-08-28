@@ -4,8 +4,9 @@ import cats.data.Chain
 import cats.implicits._
 import fastparse.P
 import scitzen.parser.MacroCommand.Comment
-import scitzen.parser.Sast._
-import scitzen.parser.{Attribute, Attributes, AttributesParser, Inline, InlineText, MacroCommand, Sast}
+import scitzen.parser.sast.{Attribute, Attributes, Sast}
+import scitzen.parser.sast._
+import scitzen.parser.{AttributesParser, MacroCommand}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex

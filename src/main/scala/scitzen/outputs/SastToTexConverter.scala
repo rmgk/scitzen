@@ -3,11 +3,10 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, Reporter}
-import scitzen.parser.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
-}
-import scitzen.parser.Sast._
-import scitzen.parser.{Attributes, Inline, InlineText, MacroCommand, Sast}
+import scitzen.parser.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.parser.sast._
+import scitzen.parser.MacroCommand
+import scitzen.parser.sast.{Attributes, Sast}
 
 class SastToTexConverter(project: Project, cwd: File, reporter: Reporter, includeResolver: DocumentDirectory) {
 
