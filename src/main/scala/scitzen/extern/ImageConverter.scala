@@ -4,9 +4,8 @@ import better.files.File
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.{ConversionContext, Project}
 import scitzen.outputs.SastToTextConverter
-import scitzen.parser.sast.{Attribute, Attributes, Prov, Sast}
-import scitzen.parser.sast.{Block, Fenced, Macro}
-import scitzen.parser.{MacroCommand, Parse}
+import scitzen.parser.Parse
+import scitzen.sast.{Attribute, Attributes, Block, Fenced, Macro, MacroCommand, Prov, Sast}
 
 import scala.jdk.CollectionConverters._
 

@@ -2,9 +2,8 @@ package scitzen.generic
 
 import better.files.File
 import cats.implicits._
-import scitzen.parser.sast.Macro
 import scitzen.parser.Parse
-import scitzen.parser.sast.{Prov, Sast}
+import scitzen.sast.{Macro, Prov, Sast}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal

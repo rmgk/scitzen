@@ -1,5 +1,5 @@
 import org.scalatest.freespec.AnyFreeSpec
-import scitzen.parser.sast.{Attributes, Section, Text}
+import scitzen.sast.{Attributes, Section, Text}
 
 class SectionOrderingTest extends AnyFreeSpec {
 

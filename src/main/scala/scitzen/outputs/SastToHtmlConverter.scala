@@ -6,10 +6,9 @@ import cats.implicits._
 import scalatags.generic.Bundle
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, Reporter, SastRef}
-import scitzen.parser.MacroCommand._
-import scitzen.parser.sast._
+import scitzen.sast.MacroCommand._
 import scitzen.parser.ScitzenDateTime
-import scitzen.parser.sast.{Attributes, Sast}
+import scitzen.sast.{Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment}
 
 import scala.jdk.CollectionConverters._
 

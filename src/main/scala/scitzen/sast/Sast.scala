@@ -1,8 +1,8 @@
-package scitzen.parser.sast
+package scitzen.sast
 
 import scitzen.outputs.AttributesToScim
-import scitzen.parser.MacroCommand
-import scitzen.parser.MacroCommand.{Emph, Strong}
+import scitzen.sast.MacroCommand
+import scitzen.sast.MacroCommand.{Emph, Strong}
 
 sealed trait Sast
 

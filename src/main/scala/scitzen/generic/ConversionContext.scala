@@ -6,8 +6,7 @@ import better.files.File
 import cats.data.Chain
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.extern.{ConvertTask, KatexConverter}
-import scitzen.parser.sast.{Macro, Section}
-import scitzen.parser.sast.Sast
+import scitzen.sast.{Macro, Sast, Section}
 
 case class SastRef(scope: File, sast: Sast, directArticle: Option[Article])
 

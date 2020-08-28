@@ -3,10 +3,9 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers.{eol, untilE, withProv}
-import scitzen.parser.MacroCommand.Comment
+import scitzen.sast.MacroCommand.Comment
 import scitzen.parser.MacroParsers.commentStart
-import scitzen.parser.sast.Attribute
-import scitzen.parser.sast.{Inline, InlineText, Macro}
+import scitzen.sast.{Attribute, Inline, InlineText, Macro}
 
 case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit], allowEmpty: Boolean = false) {
 

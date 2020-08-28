@@ -1,9 +1,8 @@
 package scitzen.outputs
 
 import scitzen.generic.{Article, HtmlPathManager}
-import scitzen.parser.MacroCommand.Other
-import scitzen.parser.sast.{Block, InlineText, Macro, Parsed, Section, Text}
-import scitzen.parser.sast.{Attribute, Attributes, Prov, Sast}
+import scitzen.sast.MacroCommand.Other
+import scitzen.sast.{Attribute, Attributes, Block, InlineText, Macro, Parsed, Prov, Sast, Section, Text}
 
 object GenIndexPage {
 

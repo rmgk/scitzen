@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import cats.implicits._
 import scitzen.outputs.SastToTextConverter
-import scitzen.parser.sast.Sast
+import scitzen.sast.Sast
 
 case class NLP(stopwords: Map[String, Set[String]]) {
 

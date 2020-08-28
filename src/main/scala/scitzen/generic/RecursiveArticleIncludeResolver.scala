@@ -1,9 +1,8 @@
 package scitzen.generic
 
 import better.files.File
-import scitzen.parser.sast._
-import scitzen.parser.MacroCommand
-import scitzen.parser.sast.Sast
+import scitzen.sast.MacroCommand
+import scitzen.sast.{Block, BlockType, Fenced, InlineText, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 
 /* The only thing the includes are used for is to figure out reference targets.
  * This somehow should be much easier … */

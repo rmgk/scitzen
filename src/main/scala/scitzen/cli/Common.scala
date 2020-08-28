@@ -4,7 +4,7 @@ import cats.data.Chain
 import scitzen.extern.ImageConverter
 import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, RecursiveArticleIncludeResolver, SastRef}
 import scitzen.outputs.SastToSastConverter
-import scitzen.parser.sast.Sast
+import scitzen.sast.Sast
 
 object Common {
 

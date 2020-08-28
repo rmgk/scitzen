@@ -3,8 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.sast.{Attribute, Attributes, Prov, Sast}
-import scitzen.parser.sast.{Block, Fenced, Parsed}
+import scitzen.sast.{Attribute, Attributes, Block, Fenced, Prov, Sast}
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
@@ -24,9 +23,9 @@ object DelimitedBlockParsers {
                   case '`' => Fenced(strippedText)
                   case ':' =>
                     val sast: Seq[Sast] = Parse.documentUnwrap(strippedText, prov)
-                    Parsed(delimiter, sast)
+                    scitzen.sast.Parsed(delimiter, sast)
                 }
-              Block(Attributes(rawAttr, if (!isStripped) prov else prov.copy(indent = delimiter.length)), blockContent)
+              scitzen.sast.Block(Attributes(rawAttr, if (!isStripped) prov else prov.copy(indent = delimiter.length)), blockContent)
           }
     }
 
@@ -49,11 +48,11 @@ object DelimitedBlockParsers {
         .rep(min = 1, sep = significantSpaceLine.rep ~ &(indentation))
         .map { lines =>
           val sast: Seq[Sast] = Parse.documentUnwrap(lines.mkString, Prov())
-          Parsed(indentation, sast)
+          scitzen.sast.Parsed(indentation, sast)
         }
     }).map {
       case (parsed, prov) =>
-        Block(Attributes(Nil, prov.copy(indent = parsed.delimiter.length)), parsed)
+        scitzen.sast.Block(Attributes(Nil, prov.copy(indent = parsed.delimiter.length)), parsed)
     })
 
 }

@@ -3,8 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.sast.Attribute
-import scitzen.parser.sast.{Inline, Text}
+import scitzen.sast.{Attribute, Inline, Text}
 
 object AttributesParser {
   def start[_: P]: P[Unit] = P(open)
@@ -27,14 +26,14 @@ object AttributesParser {
       //(("[" ~ untilI("]" ~ quotes ~ verticalSpaces ~ &(terminator)))
       //  | (if (quotes.isEmpty) unquotedValue
       //     else untilI(quotes ~ verticalSpaces ~ &(terminator))))
-    }).map(r => Text(r._1))
+    }).map(r => scitzen.sast.Text(r._1))
   }
 
   def namedAttribute[_: P]: P[Attribute] =
     P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~ value)
-      .map { case (id, v) => scitzen.parser.sast.Attribute(id, v) }
+      .map { case (id, v) => scitzen.sast.Attribute(id, v) }
 
-  def positionalAttribute[_: P]: P[Attribute] = P(value).map(v => scitzen.parser.sast.Attribute("", v))
+  def positionalAttribute[_: P]: P[Attribute] = P(value).map(v => scitzen.sast.Attribute("", v))
 
   def attribute[_: P]: P[Attribute] = P(namedAttribute | positionalAttribute)
 

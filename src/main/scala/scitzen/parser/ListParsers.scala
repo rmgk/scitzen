@@ -3,8 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.parser.sast.Prov
-import scitzen.parser.sast.{Block, ListItem, Slist, Text}
+import scitzen.sast.{Block, ListItem, Prov, Slist, Text}
 
 object ListParsers {
 
@@ -66,7 +65,7 @@ object ListParsers {
           val childSasts  = if (children.isEmpty) None else Some(listtoSast(children))
           ListItem(item.marker, Text(itemSast), contentSast.orElse(childSasts))
       }
-      Slist(listItems)
+      scitzen.sast.Slist(listItems)
     }
   }
 }

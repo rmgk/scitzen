@@ -9,7 +9,7 @@ import scitzen.generic.Project.ProjectConfig
 import scitzen.generic.{ConversionContext, Project}
 import scitzen.outputs.SastToSastConverter
 import scitzen.parser._
-import scitzen.parser.sast.{Prov, Sast}
+import scitzen.sast.{Prov, Sast}
 
 object JsonSast {
 

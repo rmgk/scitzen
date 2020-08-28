@@ -3,10 +3,9 @@ package scitzen.outputs
 import cats.data.Chain
 import cats.implicits._
 import fastparse.P
-import scitzen.parser.MacroCommand.Comment
-import scitzen.parser.sast.{Attribute, Attributes, Sast}
-import scitzen.parser.sast._
-import scitzen.parser.{AttributesParser, MacroCommand}
+import scitzen.parser.AttributesParser
+import scitzen.sast.MacroCommand.Comment
+import scitzen.sast._
 
 import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex

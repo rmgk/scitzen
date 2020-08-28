@@ -4,8 +4,8 @@ import better.files.File
 import cats.data.Chain
 import scitzen.extern.ImageConverter
 import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, Reporter, SastRef}
-import scitzen.parser.MacroCommand.{Image, Include, Label}
-import scitzen.parser.sast._
+import scitzen.sast.MacroCommand.{Image, Include, Label}
+import scitzen.sast.{Attribute, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 
 class SastToSastConverter(
     project: Project,
@@ -53,7 +53,7 @@ class SastToSastConverter(
               }
           }
         }.map { cs =>
-          Slist(cs.iterator.toSeq)
+          scitzen.sast.Slist(cs.iterator.toSeq)
         }
 
       case mcro @ Macro(_, _) =>

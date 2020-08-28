@@ -4,7 +4,7 @@ import cats.implicits._
 import fastparse.NoWhitespace._
 import fastparse.Parsed.{Failure, Success, TracedFailure}
 import fastparse._
-import scitzen.parser.sast.{Prov, Sast, Inline}
+import scitzen.sast.{Inline, Prov, Sast}
 
 case class ParsingAnnotation(content: String, failure: TracedFailure) extends Exception
 

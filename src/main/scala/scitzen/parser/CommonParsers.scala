@@ -2,7 +2,7 @@ package scitzen.parser
 
 import fastparse.NoWhitespace._
 import fastparse._
-import scitzen.parser.sast.Prov
+import scitzen.sast.Prov
 
 object CommonParsers {
   def verticalSpace[_: P]: P[Unit]             = P(CharIn(" \t"))
