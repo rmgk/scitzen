@@ -105,7 +105,6 @@ class SastToSastConverter(
               val target  = SastRef(cwf, tlblock, artOpt(ctx))
               matches.foldLeft(ctx.ret(target)) { (cx, group) => cx.addRefTarget(ref + group, target) }.ret(tlblock)
           }
-
         }
 
       case SpaceComment(_) => ctx.ret(tlblock)

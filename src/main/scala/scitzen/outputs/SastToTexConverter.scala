@@ -241,7 +241,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
             scribe.error(s"no resolution found for ${attr.target}" + reporter(attr.prov))
             ctx.empty
           case Some(candidate) =>
-            val label = References.getLabel(candidates.head).get
+            val label = if (candidate.sast.isInstanceOf[Section]) References.getLabel(candidate).get else attr.target
             ctx.retc(s"${nbrs(attr)}\\ref{${label}}")
 
         }
