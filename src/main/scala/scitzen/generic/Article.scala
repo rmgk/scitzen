@@ -1,14 +1,14 @@
 package scitzen.generic
 
-import scitzen.parser.{DateParsingHelper, ScitzenDateTime}
-import scitzen.sast.{Sast, Section}
+import scitzen.parser.{TimeParsers}
+import scitzen.sast.{Sast, Section, ScitzenDateTime}
 
 case class Article(header: Section, content: List[Sast], sourceDoc: Document, includes: DocumentDirectory) {
 
   lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
 
   lazy val date: Option[ScitzenDateTime] = header.attributes.named.get("date")
-    .map(v => DateParsingHelper.parseDate(v.trim))
+    .map(v => TimeParsers.parseDate(v.trim))
 
   lazy val title: String = header.title.str
 
