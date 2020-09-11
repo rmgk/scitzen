@@ -219,7 +219,6 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
   def inlineToTex(inln: Inline)(implicit ctx: Cta): CtxCS =
     inln match {
       case InlineText(str)                    => ctx.retc(latexencode(str))
-      case Macro(Cite, attr)                  => ctx.retc(s"${nbrs(attr)}\\cite{${attr.target}}")
       case Macro(Code, attrs)                 => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
       case Macro(Comment, _)                  => ctx.retc("")
       case Macro(Def, _)                      => ctx.retc("")
@@ -231,6 +230,10 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
       case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
       case Macro(Strong, attrs)               => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
+
+      case Macro(Cite, attr)                  =>
+        val cmnd = if(attr.named.get("style").contains("name")) "citet" else "cite"
+        ctx.retc(s"${nbrs(attr)}\\$cmnd{${attr.target}}")
 
       case Macro(Ref, attr) =>
         val scope      = attr.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
