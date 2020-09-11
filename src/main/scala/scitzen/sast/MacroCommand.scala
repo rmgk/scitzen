@@ -9,7 +9,6 @@ object MacroCommand {
       "def"     -> Def,
       "image"   -> Image,
       "include" -> Include,
-      "label"   -> Label,
       "link"    -> Link,
       "ref"     -> Ref,
       "code"    -> Code,
@@ -45,7 +44,6 @@ object MacroCommand {
   object Def                    extends MacroCommand
   object Image                  extends MacroCommand
   object Include                extends MacroCommand
-  object Label                  extends MacroCommand
   object Link                   extends MacroCommand
   object Ref                    extends MacroCommand
   object Lookup                 extends MacroCommand

@@ -4,7 +4,7 @@ import better.files.File
 import cats.data.Chain
 import scitzen.extern.ImageConverter
 import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, Reporter, SastRef}
-import scitzen.sast.MacroCommand.{Image, Include, Label}
+import scitzen.sast.MacroCommand.{Image, Include}
 import scitzen.sast.{
   Attribute, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment,
   Text
@@ -142,9 +142,6 @@ class SastToSastConverter(
 
       // collect image macros
       case mcro @ Macro(Image, _) => ctx.addMacro(mcro).ret(mcro)
-
-      case Macro(Label, attributes) =>
-        ctx.addRefTarget(attributes.target, SastRef(cwf, ctx.sections.head, artOpt(ctx))).ret(mcro)
 
       case Macro(Include, attributes) if attributes.arguments.isEmpty =>
         project.resolve(cwd, attributes.target) match {

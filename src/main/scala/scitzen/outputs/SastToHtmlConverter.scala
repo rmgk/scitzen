@@ -265,8 +265,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           cctx.retc(frag(s"${attributes.arguments.head}\u00A0", anchors))
         } else cctx.retc(anchors)
 
-      case Macro(Label, _) => ctx.empty
-
       case Macro(Link, attributes) =>
         val target = attributes.target
         ctx.retc(linkTo(attributes, target))

@@ -4,7 +4,7 @@ import better.files.File
 import cats.data.Chain
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, References, Reporter}
 import scitzen.sast.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Label, Link, Lookup, Math, Other, Ref, Strong
+  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
 }
 import scitzen.sast._
 
@@ -224,7 +224,6 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case Macro(Comment, _)                  => ctx.retc("")
       case Macro(Def, _)                      => ctx.retc("")
       case Macro(Emph, attrs)                 => ctx.retc(s"\\emph{${latexencode(attrs.target)}}")
-      case Macro(Label, attr)                 => ctx.retc(s"\\label{${attr.target}}")
       case Macro(Math, attrs)                 => ctx.retc(s"$$${attrs.target}$$")
       case Macro(Other("break"), _)           => ctx.retc(s"\\clearpage{}")
       case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
