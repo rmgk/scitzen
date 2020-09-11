@@ -131,9 +131,11 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         }
     }
 
-  def texbox(name: String, args: Seq[String], content: Seq[Sast])(implicit ctx: Cta): CtxCS = {
+  def texbox(name: String, attributes: Attributes, content: Seq[Sast])(implicit ctx: Cta): CtxCS = {
+    val args = attributes.positional.tail
     val optionals = if (args.isEmpty) "" else args.mkString("[", "; ", "]")
-    s"\\begin{$name}$optionals" +:
+    val label = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
+    s"\\begin{$name}$optionals$label" +:
       sastSeqToTex(content) :+
       s"\\end{$name}"
   }
@@ -167,7 +169,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
                   )
 
               case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example" | "abstract") =>
-                texbox(name, tlblock.attributes.positional.tail, blockContent)
+                texbox(name, tlblock.attributes, blockContent)
 
               case _ =>
                 sastSeqToTex(blockContent)
