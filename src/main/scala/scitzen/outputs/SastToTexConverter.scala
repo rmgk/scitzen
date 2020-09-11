@@ -139,8 +139,8 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       s"\\end{$name}"
   }
 
-  def blockToTex(tlblock: Block)(implicit ctx: Cta): CtxCS =
-    tlblock.content match {
+  def blockToTex(tlblock: Block)(implicit ctx: Cta): CtxCS = {
+    val innerCtx: CtxCS = tlblock.content match {
       case Paragraph(content) => inlineValuesToTex(content.inl).single :+ "" :+ ""
 
       case Parsed(_, blockContent) =>
@@ -200,6 +200,13 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case SpaceComment(_) => ctx.empty
 
     }
+
+    tlblock.attributes.namedT.get("note").fold(innerCtx) { note =>
+      inlineValuesToTex(note.inl)(innerCtx).map { (content: String) =>
+        s"\\sidepar{$content}" +: innerCtx.data
+      }
+    }
+  }
 
   def nbrs(attributes: Attributes): String = {
     if (attributes.arguments.nonEmpty) s"${attributes.arguments.head}~"
