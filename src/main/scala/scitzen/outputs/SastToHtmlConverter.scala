@@ -239,9 +239,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     inlineSast match {
       case InlineText(str) => ctx.retc(stringFrag(str))
 
-      case Macro(Strong, attrs) => ctx.retc(strong(attrs.target))
-      case Macro(Emph, attrs)   => ctx.retc(em(attrs.target))
-      case Macro(Code, attrs)   => ctx.retc(code(attrs.target))
+      case Macro(Strong, attrs)             => ctx.retc(strong(attrs.target))
+      case Macro(Emph, attrs)               => ctx.retc(em(attrs.target))
+      case Macro(Code, attrs)               => ctx.retc(code(attrs.target))
+      case Macro(Other("partition"), attrs) => ctx.empty
 
       case Macro(Math, attrs) =>
         val inner = attrs.target

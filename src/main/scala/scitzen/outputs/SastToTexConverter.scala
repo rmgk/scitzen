@@ -230,9 +230,10 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
       case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
       case Macro(Strong, attrs)               => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
+      case Macro(Other("partition"), attrs)   => ctx.retc(s"\\part{${latexencode(attrs.target)}}")
 
-      case Macro(Cite, attr)                  =>
-        val cmnd = if(attr.named.get("style").contains("name")) "citet" else "cite"
+      case Macro(Cite, attr) =>
+        val cmnd = if (attr.named.get("style").contains("name")) "citet" else "cite"
         ctx.retc(s"${nbrs(attr)}\\$cmnd{${attr.target}}")
 
       case Macro(Ref, attr) =>
