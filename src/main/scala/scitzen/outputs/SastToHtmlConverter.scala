@@ -335,8 +335,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val linktarget = s"$protocol:${attributes.target}"
             ctx.retc(linkTo(attributes, linktarget))
 
-          case "subparagraph" => ctx.retc(b(`class` := "paragraphtitle", attributes.target))
-
           case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
 
           case "tableofcontents" => ctx.empty

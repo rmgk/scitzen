@@ -225,7 +225,6 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case Macro(Label, attr)                 => ctx.retc(s"\\label{${attr.target}}")
       case Macro(Math, attrs)                 => ctx.retc(s"$$${attrs.target}$$")
       case Macro(Other("break"), _)           => ctx.retc(s"\\clearpage{}")
-      case Macro(Other("subparagraph"), attr) => ctx.retc(s"\\subparagraph{${attr.target}}")
       case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
       case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
       case Macro(Strong, attrs)               => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
