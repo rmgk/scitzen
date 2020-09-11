@@ -203,7 +203,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
     tlblock.attributes.namedT.get("note").fold(innerCtx) { note =>
       inlineValuesToTex(note.inl)(innerCtx).map { (content: String) =>
-        s"\\sidepar{$content}" +: innerCtx.data
+        s"\\sidepar{$content}%" +: innerCtx.data
       }
     }
   }
