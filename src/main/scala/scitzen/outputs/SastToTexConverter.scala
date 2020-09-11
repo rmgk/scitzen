@@ -108,8 +108,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
             project.resolve(cwd, target) match {
               case None =>
-                scribe.error(s"Not relative path: $mcro")
-                ctx.empty
+                ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>
                 ctx.ret(Chain(s"\\noindent{}\\includegraphics[max width=\\columnwidth]{$data}\n"))
             }
@@ -284,13 +283,16 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         )
 
       case im @ Macro(Other(_), _) =>
-        val str = SastToScimConverter.macroToScim(im)
-        scribe.warn(s"unknown macro “$str”" + reporter(im))
+        val str = warn(s"unknown macro", im)
         ctx.retc(str)
 
       case im @ Macro(Image | Include, _) =>
-        val str = SastToScimConverter.macroToScim(im)
-        scribe.warn(s"tex backend does not allow inline images or includes" + reporter(im))
+        val str: String = warn(s"tex backend does not allow inline images or includes", im)
         ctx.retc(str)
     }
+  def warn(msg: String, im: Macro): String = {
+    val macroStr = SastToScimConverter.macroToScim(im)
+    scribe.warn(s"$msg: ⸢$macroStr⸥${reporter(im)}")
+    macroStr
+  }
 }
