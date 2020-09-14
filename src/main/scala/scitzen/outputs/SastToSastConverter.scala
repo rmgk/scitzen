@@ -6,8 +6,8 @@ import scitzen.extern.ImageConverter
 import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, Reporter, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
 import scitzen.sast.{
-  Attribute, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment,
-  Text
+  Attribute, Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist,
+  SpaceComment, Text
 }
 
 class SastToSastConverter(
@@ -40,8 +40,9 @@ class SastToSastConverter(
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _) =>
-        val (newSection, ctxWithRef) = addRefTargetMakeUnique(ctx, sec)
-        val conCtx                   = ctxWithRef.push(newSection)
+        val (newSection, ctxWithRef) =
+          addRefTargetMakeUnique(ctx, sec, sec.ref, sec.attributes)(a => sec.copy(attributes = a))
+        val conCtx = ctxWithRef.push(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
           Section(Text(title.toList), level, newSection.attributes)
         }
@@ -63,50 +64,50 @@ class SastToSastConverter(
         convertMacro(mcro).map(identity(_): Sast)
     }
 
-  def addRefTargetMakeUnique(ctx: Cta, sec: Section): (Section, Ctx[SastRef]) = {
-    val ref1 = sec.ref
-    val attr = sec.attributes
+  def addRefTargetMakeUnique[A <: Sast](
+      ctx: Cta,
+      sec: A,
+      ref1: String,
+      attr: Attributes
+  )(updateAttr: (Attributes) => A): (A, Ctx[Unit]) = {
     val counter =
       if (ctx.labelledThings.contains(ref1)) {
         ctx.nextId.map(_.toString)
       } else {
         ctx.ret("")
       }
+    val newLabel = s"$ref1 ($uid${counter.data})"
+    val cp       = updateAttr(attr.updated("label", newLabel))
 
-    val cp: Section = sec.copy(attributes = attr.updated("label", s"$ref1 ($uid${counter.data})"))
-    val secref      = SastRef(cwf, cp, artOpt(ctx, Some(cp)))
-    (cp, counter.addRefTarget(ref1, secref).addRefTarget(cp.ref, secref))
+    val asSection = Option.when(cp.isInstanceOf[Section])(cp.asInstanceOf[Section])
+    val secref    = SastRef(cwf, cp, artOpt(ctx, asSection))
+    (cp, counter.addRefTarget(ref1, secref).addRefTarget(newLabel, secref).ret(()))
   }
 
-  def convertBlock(tlblock: Block)(ctx: Cta): Ctx[Sast] = {
+  def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] = {
     // make all blocks labellable
-    val refctx = tlblock.attributes.named.get("label") match {
-      case None      => ctx
-      case Some(ref) => ctx.addRefTarget(ref, SastRef(cwf, tlblock, artOpt(ctx)))
+    val (ublock, refctx) = block.attributes.named.get("label") match {
+      case None => (block, ctx)
+      case Some(ref) =>
+        addRefTargetMakeUnique(ctx, block, ref, block.attributes)(a => block.copy(attributes = a))
     }
-    tlblock.content match {
+    ublock.content match {
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
-          .map(il => Block(tlblock.attributes, Paragraph(Text(il.toList))): Sast)
+          .map(il => Block(ublock.attributes, Paragraph(Text(il.toList))): Sast)
 
       case Parsed(delimiter, blockContent) =>
-        convertSeq(blockContent)(refctx).map(bc => Block(tlblock.attributes, Parsed(delimiter, bc.toList)): Sast)
+        convertSeq(blockContent)(refctx).map(bc => Block(ublock.attributes, Parsed(delimiter, bc.toList)): Sast)
 
       case Fenced(text) =>
-        if (tlblock.attributes.named.contains("converter") && converter.isDefined) {
-          val resctx = converter.get.convertBlock(cwd, tlblock).schedule(refctx)
+        if (ublock.attributes.named.contains("converter") && converter.isDefined) {
+          val resctx = converter.get.convertBlock(cwd, ublock).schedule(refctx)
           convertSingle(resctx.data)(resctx)
         } else {
-          // fenced blocks allow line labels
-          tlblock.attributes.named.get("label") match {
-            case None => ctx.ret(tlblock)
-            case Some(ref) =>
-              val target  = SastRef(cwf, tlblock, artOpt(ctx))
-              ctx.addRefTarget(ref, target).ret(tlblock)
-          }
+          refctx.ret(ublock)
         }
 
-      case SpaceComment(_) => ctx.ret(tlblock)
+      case SpaceComment(_) => refctx.ret(ublock)
 
     }
   }

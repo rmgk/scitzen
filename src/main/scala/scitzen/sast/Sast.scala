@@ -1,7 +1,6 @@
 package scitzen.sast
 
 import scitzen.outputs.AttributesToScim
-import scitzen.sast.MacroCommand
 import scitzen.sast.MacroCommand.{Emph, Strong}
 
 sealed trait Sast
