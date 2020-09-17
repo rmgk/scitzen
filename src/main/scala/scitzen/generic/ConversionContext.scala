@@ -19,7 +19,8 @@ case class ConversionContext[T](
     includes: List[File] = Nil,
     usedCitations: List[BibEntry] = Nil,
     partialMacros: List[Macro] = Nil,
-    sections: List[Section] = Nil
+    sections: List[Section] = Nil,
+    features: Set[String] = Set.empty,
 ) {
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
 
@@ -38,6 +39,8 @@ case class ConversionContext[T](
     val old = labelledThings.getOrElse(ref, Nil)
     copy(labelledThings = labelledThings.updated(ref, secref :: old), data = secref)
   }
+
+  def useFeature(name: String): ConversionContext[T] = copy(features = features.incl(name))
 
   def push(section: Section): ConversionContext[T] = copy(sections = section :: sections)
 

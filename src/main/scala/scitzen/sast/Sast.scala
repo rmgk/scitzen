@@ -29,7 +29,7 @@ case class Section(title: Text, prefix: String, attributes: Attributes) extends 
   }
 }
 case class Block(attributes: Attributes, content: BlockType) extends Sast {
-  override def toString: String = s"SBlock(${content.getClass.getSimpleName}, $attributes)"
+  override def toString: String = s"Block(${content.getClass.getSimpleName}, $attributes)"
   def command: String           = attributes.positional.headOption.getOrElse("")
 }
 

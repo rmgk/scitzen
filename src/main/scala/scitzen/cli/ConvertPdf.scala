@@ -59,13 +59,14 @@ object ConvertPdf {
       val template        = article.named.get("texTemplate").orElse(project.config.texTemplate).get
       val templateContent = project.resolve(project.root, template).get.contentAsString
       val templateSast    = Parse.documentUnwrap(templateContent, Prov(0, templateContent.length))
-      val templateSettings =
+      val templateSettings: Map[String, String] =
         project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
-          "template content"  -> content.iterator.mkString("\n"),
-          "bibliography path" -> bibliography.getOrElse("")
-        )
+          Some("template content"              -> content.iterator.mkString("\n")),
+          bibliography.map("bibliography path" -> _)
+        ).flatten ++ resultContext.features.toList.map(s => s"feature $s" -> "")
 
-      temptexfile.write(SastToTextConverter(templateSettings).convert(templateSast).mkString("\n"))
+      val documentString = SastToTextConverter(templateSettings).convert(templateSast).mkString("\n")
+      temptexfile.write(documentString)
       latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
     }
   }

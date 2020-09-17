@@ -24,11 +24,26 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
         List(definitions(attr.target))
       case Macro(_, _) => Nil
 
-      case Block(_, blockType) => blockType match {
-          case Paragraph(content)      => List(convertInline(content.inl))
-          case Parsed(_, blockContent) => convert(blockContent)
-          case Fenced(text)            => List(text)
-          case SpaceComment(_)         => Nil
+      case Block(attr, blockType) =>
+        val filterBlock = attr.positional match {
+          case "if" :: parameter :: _ =>
+            val res = definitions.get(parameter) match {
+              case Some(value) =>
+                attr.named.get("equals").forall(_ == value)
+              case None => false
+            }
+            if (attr.named.contains("not")) !res else res
+          case _ => true
+        }
+
+        if (!filterBlock) Nil
+        else {
+          blockType match {
+            case Paragraph(content)      => List(convertInline(content.inl))
+            case Parsed(_, blockContent) => convert(blockContent)
+            case Fenced(text)            => List(text)
+            case SpaceComment(_)         => Nil
+          }
         }
 
     }
@@ -38,7 +53,7 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
     inners.map {
       case InlineText(str) => str
       case Macro(Lookup, attr) =>
-        definitions(attr.target)
+        definitions.get(attr.target).orElse(attr.named.get("default")).get
       case _: Macro => ""
     }.mkString("")
 }

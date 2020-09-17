@@ -110,7 +110,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
               case None =>
                 ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>
-                ctx.ret(Chain(s"\\noindent{}\\includegraphics[max width=\\columnwidth]{$data}\n"))
+                ctx.ret(Chain(s"\\noindent{}\\includegraphics[max width=\\columnwidth]{$data}\n")).useFeature("graphics")
             }
 
           case Macro(Include, attributes) =>
@@ -168,8 +168,10 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
                     "\\end{figure}"
                   )
 
-              case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example" | "abstract") =>
-                texbox(name, tlblock.attributes, blockContent)
+              case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
+                texbox(name, tlblock.attributes, blockContent).useFeature("framed")
+
+              case name @ "abstract" => texbox(name, tlblock.attributes, blockContent)
 
               case _ =>
                 sastSeqToTex(blockContent)
@@ -194,7 +196,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
               case Some(label) =>
                 text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
             }
-            ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}"))
+            ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
 
         }
 
@@ -205,7 +207,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
     tlblock.attributes.namedT.get("note").fold(innerCtx) { note =>
       inlineValuesToTex(note.inl)(innerCtx).map { (content: String) =>
         s"\\sidepar{$content}%" +: innerCtx.data
-      }
+      }.useFeature("sidepar")
     }
   }
 
@@ -262,7 +264,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
             val name = "{" + attributes.positional.head + "}"
             s"\\href{$target}{$name}"
           } else s"\\url{$target}"
-        }
+        }.useFeature("href")
 
       case Macro(Lookup, attributes) =>
         ctx.retc {
