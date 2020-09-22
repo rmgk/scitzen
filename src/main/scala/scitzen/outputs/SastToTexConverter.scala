@@ -267,14 +267,13 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         }.useFeature("href")
 
       case Macro(Lookup, attributes) =>
-        ctx.retc {
-          project.config.definitions.getOrElse(
-            attributes.target, {
+          project.definitions.get(attributes.target) match {
+            case Some(res) =>
+              inlineValuesToTex(res.inl)(ctx).map(Chain(_))
+            case None =>
               scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
-              attributes.target
-            }
-          )
-        }
+              ctx.retc(latexencode( attributes.target))
+          }
 
       case Macro(Other("footnote"), attributes) =>
         inlineValuesToTex(attributes.targetT.inl).map(target => s"\\footnote{$target}").single

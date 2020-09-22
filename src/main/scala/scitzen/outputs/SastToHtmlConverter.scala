@@ -309,8 +309,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         }
 
       case Macro(Lookup, attributes) =>
-        if (pathManager.project.config.definitions.contains(attributes.target))
-          ctx.retc(pathManager.project.config.definitions(attributes.target))
+        if (pathManager.project.definitions.contains(attributes.target))
+          inlineValuesToHTML(pathManager.project.definitions(attributes.target).inl)(ctx)
         else {
           scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
           ctx.retc(code(attributes.target))
