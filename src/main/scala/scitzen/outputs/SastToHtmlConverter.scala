@@ -239,10 +239,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     inlineSast match {
       case InlineText(str) => ctx.retc(stringFrag(str))
 
-      case Macro(Strong, attrs)             => ctx.retc(strong(attrs.target))
-      case Macro(Emph, attrs)               => ctx.retc(em(attrs.target))
-      case Macro(Code, attrs)               => ctx.retc(code(attrs.target))
-      case Macro(Other("partition"), attrs) => ctx.empty
+      case Macro(Strong, attrs) => ctx.retc(strong(attrs.target))
+      case Macro(Emph, attrs)   => ctx.retc(em(attrs.target))
+      case Macro(Code, attrs)   => ctx.retc(code(attrs.target))
 
       case Macro(Math, attrs) =>
         val inner = attrs.target
@@ -323,9 +322,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               SastToTextConverter(pathManager.project.config.definitions).convertInline(attributes.targetT.inl)
             ctx.retc(a(title := target, "※"))
 
-          case "textsc" =>
-            ctx.retc(span(`class` := "smallcaps", attributes.target))
-
           case tagname @ ("ins" | "del") =>
             ctx.retc(tag(tagname)(attributes.positional.mkString(", ")))
 
@@ -333,9 +329,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val linktarget = s"$protocol:${attributes.target}"
             ctx.retc(linkTo(attributes, linktarget))
 
-          case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
-
+          case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
           case "tableofcontents" => ctx.empty
+          case "partition"       => ctx.empty
+          case "rule"            => ctx.retc(span(attributes.target, `class` := "rule"))
 
           case _ => ctx.retc(unknownMacroOutput(mcro))
 

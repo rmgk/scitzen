@@ -110,7 +110,9 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
               case None =>
                 ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>
-                ctx.ret(Chain(s"\\noindent{}\\includegraphics[max width=\\columnwidth]{$data}\n")).useFeature("graphics")
+                ctx.ret(Chain(s"\\noindent{}\\includegraphics[max width=\\columnwidth]{$data}\n")).useFeature(
+                  "graphics"
+                )
             }
 
           case Macro(Include, attributes) =>
@@ -132,9 +134,9 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
     }
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(implicit ctx: Cta): CtxCS = {
-    val args = attributes.positional.tail
+    val args      = attributes.positional.tail
     val optionals = if (args.isEmpty) "" else args.mkString("[", "; ", "]")
-    val label = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
+    val label     = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
       sastSeqToTex(content) :+
       s"\\end{$name}"
@@ -221,17 +223,17 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
   def inlineToTex(inln: Inline)(implicit ctx: Cta): CtxCS =
     inln match {
-      case InlineText(str)                    => ctx.retc(latexencode(str))
-      case Macro(Code, attrs)                 => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
-      case Macro(Comment, _)                  => ctx.retc("")
-      case Macro(Def, _)                      => ctx.retc("")
-      case Macro(Emph, attrs)                 => ctx.retc(s"\\emph{${latexencode(attrs.target)}}")
-      case Macro(Math, attrs)                 => ctx.retc(s"$$${attrs.target}$$")
-      case Macro(Other("break"), _)           => ctx.retc(s"\\clearpage{}")
-      case Macro(Other("textsc"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
-      case Macro(Other("todo"), attr)         => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
-      case Macro(Strong, attrs)               => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
-      case Macro(Other("partition"), attrs)   => ctx.retc(s"\\part{${latexencode(attrs.target)}}")
+      case InlineText(str)                  => ctx.retc(latexencode(str))
+      case Macro(Code, attrs)               => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
+      case Macro(Comment, _)                => ctx.retc("")
+      case Macro(Def, _)                    => ctx.retc("")
+      case Macro(Emph, attrs)               => ctx.retc(s"\\emph{${latexencode(attrs.target)}}")
+      case Macro(Math, attrs)               => ctx.retc(s"$$${attrs.target}$$")
+      case Macro(Other("break"), _)         => ctx.retc(s"\\clearpage{}")
+      case Macro(Other("rule"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
+      case Macro(Other("todo"), attr)       => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
+      case Macro(Strong, attrs)             => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
+      case Macro(Other("partition"), attrs) => ctx.retc(s"\\part{${latexencode(attrs.target)}}")
 
       case Macro(Cite, attr) =>
         val cmnd = if (attr.named.get("style").contains("name")) "citet" else "cite"
@@ -267,13 +269,13 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         }.useFeature("href")
 
       case Macro(Lookup, attributes) =>
-          project.definitions.get(attributes.target) match {
-            case Some(res) =>
-              inlineValuesToTex(res.inl)(ctx).map(Chain(_))
-            case None =>
-              scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
-              ctx.retc(latexencode( attributes.target))
-          }
+        project.definitions.get(attributes.target) match {
+          case Some(res) =>
+            inlineValuesToTex(res.inl)(ctx).map(Chain(_))
+          case None =>
+            scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
+            ctx.retc(latexencode(attributes.target))
+        }
 
       case Macro(Other("footnote"), attributes) =>
         inlineValuesToTex(attributes.targetT.inl).map(target => s"\\footnote{$target}").single
