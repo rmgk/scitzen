@@ -21,7 +21,7 @@ object JsonSast {
   def jsonFor(file: File): String = {
     val content   = file.contentAsString
     val sast      = Parse.documentUnwrap(content, Prov(0, content.length))
-    val converter = new SastToSastConverter(Project(file.parent, ProjectConfig()), file, _ => "", None)
+    val converter = new SastToSastConverter(Project(file.parent, ProjectConfig(), Map.empty), file, _ => "", None)
     val converted = converter.convertSeq(sast)(ConversionContext(())).data.toList
     writeToString(converted)(SastEncoder)
   }

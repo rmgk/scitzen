@@ -4,9 +4,11 @@ import java.nio.file.{Path, Paths}
 
 import better.files.File
 import scitzen.generic.Project.ProjectConfig
+import scitzen.parser.Parse
+import scitzen.sast.{Prov, Text}
 import toml.Codecs._
 
-case class Project(root: File, config: ProjectConfig) {
+case class Project(root: File, config: ProjectConfig, definitions: Map[String, Text]) {
 
   val cacheDir: File  = root / config.cache
   val outputdir: File = root / config.output
@@ -15,7 +17,6 @@ case class Project(root: File, config: ProjectConfig) {
   def relativizeToProject(target: File): Path = {
     Paths.get("/").resolve(root.relativize(target))
   }
-
 
   def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File = {
     val rawPath = Paths.get(pathString)
@@ -59,20 +60,22 @@ object Project {
   def fromSource(file: File): Option[Project] = {
     if (isScim(file)) {
       findRoot(file) match {
-        case None       => Some(Project(file.parent, ProjectConfig()))
+        case None       => Some(Project(file.parent, ProjectConfig(), Map.empty))
         case Some(file) => fromConfig(file)
       }
     } else if (file.isDirectory) {
       if ((file / scitzenconfig).isRegularFile) {
         fromConfig(file)
-      } else Some(Project(file, ProjectConfig()))
+      } else Some(Project(file, ProjectConfig(), Map.empty))
     } else None
   }
 
   def fromConfig(file: File): Option[Project] = {
     locally(stringCodec) // make tools believe the import is used
     toml.Toml.parseAs[ProjectConfig]((file / scitzenconfig).contentAsString) match {
-      case Right(value) => Some(Project(file, value))
+      case Right(value) =>
+        val definitions = value.definitions.view.mapValues(s => Text(Parse.inlineUnwrap(s, Prov()))).toMap
+        Some(Project(file, value, definitions))
       case Left((addr, mesg)) =>
         val errormessage = s"could not parse config:\n$mesg\nat $addr"
         scribe.error(errormessage)
