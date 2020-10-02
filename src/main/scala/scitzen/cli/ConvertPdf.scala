@@ -6,7 +6,7 @@ import better.files.File
 import scitzen.extern.ImageConverter
 import scitzen.extern.TexConverter.latexmk
 import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
-import scitzen.outputs.{SastToTexConverter, SastToTextConverter}
+import scitzen.outputs.{Includes, SastToTexConverter, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.Prov
 
@@ -17,7 +17,7 @@ object ConvertPdf {
 
     val preprocessed = Common.preprocessDocuments(
       project,
-      new ImageConverter(project, "pdf", List("svg")),
+      new ImageConverter(project, "pdf", List("svg"), documentDirectory),
       documentDirectory
     )
 
@@ -57,7 +57,8 @@ object ConvertPdf {
       val temptexdir  = project.cacheDir / s"$articlename.outdir"
 
       val template        = article.named.get("texTemplate").orElse(project.config.texTemplate).get
-      val templateContent = project.resolve(project.root, template).get.contentAsString
+      val templateFile = project.resolve(project.root, template).get
+      val templateContent = templateFile.contentAsString
       val templateSast    = Parse.documentUnwrap(templateContent, Prov(0, templateContent.length))
       val templateSettings: Map[String, String] =
         project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
@@ -65,7 +66,7 @@ object ConvertPdf {
           bibliography.map("bibliography path" -> _)
         ).flatten ++ resultContext.features.toList.map(s => s"feature $s" -> "")
 
-      val documentString = SastToTextConverter(templateSettings).convert(templateSast).mkString("\n")
+      val documentString = SastToTextConverter(templateSettings, Some(Includes(project, templateFile, preprocessed.directory))).convert(templateSast).mkString("\n")
       temptexfile.write(documentString)
       latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
     }

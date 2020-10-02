@@ -2,8 +2,8 @@ package scitzen.extern
 
 import better.files.File
 import scitzen.generic.RegexContext.regexStringContext
-import scitzen.generic.{ConversionContext, Project}
-import scitzen.outputs.SastToTextConverter
+import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
+import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.{Attribute, Attributes, Block, Fenced, Macro, MacroCommand, Prov, Sast}
 
@@ -22,7 +22,7 @@ class ConvertSchedulable[T](data: T, task: Option[ConvertTask]) {
   }
 }
 
-class ImageConverter(project: Project, val preferredFormat: String, unsupportedFormat: List[String] = Nil) {
+class ImageConverter(project: Project, val preferredFormat: String, unsupportedFormat: List[String] = Nil, documentDirectory: DocumentDirectory) {
 
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
@@ -165,7 +165,7 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
         val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
         SastToTextConverter(project.config.definitions ++ attributes.named + (
           "template content" -> content
-        )).convert(sast).mkString("\n")
+        ), Some(Includes(project, templateFile, documentDirectory))).convert(sast).mkString("\n")
     }
 
     converter match {

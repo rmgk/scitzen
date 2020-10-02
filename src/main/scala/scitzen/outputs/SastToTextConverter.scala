@@ -1,11 +1,18 @@
 package scitzen.outputs
 
-import scitzen.sast.MacroCommand.Lookup
-import scitzen.sast.{
-  Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
-}
+import better.files.File
+import scitzen.generic.{DocumentDirectory, Project}
+import scitzen.sast.MacroCommand.{Include, Lookup}
+import scitzen.sast.{Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 
-case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
+case class Includes(    project: Project,
+                        cwf: File,
+                        includeResolver: DocumentDirectory)
+
+case class SastToTextConverter(
+    definitions: Map[String, String] = Map.empty,
+    includes: Option[Includes] = None
+) {
 
   def convert(b: Seq[Sast]): Seq[String] = {
     b.flatMap {
@@ -22,6 +29,25 @@ case class SastToTextConverter(definitions: Map[String, String] = Map.empty) {
       case Macro(Lookup, attr) =>
         if (!definitions.contains(attr.target)) scribe.error(s"could not resolve ${attr.target}")
         List(definitions(attr.target))
+
+      case Macro(Include, attributes) =>
+        includes match {
+          case None => Nil
+          case Some(Includes(project, cwf, includeResolver)) =>
+            project.resolve(cwf.parent, attributes.target).flatMap(includeResolver.byPath.get) match {
+              case Some(doc) =>
+                val included = includeResolver.byPath(doc.file)
+
+                new SastToTextConverter(definitions, includes)
+                .convert(included.sast)
+
+              case None =>
+                scribe.error(s"unknown include ${attributes.target} in template ${cwf}")
+                Nil
+            }
+        }
+
+
       case Macro(_, _) => Nil
 
       case Block(attr, blockType) =>

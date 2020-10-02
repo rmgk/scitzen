@@ -319,7 +319,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         otherCommand match {
           case "footnote" =>
             val target =
-              SastToTextConverter(pathManager.project.config.definitions).convertInline(attributes.targetT.inl)
+              SastToTextConverter(pathManager.project.config.definitions, Some(Includes(pathManager.project, pathManager.cwf, includeResolver))).convertInline(attributes.targetT.inl)
             ctx.retc(a(title := target, "※"))
 
           case tagname @ ("ins" | "del") =>

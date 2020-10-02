@@ -28,7 +28,7 @@ object ConvertHtml {
 
     val preprocessed = Common.preprocessDocuments(
       project,
-      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf")),
+      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"), documentDirectory),
       documentDirectory
     )
 
