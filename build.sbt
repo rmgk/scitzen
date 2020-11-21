@@ -3,8 +3,7 @@ import Settings._
 import org.irundaia.sass.Maxified
 
 lazy val scitzen = project.in(file("."))
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(GraalVMNativeImagePlugin)
+  .enablePlugins(NativeImagePlugin)
   .enablePlugins(SbtSassify)
   .settings(
     name := "scitzen",
@@ -24,7 +23,8 @@ lazy val scitzen = project.in(file("."))
     scribe,
     SassKeys.cssStyle := Maxified,
     normalizecss,
-    graalVMNativeImageOptions ++= Seq(
+    nativeImageVersion := "20.3.0",
+    nativeImageOptions ++= Seq(
       "--initialize-at-build-time",
       "--no-fallback",
       "--no-server"
@@ -33,6 +33,5 @@ lazy val scitzen = project.in(file("."))
     libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value))
   )
 
-lazy val nativeImage = taskKey[File]("calls graalvm native image")
-
-nativeImage := (scitzen / GraalVMNativeImage / packageBin).value
+// fix some linting nonsense
+Global / excludeLintKeys += nativeImageVersion
