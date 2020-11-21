@@ -30,12 +30,10 @@ jobs:
         with:
           java-version: openjdk@1.11
       - run: git fetch --tags || true
-      - run: sbt nativeImage
+      - run: sbt nativeImage (unix)
         shell: bash
         if: ${{ matrix.os != 'windows-latest' }}
-      - run: echo $(pwd)
-        shell: bash
-      - name: sbt test
+      - name: sbt nativeImage (windows)
         shell: cmd
         if: ${{ matrix.os == 'windows-latest' }}
         run: >-
