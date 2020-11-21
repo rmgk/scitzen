@@ -26,7 +26,9 @@ jobs:
             local_path: target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v12
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: openjdk@1.11
       - run: git fetch --tags || true
       - run: sbt nativeImage
         shell: bash
