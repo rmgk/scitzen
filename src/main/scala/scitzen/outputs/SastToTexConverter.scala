@@ -193,11 +193,17 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
             ctx.ret(Chain("\\noindent", latexenc))
 
           case _ =>
-            val restext = tlblock.attributes.named.get("label") match {
+            val labeltext = tlblock.attributes.named.get("label") match {
               case None => text
               case Some(label) =>
                 text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
             }
+            val restext =
+              if (!tlblock.attributes.positional.contains("highlight")) labeltext
+              else {
+                labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
+
+              }
             ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
 
         }
