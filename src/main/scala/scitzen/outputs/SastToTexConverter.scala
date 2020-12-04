@@ -219,9 +219,14 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
     }
   }
 
-  def nbrs(attributes: Attributes): String = {
-    if (attributes.arguments.nonEmpty) s"${attributes.arguments.head}~"
-    else ""
+  def nbrs(attributes: Attributes)(implicit ctx: Cta): Ctx[String] = {
+    attributes.argumentsT match {
+      case Nil => ctx.ret("")
+      case arg :: _ =>
+        inlineValuesToTex(attributes.argumentsT.head.inl).map { str =>
+          s"${str}~"
+        }
+    }
   }
 
   def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] =
@@ -229,21 +234,23 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
   def inlineToTex(inln: Inline)(implicit ctx: Cta): CtxCS =
     inln match {
-      case InlineText(str)                  => ctx.retc(latexencode(str))
-      case Macro(Code, attrs)               => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
-      case Macro(Comment, _)                => ctx.retc("")
-      case Macro(Def, _)                    => ctx.retc("")
-      case Macro(Emph, attrs)               => ctx.retc(s"\\emph{${latexencode(attrs.target)}}")
-      case Macro(Math, attrs)               => ctx.retc(s"$$${attrs.target}$$")
-      case Macro(Other("break"), _)         => ctx.retc(s"\\clearpage{}")
-      case Macro(Other("rule"), attr)       => ctx.retc(s"\\textsc{${attr.target}}")
-      case Macro(Other("todo"), attr)       => ctx.retc(s"{\\color{red}TODO:${attr.target}}")
-      case Macro(Strong, attrs)             => ctx.retc(s"\\textbf{${latexencode(attrs.target)}}")
-      case Macro(Other("partition"), attrs) => ctx.retc(s"\\part{${latexencode(attrs.target)}}")
+      case InlineText(str)            => ctx.retc(latexencode(str))
+      case Macro(Code, attrs)         => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
+      case Macro(Comment, _)          => ctx.retc("")
+      case Macro(Def, _)              => ctx.retc("")
+      case Macro(Emph, attrs)         => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\emph{$str}")
+      case Macro(Math, attrs)         => ctx.retc(s"$$${attrs.target}$$")
+      case Macro(Other("break"), _)   => ctx.retc(s"\\clearpage{}")
+      case Macro(Other("rule"), attr) => ctx.retc(s"\\textsc{${attr.target}}")
+      case Macro(Other("todo"), attr) =>
+        inlineValuesToTex(attr.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
+      case Macro(Strong, attrs) => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\textbf{$str}")
+      case Macro(Other("partition"), attrs) =>
+        inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\part{${str}}")
 
       case Macro(Cite, attr) =>
         val cmnd = if (attr.named.get("style").contains("name")) "citet" else "cite"
-        ctx.retc(s"${nbrs(attr)}\\$cmnd{${attr.target}}")
+        nbrs(attr).mapc(str => s"$str\\$cmnd{${attr.target}}")
 
       case Macro(Ref, attr) =>
         val scope      = attr.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
@@ -262,7 +269,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
             ctx.empty
           case Some(candidate) =>
             val label = References.getLabel(candidate).get + attr.named.getOrElse("line", "")
-            ctx.retc(s"${nbrs(attr)}\\ref{${label}}")
+            nbrs(attr).mapc { str => s"${str}\\ref{${label}}" }
         }
 
       case Macro(Link, attributes) =>
