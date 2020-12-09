@@ -63,6 +63,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     }
   }
 
+  val videoEndings = List(".mp4", ".mkv", ".webm")
+
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
   def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
     singleSast match {
@@ -100,7 +102,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               case Some(target) =>
                 val path = pathManager.relativizeImage(target)
                 ctx.requireInOutput(target, path).retc {
-                  img(src := path.toString)(attributes.named.get("style").map(style := _))
+                  val filename = path.getFileName.toString
+                  if (videoEndings.exists(filename.endsWith)) video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
+                  else img(src := path.toString)
                 }
               case None =>
                 scribe.warn(s"could not find path ${attributes.target}" + reporter(mcro))

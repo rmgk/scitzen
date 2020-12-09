@@ -129,21 +129,23 @@ main * {
 }
 
 
-main > figure, main > img, main > section > figure, main > section > img {
-  // oversized figures and images
-  grid-column: image-start / image-end;
+main,  main > section {
+  & > img, & > figure, & > video {
+    // oversized figures and images
+    grid-column: image-start / image-end;
 
-  // add borders around figures and pure images
-  box-shadow: var(--figure-box-shadow);
-  //background: rgba(255, 255, 255, 0.8);
-  border-radius: 5px;
+    // add borders around figures and pure images
+    box-shadow: var(--figure-box-shadow);
+    //background: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
 
-  // justify instead of margins to center elements in grid
-  // unsafe causes the image to stay centered even if things get small,
-  // causing the box and shadow of the image to hit the border of the window
-  justify-self: unsafe center;
-  margin-left: 0;
-  margin-right: 0;
+    // justify instead of margins to center elements in grid
+    // unsafe causes the image to stay centered even if things get small,
+    // causing the box and shadow of the image to hit the border of the window
+    justify-self: unsafe center;
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
 
 
