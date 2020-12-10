@@ -11,7 +11,13 @@ object TexConverter {
     scribe.info(s"compiling $sourceFile")
     outputdir.createDirectories()
     val errorFile = (outputdir / "latexmk.err")
-    val returnCode = new ProcessBuilder(
+    val returnCode =
+    //new ProcessBuilder(
+    //  "tectonic", "--keep-intermediates",
+    //  "--outdir", outputdir.toString(),
+    //  sourceFile.pathAsString
+    //)
+      new ProcessBuilder(
       "latexmk",
       "-cd",
       "-halt-on-error",

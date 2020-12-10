@@ -1,7 +1,5 @@
 package scitzen.cli
 
-import java.nio.charset.{Charset, StandardCharsets}
-
 import better.files.File
 import scitzen.extern.ImageConverter
 import scitzen.extern.TexConverter.latexmk
@@ -9,6 +7,8 @@ import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
 import scitzen.outputs.{Includes, SastToTexConverter, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.Prov
+
+import java.nio.charset.{Charset, StandardCharsets}
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
@@ -21,7 +21,8 @@ object ConvertPdf {
       documentDirectory
     )
 
-    preprocessed.articles.foreach { article =>
+    import scala.jdk.CollectionConverters._
+    preprocessed.articles.asJava.parallelStream().forEach { article =>
       val converter = new SastToTexConverter(
         project,
         article.sourceDoc.file,
@@ -57,7 +58,7 @@ object ConvertPdf {
       val temptexdir  = project.cacheDir / s"$articlename.outdir"
 
       val template        = article.named.get("texTemplate").orElse(project.config.texTemplate).get
-      val templateFile = project.resolve(project.root, template).get
+      val templateFile    = project.resolve(project.root, template).get
       val templateContent = templateFile.contentAsString
       val templateSast    = Parse.documentUnwrap(templateContent, Prov(0, templateContent.length))
       val templateSettings: Map[String, String] =
@@ -66,7 +67,10 @@ object ConvertPdf {
           bibliography.map("bibliography path" -> _)
         ).flatten ++ resultContext.features.toList.map(s => s"feature $s" -> "")
 
-      val documentString = SastToTextConverter(templateSettings, Some(Includes(project, templateFile, preprocessed.directory))).convert(templateSast).mkString("\n")
+      val documentString = SastToTextConverter(
+        templateSettings,
+        Some(Includes(project, templateFile, preprocessed.directory))
+      ).convert(templateSast).mkString("\n")
       temptexfile.write(documentString)
       latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
     }

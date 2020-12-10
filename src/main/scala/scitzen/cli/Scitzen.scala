@@ -1,13 +1,16 @@
 package scitzen.cli
 
-import java.nio.file.{Path, Paths}
-
 import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.generic.{DocumentDirectory, Project}
 import scribe.Logger
+
+import java.nio.file.{Path, Paths}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object Scitzen
     extends CommandApp(
@@ -72,19 +75,27 @@ object ConvertProject {
                   Format.formatRename(documentDirectory)
                   scribe.info(s"formatted filenames $timediff")
                 }
-                if (project.config.outputType.contains("html")) {
-                  val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-                  ConvertHtml.convertToHtml(project, sync, documentDirectory)
-                  scribe.info(s"generated html $timediff")
+                val fHtml = Future {
+                  if (project.config.outputType.contains("html")) {
+                    val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+                    ConvertHtml.convertToHtml(project, sync, documentDirectory)
+                    scribe.info(s"generated html $timediff")
+                  }
                 }
-                if (project.config.outputType.contains("pdf")) {
-                  ConvertPdf.convertToPdf(project, documentDirectory)
-                  scribe.info(s"generated pdfs $timediff")
+                val fPdf = Future {
+                  if (project.config.outputType.contains("pdf")) {
+                    ConvertPdf.convertToPdf(project, documentDirectory)
+                    scribe.info(s"generated pdfs $timediff")
+                  }
                 }
-                if (imageFileMap) {
-                  ImageReferences.listAll(project, documentDirectory)
-                  scribe.info(s"generated imagemap $timediff")
+                val fIfm = Future {
+                  if (imageFileMap) {
+                    ImageReferences.listAll(project, documentDirectory)
+                    scribe.info(s"generated imagemap $timediff")
+                  }
                 }
+                List(fHtml, fPdf, fIfm).foreach(Await.ready(_, Duration.Inf))
+
             }
         }
     }
