@@ -249,8 +249,13 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\part{${str}}")
 
       case Macro(Cite, attr) =>
-        val cmnd = if (attr.named.get("style").contains("name")) "citet" else "cite"
-        nbrs(attr).mapc(str => s"$str\\$cmnd{${attr.target}}")
+        val cmndCtx = attr.named.get("style") match {
+          case Some("name") => ctx.ret("citet")
+          case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
+          case _ => ctx.ret("cite")
+        }
+
+        nbrs(attr)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attr.target}}")
 
       case Macro(Ref, attr) =>
         val scope      = attr.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
