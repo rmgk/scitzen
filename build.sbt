@@ -1,5 +1,4 @@
-import Dependencies.Compile._
-import Dependencies.Test._
+import Dependencies._
 import Settings._
 import org.irundaia.sass.Maxified
 
@@ -25,7 +24,7 @@ lazy val scitzen = project.in(file("."))
       normalizecss.value,
       tomlScala.value,
     ),
-    jsoniterScala,
+    libraryDependencies ++= jsoniterScala.value,
     SassKeys.cssStyle := Maxified,
     nativeImageVersion := "20.3.0",
     nativeImageOptions ++= Seq(
@@ -33,7 +32,6 @@ lazy val scitzen = project.in(file("."))
       "--no-fallback",
       "--no-server"
     ),
-    libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value))
   )
 
 // fix some linting nonsense
