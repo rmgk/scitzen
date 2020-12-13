@@ -103,7 +103,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 val path = pathManager.relativizeImage(target)
                 ctx.requireInOutput(target, path).retc {
                   val filename = path.getFileName.toString
-                  if (videoEndings.exists(filename.endsWith)) video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
+                  if (videoEndings.exists(filename.endsWith))
+                    video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
                   else img(src := path.toString)
                 }
               case None =>
@@ -323,7 +324,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         otherCommand match {
           case "footnote" =>
             val target =
-              SastToTextConverter(pathManager.project.config.definitions, Some(Includes(pathManager.project, pathManager.cwf, includeResolver))).convertInline(attributes.targetT.inl)
+              SastToTextConverter(
+                pathManager.project.config.definitions,
+                Some(Includes(pathManager.project, pathManager.cwf, includeResolver))
+              ).convertInline(attributes.targetT.inl)
             ctx.retc(a(title := target, "※"))
 
           case tagname @ ("ins" | "del") =>

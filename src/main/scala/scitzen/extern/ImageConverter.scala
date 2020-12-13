@@ -22,7 +22,12 @@ class ConvertSchedulable[T](data: T, task: Option[ConvertTask]) {
   }
 }
 
-class ImageConverter(project: Project, val preferredFormat: String, unsupportedFormat: List[String] = Nil, documentDirectory: DocumentDirectory) {
+class ImageConverter(
+    project: Project,
+    val preferredFormat: String,
+    unsupportedFormat: List[String] = Nil,
+    documentDirectory: DocumentDirectory
+) {
 
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
@@ -163,9 +168,12 @@ class ImageConverter(project: Project, val preferredFormat: String, unsupportedF
       case Some(templateFile) =>
         val tc   = templateFile.contentAsString
         val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
-        SastToTextConverter(project.config.definitions ++ attributes.named + (
-          "template content" -> content
-        ), Some(Includes(project, templateFile, documentDirectory))).convert(sast).mkString("\n")
+        SastToTextConverter(
+          project.config.definitions ++ attributes.named + (
+            "template content" -> content
+          ),
+          Some(Includes(project, templateFile, documentDirectory))
+        ).convert(sast).mkString("\n")
     }
 
     converter match {

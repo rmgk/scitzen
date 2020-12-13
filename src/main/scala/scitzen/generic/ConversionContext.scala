@@ -44,10 +44,10 @@ case class ConversionContext[T](
 
   def push(section: Section): ConversionContext[T] = copy(sections = section :: sections)
 
-  def ret[U](d: U): ConversionContext[U]         = copy(data = d)
-  def retc[U](d: U): ConversionContext[Chain[U]] = copy(data = Chain(d))
-  def map[U](f: T => U): ConversionContext[U]    = ret(f(data))
-  def mapc[U](f: T => U): ConversionContext[Chain[U]]   = ret(Chain(f(data)))
+  def ret[U](d: U): ConversionContext[U]              = copy(data = d)
+  def retc[U](d: U): ConversionContext[Chain[U]]      = copy(data = Chain(d))
+  def map[U](f: T => U): ConversionContext[U]         = ret(f(data))
+  def mapc[U](f: T => U): ConversionContext[Chain[U]] = ret(Chain(f(data)))
 
   def +:[I](value: I)(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => value +: data)

@@ -1,4 +1,5 @@
-import Dependencies._
+import Dependencies.Compile._
+import Dependencies.Test._
 import Settings._
 import org.irundaia.sass.Maxified
 
@@ -11,25 +12,27 @@ lazy val scitzen = project.in(file("."))
     scalaVersion_213,
     Compile / resources ++= (Assets / SassKeys.sassify).value,
     strictCompile,
-    decline,
-    betterFiles,
-    scalatags,
-    fastparse,
-    scalatest,
-    scalacheck,
-    pprint,
-    cats,
-    jsoniter,
-    scribe,
+    libraryDependencies ++= Seq(
+      decline.value,
+      betterFiles.value,
+      scalatags.value,
+      fastparse.value,
+      scalatest.value,
+      scalacheck.value,
+      pprint.value,
+      cats.value,
+      scribe.value,
+      normalizecss.value,
+      tomlScala.value,
+    ),
+    jsoniterScala,
     SassKeys.cssStyle := Maxified,
-    normalizecss,
     nativeImageVersion := "20.3.0",
     nativeImageOptions ++= Seq(
       "--initialize-at-build-time",
       "--no-fallback",
       "--no-server"
     ),
-    toml,
     libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value))
   )
 

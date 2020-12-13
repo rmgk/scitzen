@@ -3,11 +3,11 @@ package scitzen.outputs
 import better.files.File
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.sast.MacroCommand.{Include, Lookup}
-import scitzen.sast.{Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
+}
 
-case class Includes(    project: Project,
-                        cwf: File,
-                        includeResolver: DocumentDirectory)
+case class Includes(project: Project, cwf: File, includeResolver: DocumentDirectory)
 
 case class SastToTextConverter(
     definitions: Map[String, String] = Map.empty,
@@ -39,14 +39,13 @@ case class SastToTextConverter(
                 val included = includeResolver.byPath(doc.file)
 
                 new SastToTextConverter(definitions, includes)
-                .convert(included.sast)
+                  .convert(included.sast)
 
               case None =>
                 scribe.error(s"unknown include ${attributes.target} in template ${cwf}")
                 Nil
             }
         }
-
 
       case Macro(_, _) => Nil
 

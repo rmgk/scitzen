@@ -250,9 +250,9 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
       case Macro(Cite, attr) =>
         val cmndCtx = attr.named.get("style") match {
-          case Some("name") => ctx.ret("citet")
+          case Some("name")   => ctx.ret("citet")
           case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
-          case _ => ctx.ret("cite")
+          case _              => ctx.ret("cite")
         }
 
         nbrs(attr)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attr.target}}")
