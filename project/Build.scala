@@ -7,23 +7,22 @@ import sbt._
 
 object Settings {
 
-  private val sv11    = "2.11.12"
-  private val sv12    = "2.12.11"
-  private val sv13    = "2.13.4"
+  import Dependencies.{Versions => V}
+
   private val svDotty = "0.24.0-RC1"
 
-  val commonCrossBuildVersions = crossScalaVersions := Seq(sv11, sv12, sv13)
+  val commonCrossBuildVersions = crossScalaVersions := Seq(V.scala211, V.scala212, V.scala212)
 
   val scalaVersion_211 = Def.settings(
-    scalaVersion := sv11,
+    scalaVersion := V.scala211,
     scalacOptions ++= settingsFor(scalaVersion.value)
   )
   val scalaVersion_212 = Def.settings(
-    scalaVersion := sv12,
+    scalaVersion := V.scala212,
     scalacOptions ++= settingsFor(scalaVersion.value)
   )
   val scalaVersion_213 = Def.settings(
-    scalaVersion := sv13,
+    scalaVersion := V.scala213,
     scalacOptions ++= settingsFor(scalaVersion.value)
   )
   val scalaVersion_Dotty = Def.settings(
