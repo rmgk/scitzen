@@ -78,34 +78,34 @@ object ConvertProject {
   ): Unit = {
     val timediff = makeTimediff()
 
-    scribe.info(s"found project in ${project.root} $timediff()")
+    scribe.info(s"found project in ${project.root} ${timediff()}")
     val documentDirectory = DocumentDirectory(project.root)
-    scribe.info(s"parsed ${documentDirectory.documents.size} documents $timediff()")
+    scribe.info(s"parsed ${documentDirectory.documents.size} documents ${timediff()}")
     if (project.config.format.contains("content")) {
       Format.formatContents(documentDirectory)
-      scribe.info(s"formatted contents $timediff()")
+      scribe.info(s"formatted contents ${timediff()}")
     }
     if (project.config.format.contains("filename")) {
       Format.formatRename(documentDirectory)
-      scribe.info(s"formatted filenames $timediff()")
+      scribe.info(s"formatted filenames ${timediff()}")
     }
     val fHtml = () => {
       if (project.config.outputType.contains("html")) {
         val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
         ConvertHtml.convertToHtml(project, sync, documentDirectory)
-        scribe.info(s"generated html $timediff()")
+        scribe.info(s"generated html ${timediff()}")
       }
     }
     val fPdf = () =>  {
       if (project.config.outputType.contains("pdf")) {
         ConvertPdf.convertToPdf(project, documentDirectory)
-        scribe.info(s"generated pdfs $timediff()")
+        scribe.info(s"generated pdfs ${timediff()}")
       }
     }
     val fIfm = () => {
       if (imageFileMap) {
         ImageReferences.listAll(project, documentDirectory)
-        scribe.info(s"generated imagemap $timediff()")
+        scribe.info(s"generated imagemap ${timediff()}")
       }
     }
     import scala.jdk.CollectionConverters._
