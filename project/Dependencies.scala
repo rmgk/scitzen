@@ -1,4 +1,3 @@
-import org.jmotor.sbt.plugin.DependencyUpdatesKeys._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 import sbt.Keys._
