@@ -42,7 +42,7 @@ object Dependencies {
     val scalatest = "3.2.3"
     val scalatestpluscheck = "3.2.2.0"
     val scalaXml = "1.3.0"
-    val scribe = "3.1.7"
+    val scribe = "3.0.4"
     val scribeSlf4j = "2.7.0"
     val sourcecode = "0.2.1"
     val tomlScala = "0.2.2"
