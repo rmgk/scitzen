@@ -24,7 +24,7 @@ lazy val scitzen = project.in(file("."))
       normalizecss.value,
       tomlScala.value,
     ),
-    libraryDependencies ++= jsoniterScala.value,
+    libraryDependencies ++= jsoniterScalaAll.value,
     SassKeys.cssStyle := Maxified,
     nativeImageVersion := "20.3.0",
     nativeImageOptions ++= Seq(
