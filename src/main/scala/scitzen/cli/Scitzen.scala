@@ -89,26 +89,18 @@ object ConvertProject {
       Format.formatRename(documentDirectory)
       scribe.info(s"formatted filenames ${timediff()}")
     }
-    val fHtml = () => {
-      if (project.config.outputType.contains("html")) {
-        val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-        ConvertHtml.convertToHtml(project, sync, documentDirectory)
-        scribe.info(s"generated html ${timediff()}")
-      }
+    if (project.config.outputType.contains("html")) {
+      val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
+      ConvertHtml.convertToHtml(project, sync, documentDirectory)
+      scribe.info(s"generated html ${timediff()}")
     }
-    val fPdf = () =>  {
-      if (project.config.outputType.contains("pdf")) {
-        ConvertPdf.convertToPdf(project, documentDirectory)
-        scribe.info(s"generated pdfs ${timediff()}")
-      }
+    if (project.config.outputType.contains("pdf")) {
+      ConvertPdf.convertToPdf(project, documentDirectory)
+      scribe.info(s"generated pdfs ${timediff()}")
     }
-    val fIfm = () => {
-      if (imageFileMap) {
-        ImageReferences.listAll(project, documentDirectory)
-        scribe.info(s"generated imagemap ${timediff()}")
-      }
+    if (imageFileMap) {
+      ImageReferences.listAll(project, documentDirectory)
+      scribe.info(s"generated imagemap ${timediff()}")
     }
-    import scala.jdk.CollectionConverters._
-    List(fHtml, fPdf, fIfm).asJava.parallelStream().forEach(_.apply())
   }
 }
