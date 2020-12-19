@@ -6,6 +6,7 @@ import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.generic.{DocumentDirectory, Project}
 import scribe.Logger
+import scribe.output.format.ASCIIOutputFormat
 
 import java.nio.file.{Path, Paths}
 
@@ -18,7 +19,8 @@ object Scitzen
         val myFormatter: Formatter = formatter"$message ($position)"
         Logger.root.clearHandlers().withHandler(
           formatter = myFormatter,
-          minimumLevel = Some(scribe.Level.Info)
+          minimumLevel = Some(scribe.Level.Info),
+          outputFormat = ASCIIOutputFormat
         ).replace()
 
         ConvertProject.command.options
