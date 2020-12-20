@@ -33,7 +33,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF = {
     val textCtx = inlineValuesToHTML(child.text.inl)(ctx)
-    textCtx.data ++: child.content.fold(textCtx)(convertSingle(_)(textCtx))
+    textCtx.data ++: child.content.fold(textCtx.empty[Frag])(convertSingle(_)(textCtx))
   }
 
   def categoriesSpan(categories: Seq[String]): Option[Tag] = {
