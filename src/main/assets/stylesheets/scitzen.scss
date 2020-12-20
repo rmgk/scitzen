@@ -49,7 +49,6 @@ a {
 
   // add a “push down” effect when hovering links
   &:hover {
-    transition: 0.2s ease-out;
     transform: translateX(4px);
     filter: brightness(75%);
   }
