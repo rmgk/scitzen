@@ -11,7 +11,7 @@ $main-content-width: 70ch;
   --theme-color: hsl(0, 50%, 50%);
   --light-theme-color: hsla(0, 50%, 50%, 0.4);
   --color-subdued: hsl(0, 0%, 60%);
-  
+
   --main-content-width: 70ch;
   --sidebar-max-width: 20em;
 
@@ -32,15 +32,6 @@ $main-content-width: 70ch;
 html {
   background-color: var(--background-color);
   color: var(--text-color);
-}
-
-.fullpost main {
-  font-family: "Libertinus Serif", "Linux Libertine", serif;
-  line-height: 1.3;
-}
-
-math {
-  font-family: "Libertinus Math", serif;
 }
 
 a {
@@ -79,7 +70,7 @@ time, .category {
 time {
   white-space: nowrap;
   // double monospace to override firefox default font size to use same as other fonts
-  font-family: monospace, monospace;
+  font-family: Hack, monospace, monospace;
   letter-spacing: -0.0625em;
 }
 
@@ -102,15 +93,29 @@ time {
 }
 
 main {
-  hyphens: auto;
   // outer edge to keep everything from hugging the screen
   padding: 1em;
   // allow overscrolling past the end of the content
   margin-bottom: calc(100vh - 3.5em);
 }
 
+.fullpost main {
+  hyphens: auto;
+  font-family: "Libertinus Serif", "Linux Libertine", serif;
+  line-height: 1.3;
+  font-size: 18px;
+}
+
+math {
+  font-family: "Libertinus Math", serif;
+}
+
+code {
+  font-family: Hack, monospace, monospace;
+}
+
 main {
-  &> *, p, pre, ol, ul {
+  & > *, p, pre, ol, ul {
     overflow-x: auto;
     // Changing overflow-x seems to also change the default of overflow-y, now also showing scrollbars.
     // Going back to visible does not work, so we  hide the overflow,
@@ -124,7 +129,7 @@ main section {
   display: contents;
 }
 
-main > *, main > section > * , main > section > section > * {
+main > *, main > section > *, main > section > section > * {
   // usually margins should collapse, but because of grid they dont.
   margin: 0;
   grid-column: content-start / content-end;
@@ -137,7 +142,7 @@ main * {
 }
 
 
-main,  main > section {
+main, main > section {
   & > img, & > figure, & > video {
     // oversized figures and images
     grid-column: image-start / image-end;
