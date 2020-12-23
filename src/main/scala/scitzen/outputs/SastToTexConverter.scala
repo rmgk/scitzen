@@ -281,7 +281,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         ctx.retc {
           val target = attributes.target
           if (attributes.positional.size > 1) {
-            val name = "{" + attributes.positional.head + "}"
+            val name = "{" + latexencode(attributes.positional.head) + "}"
             s"\\href{$target}{$name}"
           } else s"\\url{$target}"
         }.useFeature("href")
