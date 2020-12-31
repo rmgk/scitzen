@@ -40,8 +40,8 @@ case class Project(root: File, config: ProjectConfig, definitions: Map[String, T
 object Project {
 
   case class ProjectConfig(
-      output: String = "out",
-      cache: String = "cache",
+      output: String = "scitzen/out",
+      cache: String = "scitzen/cache",
       stopwords: String = "scitzen",
       format: List[String] = Nil,
       outputType: List[String] = Nil,
