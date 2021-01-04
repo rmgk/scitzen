@@ -84,14 +84,15 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         children match {
           case Nil => ctx.ret(Chain.nil)
 
-          case ListItem(_, _, None | Some(Slist(_))) :: _ =>
-            "\\begin{itemize}" +:
+          case ListItem(marker, _, None | Some(Slist(_))) :: _ =>
+            val listType = if (marker.contains(".")) "enumerate" else "itemize"
+            s"\\begin{$listType}" +:
               ctx.fold[ListItem, String](children) { (ctx, child) =>
                 val inlineCtx  = inlineValuesToTex(child.text.inl)(ctx).map(s => Chain(s"\\item{$s}"))
                 val contentCtx = child.content.fold(inlineCtx.empty[String])(sastToTex(_)(inlineCtx))
                 inlineCtx.data ++: contentCtx
               } :+
-              "\\end{itemize}"
+              s"\\end{$listType}"
 
           case ListItem(_, _, _) :: _ =>
             ctx.fold[ListItem, String](children) { (ctx, child) =>
