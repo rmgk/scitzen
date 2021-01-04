@@ -20,7 +20,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
     val hasToc = cta.partialMacros.exists(_.command == MacroCommand.Other("tableofcontents"))
     val fm     = if (hasToc) Chain("\\frontmatter") else Chain.empty
 
-    val ilc = inlineValuesToTex(article.header.title.inl)(cta)
+    val ilc    = inlineValuesToTex(article.header.title.inl)(cta)
     val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
     ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\maketitle{}")
 
@@ -213,10 +213,13 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
     }
 
-    tlblock.attributes.namedT.get("note").fold(innerCtx) { note =>
-      inlineValuesToTex(note.inl)(innerCtx).map { (content: String) =>
-        s"\\sidepar{$content}%" +: innerCtx.data
-      }.useFeature("sidepar")
+    if (project.config.notes.contains("hide")) innerCtx
+    else {
+      tlblock.attributes.namedT.get("note").fold(innerCtx) { note =>
+        inlineValuesToTex(note.inl)(innerCtx).map { (content: String) =>
+          s"\\sidepar{$content}%" +: innerCtx.data
+        }.useFeature("sidepar")
+      }
     }
   }
 
@@ -243,7 +246,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case Macro(Math, attrs)         => ctx.retc(s"$$${attrs.target}$$")
       case Macro(Other("break"), _)   => ctx.retc(s"\\clearpage{}")
       case Macro(Other("rule"), attr) => ctx.retc(s"\\textsc{${attr.target}}")
-      case Macro(Other("raw"), attr) => ctx.retc(attr.named.getOrElse("tex", ""))
+      case Macro(Other("raw"), attr)  => ctx.retc(attr.named.getOrElse("tex", ""))
       case Macro(Other("todo"), attr) =>
         inlineValuesToTex(attr.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
       case Macro(Strong, attrs) => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\textbf{$str}")

@@ -47,7 +47,8 @@ object Project {
       outputType: List[String] = Nil,
       revealTemplate: Option[String] = None,
       definitions: Map[String, String] = Map.empty,
-      texTemplate: Option[String] = None
+      texTemplate: Option[String] = None,
+      notes: Option[String] = None,
   )
 
   val scitzenconfig: String = "scitzen.toml"
