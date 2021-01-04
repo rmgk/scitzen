@@ -66,14 +66,15 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case section @ Section(title, prefix, attr) =>
         val ilc = inlineValuesToTex(title.inl)(ctx)
 
-        val pushed = ilc.push(section)
+        val pushed   = ilc.push(section)
+        val numbered = if (attr.named.get("style").contains("unnumbered")) "*" else ""
         val header = prefix match {
           case "==" =>
-            s"\\chapter{${ilc.data}}"
+            s"\\chapter$numbered[${ilc.data}]{${ilc.data}}"
           case _ =>
             val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
             val sec   = sectioning(prefix.length - shift)
-            s"\\$sec{${ilc.data}}"
+            s"\\$sec$numbered{${ilc.data}}"
         }
 
         val label = attr.named.get("label").map(l => s"\\label{$l}").toList
