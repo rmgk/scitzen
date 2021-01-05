@@ -3,9 +3,7 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, References, Reporter}
-import scitzen.sast.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
-}
+import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.sast._
 
 class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includeResolver: DocumentDirectory) {
@@ -106,18 +104,6 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         }
 
       case mcro @ Macro(_, _) => mcro match {
-          case Macro(Image, attributes) =>
-            val target = attributes.target
-
-            project.resolve(cwd, target) match {
-              case None =>
-                ctx.retc(warn(s"could not find path", mcro))
-              case Some(data) =>
-                ctx.ret(Chain(s"\\noindent{}\\includegraphics[max width=\\columnwidth]{$data}\n")).useFeature(
-                  "graphics"
-                )
-            }
-
           case Macro(Include, attributes) =>
             project.resolve(cwd, attributes.target).flatMap(includeResolver.byPath.get) match {
               case Some(doc) =>
@@ -314,8 +300,21 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         val str = warn(s"unknown macro", im)
         ctx.retc(str)
 
-      case im @ Macro(Image | Include, _) =>
-        val str: String = warn(s"tex backend does not allow inline images or includes", im)
+      case mcro @ Macro(Image, attributes) =>
+        val target = attributes.target
+
+        project.resolve(cwd, target) match {
+          case None       =>
+            ctx.retc(warn(s"could not find path", mcro))
+          case Some(data) =>
+            val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
+            ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{$data}")).useFeature(
+              "graphics"
+              )
+        }
+
+      case im @ Macro(Include, _) =>
+        val str: String = warn(s"tex backend does not allow inline includes", im)
         ctx.retc(str)
     }
   def warn(msg: String, im: Macro): String = {
