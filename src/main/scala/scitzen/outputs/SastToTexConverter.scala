@@ -274,6 +274,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
             scribe.error(s"no resolution found for ${attr.target}" + reporter(attr.prov))
             ctx.empty
           case Some(candidate) =>
+            //TODO: existence of line is unchecked
             val label = References.getLabel(candidate).get + attr.named.getOrElse("line", "")
             attr.named.get("style") match {
               case Some("plain") =>
