@@ -306,7 +306,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
       case toc @ Macro(Other("tableofcontents"), _) =>
         ctx.addMacro(toc).retc(
-          List("\\clearpage", "\\tableofcontents*", "\\clearpage", "\\mainmatter").mkString("\n")
+          List("\\cleardoublepage", "\\tableofcontents*", "\\mainmatter").mkString("\n")
         )
 
       case im @ Macro(Other(_), _) =>
