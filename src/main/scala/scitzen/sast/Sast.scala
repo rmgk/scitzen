@@ -59,6 +59,9 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
   def updated(key: String, value: String) = {
     remove(key).append(List(Attribute.apply(key, value)))
   }
+  def updated(attribute: Attribute) = {
+    remove(attribute.id).append(List(attribute))
+  }
   override def toString: String =
     s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)}, $prov)"
 }

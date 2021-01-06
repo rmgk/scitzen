@@ -68,7 +68,7 @@ class SastToSastConverter(
       ctx: Cta,
       sec: A,
       ref1: String,
-      attr: Attributes
+      attr: Attributes,
   )(updateAttr: (Attributes) => A): (A, Ctx[Unit]) = {
     val counter =
       if (ctx.labelledThings.contains(ref1)) {
@@ -81,7 +81,9 @@ class SastToSastConverter(
 
     val asSection = Option.when(cp.isInstanceOf[Section])(cp.asInstanceOf[Section])
     val secref    = SastRef(cwf, cp, artOpt(ctx, asSection))
-    (cp, counter.addRefTarget(ref1, secref).addRefTarget(newLabel, secref).ret(()))
+    val aliases = attr.named.get("aliases").toList.flatMap(_.split(',').toList)
+    val referenced = (ref1 :: newLabel :: aliases).foldLeft(counter.ret(())){(c, l) => c.addRefTarget(l, secref).ret(())}
+    (cp, referenced)
   }
 
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] = {

@@ -3,7 +3,9 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, References, Reporter}
-import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.sast.MacroCommand.{
+  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
+}
 import scitzen.sast._
 
 class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includeResolver: DocumentDirectory) {
@@ -226,15 +228,21 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
   def inlineToTex(inln: Inline)(implicit ctx: Cta): CtxCS =
     inln match {
-      case InlineText(str)            => ctx.retc(latexencode(str))
-      case Macro(Code, attrs)         => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
-      case Macro(Comment, _)          => ctx.retc("")
-      case Macro(Def, _)              => ctx.retc("")
-      case Macro(Emph, attrs)         => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\emph{$str}")
-      case Macro(Math, attrs)         => ctx.retc(s"$$${attrs.target}$$")
-      case Macro(Other("break"), _)   => ctx.retc(s"\\clearpage{}")
-      case Macro(Other("rule"), attr) => ctx.retc(s"\\textsc{${attr.target}}")
-      case Macro(Other("raw"), attr)  => ctx.retc(attr.named.getOrElse("tex", ""))
+      case InlineText(str)          => ctx.retc(latexencode(str))
+      case Macro(Code, attrs)       => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
+      case Macro(Comment, _)        => ctx.retc("")
+      case Macro(Def, _)            => ctx.retc("")
+      case Macro(Emph, attrs)       => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\emph{$str}")
+      case Macro(Math, attrs)       => ctx.retc(s"$$${attrs.target}$$")
+      case Macro(Other("break"), _) => ctx.retc(s"\\clearpage{}")
+      case Macro(Other("rule"), attr) => inlineToTex(Macro(
+          Ref,
+          attr.copy(raw = Seq(Attribute("", Text(Seq(Macro(Other("smallcaps"), attr)))),
+                              Attribute("style", "plain"),
+                              Attribute("", s"rule-${attr.target}"))
+        )))
+      case Macro(Other("smallcaps"), attr) => ctx.retc(s"\\textsc{${attr.target}}")
+      case Macro(Other("raw"), attr) => ctx.retc(attr.named.getOrElse("tex", ""))
       case Macro(Other("todo"), attr) =>
         inlineValuesToTex(attr.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
       case Macro(Strong, attrs) => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\textbf{$str}")
@@ -267,7 +275,12 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
             ctx.empty
           case Some(candidate) =>
             val label = References.getLabel(candidate).get + attr.named.getOrElse("line", "")
-            nbrs(attr).mapc { str => s"${str}\\ref{${label}}" }
+            attr.named.get("style") match {
+              case Some("plain") =>
+                inlineValuesToTex(attr.argumentsT.head.inl)(ctx).mapc { str => s"\\hyperref[${label}]{${str}}" }
+              case _ => nbrs(attr).mapc { str => s"${str}\\ref{${label}}" }
+
+            }
         }
 
       case Macro(Link, attributes) =>
@@ -304,13 +317,13 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         val target = attributes.target
 
         project.resolve(cwd, target) match {
-          case None       =>
+          case None =>
             ctx.retc(warn(s"could not find path", mcro))
           case Some(data) =>
             val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
             ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{$data}")).useFeature(
               "graphics"
-              )
+            )
         }
 
       case im @ Macro(Include, _) =>
