@@ -4,7 +4,7 @@ import better.files.File
 import scitzen.extern.ImageConverter
 import scitzen.extern.TexConverter.latexmk
 import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
-import scitzen.outputs.{Includes, SastToTexConverter, SastToTextConverter}
+import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
 
@@ -57,22 +57,21 @@ object ConvertPdf {
         val temptexfile = project.cacheDir / (jobname + ".tex")
         val temptexdir  = project.cacheDir / s"$articlename.outdir"
 
-        val template     = article.named.get("texTemplate").orElse(project.config.texTemplate).get
-        val templateFile = project.resolve(project.root, template).get
-        val templateSast = documentDirectory.byPath(templateFile).sast
-        val templateSettings: Map[String, String] =
+        val templateSettings =
           project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
             Some("template content"              -> content.iterator.mkString("\n")),
             bibliography.map("bibliography path" -> _)
           ).flatten ++ resultContext.features.toList.map(s => s"feature $s" -> "")
 
-        val documentString = SastToTextConverter(
-          templateSettings,
-          Some(Includes(project, templateFile, preprocessed.directory))
-        ).convert(templateSast).mkString("\n")
+        val documentString: String =
+          ConvertTemplate.fillTemplate(
+            project,
+            preprocessed.directory,
+            article.named.get("texTemplate").orElse(project.config.texTemplate).get,
+            templateSettings
+          )
         temptexfile.write(documentString)
         latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
       }
   }
-
 }

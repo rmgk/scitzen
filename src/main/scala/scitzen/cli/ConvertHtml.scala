@@ -1,8 +1,5 @@
 package scitzen.cli
 
-import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Path
-
 import better.files._
 import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
@@ -11,6 +8,8 @@ import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 
+import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.file.Path
 import scala.util.Try
 
 object ConvertHtml {
@@ -161,13 +160,32 @@ object ConvertHtml {
 
     val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 
-    val res = HtmlPages(cssrelpath).wrapContentHtml(
-      headerCtx.data +: convertedArticleCtx.data.toList ++: citations,
-      "fullpost",
-      toc,
-      article.language
-        .orElse(nlp.flatMap(_.language(article.content)))
-    )
+    val res = article.header.attributes.named.get("htmlTemplate") match {
+      case None =>
+        val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
+
+        HtmlPages(cssrelpath).wrapContentHtml(
+          contentFrag,
+          "fullpost",
+          toc,
+          article.language
+            .orElse(nlp.flatMap(_.language(article.content)))
+        )
+      case Some(templatePath) =>
+        val content = scalatags.Text.all.SeqFrag(convertedArticleCtx.data.toList).render
+
+        val templateSettings =
+          project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
+            Some("template content" -> content)
+          ).flatten ++ convertedArticleCtx.features.toList.map(s => s"feature $s" -> "")
+
+        ConvertTemplate.fillTemplate(
+          project,
+          preprocessed,
+          templatePath,
+          templateSettings
+        )
+    }
     val target = pathManager.articleOutputPath(article)
     target.write(res)
     convertedArticleCtx
