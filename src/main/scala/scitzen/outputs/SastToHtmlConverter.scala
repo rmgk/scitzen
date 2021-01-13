@@ -97,21 +97,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         }
 
       case mcro @ Macro(_, _) => mcro match {
-          case Macro(Image, attributes) =>
-            pathManager.project.resolve(pathManager.cwd, attributes.target) match {
-              case Some(target) =>
-                val path = pathManager.relativizeImage(target)
-                ctx.requireInOutput(target, path).retc {
-                  val filename = path.getFileName.toString
-                  if (videoEndings.exists(filename.endsWith))
-                    video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
-                  else img(src := path.toString)
-                }
-              case None =>
-                scribe.warn(s"could not find path ${attributes.target}" + reporter(mcro))
-                ctx.empty
-            }
-
           case Macro(Other("break"), _) =>
             ctx.ret(Chain(hr))
 
@@ -271,7 +256,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Macro(Link, attributes) =>
         val target = attributes.target
-        ctx.retc(linkTo(attributes, target))
+        val content = attributes.positionalT.headOption.map { txt =>
+          inlineValuesToHTML(txt.inl)(ctx)
+        }.getOrElse(ctx.retc(stringFrag(target)))
+        content.retc(a(href := target)(content.data.toList))
 
       case macroRef @ Macro(Ref, attributes) =>
         val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
@@ -333,10 +321,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case tagname @ ("ins" | "del") =>
             ctx.retc(tag(tagname)(attributes.positional.mkString(", ")))
 
-          case protocol @ ("http" | "https" | "ftp" | "irc" | "mailto") =>
-            val linktarget = s"$protocol:${attributes.target}"
-            ctx.retc(linkTo(attributes, linktarget))
-
           case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
           case "tableofcontents" => ctx.empty
           case "partition"       => ctx.empty
@@ -348,7 +332,22 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Macro(Def, _) => ctx.empty
 
-      case mcro @ Macro(Image | Include, _) =>
+      case mcro @ Macro(Image, attributes) =>
+        pathManager.project.resolve(pathManager.cwd, attributes.target) match {
+          case Some(target) =>
+            val path = pathManager.relativizeImage(target)
+            ctx.requireInOutput(target, path).retc {
+              val filename = path.getFileName.toString
+              if (videoEndings.exists(filename.endsWith))
+                video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
+              else img(src := path.toString)
+            }
+          case None =>
+            scribe.warn(s"could not find path ${attributes.target}" + reporter(mcro))
+            ctx.empty
+        }
+
+      case mcro @ Macro(Include, _) =>
         ctx.retc(unknownMacroOutput(mcro))
 
     }
@@ -361,7 +360,4 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     code(str)
   }
 
-  def linkTo(attributes: Attributes, linktarget: String): Tag = {
-    a(href := linktarget)(attributes.positional.headOption.getOrElse[String](linktarget))
-  }
 }
