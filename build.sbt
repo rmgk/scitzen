@@ -19,7 +19,7 @@ lazy val scitzen = project.in(file("."))
       scalatest.value,
       scalacheck.value,
       pprint.value,
-      cats.value,
+      catsCore.value,
       scribe.value,
       normalizecss.value,
       tomlScala.value,
