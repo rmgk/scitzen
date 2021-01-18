@@ -81,8 +81,10 @@ class SastToSastConverter(
 
     val asSection = Option.when(cp.isInstanceOf[Section])(cp.asInstanceOf[Section])
     val secref    = SastRef(cwf, cp, artOpt(ctx, asSection))
-    val aliases = attr.named.get("aliases").toList.flatMap(_.split(',').toList)
-    val referenced = (ref1 :: newLabel :: aliases).foldLeft(counter.ret(())){(c, l) => c.addRefTarget(l, secref).ret(())}
+    val aliases   = attr.named.get("aliases").toList.flatMap(_.split(',').toList)
+    val referenced = (ref1 :: newLabel :: aliases).foldLeft(counter.ret(())) { (c, l) =>
+      c.addRefTarget(l, secref).ret(())
+    }
     (cp, referenced)
   }
 

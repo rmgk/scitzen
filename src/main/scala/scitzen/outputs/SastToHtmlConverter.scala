@@ -209,8 +209,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               }
             }
             val initTag: Tag = pre(code(txt))
-            val respre = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
-            val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
+            val respre       = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
+            val res          = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
             ctx.retc(res)
         }
 

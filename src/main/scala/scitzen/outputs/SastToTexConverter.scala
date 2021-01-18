@@ -237,12 +237,14 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
       case Macro(Other("break"), _) => ctx.retc(s"\\clearpage{}")
       case Macro(Other("rule"), attr) => inlineToTex(Macro(
           Ref,
-          attr.copy(raw = Seq(Attribute("", Text(Seq(Macro(Other("smallcaps"), attr)))),
-                              Attribute("style", "plain"),
-                              Attribute("", s"rule-${attr.target}"))
-        )))
+          attr.copy(raw = Seq(
+            Attribute("", Text(Seq(Macro(Other("smallcaps"), attr)))),
+            Attribute("style", "plain"),
+            Attribute("", s"rule-${attr.target}")
+          ))
+        ))
       case Macro(Other("smallcaps"), attr) => ctx.retc(s"\\textsc{${attr.target}}")
-      case Macro(Other("raw"), attr) => ctx.retc(attr.named.getOrElse("tex", ""))
+      case Macro(Other("raw"), attr)       => ctx.retc(attr.named.getOrElse("tex", ""))
       case Macro(Other("todo"), attr) =>
         inlineValuesToTex(attr.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
       case Macro(Strong, attrs) => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\textbf{$str}")
