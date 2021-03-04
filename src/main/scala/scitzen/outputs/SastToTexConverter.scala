@@ -193,7 +193,6 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
               if (!tlblock.attributes.positional.contains("highlight")) labeltext
               else {
                 labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
-
               }
             ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
 

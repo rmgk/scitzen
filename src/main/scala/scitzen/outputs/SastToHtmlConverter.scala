@@ -202,13 +202,20 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           // Use this for monospace, space preserving, line preserving text
           // It may wrap to fit the screen content
           case _ =>
-            val txt = {
+            val labeltext = {
               if (!sBlock.attributes.named.contains("label")) text
               else {
                 text.replaceAll(""":§([^§]*?)§""", "")
               }
             }
-            val initTag: Tag = pre(code(txt))
+            val initTag: Tag =
+              if (!sBlock.attributes.positional.contains("highlight")) pre(code(labeltext))
+              else {
+                val lines = labeltext.linesIterator.zipWithIndex.filter{case (s, _) => s.contains(":hl§")}.map{_._2 + 1}.mkString(",")
+                val txt  = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
+                pre(code(txt, attr("data-line-numbers") := lines))
+              }
+
             val respre       = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
             val res          = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
             ctx.retc(res)
@@ -340,11 +347,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         pathManager.project.resolve(pathManager.cwd, attributes.target) match {
           case Some(target) =>
             val path = pathManager.relativizeImage(target)
+            val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1")) * 100
             ctx.requireInOutput(target, path).retc {
               val filename = path.getFileName.toString
               if (videoEndings.exists(filename.endsWith))
                 video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
-              else img(src := path.toString)
+              else img(src := path.toString, style := s"max-width: $mw%")
             }
           case None =>
             scribe.warn(s"could not find path ${attributes.target}" + reporter(mcro))
