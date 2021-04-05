@@ -60,7 +60,7 @@ object GenIndexPage {
                 "target",
                 htmlPathManager.project.outputdir.relativize(htmlPathManager.articleOutputPath(doc)).toString
               )),
-              doc.date.map(date => Attribute("datetime", date.monthDayTime))
+              doc.date.map(date => Attribute("datetime", date.dayTime))
             ).flatten ++ categories.map(Attribute("category", _)),
             Prov()
           )

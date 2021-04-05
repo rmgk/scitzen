@@ -10,7 +10,8 @@ case class ScitzenTime(hour: String, minute: String, second: String) {
 case class ScitzenDateTime(date: ScitzenDate, timeO: Option[ScitzenTime]) {
   def timeAppend: String   = timeO.fold("")(st => s" ${st.short}")
   def full: String         = s"${date.full}$timeAppend"
-  def monthDayTime: String = s"${date.month}-${date.day}$timeAppend"
+  def dayTime: String      = s"${date.day}$timeAppend"
+  def monthDayTime: String = s"${date.month}-$dayTime"
   def year: String         = date.year
   def iso: String          = s"${date.full}${timeO.fold("")(_.iso)}"
 }
