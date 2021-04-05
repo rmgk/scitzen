@@ -34,45 +34,26 @@ html {
   color: var(--text-color);
 }
 
-a {
-  text-decoration: none;
-  color: var(--theme-color);
-
-  // add a “push down” effect when hovering links
-  &:hover {
-    transform: translateX(4px);
-    filter: brightness(75%);
-  }
+body {
+  // that should be 18px for the default of 16px font, but scale with font size …
+  font-size: 1.125rem;
+  // set line-height to 30 scaled pixels
+  line-height: calc(30/18);
 }
 
-.metadata {
-  display: flex;
-  // safe causes the metadata to always be visible,
-  // even if things become so small that they need to be scrolled
-  justify-content: safe center;
+* {
+  // causes words to be broken in the middle, if required for no overflow to occur
+  overflow-wrap: break-word;
+}
 
-  > * {
-    margin-right: 0.5em;
-  }
+.fullpost main {
+  hyphens: auto;
 }
 
 
-h1, h2, h3, h4, h5, h6 {
-  text-align: center;
-}
-
-time, .category {
-  @media screen {
-    color: var(--color-subdued);
-  }
-}
-
-time {
-  white-space: nowrap;
-  // double monospace to override firefox default font size to use same as other fonts
-  font-family: Hack, monospace, monospace;
-  letter-spacing: -0.0625em;
-}
+/////////////////////////////////////////////////////////////////////////////
+// main grid layout
+/////////////////////////////////////////////////////////////////////////////
 
 
 @media screen {
@@ -80,7 +61,6 @@ time {
   main {
     // use grid to have text centered, but allow oversized image content
     display: grid;
-    grid-row-gap: 0.75em;
     // the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
     // but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
     // causing the thing to widen in case the content is large,
@@ -99,21 +79,6 @@ main {
   margin-bottom: calc(100vh - 3.5em);
 }
 
-.fullpost main {
-  hyphens: auto;
-  font-family: "Libertinus Serif", "Linux Libertine", serif;
-  line-height: 1.3;
-  font-size: 18px;
-}
-
-math {
-  font-family: "Libertinus Math", serif;
-}
-
-code {
-  font-family: Hack, monospace, monospace;
-}
-
 main {
   & > *, p, pre, ol, ul {
     overflow-x: auto;
@@ -129,10 +94,16 @@ main section {
   display: contents;
 }
 
-main > *, main > section > *, main > section > section > * {
-  // usually margins should collapse, but because of grid they dont.
-  margin: 0;
-  grid-column: content-start / content-end;
+// usually margins should collapse, but because of grid they dont.
+// thus we replace margins by grid gaps
+@media screen {
+  main > *, main section > * {
+    margin: 0;
+    grid-column: content-start / content-end;
+  }
+  .fullpost main {
+    grid-row-gap: 0.75em;
+  }
 }
 
 main * {
@@ -142,7 +113,7 @@ main * {
 }
 
 
-main, main > section {
+main, main section {
   & > img, & > figure, & > video {
     // oversized figures and images
     grid-column: image-start / image-end;
@@ -158,11 +129,59 @@ main, main > section {
     justify-self: unsafe center;
     margin-left: 0;
     margin-right: 0;
+
+    @media print {
+      margin-left: auto;
+      margin-right: auto;
+    }
   }
 }
 
 
+
+/////////////////////////////////////////////////////////////////////////////
 // general styling of elements follow, these should not affect overall layout
+/////////////////////////////////////////////////////////////////////////////
+
+a {
+  text-decoration: none;
+  color: var(--theme-color);
+
+  // add a “push down” effect when hovering links
+  &:hover {
+    transform: translateX(4px);
+    filter: brightness(75%);
+  }
+}
+
+//math {
+//  font-family: "Libertinus Math", sans-serif;
+//}
+
+.metadata {
+  display: flex;
+  // safe causes the metadata to always be visible,
+  // even if things become so small that they need to be scrolled
+  justify-content: safe center;
+
+  > * {
+    margin-right: 0.5em;
+  }
+}
+
+time, .category {
+  @media screen {
+    color: var(--color-subdued);
+  }
+}
+
+time {
+  white-space: nowrap;
+  // double monospace to override firefox default font size to use same as other fonts
+  font-family: monospace, monospace;
+  //letter-spacing: -0.0625em;
+}
+
 
 
 main {
@@ -185,12 +204,35 @@ main figure > pre {
   max-width: 100%;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    line-height: 1.1;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+h1 { font-size: 2.35em }
+h2 { font-size: 2.00em }
+h3 { font-size: 1.75em }
+h4 { font-size: 1.5em }
+h5 { font-size: 1.25em }
+h6 { font-size: 1em }
+
+
+h1, h2, h3, h4, h5, h6 {
+  text-align: center;
+}
+
+main > *:first-child {
+  margin-top: 0;
+}
+
 pre {
   white-space: pre-line;
 }
 
 pre > code {
-  white-space: pre;
+  white-space: pre-wrap;
 }
 
 .rule {
@@ -264,8 +306,10 @@ del {
 }
 
 
-// index page styling
 
+/////////////////////////////////////////////////////////////////////////////
+// index page styling
+/////////////////////////////////////////////////////////////////////////////
 
 a > article {
   display: flex;
@@ -293,7 +337,10 @@ a > article {
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
 // Sidebar design
+/////////////////////////////////////////////////////////////////////////////
+
 // body has an optional aside and a main
 // if the aside exists, it is pinned on the full height,
 // unless a button is pressed to hide it
@@ -385,8 +432,11 @@ body {
   }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// external and technical stuff
+/////////////////////////////////////////////////////////////////////////////
 
-// not what crap katex is adding here, but we just hide it …
+// not sure what kind of crap katex is adding here, but we just hide it …
 .katex-html {
   display: none;
 }
