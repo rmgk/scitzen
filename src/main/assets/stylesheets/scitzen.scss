@@ -79,16 +79,6 @@ main {
   margin-bottom: calc(100vh - 3.5em);
 }
 
-main {
-  & > *, p, pre, ol, ul {
-    overflow-x: auto;
-    // Changing overflow-x seems to also change the default of overflow-y, now also showing scrollbars.
-    // Going back to visible does not work, so we  hide the overflow,
-    // which should not be a probblem because all elements expand
-    overflow-y: hidden;
-  }
-}
-
 // in general, we try to ignore section tags in main
 main section {
   display: contents;
@@ -196,6 +186,7 @@ main {
 main .marginnote {
   grid-column: content-end;
   margin-left: 2em;
+  overflow: hidden;
 }
 
 main figure > pre {
