@@ -354,7 +354,7 @@ body {
       }
 
       position: fixed;
-      top: 0;
+      bottom: 0;
       cursor: pointer;
       width: 1.5em;
       height: 1.5em;
@@ -385,16 +385,23 @@ body {
       box-sizing: border-box;
       height: 100vh;
 
-      // top margin to not collide with the label as much
-      padding: 2.5em 0.5em 0 0.5em;
+      padding: 0;
+      padding-top: 0.5em;
+      // for the srcoll bar
+      padding-right: 0.5em;
 
       border-right: 1px solid var(--theme-color);
 
       ol {
         list-style: disc;
         margin: 0;
-        margin-left: 1em;
+        margin-left: 1.5em;
         padding: 0;
+      }
+
+      *:last-child {
+        // bottom margin to not collide with the label as much
+        margin-bottom: 2.5em;
       }
 
     }
