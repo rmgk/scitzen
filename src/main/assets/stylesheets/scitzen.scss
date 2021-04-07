@@ -15,23 +15,7 @@ $main-content-width: 70ch;
   --main-content-width: 70ch;
   --sidebar-max-width: 20em;
 
-  // used for media query based theming
-  --background-color: white;
-  --text-color: black;
-  --figure-box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
-}
-
-//@media (prefers-color-scheme: dark) {
-//  :root {
-//    --background-color: #101010;
-//    --text-color: white;
-//    --figure-box-shadow: none;
-//  }
-//}
-
-html {
-  background-color: var(--background-color);
-  color: var(--text-color);
+  color-scheme: light dark;
 }
 
 body {
@@ -109,7 +93,7 @@ main, main section {
     grid-column: image-start / image-end;
 
     // add borders around figures and pure images
-    box-shadow: var(--figure-box-shadow);
+    box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
     //background: rgba(255, 255, 255, 0.8);
     border-radius: 5px;
 
@@ -254,6 +238,9 @@ img {
   // why is this not the default?
   image-orientation: from-image;
 
+  // seems to be the most sane default for transparent images
+  background-color: white;
+
   display: block;
   height: auto;
   max-height: 40em;
@@ -351,6 +338,7 @@ body {
     flex: 0 100 max-content;
     // max width, because sidebar with very long header names does not look great
     max-width: var(--sidebar-max-width);
+    min-width: min-content;
 
     // input label pair to allow hiding the sidebar content (nav)
     & > input {
@@ -390,6 +378,8 @@ body {
       overflow-y: scroll;
       scrollbar-width: thin;
       scrollbar-color: var(--light-theme-color) hsla(0, 0%, 0%, 0);
+
+      min-width: min-content;
 
       // box sizing together with height makes it occupy the full height pixel perfect
       box-sizing: border-box;
