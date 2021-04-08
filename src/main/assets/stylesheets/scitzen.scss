@@ -399,7 +399,7 @@ body {
         padding: 0;
       }
 
-      *:last-child {
+      & > *:last-child {
         // bottom margin to not collide with the label as much
         margin-bottom: 2.5em;
       }
