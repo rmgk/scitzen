@@ -30,7 +30,7 @@ object Parse {
   def documentUnwrap(blockContent: String, prov: Prov): Seq[Sast] = {
     parseResult(blockContent, parserDocument(_), prov) match {
       case Left(parsingAnnotation) => throw parsingAnnotation
-      case Right(res)              => res.toList
+      case Right(res)              => res
     }
   }
 

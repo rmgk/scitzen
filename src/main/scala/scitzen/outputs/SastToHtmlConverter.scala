@@ -5,8 +5,10 @@ import cats.data.Chain
 import cats.implicits._
 import scalatags.generic
 import scalatags.generic.Bundle
+import scitzen.cli.Common.PreprocessedResults
+import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.generic.{Article, ConversionContext, DocumentDirectory, HtmlPathManager, References, Reporter, SastRef}
+import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, References, Reporter, SastRef}
 import scitzen.sast.MacroCommand._
 import scitzen.sast._
 
@@ -16,8 +18,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     bibliography: Map[String, BibEntry],
     sync: Option[(File, Int)],
     reporter: Reporter,
-    includeResolver: DocumentDirectory,
-    articles: List[Article]
+    preprocessed: PreprocessedResults
+
 ) {
 
   import bundle.all._
@@ -26,6 +28,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   type CtxCF  = ConversionContext[Chain[Frag]]
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[_]
+
+  def includeResolver: DocumentDirectory = preprocessed.directory
+  def articles: List[Article] = preprocessed.articles
 
   val syncPos: Int =
     if (sync.exists(_._1 == pathManager.cwf)) sync.get._2
@@ -137,8 +142,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       bibliography,
                       sync,
                       doc.reporter,
-                      includeResolver,
-                      articles
+                      preprocessed
                     ).convertSeq(doc.sast)(ctx)
                   case None =>
                     scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
@@ -274,7 +278,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case macroRef @ Macro(Ref, attributes) =>
         val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
-        val candidates = References.filterCandidates(scope, ctx.resolveRef(attributes.target))
+        val candidates = References.filterCandidates(scope, preprocessed.labels.getOrElse(attributes.target, Nil))
 
         if (candidates.sizeIs > 1)
           scribe.error(

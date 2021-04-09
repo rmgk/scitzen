@@ -2,13 +2,11 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
+import scitzen.contexts.SastContext
 import scitzen.extern.ImageConverter
-import scitzen.generic.{Article, ConversionContext, Document, DocumentDirectory, Project, Reporter, SastRef}
+import scitzen.generic.{Article, Document, DocumentDirectory, Project, Reporter, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
-import scitzen.sast.{
-  Attribute, Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist,
-  SpaceComment, Text
-}
+import scitzen.sast.{Attribute, Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 
 class SastToSastConverter(
     project: Project,
@@ -17,8 +15,8 @@ class SastToSastConverter(
     converter: Option[ImageConverter]
 ) {
 
-  type CtxCS  = ConversionContext[Chain[Sast]]
-  type Ctx[T] = ConversionContext[T]
+  type CtxCS  = SastContext[Chain[Sast]]
+  type Ctx[T] = SastContext[T]
   type Cta    = Ctx[_]
 
   val uid = Integer.toHexString(cwf.hashCode())
@@ -50,7 +48,7 @@ class SastToSastConverter(
       case Slist(children) =>
         ctx.fold[ListItem, ListItem](children) { (ctx, child) =>
           child.content match {
-            case None => ctx.retc(child)
+            case None => ctx.ret(Chain(child))
             case Some(content) =>
               convertSingle(content)(ctx).map { con =>
                 Chain(ListItem(child.marker, child.text, Some(con)))
@@ -90,7 +88,7 @@ class SastToSastConverter(
 
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] = {
     // make all blocks labellable
-    val (ublock, refctx) = block.attributes.named.get("label") match {
+    val (ublock, refctx: Ctx[_]) = block.attributes.named.get("label") match {
       case None => (block, ctx)
       case Some(ref) =>
         addRefTargetMakeUnique(ctx, block, ref, block.attributes)(a => block.copy(attributes = a))
@@ -119,7 +117,7 @@ class SastToSastConverter(
   def convertInlines(inners: Seq[Inline])(implicit ctx: Cta): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>
       inline match {
-        case inlineText: InlineText => ctx.retc(inlineText)
+        case inlineText: InlineText => ctx.ret(Chain(inlineText))
         case m: Macro               => convertMacro(m)(ctx).single
       }
     }

@@ -1,8 +1,9 @@
 package scitzen.extern
 
 import better.files.File
+import scitzen.contexts.SastContext
 import scitzen.generic.RegexContext.regexStringContext
-import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
+import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.{Attribute, Attributes, Block, Fenced, Macro, MacroCommand, Prov, Sast}
@@ -15,7 +16,7 @@ trait ConvertTask {
 
 class ConvertSchedulable[T](data: T, task: Option[ConvertTask]) {
   def map[U](f: T => U): ConvertSchedulable[U] = new ConvertSchedulable[U](f(data), task)
-  def schedule(ctx: ConversionContext[_]): ConversionContext[T] = {
+  def schedule(ctx: SastContext[_]): SastContext[T] = {
     task.fold(ctx.ret(data)) { task =>
       ctx.copy(data = data, tasks = task :: ctx.tasks)
     }

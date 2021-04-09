@@ -2,13 +2,12 @@ package scitzen.outputs
 
 import better.files.File
 import cats.data.Chain
-import scitzen.generic.{Article, ConversionContext, DocumentDirectory, Project, References, Reporter}
-import scitzen.sast.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
-}
+import scitzen.contexts.ConversionContext
+import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
+import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.sast._
 
-class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includeResolver: DocumentDirectory) {
+class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includeResolver: DocumentDirectory, labels:  Map[String, List[SastRef]]) {
 
   val cwd = cwf.parent
 
@@ -17,7 +16,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
   type Cta    = Ctx[_]
 
   def articleHeader(article: Article, cta: Cta): CtxCS = {
-    val hasToc = cta.partialMacros.exists(_.command == MacroCommand.Other("tableofcontents"))
+    val hasToc = cta.features.contains("tableofcontents")
     val fm     = if (hasToc) Chain("\\frontmatter") else Chain.empty
 
     val ilc    = inlineValuesToTex(article.header.title.inl)(cta)
@@ -111,7 +110,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
               case Some(doc) =>
                 val included = includeResolver.byPath(doc.file)
 
-                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver)
+                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver, labels)
                   .sastSeqToTex(included.sast)(ctx)
 
               case None =>
@@ -261,7 +260,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
       case Macro(Ref, attr) =>
         val scope      = attr.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
-        val candidates = References.filterCandidates(scope, ctx.resolveRef(attr.target))
+        val candidates = References.filterCandidates(scope, labels.getOrElse(attr.target, Nil))
 
         if (candidates.sizeIs > 1)
           scribe.error(
@@ -307,7 +306,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
         inlineValuesToTex(attributes.targetT.inl).map(target => s"\\footnote{$target}").single
 
       case toc @ Macro(Other("tableofcontents"), _) =>
-        ctx.addMacro(toc).retc(
+        ctx.useFeature("tableofcontents").retc(
           List("\\cleardoublepage", "\\tableofcontents*", "\\mainmatter").mkString("\n")
         )
 

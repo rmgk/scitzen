@@ -1,15 +1,16 @@
 package scitzen.cli
 
-import java.nio.charset.{Charset, StandardCharsets}
-
 import better.files.File
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
+import scitzen.contexts.SastContext
+import scitzen.generic.Project
 import scitzen.generic.Project.ProjectConfig
-import scitzen.generic.{ConversionContext, Project}
 import scitzen.outputs.SastToSastConverter
 import scitzen.parser._
 import scitzen.sast.{Prov, Sast}
+
+import java.nio.charset.{Charset, StandardCharsets}
 
 object JsonSast {
 
@@ -22,7 +23,7 @@ object JsonSast {
     val content   = file.contentAsString
     val sast      = Parse.documentUnwrap(content, Prov(0, content.length))
     val converter = new SastToSastConverter(Project(file.parent, ProjectConfig(), Map.empty), file, _ => "", None)
-    val converted = converter.convertSeq(sast)(ConversionContext(())).data.toList
+    val converted = converter.convertSeq(sast)(SastContext(())).data.toList
     writeToString(converted)(SastEncoder)
   }
 

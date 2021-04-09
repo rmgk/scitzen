@@ -1,9 +1,10 @@
 package scitzen.cli
 
 import better.files.File
+import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageConverter
 import scitzen.extern.TexConverter.latexmk
-import scitzen.generic.{ConversionContext, DocumentDirectory, Project}
+import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -27,17 +28,16 @@ object ConvertPdf {
           project,
           article.sourceDoc.file,
           article.sourceDoc.reporter,
-          preprocessed.directory
+          preprocessed.directory,
+          preprocessed.labels
         )
 
         val resultContext =
-          converter.convert(article.content)(ConversionContext((), labelledThings = preprocessed.labels))
+          converter.convert(article.content)(ConversionContext(()))
 
         val headerres = converter.articleHeader(article, resultContext)
 
         val content = headerres.data ++ resultContext.data
-
-        headerres.execTasks()
 
         val articlename = Format.canonicalName(article)
 
@@ -50,7 +50,9 @@ object ConvertPdf {
           article.named.get(param).map(s => article.sourceDoc.file.parent / s.trim)
         }
 
-        val bibliography = fileFromParam("bibliography").map(_.pathAsString)
+        val bibliography =
+          fileFromParam("bibliography").map(project.cacheDir.relativize).map(_.toString)
+
         scribe.debug(s"bib is $bibliography")
 
         val jobname     = targetfile.nameWithoutExtension(includeAll = false)

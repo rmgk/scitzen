@@ -4,6 +4,8 @@ import better.files._
 import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
+import scitzen.cli.Common.PreprocessedResults
+import scitzen.contexts.ConversionContext
 import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
@@ -57,20 +59,16 @@ object ConvertHtml {
       rem match {
         case Nil => (katexmap, resourcemap)
         case article :: rest =>
-          val kc =
-            KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
           val cctx = convertArticle(
             article,
             pathManager.changeWorkingFile(article.sourceDoc.file),
             project,
             cssfile,
             sync,
-            preprocessed.directory,
-            ConversionContext((), labelledThings = preprocessed.labels, katexConverter = kc),
             nlp,
-            preprocessed.articles
+            preprocessed,
+            KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
           )
-          cctx.execTasks()
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
       }
     }
@@ -95,15 +93,12 @@ object ConvertHtml {
       bibliography = Map(),
       sync = None,
       reporter = _ => "",
-      includeResolver = preprocessed.directory,
-      articles = preprocessed.articles
-    ).convertSeq(generatedIndex)(ConversionContext((), labelledThings = preprocessed.labels))
+      preprocessed = preprocessed,
+    ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
       .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), None)
     project.outputdir./("index.html").write(res)
-
-    convertedCtx.execTasks()
   }
 
   private def loadKatex(katexmapfile: File): Map[String, String] = {
@@ -128,10 +123,9 @@ object ConvertHtml {
       project: Project,
       cssfile: File,
       sync: Option[(File, Int)],
-      preprocessed: DocumentDirectory,
-      preprocessedCtx: ConversionContext[_],
       nlp: Option[NLP],
-      articles: List[Article]
+      preprocessed: PreprocessedResults,
+      katexConverter: KatexConverter,
   ): ConversionContext[_] = {
 
     val biblio = makeBib(project, article)
@@ -142,13 +136,13 @@ object ConvertHtml {
       bibliography = biblio,
       sync = sync,
       reporter = article.sourceDoc.reporter,
-      includeResolver = preprocessed,
-      articles = articles
+      preprocessed = preprocessed,
     )
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 
-    val convertedArticleCtx = converter.convertSeq(article.content)(preprocessedCtx)
-    val headerCtx           = converter.articleHeader(article)(convertedArticleCtx.empty)
+    val convertedArticleCtx =
+      converter.convertSeq(article.content)(ConversionContext((), katexConverter = katexConverter))
+    val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
     val citations =
@@ -181,7 +175,7 @@ object ConvertHtml {
 
         ConvertTemplate.fillTemplate(
           project,
-          preprocessed,
+          preprocessed.directory,
           templatePath,
           templateSettings
         )
