@@ -13,7 +13,7 @@ object ImageReferences {
 
   implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
-  def listAll(project: Project, documentDirectory: DocumentDirectory) = {
+  def listAll(project: Project, documentDirectory: DocumentDirectory): Unit = {
     val fileImageMap: Map[String, List[Reference]] = documentDirectory.documents.map { doc =>
       val cwf = doc.file
       val cwd = cwf.parent
