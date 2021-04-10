@@ -117,7 +117,7 @@ class SastToSastConverter(
   def convertInlines(inners: Seq[Inline])(implicit ctx: Cta): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>
       inline match {
-        case inlineText: InlineText => ctx.ret(Chain(inlineText))
+        case inlineText: InlineText => ctx.ret(Chain.one(inlineText))
         case m: Macro               => convertMacro(m)(ctx).single
       }
     }

@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.parser.{TimeParsers}
+import scitzen.parser.TimeParsers
 import scitzen.sast.{Sast, Section, ScitzenDateTime}
 
 case class Article(header: Section, content: List[Sast], sourceDoc: Document, includes: DocumentDirectory) {
