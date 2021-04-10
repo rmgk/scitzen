@@ -80,7 +80,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               ctx.sections.iterator
                 .map(_.prefix)
                 .find(_.contains("="))
-                .fold(0)(s => s.length)
+                .fold(1)(s => s.length)
           Chain[Frag](tag(s"h${level.length + addDepth}")(id := sec.ref, innerFrags.toList))
         }.push(sec)
 
