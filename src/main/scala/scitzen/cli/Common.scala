@@ -23,17 +23,14 @@ object Common {
 
     project.cacheDir.createDirectories()
 
-    val initialCtx = SastContext(())
-
-    import scala.jdk.CollectionConverters._
     val preprocessedCtxs: List[SastContext[(Document, Chain[Sast])]] =
-      unprocessedDocuments.documents.asJava.parallelStream().map {
-        preprocess(project, initialCtx, imageConverter)
-      }.iterator().asScala.toList
+      unprocessedDocuments.documents.map {
+        preprocess(project, imageConverter)
+      }
 
     val preprocessedDocuments = splitPreprocessed(preprocessedCtxs)
     val labels = {
-      val all     = initialCtx.labelledThings :: preprocessedCtxs.map(_.labelledThings)
+      val all     = preprocessedCtxs.map(_.labelledThings)
       val allKeys = all.iterator.flatMap(_.keysIterator).toSet
       allKeys.iterator.map { key =>
         key -> all.flatMap(_.getOrElse(key, Nil))
@@ -45,7 +42,6 @@ object Common {
 
   def preprocess(
       project: Project,
-      initialCtx: SastContext[_],
       imageConverter: ImageConverter
   )(doc: Document): SastContext[(Document, Chain[Sast])] = {
     val resCtx = new SastToSastConverter(
@@ -53,7 +49,7 @@ object Common {
       doc.file,
       doc.reporter,
       Some(imageConverter)
-    ).convertSeq(doc.sast)(initialCtx)
+    ).convertSeq(doc.sast)(SastContext(()))
     resCtx.execTasks()
     resCtx.map(doc -> _)
   }
