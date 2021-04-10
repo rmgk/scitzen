@@ -21,10 +21,26 @@ class SastToSastConverter(
 
   val uid = Integer.toHexString(cwf.hashCode())
 
-  def artOpt(ctx: Cta, self: Option[Section] = None): Option[Article] = {
-    (self ++: ctx.sections).find(!Article.notArticleHeader(_)).collect {
+  def findArticle(ctx: Cta, self: Section): Option[Article] = {
+    (self +: ctx.sections).find(!Article.notArticleHeader(_)).collect {
       case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil))
     }
+  }
+
+  def ensureUniqueRef[A <: Sast](
+      ctx: Cta,
+      ref1: String,
+      attr: Attributes,
+  ): Ctx[(List[String], Attributes)] = {
+    val counter =
+      if (ctx.labelledThings.contains(ref1)) {
+        ctx.nextId.map(_.toString)
+      } else {
+        ctx.ret("")
+      }
+    val newLabel = s"$ref1 ($uid${counter.data})"
+    val aliases  = ref1 :: newLabel :: attr.named.get("aliases").toList.flatMap(_.split(',').toList)
+    counter.ret((aliases, attr.updated("label", newLabel)))
   }
 
   val cwd = if (cwf.isDirectory) cwf else cwf.parent
@@ -38,9 +54,15 @@ class SastToSastConverter(
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _) =>
-        val (newSection, ctxWithRef) =
-          addRefTargetMakeUnique(ctx, sec, sec.ref, sec.attributes)(a => sec.copy(attributes = a))
-        val conCtx = ctxWithRef.push(newSection)
+        val ctxWithRef = {
+          val resctx          = ensureUniqueRef(ctx, sec.ref, sec.attributes)
+          val (aliases, attr) = resctx.data
+          val ublock          = sec.copy(attributes = attr)
+          val target          = SastRef(cwf, ublock, findArticle(ctx, sec))
+          refAliases(resctx, aliases, target).ret(ublock)
+        }
+        val newSection = ctxWithRef.data
+        val conCtx     = ctxWithRef.push(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
           Section(Text(title.toList), level, newSection.attributes)
         }
@@ -62,37 +84,18 @@ class SastToSastConverter(
         convertMacro(mcro).map(identity(_): Sast)
     }
 
-  def addRefTargetMakeUnique[A <: Sast](
-      ctx: Cta,
-      sec: A,
-      ref1: String,
-      attr: Attributes,
-  )(updateAttr: (Attributes) => A): (A, Ctx[Unit]) = {
-    val counter =
-      if (ctx.labelledThings.contains(ref1)) {
-        ctx.nextId.map(_.toString)
-      } else {
-        ctx.ret("")
-      }
-    val newLabel = s"$ref1 ($uid${counter.data})"
-    val cp       = updateAttr(attr.updated("label", newLabel))
-
-    val asSection = Option.when(cp.isInstanceOf[Section])(cp.asInstanceOf[Section])
-    val secref    = SastRef(cwf, cp, artOpt(ctx, asSection))
-    val aliases   = attr.named.get("aliases").toList.flatMap(_.split(',').toList)
-    val referenced = (ref1 :: newLabel :: aliases).foldLeft(counter.ret(())) { (c, l) =>
-      c.addRefTarget(l, secref).ret(())
-    }
-    (cp, referenced)
-  }
-
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] = {
     // make all blocks labellable
-    val (ublock, refctx: Ctx[_]) = block.attributes.named.get("label") match {
-      case None => (block, ctx)
+    val refctx: Ctx[Block] = block.attributes.named.get("label") match {
+      case None => ctx.ret(block)
       case Some(ref) =>
-        addRefTargetMakeUnique(ctx, block, ref, block.attributes)(a => block.copy(attributes = a))
+        val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
+        val (aliases, attr) = resctx.data
+        val ublock          = block.copy(attributes = attr)
+        val target          = SastRef(cwf, ublock, None)
+        refAliases(resctx, aliases, target).ret(ublock)
     }
+    val ublock = refctx.data
     ublock.content match {
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
@@ -112,6 +115,10 @@ class SastToSastConverter(
       case SpaceComment(_) => refctx.ret(ublock)
 
     }
+  }
+
+  private def refAliases(resctx: Ctx[_], aliases: List[String], target: SastRef): Ctx[Unit] = {
+    aliases.foldLeft(resctx.ret(()))((c: Ctx[_], a) => c.addRefTarget(a, target).ret(()))
   }
 
   def convertInlines(inners: Seq[Inline])(implicit ctx: Cta): Ctx[Chain[Inline]] =
