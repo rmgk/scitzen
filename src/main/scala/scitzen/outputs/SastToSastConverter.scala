@@ -4,9 +4,9 @@ import better.files.File
 import cats.data.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.ImageConverter
-import scitzen.generic.{Article, Document, DocumentDirectory, Project, Reporter, SastRef}
+import scitzen.generic.{Article, Document, Project, Reporter, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
-import scitzen.sast.{Attribute, Attributes, Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast._
 
 class SastToSastConverter(
     project: Project,
@@ -23,7 +23,7 @@ class SastToSastConverter(
 
   def artOpt(ctx: Cta, self: Option[Section] = None): Option[Article] = {
     (self ++: ctx.sections).find(!Article.notArticleHeader(_)).collect {
-      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil, Nil), DocumentDirectory(Nil))
+      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil))
     }
   }
 

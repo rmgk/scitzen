@@ -291,10 +291,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
         candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
           val nameOpt = attributes.arguments.headOption
-          val articleOpt =
-            targetDocument.directArticle.orElse(articles.find(a => a.includes.byPath.contains(targetDocument.scope)))
+          val articleOpt = targetDocument.directArticle
           val fileRef = articleOpt match {
-            case Some(article) if !article.includes.byPath.contains(pathManager.cwf) =>
+            case Some(article) =>
               pathManager.relativeArticleTarget(article).toString
             case _ => ""
           }

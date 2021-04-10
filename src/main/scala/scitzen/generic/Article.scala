@@ -3,7 +3,7 @@ package scitzen.generic
 import scitzen.parser.TimeParsers
 import scitzen.sast.{Sast, Section, ScitzenDateTime}
 
-case class Article(header: Section, content: List[Sast], sourceDoc: Document, includes: DocumentDirectory) {
+case class Article(header: Section, content: List[Sast], sourceDoc: Document) {
 
   lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
 
@@ -28,7 +28,7 @@ object Article {
       rem.dropWhile(notArticleHeader) match {
         case (sec @ Section(_, "=", _)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
-          rec(other, Article(sec, cont, document, DocumentDirectory(Nil)) :: acc)
+          rec(other, Article(sec, cont, document) :: acc)
         case _ => acc
       }
     }
