@@ -19,7 +19,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     sync: Option[(File, Int)],
     reporter: Reporter,
     preprocessed: PreprocessedResults
-
 ) {
 
   import bundle.all._
@@ -30,7 +29,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   type Cta    = Ctx[_]
 
   def includeResolver: DocumentDirectory = preprocessed.directory
-  def articles: List[Article] = preprocessed.articles
+  def articles: List[Article]            = preprocessed.articles
 
   val syncPos: Int =
     if (sync.exists(_._1 == pathManager.cwf)) sync.get._2
@@ -215,13 +214,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val initTag: Tag =
               if (!sBlock.attributes.positional.contains("highlight")) pre(code(labeltext))
               else {
-                val lines = labeltext.linesIterator.zipWithIndex.filter{case (s, _) => s.contains(":hl§")}.map{_._2 + 1}.mkString(",")
-                val txt  = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
+                val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
+                  _._2 + 1
+                }.mkString(",")
+                val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
                 pre(code(txt, attr("data-line-numbers") := lines))
               }
 
-            val respre       = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
-            val res          = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
+            val respre = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
+            val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
             ctx.retc(res)
         }
 
@@ -271,9 +272,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Macro(Link, attributes) =>
         val target = attributes.target
-        val content = attributes.positionalT.headOption.map { txt =>
-          inlineValuesToHTML(txt.inl)(ctx)
-        }.getOrElse(ctx.retc(stringFrag(target)))
+        val content = attributes.positionalT.headOption
+          .fold(ctx.retc(stringFrag(target))) { txt =>
+            inlineValuesToHTML(txt.inl)(ctx)
+          }
         content.retc(a(href := target)(content.data.toList))
 
       case macroRef @ Macro(Ref, attributes) =>
@@ -351,7 +353,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         pathManager.project.resolve(pathManager.cwd, attributes.target) match {
           case Some(target) =>
             val path = pathManager.relativizeImage(target)
-            val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1")) * 100
+            val mw   = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1")) * 100
             ctx.requireInOutput(target, path).retc {
               val filename = path.getFileName.toString
               if (videoEndings.exists(filename.endsWith))
