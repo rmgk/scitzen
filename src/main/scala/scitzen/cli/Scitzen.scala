@@ -4,7 +4,7 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
-import scitzen.generic.{DocumentDirectory, Project}
+import scitzen.generic.Project
 import scribe.Logger
 import scribe.output.format.ASCIIOutputFormat
 
@@ -81,7 +81,8 @@ object ConvertProject {
     val timediff = makeTimediff()
 
     scribe.info(s"found project in ${project.root} ${timediff()}")
-    val documentDirectory = DocumentDirectory(project.root)
+    val documentDirectory = Project.directory(project.root)
+
     scribe.info(s"parsed ${documentDirectory.documents.size} documents ${timediff()}")
     if (project.config.format.contains("content")) {
       Format.formatContents(documentDirectory)

@@ -32,7 +32,7 @@ object Article {
         case _ => acc
       }
     }
-    
+
     rec(document.sast.dropWhile(notArticleHeader), Nil)
   }
 }

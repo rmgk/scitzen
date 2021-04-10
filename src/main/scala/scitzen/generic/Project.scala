@@ -100,4 +100,12 @@ object Project {
     }
   }
 
+  def directory(root: File): DocumentDirectory = {
+    scribe.debug(s"discovering sources in ${root}")
+    val sources: List[File] = Project.discoverSources(root)
+    scribe.debug(s"parsing ${sources.length} documents")
+    val documents = sources.map(Document.apply)
+    DocumentDirectory(documents)
+  }
+
 }
