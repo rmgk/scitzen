@@ -18,7 +18,7 @@ object ConvertPdf {
     val preprocessed = Common.preprocessDocuments(
       project,
       new ImageConverter(project, "pdf", List("svg"), documentDirectory),
-      documentDirectory
+      documentDirectory.documents
     )
 
     import scala.jdk.CollectionConverters._
