@@ -18,11 +18,11 @@ class SastToSastConverter(
   type Ctx[T] = SastContext[T]
   type Cta    = Ctx[_]
 
-  def cwf: File = document.file
-
+  def cwf: File   = document.file
+  val cwd: File   = if (cwf.isDirectory) cwf else cwf.parent
   val uid: String = Integer.toHexString(cwf.hashCode())
 
-  def run() = convertSeq(document.sast)(SastContext(()))
+  def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
 
   def findArticle(ctx: Cta, self: Section): Option[Article] = {
     (self +: ctx.sections).find(!Article.notArticleHeader(_)).collect {
@@ -45,8 +45,6 @@ class SastToSastConverter(
     val aliases  = ref1 :: newLabel :: attr.named.get("aliases").toList.flatMap(_.split(',').toList)
     counter.ret((aliases, attr.updated("label", newLabel)))
   }
-
-  val cwd = if (cwf.isDirectory) cwf else cwf.parent
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
     ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
