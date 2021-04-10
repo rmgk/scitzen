@@ -3,9 +3,8 @@ package scitzen.cli
 import better.files.File
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
-import scitzen.contexts.SastContext
-import scitzen.generic.Project
 import scitzen.generic.Project.ProjectConfig
+import scitzen.generic.{Document, Project}
 import scitzen.outputs.SastToSastConverter
 import scitzen.parser._
 import scitzen.sast.{Prov, Sast}
@@ -22,8 +21,8 @@ object JsonSast {
   def jsonFor(file: File): String = {
     val content   = file.contentAsString
     val sast      = Parse.documentUnwrap(content, Prov(0, content.length))
-    val converter = new SastToSastConverter(Project(file.parent, ProjectConfig(), Map.empty), file, _ => "", None)
-    val converted = converter.convertSeq(sast)(SastContext(())).data.toList
+    val converter = new SastToSastConverter(Project(file.parent, ProjectConfig(), Map.empty), Document(file, content, sast.toList), None)
+    val converted = converter.run().data.toList
     writeToString(converted)(SastEncoder)
   }
 

@@ -4,14 +4,13 @@ import better.files.File
 import cats.data.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.ImageConverter
-import scitzen.generic.{Article, Document, Project, Reporter, SastRef}
+import scitzen.generic.{Article, Document, Project, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
 import scitzen.sast._
 
 class SastToSastConverter(
     project: Project,
-    cwf: File,
-    reporter: Reporter,
+    document: Document,
     converter: Option[ImageConverter]
 ) {
 
@@ -19,7 +18,11 @@ class SastToSastConverter(
   type Ctx[T] = SastContext[T]
   type Cta    = Ctx[_]
 
-  val uid = Integer.toHexString(cwf.hashCode())
+  def cwf: File = document.file
+
+  val uid: String = Integer.toHexString(cwf.hashCode())
+
+  def run() = convertSeq(document.sast)(SastContext(()))
 
   def findArticle(ctx: Cta, self: Section): Option[Article] = {
     (self +: ctx.sections).find(!Article.notArticleHeader(_)).collect {
@@ -156,7 +159,7 @@ class SastToSastConverter(
       case Macro(Include, attributes) if attributes.arguments.isEmpty =>
         project.resolve(cwd, attributes.target) match {
           case None =>
-            scribe.error(s"unknown include ${attributes.target}" + reporter(mcro))
+            scribe.error(s"unknown include ${attributes.target}" + document.reporter(mcro))
             ctx.ret(mcro)
           case Some(file) => ctx.copy(includes = file :: ctx.includes).ret(mcro)
         }

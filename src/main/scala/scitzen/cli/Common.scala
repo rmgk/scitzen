@@ -27,10 +27,9 @@ object Common {
       documents.map { doc =>
         new SastToSastConverter(
           project,
-          doc.file,
-          doc.reporter,
+          doc,
           Some(imageConverter)
-        ).convertSeq(doc.sast)(SastContext(()))
+        ).run()
       }
 
     val preprocessedDocuments = DocumentDirectory(preprocessedCtxs.map(_.data).zip(documents).map {

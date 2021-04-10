@@ -1,13 +1,11 @@
 package scitzen.cli
 
-import cats.data.Chain
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.contexts.SastContext
 import scitzen.extern.ImageConverter
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.sast.{MacroCommand, Sast}
+import scitzen.sast.MacroCommand
 
 object ImageReferences {
 
@@ -22,15 +20,14 @@ object ImageReferences {
 
       val convertedCtx = new SastToSastConverter(
         project,
-        doc.file,
-        doc.reporter,
+        doc,
         Some(new ImageConverter(
           project,
           preferredFormat = "png",
           unsupportedFormat = List("pdf", "svg"),
           documentDirectory
         ))
-      ).convertSeq(doc.sast)(SastContext(Chain.empty[Sast]))
+      ).run()
 
       import scala.jdk.CollectionConverters._
       convertedCtx.tasks.asJava.parallelStream().forEach { ct =>
