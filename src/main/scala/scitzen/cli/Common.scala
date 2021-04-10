@@ -40,7 +40,7 @@ object Common {
       }.toMap
     }
     val articles = preprocessedDocuments.documents.flatMap(Article.articles)
-    new PreprocessedResults(preprocessedDocuments, labels, articles)
+    PreprocessedResults(preprocessedDocuments, labels, articles)
   }
 
   def preprocess(

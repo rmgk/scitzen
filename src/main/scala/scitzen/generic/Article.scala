@@ -25,13 +25,14 @@ object Article {
   def articles(document: Document): List[Article] = {
     @scala.annotation.tailrec
     def rec(rem: List[Sast], acc: List[Article]): List[Article] = {
-      rem.dropWhile(notArticleHeader) match {
+      rem match {
         case (sec @ Section(_, "=", _)) :: rest =>
           val (cont, other) = rest.span(notArticleHeader)
           rec(other, Article(sec, cont, document) :: acc)
         case _ => acc
       }
     }
-    rec(document.sast, Nil)
+    
+    rec(document.sast.dropWhile(notArticleHeader), Nil)
   }
 }
