@@ -150,7 +150,7 @@ time, .category {
 }
 
 time {
-  white-space: nowrap;
+  white-space: pre;
   // double monospace to override firefox default font size to use same as other fonts
   font-family: monospace, monospace;
   //letter-spacing: -0.0625em;

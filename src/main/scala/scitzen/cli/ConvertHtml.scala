@@ -86,7 +86,7 @@ object ConvertHtml {
       cssfile: File,
       pathManager: HtmlPathManager
   ): Unit = {
-    val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager, reverse = true)
+    val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager)
     val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,

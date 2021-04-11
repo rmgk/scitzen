@@ -105,11 +105,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             ctx.ret(Chain(hr))
 
           case Macro(Other("article"), attributes) =>
-            def timeShort(date: Option[String]) =
-              date match {
-                case Some(date) => time(stringFrag(date + " "))
-                case None       => time("00 00:00")
-              }
+            def timeShort(date: Option[String]) =time(f"${date.getOrElse("")}%-8s")
 
             val aref = attributes.named("target")
 

@@ -24,9 +24,8 @@ object GenIndexPage {
   def makeIndex(
       articles: List[Article],
       htmlPathManager: HtmlPathManager,
-      reverse: Boolean = false
   ): List[Sast] = {
-    def ordering[T: Ordering]: Ordering[T] = if (reverse) Ordering[T].reverse else Ordering[T]
+    def ordering[T: Ordering]: Ordering[T] = Ordering[T].reverse
 
     def sectionBy(pdocs: List[Article])(f: Article => String)(cont: List[Article] => List[Sast]): List[Sast] = {
       val sectionTitle = pdocs.groupBy(f)
@@ -41,7 +40,7 @@ object GenIndexPage {
     }
 
     def secmon(fd: Article): String = {
-      fd.date.fold("") { date =>
+      fd.date.fold("Dateless") { date =>
         val m = date.date.month
         s"${date.year}-$m " + months(m.toInt - 1)
       }
