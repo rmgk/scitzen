@@ -13,7 +13,7 @@ object MacroParsers {
   def full[_: P]: P[Macro] =
     P(withProv(":" ~ macroCommand.? ~ AttributesParser.braces)).map {
       case ((name, attributes), prov) =>
-        Macro(MacroCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes, prov))
+        Macro(MacroCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes), prov)
     }
 
   def commentStart[_: P]: P[Unit] = P(":%")
@@ -22,6 +22,6 @@ object MacroParsers {
 
   def comment[_: P]: P[Macro] =
     P(withProv(commentStart ~ untilI(eol).!))
-      .map { case (text, prov) => Macro(Comment, Attribute("", text).toAttributes(prov)) }
+      .map { case (text, prov) => Macro(Comment, Attribute("", text).toAttributes, prov) }
 
 }

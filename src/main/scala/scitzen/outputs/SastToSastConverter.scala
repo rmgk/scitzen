@@ -26,7 +26,7 @@ class SastToSastConverter(
 
   def findArticle(ctx: Cta, self: Section): Option[Article] = {
     (self +: ctx.sections).find(!Article.notArticleHeader(_)).collect {
-      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil))
+      case sect @ Section(_, "=", _, _) => Article(sect, Nil, Document(cwf, "", Nil))
     }
   }
 
@@ -54,7 +54,7 @@ class SastToSastConverter(
     sast match {
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
-      case sec @ Section(title, level, _) =>
+      case sec @ Section(title, level, _, _) =>
         val ctxWithRef = {
           val resctx          = ensureUniqueRef(ctx, sec.ref, sec.attributes)
           val (aliases, attr) = resctx.data
@@ -65,7 +65,7 @@ class SastToSastConverter(
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.push(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
-          Section(Text(title.toList), level, newSection.attributes)
+          Section(Text(title.toList), level, newSection.attributes, newSection.prov)
         }
 
       case Slist(children) =>
@@ -81,7 +81,7 @@ class SastToSastConverter(
           scitzen.sast.Slist(cs.iterator.toSeq)
         }
 
-      case mcro @ Macro(_, _) =>
+      case mcro: Macro =>
         convertMacro(mcro).map(identity(_): Sast)
     }
 
@@ -100,10 +100,12 @@ class SastToSastConverter(
     ublock.content match {
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
-          .map(il => Block(ublock.attributes, Paragraph(Text(il.toList))): Sast)
+          .map(il => Block(ublock.attributes, Paragraph(Text(il.toList)), ublock.prov): Sast)
 
       case Parsed(delimiter, blockContent) =>
-        convertSeq(blockContent)(refctx).map(bc => Block(ublock.attributes, Parsed(delimiter, bc.toList)): Sast)
+        convertSeq(blockContent)(refctx).map(bc =>
+          Block(ublock.attributes, Parsed(delimiter, bc.toList), ublock.prov): Sast
+        )
 
       case Fenced(text) =>
         if (ublock.attributes.named.contains("converter") && converter.isDefined) {
@@ -130,16 +132,17 @@ class SastToSastConverter(
       }
     }
 
-  def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] =
-    mcro match {
+  def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] = {
+    val attributes = mcro.attributes
+    mcro.command match {
 
       // explicit image conversions
-      case Macro(Image, attributes) if attributes.named.contains("converter") && converter.isDefined =>
+      case Image if attributes.named.contains("converter") && converter.isDefined =>
         val resctx = converter.get.convertMacroTargetFile(cwd, mcro).schedule(ctx)
         convertMacro(resctx.data)(resctx)
 
       // unsupported image format conversions
-      case Macro(Image, attributes) if converter.isDefined && converter.get.requiresConversion(attributes.target) =>
+      case Image if converter.isDefined && converter.get.requiresConversion(attributes.target) =>
         project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
           val resctx    = converter.get.applyConversion(file).schedule(ctx)
           val reltarget = cwd.relativize(resctx.data)
@@ -147,14 +150,15 @@ class SastToSastConverter(
             Image,
             attributes.copy(
               raw = attributes.raw.init :+ Attribute("", reltarget.toString)
-            )
+            ),
+            mcro.prov
           ))(resctx)
         }
 
       // collect image macros
-      case mcro @ Macro(Image, _) => ctx.addMacro(mcro).ret(mcro)
+      case Image => ctx.addMacro(mcro).ret(mcro)
 
-      case Macro(Include, attributes) if attributes.arguments.isEmpty =>
+      case Include if attributes.arguments.isEmpty =>
         project.resolve(cwd, attributes.target) match {
           case None =>
             scribe.error(s"unknown include ${attributes.target}" + document.reporter(mcro))
@@ -162,8 +166,9 @@ class SastToSastConverter(
           case Some(file) => ctx.copy(includes = file :: ctx.includes).ret(mcro)
         }
 
-      case other => ctx.ret(other)
+      case _ => ctx.ret(mcro)
 
     }
+  }
 
 }

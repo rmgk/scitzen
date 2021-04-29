@@ -26,8 +26,9 @@ object DelimitedBlockParsers {
                     scitzen.sast.Parsed(delimiter, sast)
                 }
               scitzen.sast.Block(
-                Attributes(rawAttr, if (!isStripped) prov else prov.copy(indent = delimiter.length)),
-                blockContent
+                Attributes(rawAttr),
+                blockContent,
+                if (!isStripped) prov else prov.copy(indent = delimiter.length)
               )
           }
     }
@@ -55,7 +56,7 @@ object DelimitedBlockParsers {
         }
     }).map {
       case (parsed, prov) =>
-        scitzen.sast.Block(Attributes(Nil, prov.copy(indent = parsed.delimiter.length)), parsed)
+        scitzen.sast.Block(Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))
     })
 
 }

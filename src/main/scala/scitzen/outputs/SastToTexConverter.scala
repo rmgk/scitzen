@@ -4,10 +4,18 @@ import better.files.File
 import cats.data.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.sast.MacroCommand.{
+  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
+}
 import scitzen.sast._
 
-class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includeResolver: DocumentDirectory, labels:  Map[String, List[SastRef]]) {
+class SastToTexConverter(
+    project: Project,
+    cwf: File,
+    reporter: Reporter,
+    includeResolver: DocumentDirectory,
+    labels: Map[String, List[SastRef]]
+) {
 
   val cwd = cwf.parent
 
@@ -62,7 +70,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
     sast match {
       case tlBlock: Block => blockToTex(tlBlock)
 
-      case section @ Section(title, prefix, attr) =>
+      case section @ Section(title, prefix, attr, _) =>
         val ilc = inlineValuesToTex(title.inl)(ctx)
 
         val pushed   = ilc.push(section)
@@ -71,7 +79,7 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
           case "==" =>
             s"\\chapter$numbered[${ilc.data}]{${ilc.data}}"
           case _ =>
-            val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
+            val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _, _) => () }.size
             val sec   = sectioning(prefix.length - shift)
             s"\\$sec$numbered{${ilc.data}}"
         }
@@ -104,9 +112,9 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
         }
 
-      case mcro @ Macro(_, _) => mcro match {
-          case Macro(Include, attributes) =>
-            project.resolve(cwd, attributes.target).flatMap(includeResolver.byPath.get) match {
+      case mcro: Macro => mcro.command match {
+          case Include =>
+            project.resolve(cwd, mcro.attributes.target).flatMap(includeResolver.byPath.get) match {
               case Some(doc) =>
                 val included = includeResolver.byPath(doc.file)
 
@@ -114,12 +122,12 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
                   .sastSeqToTex(included.sast)(ctx)
 
               case None =>
-                scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
+                scribe.error(s"unknown include ${mcro.attributes.target}" + reporter(mcro))
                 ctx.empty
             }
 
           case other =>
-            inlineValuesToTex(List(other)).single
+            inlineValuesToTex(List(mcro)).single
         }
     }
 
@@ -143,11 +151,11 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
               case "figure" =>
                 val (figContent, caption) = {
                   blockContent.lastOption match {
-                    case Some(Block(_, Paragraph(content))) =>
+                    case Some(Block(_, Paragraph(content), _)) =>
                       val captionstr = inlineValuesToTex(content.inl).data
                       (blockContent.init, s"\\caption{$captionstr}")
                     case _ =>
-                      scribe.warn(s"figure has no caption" + reporter(tlblock.attributes.prov))
+                      scribe.warn(s"figure has no caption" + reporter(tlblock.prov))
                       (blockContent, "")
                   }
                 }
@@ -226,110 +234,117 @@ class SastToTexConverter(project: Project, cwf: File, reporter: Reporter, includ
 
   def inlineToTex(inln: Inline)(implicit ctx: Cta): CtxCS =
     inln match {
-      case InlineText(str)          => ctx.retc(latexencode(str))
-      case Macro(Code, attrs)       => ctx.retc(s"\\texttt{${latexencode(attrs.target)}}")
-      case Macro(Comment, _)        => ctx.retc("")
-      case Macro(Def, _)            => ctx.retc("")
-      case Macro(Emph, attrs)       => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\emph{$str}")
-      case Macro(Math, attrs)       => ctx.retc(s"$$${attrs.target}$$")
-      case Macro(Other("break"), _) => ctx.retc(s"\\clearpage{}")
-      case Macro(Other("rule"), attr) => inlineToTex(Macro(
-          Ref,
-          attr.copy(raw = Seq(
-            Attribute("", Text(Seq(Macro(Other("smallcaps"), attr)))),
-            Attribute("style", "plain"),
-            Attribute("", s"rule-${attr.target}")
-          ))
-        ))
-      case Macro(Other("smallcaps"), attr) => ctx.retc(s"\\textsc{${attr.target}}")
-      case Macro(Other("raw"), attr)       => ctx.retc(attr.named.getOrElse("tex", ""))
-      case Macro(Other("todo"), attr) =>
-        inlineValuesToTex(attr.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
-      case Macro(Strong, attrs) => inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\textbf{$str}")
-      case Macro(Other("partition"), attrs) =>
-        inlineValuesToTex(attrs.targetT.inl).mapc(str => s"\\part{${str}}")
+      case InlineText(str) => ctx.retc(latexencode(str))
+      case mcro: Macro =>
+        val attributes = mcro.attributes
+        mcro.command match {
+          case Code           => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
+          case Comment        => ctx.retc("")
+          case Def            => ctx.retc("")
+          case Emph           => inlineValuesToTex(attributes.targetT.inl).mapc(str => s"\\emph{$str}")
+          case Math           => ctx.retc(s"$$${attributes.target}$$")
+          case Other("break") => ctx.retc(s"\\clearpage{}")
+          case Other("rule") => inlineToTex(Macro(
+              Ref,
+              attributes.copy(raw = Seq(
+                Attribute("", Text(Seq(Macro(Other("smallcaps"), attributes, mcro.prov)))),
+                Attribute("style", "plain"),
+                Attribute("", s"rule-${attributes.target}")
+              )),
+              mcro.prov
+            ))
+          case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
+          case Other("raw")       => ctx.retc(attributes.named.getOrElse("tex", ""))
+          case Other("todo") =>
+            inlineValuesToTex(attributes.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
+          case Strong => inlineValuesToTex(attributes.targetT.inl).mapc(str => s"\\textbf{$str}")
+          case Other("partition") =>
+            inlineValuesToTex(attributes.targetT.inl).mapc(str => s"\\part{${str}}")
 
-      case Macro(Cite, attr) =>
-        val cmndCtx = attr.named.get("style") match {
-          case Some("name")   => ctx.ret("citet")
-          case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
-          case _              => ctx.ret("cite")
-        }
-
-        nbrs(attr)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attr.target}}")
-
-      case Macro(Ref, attr) =>
-        val scope      = attr.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
-        val candidates = References.filterCandidates(scope, labels.getOrElse(attr.target, Nil))
-
-        if (candidates.sizeIs > 1)
-          scribe.error(
-            s"multiple resolutions for ${attr.target}" +
-              reporter(attr.prov) +
-              s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
-          )
-
-        candidates.headOption match {
-          case None =>
-            scribe.error(s"no resolution found for ${attr.target}" + reporter(attr.prov))
-            ctx.empty
-          case Some(candidate) =>
-            //TODO: existence of line is unchecked
-            val label = References.getLabel(candidate).get + attr.named.getOrElse("line", "")
-            attr.named.get("style") match {
-              case Some("plain") =>
-                inlineValuesToTex(attr.argumentsT.head.inl)(ctx).mapc { str => s"\\hyperref[${label}]{${str}}" }
-              case _ => nbrs(attr).mapc { str => s"${str}\\ref{${label}}" }
-
+          case Cite =>
+            val cmndCtx = attributes.named.get("style") match {
+              case Some("name")   => ctx.ret("citet")
+              case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
+              case _              => ctx.ret("cite")
             }
-        }
 
-      case Macro(Link, attributes) =>
-        ctx.retc {
-          val target = attributes.target
-          if (attributes.positional.size > 1) {
-            val name = "{" + latexencode(attributes.positional.head) + "}"
-            s"\\href{$target}{$name}"
-          } else s"\\url{$target}"
-        }.useFeature("href")
+            nbrs(attributes)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attributes.target}}")
 
-      case Macro(Lookup, attributes) =>
-        project.definitions.get(attributes.target) match {
-          case Some(res) =>
-            inlineValuesToTex(res.inl)(ctx).map(Chain(_))
-          case None =>
-            scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
-            ctx.retc(latexencode(attributes.target))
-        }
+          case Ref =>
+            val scope      = attributes.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
+            val candidates = References.filterCandidates(scope, labels.getOrElse(attributes.target, Nil))
 
-      case Macro(Other("footnote"), attributes) =>
-        inlineValuesToTex(attributes.targetT.inl).map(target => s"\\footnote{$target}").single
+            if (candidates.sizeIs > 1)
+              scribe.error(
+                s"multiple resolutions for ${attributes.target}" +
+                  reporter(mcro) +
+                  s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+              )
 
-      case toc @ Macro(Other("tableofcontents"), _) =>
-        ctx.useFeature("tableofcontents").retc(
-          List("\\cleardoublepage", "\\tableofcontents*", "\\mainmatter").mkString("\n")
-        )
+            candidates.headOption match {
+              case None =>
+                scribe.error(s"no resolution found for ${attributes.target}" + reporter(mcro))
+                ctx.empty
+              case Some(candidate) =>
+                //TODO: existence of line is unchecked
+                val label = References.getLabel(candidate).get + attributes.named.getOrElse("line", "")
+                attributes.named.get("style") match {
+                  case Some("plain") =>
+                    inlineValuesToTex(attributes.argumentsT.head.inl)(ctx).mapc { str =>
+                      s"\\hyperref[${label}]{${str}}"
+                    }
+                  case _ => nbrs(attributes).mapc { str => s"${str}\\ref{${label}}" }
 
-      case im @ Macro(Other(_), _) =>
-        val str = warn(s"unknown macro", im)
-        ctx.retc(str)
+                }
+            }
 
-      case mcro @ Macro(Image, attributes) =>
-        val target = attributes.target
+          case Link =>
+            ctx.retc {
+              val target = attributes.target
+              if (attributes.positional.size > 1) {
+                val name = "{" + latexencode(attributes.positional.head) + "}"
+                s"\\href{$target}{$name}"
+              } else s"\\url{$target}"
+            }.useFeature("href")
 
-        project.resolve(cwd, target) match {
-          case None =>
-            ctx.retc(warn(s"could not find path", mcro))
-          case Some(data) =>
-            val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
-            ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{$data}")).useFeature(
-              "graphics"
+          case Lookup =>
+            project.definitions.get(attributes.target) match {
+              case Some(res) =>
+                inlineValuesToTex(res.inl)(ctx).map(Chain(_))
+              case None =>
+                scribe.warn(s"unknown name ${attributes.target}" + reporter(mcro))
+                ctx.retc(latexencode(attributes.target))
+            }
+
+          case Other("footnote") =>
+            inlineValuesToTex(attributes.targetT.inl).map(target => s"\\footnote{$target}").single
+
+          case Other("tableofcontents") =>
+            ctx.useFeature("tableofcontents").retc(
+              List("\\cleardoublepage", "\\tableofcontents*", "\\mainmatter").mkString("\n")
             )
-        }
 
-      case im @ Macro(Include, _) =>
-        val str: String = warn(s"tex backend does not allow inline includes", im)
-        ctx.retc(str)
+          case Other(_) =>
+            val str = warn(s"unknown macro", mcro)
+            ctx.retc(str)
+
+          case Image =>
+            val target = attributes.target
+
+            project.resolve(cwd, target) match {
+              case None =>
+                ctx.retc(warn(s"could not find path", mcro))
+              case Some(data) =>
+                val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
+                ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{$data}")).useFeature(
+                  "graphics"
+                )
+            }
+
+          case Include =>
+            val str: String = warn(s"tex backend does not allow inline includes", mcro)
+            ctx.retc(str)
+        }
     }
   def warn(msg: String, im: Macro): String = {
     val macroStr = SastToScimConverter.macroToScim(im)

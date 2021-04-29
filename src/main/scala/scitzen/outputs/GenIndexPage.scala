@@ -33,8 +33,8 @@ object GenIndexPage {
         case (key, docs) =>
           val inner = cont(docs)
           List[Sast](
-            Section(Text(List(InlineText(key))), prefix = "#", Attributes.synthetic(Attribute("label", key))),
-            Block(Attributes.synthetic(), Parsed("", inner))
+            Section(Text(List(InlineText(key))), prefix = "#", Attributes.synthetic(Attribute("label", key)), Prov()),
+            Block(Attributes(Nil), Parsed("", inner), Prov())
           )
       }
     }
@@ -60,9 +60,9 @@ object GenIndexPage {
                 htmlPathManager.project.outputdir.relativize(htmlPathManager.articleOutputPath(doc)).toString
               )),
               doc.date.map(date => Attribute("datetime", date.dayTime))
-            ).flatten ++ categories.map(Attribute("category", _)),
-            Prov()
-          )
+            ).flatten ++ categories.map(Attribute("category", _))
+          ),
+          Prov()
         ))
       }
     }

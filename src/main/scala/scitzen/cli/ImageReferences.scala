@@ -39,7 +39,7 @@ object ImageReferences {
         project.resolve(cwd, path) match {
           case Some(target) =>
             //val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
-            Some(Reference(target.pathAsString, mcro.attributes.prov.start, mcro.attributes.prov.end))
+            Some(Reference(target.pathAsString, mcro.prov.start, mcro.prov.end))
           case None =>
             scribe.warn(s"could not find $path in $cwd")
             None

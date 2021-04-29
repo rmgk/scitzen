@@ -24,7 +24,7 @@ object BlockParsers {
     ).map {
       case (attrOpt, ((inlines, _), prov)) =>
         //val endline = if (end.contains('\n')) inlines :+ InlineText("\n") else inlines
-        Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil), prov), Paragraph(Text(inlines)))
+        Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
     })
 
   def sectionStart[_: P]: P[String] = P(CharsWhileIn("=#").! ~ " ")
@@ -35,7 +35,7 @@ object BlockParsers {
       .map {
         case (prefix, ((inlines, _), prov), attrl) =>
           //val inlines = Parse.inlineUnwrap(inl, prov)
-          Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil), prov))
+          Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)), prov)
       }
 
   def extendedWhitespace[_: P]: P[Block] =
@@ -44,7 +44,7 @@ object BlockParsers {
         MacroParsers.comment.rep(1)).rep(1).!
     )).map {
       case (str, prov) =>
-        Block(scitzen.sast.Attributes(Nil, prov), SpaceComment(str))
+        Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
     }
 
   def alternatives[_: P]: P[Sast] =

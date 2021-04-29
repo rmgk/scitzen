@@ -72,7 +72,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
   def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
     singleSast match {
-      case sec @ Section(title, level, _) =>
+      case sec @ Section(title, level, _, _) =>
         inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
           val addDepth: Int =
             if (level.contains("=")) 0
@@ -100,12 +100,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }.map(i => Chain(dl(i.toList)))
         }
 
-      case mcro @ Macro(_, _) => mcro match {
-          case Macro(Other("break"), _) =>
+      case mcro: Macro =>
+        val attributes = mcro.attributes
+        mcro.command match {
+          case Other("break") =>
             ctx.ret(Chain(hr))
 
-          case Macro(Other("article"), attributes) =>
-            def timeShort(date: Option[String]) =time(f"${date.getOrElse("")}%-8s")
+          case Other("article") =>
+            def timeShort(date: Option[String]) = time(f"${date.getOrElse("")}%-8s")
 
             val aref = attributes.named("target")
 
@@ -118,13 +120,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               )
             )))
 
-          case Macro(Include, attributes) =>
+          case Include =>
             attributes.arguments.headOption match {
               case Some("code") =>
                 pathManager.resolve(attributes.target) match {
                   case None => inlineValuesToHTML(List(mcro))
                   case Some(file) =>
-                    convertSingle(Block(attributes, Fenced(file.contentAsString)))
+                    convertSingle(Block(attributes, Fenced(file.contentAsString), mcro.prov))
                 }
 
               case None =>
@@ -140,17 +142,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       preprocessed
                     ).convertSeq(doc.sast)(ctx)
                   case None =>
-                    scribe.error(s"unknown include ${attributes.target}" + reporter(attributes.prov))
+                    scribe.error(s"unknown include ${attributes.target}" + reporter(mcro.prov))
                     ctx.empty
                 }
 
               case Some(other) =>
-                scribe.error(s"unknown include type $other" + reporter(attributes.prov))
+                scribe.error(s"unknown include type $other" + reporter(mcro.prov))
                 ctx.empty
             }
 
           case other =>
-            inlineValuesToHTML(List(other))
+            inlineValuesToHTML(List(mcro))
         }
 
       case tLBlock: Block =>
@@ -166,7 +168,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               Chain(if (title.nonEmpty) bq(cite(title)) else bq)
             }
           case _ =>
-            val prov = tLBlock.attributes.prov
+            val prov = tLBlock.prov
             convertBlock(tLBlock).map { html =>
               if (prov.start <= syncPos && syncPos <= prov.end) {
                 scribe.info(s"highlighting $syncPos: $prov")
@@ -239,129 +241,130 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     inlineSast match {
       case InlineText(str) => ctx.retc(stringFrag(str))
 
-      case Macro(Strong, attrs) => ctx.retc(strong(attrs.target))
-      case Macro(Emph, attrs)   => ctx.retc(em(attrs.target))
-      case Macro(Code, attrs)   => ctx.retc(code(attrs.target))
+      case mcro: Macro =>
+        val attrs = mcro.attributes
+        mcro.command match {
+          case Strong => ctx.retc(strong(attrs.target))
+          case Emph   => ctx.retc(em(attrs.target))
+          case Code   => ctx.retc(code(attrs.target))
 
-      case Macro(Other("raw"), attr) => ctx.retc(div(raw(attr.named.getOrElse("html", ""))))
+          case Def | Comment => ctx.empty
+          case Include       => ctx.retc(unknownMacroOutput(mcro))
 
-      case Macro(Math, attrs) =>
-        val inner = attrs.target
-        ctx.katex(inner).map(res => Chain(span(raw(res))))
+          case Other("raw") => ctx.retc(div(raw(attrs.named.getOrElse("html", ""))))
 
-      case Macro(Comment, _) => ctx.empty
+          case Math =>
+            val inner = attrs.target
+            ctx.katex(inner).map(res => Chain(span(raw(res))))
 
-      case mcro @ Macro(Cite, attributes) =>
-        val citations = attributes.target.split(",").toList.map { bibid =>
-          bibid -> bibliography.get(bibid.trim)
-        }
-        val anchors = citations.sortBy(_._2.map(_.citekey)).map {
-          case (bibid, Some(bib)) => a(href := s"#$bibid", bib.citekey)
-          case (bibid, None) =>
-            scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
-            code(bibid.trim)
-        }
-        val cctx = ctx.cite(citations.flatMap(_._2))
-        if (attributes.arguments.nonEmpty) {
-          cctx.retc(frag(s"${attributes.arguments.head}\u00A0", anchors))
-        } else cctx.retc(anchors)
-
-      case Macro(Link, attributes) =>
-        val target = attributes.target
-        val content = attributes.positionalT.headOption
-          .fold(ctx.retc(stringFrag(target))) { txt =>
-            inlineValuesToHTML(txt.inl)(ctx)
-          }
-        content.retc(a(href := target)(content.data.toList))
-
-      case macroRef @ Macro(Ref, attributes) =>
-        val scope      = attributes.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
-        val candidates = References.filterCandidates(scope, preprocessed.labels.getOrElse(attributes.target, Nil))
-
-        if (candidates.sizeIs > 1)
-          scribe.error(
-            s"multiple resolutions for ${attributes.target}" +
-              reporter(attributes.prov) +
-              s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
-          )
-
-        candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
-          val nameOpt = attributes.arguments.headOption
-          val articleOpt = targetDocument.directArticle
-          val fileRef = articleOpt match {
-            case Some(article) =>
-              pathManager.relativeArticleTarget(article).toString
-            case _ => ""
-          }
-
-          targetDocument.sast match {
-            case sec @ Section(title, _, _) => inlineValuesToHTML(title.inl).map { inner =>
-                Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
-              }
-            case Block(attr, _) =>
-              val label = attr.named("label")
-              val name  = nameOpt.fold(label)(n => s"$n $label")
-              ctx.retc(a(href := s"$fileRef#$label", name))
-
-            case other =>
-              scribe.error(s"can not refer to $other")
-              ctx.empty
-          }
-        }.getOrElse {
-          scribe.error(s"no resolutions for »${attributes.target}«${reporter(attributes.prov)}")
-          ctx.retc(code(SastToScimConverter.macroToScim(macroRef)))
-        }
-
-      case Macro(Lookup, attributes) =>
-        if (pathManager.project.definitions.contains(attributes.target))
-          inlineValuesToHTML(pathManager.project.definitions(attributes.target).inl)(ctx)
-        else {
-          scribe.warn(s"unknown name ${attributes.target}" + reporter(attributes.prov))
-          ctx.retc(code(attributes.target))
-        }
-
-      case mcro @ Macro(Other(otherCommand), attributes) =>
-        otherCommand match {
-          case "footnote" =>
-            val target =
-              SastToTextConverter(
-                pathManager.project.config.definitions,
-                Some(Includes(pathManager.project, pathManager.cwf, includeResolver))
-              ).convertInline(attributes.targetT.inl)
-            ctx.retc(a(title := target, "※"))
-
-          case tagname @ ("ins" | "del") =>
-            ctx.retc(tag(tagname)(attributes.positional.mkString(", ")))
-
-          case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
-          case "tableofcontents" => ctx.empty
-          case "partition"       => ctx.empty
-          case "rule"            => ctx.retc(span(attributes.target, `class` := "rule"))
-
-          case _ => ctx.retc(unknownMacroOutput(mcro))
-
-        }
-
-      case Macro(Def, _) => ctx.empty
-
-      case mcro @ Macro(Image, attributes) =>
-        pathManager.project.resolve(pathManager.cwd, attributes.target) match {
-          case Some(target) =>
-            val path = pathManager.relativizeImage(target)
-            val mw   = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1")) * 100
-            ctx.requireInOutput(target, path).retc {
-              val filename = path.getFileName.toString
-              if (videoEndings.exists(filename.endsWith))
-                video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
-              else img(src := path.toString, style := s"max-width: $mw%")
+          case Cite =>
+            val citations = attrs.target.split(",").toList.map { bibid =>
+              bibid -> bibliography.get(bibid.trim)
             }
-          case None =>
-            scribe.warn(s"could not find path ${attributes.target}" + reporter(mcro))
-            ctx.empty
-        }
+            val anchors = citations.sortBy(_._2.map(_.citekey)).map {
+              case (bibid, Some(bib)) => a(href := s"#$bibid", bib.citekey)
+              case (bibid, None) =>
+                scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
+                code(bibid.trim)
+            }
+            val cctx = ctx.cite(citations.flatMap(_._2))
+            if (attrs.arguments.nonEmpty) {
+              cctx.retc(frag(s"${attrs.arguments.head}\u00A0", anchors))
+            } else cctx.retc(anchors)
 
-      case mcro @ Macro(Include, _) =>
-        ctx.retc(unknownMacroOutput(mcro))
+          case Link =>
+            val target = attrs.target
+            val content = attrs.positionalT.headOption
+              .fold(ctx.retc(stringFrag(target))) { txt =>
+                inlineValuesToHTML(txt.inl)(ctx)
+              }
+            content.retc(a(href := target)(content.data.toList))
+
+          case Ref =>
+            val scope      = attrs.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
+            val candidates = References.filterCandidates(scope, preprocessed.labels.getOrElse(attrs.target, Nil))
+
+            if (candidates.sizeIs > 1)
+              scribe.error(
+                s"multiple resolutions for ${attrs.target}" +
+                  reporter(mcro.prov) +
+                  s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+              )
+
+            candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
+              val nameOpt    = attrs.arguments.headOption
+              val articleOpt = targetDocument.directArticle
+              val fileRef = articleOpt match {
+                case Some(article) =>
+                  pathManager.relativeArticleTarget(article).toString
+                case _ => ""
+              }
+
+              targetDocument.sast match {
+                case sec @ Section(title, _, _, _) => inlineValuesToHTML(title.inl).map { inner =>
+                    Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
+                  }
+                case Block(attr, _, _) =>
+                  val label = attr.named("label")
+                  val name  = nameOpt.fold(label)(n => s"$n $label")
+                  ctx.retc(a(href := s"$fileRef#$label", name))
+
+                case other =>
+                  scribe.error(s"can not refer to $other")
+                  ctx.empty
+              }
+            }.getOrElse {
+              scribe.error(s"no resolutions for »${attrs.target}«${reporter(mcro)}")
+              ctx.retc(code(SastToScimConverter.macroToScim(mcro)))
+            }
+
+          case Lookup =>
+            if (pathManager.project.definitions.contains(attrs.target))
+              inlineValuesToHTML(pathManager.project.definitions(attrs.target).inl)(ctx)
+            else {
+              scribe.warn(s"unknown name ${attrs.target}" + reporter(mcro))
+              ctx.retc(code(attrs.target))
+            }
+
+          case Other(otherCommand) =>
+            otherCommand match {
+              case "footnote" =>
+                val target =
+                  SastToTextConverter(
+                    pathManager.project.config.definitions,
+                    Some(Includes(pathManager.project, pathManager.cwf, includeResolver))
+                  ).convertInline(attrs.targetT.inl)
+                ctx.retc(a(title := target, "※"))
+
+              case tagname @ ("ins" | "del") =>
+                ctx.retc(tag(tagname)(attrs.positional.mkString(", ")))
+
+              case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
+              case "tableofcontents" => ctx.empty
+              case "partition"       => ctx.empty
+              case "rule"            => ctx.retc(span(attrs.target, `class` := "rule"))
+
+              case _ => ctx.retc(unknownMacroOutput(mcro))
+
+            }
+
+          case Image =>
+            pathManager.project.resolve(pathManager.cwd, attrs.target) match {
+              case Some(target) =>
+                val path = pathManager.relativizeImage(target)
+                val mw   = java.lang.Double.parseDouble(attrs.named.getOrElse("maxwidth", "1")) * 100
+                ctx.requireInOutput(target, path).retc {
+                  val filename = path.getFileName.toString
+                  if (videoEndings.exists(filename.endsWith))
+                    video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
+                  else img(src := path.toString, style := s"max-width: $mw%")
+                }
+              case None =>
+                scribe.warn(s"could not find path ${attrs.target}" + reporter(mcro))
+                ctx.empty
+            }
+
+        }
 
     }
 

@@ -28,7 +28,7 @@ object SastToScimConverter {
 
   def toScim(sast: Sast): Chain[String] =
     sast match {
-      case Section(title, prefix, attributes) =>
+      case Section(title, prefix, attributes, prov) =>
         (prefix + " " + inlineToScim(title.inl)) +:
           attributesToScim(attributes, spacy = true, force = false, light = true)
 
@@ -43,7 +43,7 @@ object SastToScimConverter {
             )
         }
 
-      case mcro @ Macro(_, _) => Chain(macroToScim(mcro))
+      case mcro : Macro => Chain(macroToScim(mcro))
 
       case tlb: Block => convertBlock(tlb)
     }
@@ -107,7 +107,7 @@ object SastToScimConverter {
 
   def macroToScim(mcro: Macro, spacy: Boolean = false): String = {
     mcro match {
-      case Macro(Comment, attributes) => s":%${attributes.target}"
+      case Macro(Comment, attributes, _) => s":%${attributes.target}"
       case _ =>
         s":${MacroCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
     }

@@ -37,7 +37,7 @@ class ImageConverter(
     val converter = mcro.attributes.named("converter")
     project.resolve(cwd, mcro.attributes.target) flatMap { file =>
       val content = file.contentAsString
-      convertString(converter, mcro.attributes, content, cwd)
+      convertString(converter, mcro.attributes, mcro.prov, content, cwd)
     } match {
       case None =>
         new ConvertSchedulable(
@@ -55,7 +55,7 @@ class ImageConverter(
   def convertBlock(cwd: File, tlb: Block): ConvertSchedulable[Sast] = {
     val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
-    convertString(converter, tlb.attributes, content, cwd) match {
+    convertString(converter, tlb.attributes, tlb.prov, content, cwd) match {
       case None =>
         new ConvertSchedulable(tlb.copy(attributes = tlb.attributes.remove("converter")), None)
       case Some(res) => res.map(identity)
@@ -135,13 +135,14 @@ class ImageConverter(
   def convertString(
       converter: String,
       attributes: Attributes,
+      prov: Prov,
       content: String,
       cwd: File
   ): Option[ConvertSchedulable[Macro]] = {
 
     def makeImageMacro(file: File): Macro = {
       val relTarget = project.root.relativize(file)
-      Macro(MacroCommand.Image, attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))))
+      Macro(MacroCommand.Image, attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))), prov)
     }
 
     def applyConversion(data: (String, File, Option[ConvertTask])) = {

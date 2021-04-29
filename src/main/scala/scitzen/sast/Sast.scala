@@ -9,26 +9,26 @@ case class Slist(children: Seq[ListItem]) extends Sast
 case class ListItem(marker: String, text: Text, content: Option[Sast])
 
 sealed trait Inline
-case class InlineText(str: String)                              extends Inline
-case class Macro(command: MacroCommand, attributes: Attributes) extends Inline with Sast
+case class InlineText(str: String) extends Inline
+case class Macro(command: MacroCommand, attributes: Attributes, prov: Prov) extends Inline with Sast
 
 case class Text(inl: Seq[Inline]) {
   lazy val str = {
     inl.map {
-      case Macro(Strong | Emph, attributes) => attributes.target
-      case Macro(_, _)                      => ""
+      case Macro(Strong | Emph, attributes, _) => attributes.target
+      case m: Macro                         => ""
       case InlineText(string)               => string
     }.mkString("")
   }
 }
-case class Section(title: Text, prefix: String, attributes: Attributes) extends Sast with Ordered[Section] {
+case class Section(title: Text, prefix: String, attributes: Attributes, prov: Prov) extends Sast with Ordered[Section] {
   def ref: String = attributes.named.getOrElse("label", title.str)
   override def compare(that: Section): Int = {
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
     Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))
   }
 }
-case class Block(attributes: Attributes, content: BlockType) extends Sast {
+case class Block(attributes: Attributes, content: BlockType, prov: Prov) extends Sast {
   override def toString: String = s"Block(${content.getClass.getSimpleName}, $attributes)"
   def command: String           = attributes.positional.headOption.getOrElse("")
 }
@@ -39,7 +39,7 @@ case class Fenced(content: String)                       extends BlockType
 case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
 case class SpaceComment(content: String)                 extends BlockType
 
-case class Attributes(raw: Seq[Attribute], prov: Prov) {
+case class Attributes(raw: Seq[Attribute]) {
 
   lazy val positionalT: Seq[Text] = raw.collect { case Attribute("", value) => value }
   lazy val argumentsT: Seq[Text]  = positionalT.dropRight(1)
@@ -53,9 +53,9 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
   lazy val target: String             = positional.last
   lazy val named: Map[String, String] = namedT.view.mapValues(_.str).toMap
 
-  def append(other: Seq[Attribute]): Attributes  = Attributes(raw ++ other, prov)
-  def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw, prov)
-  def remove(key: String): Attributes            = Attributes(raw.filterNot(_.id == key), prov)
+  def append(other: Seq[Attribute]): Attributes  = Attributes(raw ++ other)
+  def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw)
+  def remove(key: String): Attributes            = Attributes(raw.filterNot(_.id == key))
   def updated(key: String, value: String) = {
     remove(key).append(List(Attribute.apply(key, value)))
   }
@@ -63,17 +63,17 @@ case class Attributes(raw: Seq[Attribute], prov: Prov) {
     remove(attribute.id).append(List(attribute))
   }
   override def toString: String =
-    s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)}, $prov)"
+    s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)})"
 }
 
 object Attributes {
-  def synthetic(attr: Attribute*): Attributes        = Attributes(attr, Prov())
-  def target(string: String, prov: Prov): Attributes = Attribute("", string).toAttributes(prov)
+  def synthetic(attr: Attribute*): Attributes = Attributes(attr)
+  def target(string: String): Attributes      = Attribute("", string).toAttributes
 }
 
 case class Attribute(id: String, text: Text) {
-  lazy val value: String                   = text.str
-  def toAttributes(prov: Prov): Attributes = Attributes(List(this), prov)
+  lazy val value: String       = text.str
+  def toAttributes: Attributes = Attributes(List(this))
 }
 object Attribute {
   def apply(id: String, value: String): Attribute = Attribute(id, Text(List(InlineText(value))))

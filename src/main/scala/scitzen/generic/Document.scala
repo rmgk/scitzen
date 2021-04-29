@@ -29,7 +29,7 @@ object Document {
 }
 
 trait Reporter {
-  def apply(im: Macro): String = apply(im.attributes.prov)
+  def apply(im: Macro): String = apply(im.prov)
   def apply(prov: Prov): String
 }
 

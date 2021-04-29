@@ -12,7 +12,7 @@ object HtmlToc {
     def recurse(remaining: List[Section], depth: Int): Option[Frag] = {
       remaining match {
         case Nil => None
-        case (head @ Section(title, _, attr)) :: rest =>
+        case (head @ Section(title, _, attr, prov)) :: rest =>
           val (sub, other) = rest.span(e => e > head)
           val subtags      = if (depth < maxdepth) recurse(sub, depth + 1) else None
           val label        = attr.named.getOrElse("label", title.str)
