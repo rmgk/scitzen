@@ -68,7 +68,7 @@ case class SastToTextConverter(
                       .convert(included.sast)
 
                   case None =>
-                    scribe.error(s"unknown include ${attributes.target} in template ${cwf}")
+                    scribe.error(s"unknown addInclude ${attributes.target} in template ${cwf}")
                     Nil
                 }
             }

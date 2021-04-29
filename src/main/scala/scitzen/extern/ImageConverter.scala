@@ -1,7 +1,6 @@
 package scitzen.extern
 
 import better.files.File
-import scitzen.contexts.SastContext
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
@@ -16,11 +15,6 @@ trait ConvertTask {
 
 class ConvertSchedulable[T](data: T, task: Option[ConvertTask]) {
   def map[U](f: T => U): ConvertSchedulable[U] = new ConvertSchedulable[U](f(data), task)
-  def schedule(ctx: SastContext[_]): SastContext[T] = {
-    task.fold(ctx.ret(data)) { task =>
-      ctx.copy(data = data, tasks = task :: ctx.tasks)
-    }
-  }
 }
 
 class ImageConverter(
@@ -198,3 +192,22 @@ class ImageConverter(
     }
   }
 }
+
+//  // explicit image conversions
+//case Image if attributes.named.contains("converter") && converter.isDefined =>
+//  val resctx = converter.get.convertMacroTargetFile(cwd, mcro).schedule(ctx)
+//  convertMacro(resctx.data)(resctx)
+//
+//// unsupported image format conversions
+//case Image if converter.isDefined && converter.get.requiresConversion(attributes.target) =>
+//  project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
+//    val resctx    = converter.get.applyConversion(file).schedule(ctx)
+//    val reltarget = cwd.relativize(resctx.data)
+//    convertMacro(Macro(
+//      Image,
+//      attributes.copy(
+//        raw = attributes.raw.init :+ Attribute("", reltarget.toString)
+//      ),
+//      mcro.prov
+//    ))(resctx)
+//  }

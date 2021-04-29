@@ -121,7 +121,7 @@ a {
   text-decoration: none;
   color: var(--theme-color);
 
-  // add a “push down” effect when hovering links
+  // add a “addSection down” effect when hovering links
   &:hover {
     transform: translateX(4px);
     filter: brightness(75%);

@@ -122,7 +122,7 @@ class SastToTexConverter(
                   .sastSeqToTex(included.sast)(ctx)
 
               case None =>
-                scribe.error(s"unknown include ${mcro.attributes.target}" + reporter(mcro))
+                scribe.error(s"unknown addInclude ${mcro.attributes.target}" + reporter(mcro))
                 ctx.empty
             }
 

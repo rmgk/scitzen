@@ -3,23 +3,17 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.contexts.SastContext
-import scitzen.extern.ImageConverter
-import scitzen.generic.{Article, Document, Project, SastRef}
+import scitzen.generic.{Article, Document, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
 import scitzen.sast._
 
-class SastToSastConverter(
-    project: Project,
-    document: Document,
-    converter: Option[ImageConverter]
-) {
+class SastToSastConverter(document: Document) {
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
   type Cta    = Ctx[_]
 
   def cwf: File   = document.file
-  val cwd: File   = if (cwf.isDirectory) cwf else cwf.parent
   val uid: String = Integer.toHexString(cwf.hashCode())
 
   def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
@@ -63,7 +57,7 @@ class SastToSastConverter(
           refAliases(resctx, aliases, target).ret(ublock)
         }
         val newSection = ctxWithRef.data
-        val conCtx     = ctxWithRef.push(newSection)
+        val conCtx     = ctxWithRef.addSection(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
           Section(Text(title.toList), level, newSection.attributes, newSection.prov)
         }
@@ -108,12 +102,8 @@ class SastToSastConverter(
         )
 
       case Fenced(text) =>
-        if (ublock.attributes.named.contains("converter") && converter.isDefined) {
-          val resctx = converter.get.convertBlock(cwd, ublock).schedule(refctx)
-          convertSingle(resctx.data)(resctx)
-        } else {
-          refctx.ret(ublock)
-        }
+        val ctx = if (ublock.attributes.named.contains("converter")) refctx.addConversionBlock(block) else refctx
+        ctx.ret(ublock)
 
       case SpaceComment(_) => refctx.ret(ublock)
 
@@ -133,41 +123,10 @@ class SastToSastConverter(
     }
 
   def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] = {
-    val attributes = mcro.attributes
     mcro.command match {
-
-      // explicit image conversions
-      case Image if attributes.named.contains("converter") && converter.isDefined =>
-        val resctx = converter.get.convertMacroTargetFile(cwd, mcro).schedule(ctx)
-        convertMacro(resctx.data)(resctx)
-
-      // unsupported image format conversions
-      case Image if converter.isDefined && converter.get.requiresConversion(attributes.target) =>
-        project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
-          val resctx    = converter.get.applyConversion(file).schedule(ctx)
-          val reltarget = cwd.relativize(resctx.data)
-          convertMacro(Macro(
-            Image,
-            attributes.copy(
-              raw = attributes.raw.init :+ Attribute("", reltarget.toString)
-            ),
-            mcro.prov
-          ))(resctx)
-        }
-
-      // collect image macros
-      case Image => ctx.addMacro(mcro).ret(mcro)
-
-      case Include if attributes.arguments.isEmpty =>
-        project.resolve(cwd, attributes.target) match {
-          case None =>
-            scribe.error(s"unknown include ${attributes.target}" + document.reporter(mcro))
-            ctx.ret(mcro)
-          case Some(file) => ctx.copy(includes = file :: ctx.includes).ret(mcro)
-        }
-
-      case _ => ctx.ret(mcro)
-
+      case Image   => ctx.addImage(mcro).ret(mcro)
+      case Include => ctx.addInclude(mcro).ret(mcro)
+      case _       => ctx.ret(mcro)
     }
   }
 

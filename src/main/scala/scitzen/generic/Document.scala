@@ -8,7 +8,7 @@ import scitzen.sast.{Macro, Prov, Sast}
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-/** A document represents a single, on disk, textfile that has been successfully parsed */
+/** A document represents a single, on disk, text file that has been successfully parsed */
 case class Document(file: File, content: String, sast: List[Sast]) {
   lazy val reporter: FileReporter = new FileReporter(file, content)
 }

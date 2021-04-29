@@ -142,12 +142,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       preprocessed
                     ).convertSeq(doc.sast)(ctx)
                   case None =>
-                    scribe.error(s"unknown include ${attributes.target}" + reporter(mcro.prov))
+                    scribe.error(s"unknown addInclude ${attributes.target}" + reporter(mcro.prov))
                     ctx.empty
                 }
 
               case Some(other) =>
-                scribe.error(s"unknown include type $other" + reporter(mcro.prov))
+                scribe.error(s"unknown addInclude type $other" + reporter(mcro.prov))
                 ctx.empty
             }
 

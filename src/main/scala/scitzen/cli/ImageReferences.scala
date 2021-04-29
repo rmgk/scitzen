@@ -2,7 +2,6 @@ package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.extern.ImageConverter
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
 import scitzen.sast.MacroCommand
@@ -18,23 +17,16 @@ object ImageReferences {
       val cwf = doc.file
       val cwd = cwf.parent
 
-      val convertedCtx = new SastToSastConverter(
-        project,
-        doc,
-        Some(new ImageConverter(
-          project,
-          preferredFormat = "png",
-          unsupportedFormat = List("pdf", "svg"),
-          documentDirectory
-        ))
-      ).run()
+      val convertedCtx = new SastToSastConverter(doc).run()
 
-      import scala.jdk.CollectionConverters._
-      convertedCtx.tasks.asJava.parallelStream().forEach { ct =>
-        ct.run()
-      }
+      //val converter = new ImageConverter(
+      //    project,
+      //    preferredFormat = "png",
+      //    unsupportedFormat = List("pdf", "svg"),
+      //    documentDirectory
+      //  )
 
-      val images = convertedCtx.partialMacros.filter(_.command == MacroCommand.Image).flatMap { mcro =>
+      val images = convertedCtx.imageMacros.filter(_.command == MacroCommand.Image).flatMap { mcro =>
         val path = mcro.attributes.target
         project.resolve(cwd, path) match {
           case Some(target) =>
