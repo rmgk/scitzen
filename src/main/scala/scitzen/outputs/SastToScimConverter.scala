@@ -43,7 +43,7 @@ object SastToScimConverter {
             )
         }
 
-      case mcro : Macro => Chain(macroToScim(mcro))
+      case mcro: Macro => Chain(macroToScim(mcro))
 
       case tlb: Block => convertBlock(tlb)
     }

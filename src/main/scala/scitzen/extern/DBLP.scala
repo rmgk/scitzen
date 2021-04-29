@@ -20,7 +20,7 @@ object DBLP {
     System.out.println(response.statusCode)
     System.out.println(response.body)
 
-    client.sendAsync(request, BodyHandlers.ofString).asScala.foreach{r => println(r.body())}
+    client.sendAsync(request, BodyHandlers.ofString).asScala.foreach { r => println(r.body()) }
 
   }
 }

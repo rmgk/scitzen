@@ -19,7 +19,7 @@ object Article {
   def notArticleHeader(sast: Sast): Boolean =
     sast match {
       case Section(_, "=", _, prov) => false
-      case _                  => true
+      case _                        => true
     }
 
   def articles(document: Document): List[Article] = {

@@ -31,8 +31,8 @@ object References {
 
   def getLabel(targetDocument: SastRef): Option[String] = {
     targetDocument.sast match {
-      case sec : Section => Some(sec.ref)
-      case Block(attr, _, _)             => attr.named.get("label")
+      case sec: Section      => Some(sec.ref)
+      case Block(attr, _, _) => attr.named.get("label")
       case other =>
         scribe.error(s"can not refer to $other")
         None

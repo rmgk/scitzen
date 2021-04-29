@@ -51,12 +51,11 @@ object ConvertPdf {
           article.named.get(param).map(s => article.sourceDoc.file.parent / s.trim)
         }
 
-
         val jobname     = targetfile.nameWithoutExtension(includeAll = false)
         val temptexdir  = project.cacheDir / s"$articlename.outdir"
         val temptexfile = temptexdir / (jobname + ".tex")
 
-        val bibFile = fileFromParam("bibliography")
+        val bibFile      = fileFromParam("bibliography")
         val bibliography = bibFile.map(_ => "bibliography.bib")
         bibFile.foreach(_.copyTo(temptexdir / "bibliography.bib")(copyOptions = CopyOptions(overwrite = true)))
 

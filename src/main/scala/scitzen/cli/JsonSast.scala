@@ -19,9 +19,13 @@ object JsonSast {
     JsonCodecMaker.make(CodecMakerConfig.withAllowRecursiveTypes(true))
 
   def jsonFor(file: File): String = {
-    val content   = file.contentAsString
-    val sast      = Parse.documentUnwrap(content, Prov(0, content.length))
-    val converter = new SastToSastConverter(Project(file.parent, ProjectConfig(), Map.empty), Document(file, content, sast.toList), None)
+    val content = file.contentAsString
+    val sast    = Parse.documentUnwrap(content, Prov(0, content.length))
+    val converter = new SastToSastConverter(
+      Project(file.parent, ProjectConfig(), Map.empty),
+      Document(file, content, sast.toList),
+      None
+    )
     val converted = converter.run().data.toList
     writeToString(converted)(SastEncoder)
   }

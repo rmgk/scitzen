@@ -9,15 +9,15 @@ case class Slist(children: Seq[ListItem]) extends Sast
 case class ListItem(marker: String, text: Text, content: Option[Sast])
 
 sealed trait Inline
-case class InlineText(str: String) extends Inline
+case class InlineText(str: String)                                          extends Inline
 case class Macro(command: MacroCommand, attributes: Attributes, prov: Prov) extends Inline with Sast
 
 case class Text(inl: Seq[Inline]) {
   lazy val str = {
     inl.map {
       case Macro(Strong | Emph, attributes, _) => attributes.target
-      case m: Macro                         => ""
-      case InlineText(string)               => string
+      case m: Macro                            => ""
+      case InlineText(string)                  => string
     }.mkString("")
   }
 }

@@ -48,7 +48,7 @@ case class SastToTextConverter(
           }
         }
 
-      case mcro : Macro =>
+      case mcro: Macro =>
         val attributes = mcro.attributes
         mcro.command match {
 
@@ -58,14 +58,14 @@ case class SastToTextConverter(
 
           case Include =>
             includes match {
-              case None                                          => Nil
+              case None => Nil
               case Some(Includes(project, cwf, includeResolver)) =>
                 project.resolve(cwf.parent, attributes.target).flatMap(includeResolver.byPath.get) match {
                   case Some(doc) =>
                     val included = includeResolver.byPath(doc.file)
 
                     new SastToTextConverter(definitions, includes)
-                    .convert(included.sast)
+                      .convert(included.sast)
 
                   case None =>
                     scribe.error(s"unknown include ${attributes.target} in template ${cwf}")
