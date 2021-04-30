@@ -4,18 +4,16 @@ import cats.data.Chain
 import scitzen.generic.SastRef
 import scitzen.sast.{Block, Macro, Section}
 
-/** The conversion context, used to keep state of in the conversion. */
+/** The conversion context, used to keep state of the conversion. */
 case class SastContext[T](
     data: T,
     labelledThings: Map[String, List[SastRef]] = Map.empty,
     uniquectr: Int = 0,
-    includes: List[Macro] = Nil,
     imageMacros: List[Macro] = Nil,
     convertBlocks: List[Block] = Nil,
     sections: List[Section] = Nil,
 ) {
   def addImage(mcro: Macro): SastContext[T]            = copy(imageMacros = mcro :: imageMacros)
-  def addInclude(file: Macro): SastContext[T]          = copy(includes = file :: includes)
   def addConversionBlock(block: Block): SastContext[T] = copy(convertBlocks = block :: convertBlocks)
   def addSection(section: Section): SastContext[T]     = copy(sections = section :: sections)
 

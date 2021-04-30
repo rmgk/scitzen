@@ -4,7 +4,7 @@ import better.files.File
 import cats.data.Chain
 import scitzen.contexts.SastContext
 import scitzen.generic.{Article, Document, SastRef}
-import scitzen.sast.MacroCommand.{Image, Include}
+import scitzen.sast.MacroCommand.Image
 import scitzen.sast._
 
 class SastToSastConverter(document: Document) {
@@ -106,7 +106,6 @@ class SastToSastConverter(document: Document) {
         ctx.ret(ublock)
 
       case SpaceComment(_) => refctx.ret(ublock)
-
     }
   }
 
@@ -125,7 +124,6 @@ class SastToSastConverter(document: Document) {
   def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] = {
     mcro.command match {
       case Image   => ctx.addImage(mcro).ret(mcro)
-      case Include => ctx.addInclude(mcro).ret(mcro)
       case _       => ctx.ret(mcro)
     }
   }
