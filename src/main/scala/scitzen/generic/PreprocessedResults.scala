@@ -1,0 +1,30 @@
+package scitzen.generic
+
+import scitzen.outputs.SastToSastConverter
+
+class PreprocessedResults(project: Project, val documents: List[Document]) {
+
+  project.cacheDir.createDirectories()
+
+  val preprocessedCtxs: List[SastToSastConverter#CtxCS] =
+    documents.map { doc =>
+      new SastToSastConverter(doc).run()
+    }
+
+  val docCtx: List[(Document, SastToSastConverter#CtxCS)] = documents.zip(preprocessedCtxs)
+
+  val directory: DocumentDirectory = DocumentDirectory(docCtx.map {
+    case (orig, processed) => orig.copy(sast = processed.data.toList)
+  })
+
+  val labels: Map[String, List[SastRef]] = {
+    val all     = preprocessedCtxs.map(_.labelledThings)
+    val allKeys = all.iterator.flatMap(_.keysIterator).toSet
+    allKeys.iterator.map { key =>
+      key -> all.flatMap(_.getOrElse(key, Nil))
+    }.toMap
+  }
+
+  val articles: List[Article] = documents.flatMap(Article.articles)
+
+}

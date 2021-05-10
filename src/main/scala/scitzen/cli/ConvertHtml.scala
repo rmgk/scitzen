@@ -4,7 +4,6 @@ import better.files._
 import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.cli.Common.PreprocessedResults
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
@@ -27,13 +26,22 @@ object ConvertHtml {
 
   def convertToHtml(project: Project, sync: Option[(File, Int)], documentDirectory: DocumentDirectory): Unit = {
 
-    val preprocessed = Common.preprocessDocuments(
+    val preprocessed = new PreprocessedResults(
       project,
-      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"), documentDirectory),
       documentDirectory.documents
     )
 
     project.outputdir.createDirectories()
+
+    val converter = new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"), documentDirectory)
+
+    preprocessed.docCtx.foreach {
+      case (doc, ctx) =>
+        ctx.convertBlocks
+           .map(converter.convertBlock(doc.file, _))
+      .foreach(t => t.task.foreach(_.run()))
+    }
+
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
@@ -82,7 +90,7 @@ object ConvertHtml {
 
   private def makeindex(
       project: Project,
-      preprocessed: Common.PreprocessedResults,
+      preprocessed: PreprocessedResults,
       cssfile: File,
       pathManager: HtmlPathManager
   ): Unit = {

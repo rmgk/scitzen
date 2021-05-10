@@ -5,10 +5,9 @@ import cats.data.Chain
 import cats.implicits._
 import scalatags.generic
 import scalatags.generic.Bundle
-import scitzen.cli.Common.PreprocessedResults
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, References, Reporter, SastRef}
+import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.MacroCommand._
 import scitzen.sast._
 

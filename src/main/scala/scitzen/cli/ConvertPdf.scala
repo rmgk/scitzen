@@ -3,9 +3,8 @@ package scitzen.cli
 import better.files.File
 import better.files.File.CopyOptions
 import scitzen.contexts.ConversionContext
-import scitzen.extern.ImageConverter
 import scitzen.extern.TexConverter.latexmk
-import scitzen.generic.{DocumentDirectory, Project}
+import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -15,11 +14,13 @@ object ConvertPdf {
 
   def convertToPdf(project: Project, documentDirectory: DocumentDirectory): Unit = {
 
-    val preprocessed = Common.preprocessDocuments(
+    val preprocessed = new PreprocessedResults(
       project,
-      new ImageConverter(project, "pdf", List("svg"), documentDirectory),
       documentDirectory.documents
     )
+
+    // val converter = new ImageConverter(project, "pdf", List("svg"), documentDirectory)
+
 
     import scala.jdk.CollectionConverters._
     preprocessed.articles

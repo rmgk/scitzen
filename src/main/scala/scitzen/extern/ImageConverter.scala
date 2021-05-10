@@ -13,7 +13,7 @@ trait ConvertTask {
   def run(): Unit
 }
 
-class ConvertSchedulable[T](data: T, task: Option[ConvertTask]) {
+class ConvertSchedulable[T](data: T, val task: Option[ConvertTask]) {
   def map[U](f: T => U): ConvertSchedulable[U] = new ConvertSchedulable[U](f(data), task)
 }
 
