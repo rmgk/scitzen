@@ -17,7 +17,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     bibliography: Map[String, BibEntry],
     sync: Option[(File, Int)],
     reporter: Reporter,
-    preprocessed: PreprocessedResults
+    preprocessed: PreprocessedResults,
+    converted: Map[Attributes, File],
 ) {
 
   import bundle.all._
@@ -138,7 +139,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       bibliography,
                       sync,
                       doc.reporter,
-                      preprocessed
+                      preprocessed,
+                      converted,
                     ).convertSeq(doc.sast)(ctx)
                   case None =>
                     scribe.error(s"unknown addInclude ${attributes.target}" + reporter(mcro.prov))
@@ -194,10 +196,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           }
         }
 
-      case Fenced(text) => sBlock.attributes.positional.headOption match {
+      case Fenced(text) =>
+        if (sBlock.attributes.named.contains("converter")) {
+          val filePath = pathManager.relativizeToProject(converted(sBlock.attributes)).toString
+          convertSingle(Macro(Image, sBlock.attributes.remove("converter").append(List(Attribute("", filePath))), sBlock.prov))(ctx)
+        }
+        else sBlock.command match {
           // Preformatted plaintext, preserve linebreaks,
           // but also wrap for linebreaks
-          case Some("text") => ctx.retc(pre(text))
+          case "text" => ctx.retc(pre(text))
           // Code listing
           // Use this for monospace, space preserving, line preserving text
           // It may wrap to fit the screen content

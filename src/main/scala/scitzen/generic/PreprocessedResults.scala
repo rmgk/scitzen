@@ -13,9 +13,11 @@ class PreprocessedResults(project: Project, val documents: List[Document]) {
 
   val docCtx: List[(Document, SastToSastConverter#CtxCS)] = documents.zip(preprocessedCtxs)
 
-  val directory: DocumentDirectory = DocumentDirectory(docCtx.map {
+  val preprocessedDocuments = docCtx.map {
     case (orig, processed) => orig.copy(sast = processed.data.toList)
-  })
+  }
+
+  val directory: DocumentDirectory = DocumentDirectory(preprocessedDocuments)
 
   val labels: Map[String, List[SastRef]] = {
     val all     = preprocessedCtxs.map(_.labelledThings)
@@ -25,6 +27,6 @@ class PreprocessedResults(project: Project, val documents: List[Document]) {
     }.toMap
   }
 
-  val articles: List[Article] = documents.flatMap(Article.articles)
+  val articles: List[Article] = preprocessedDocuments.flatMap{Article.articles}
 
 }

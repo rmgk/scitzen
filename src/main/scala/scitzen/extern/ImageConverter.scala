@@ -5,7 +5,7 @@ import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
-import scitzen.sast.{Attribute, Attributes, Block, Fenced, Macro, MacroCommand, Prov, Sast}
+import scitzen.sast.{Attributes, Block, Fenced, Prov}
 
 import scala.jdk.CollectionConverters._
 
@@ -13,7 +13,7 @@ trait ConvertTask {
   def run(): Unit
 }
 
-class ConvertSchedulable[T](data: T, val task: Option[ConvertTask]) {
+class ConvertSchedulable[T](val data: T, val task: Option[ConvertTask]) {
   def map[U](f: T => U): ConvertSchedulable[U] = new ConvertSchedulable[U](f(data), task)
 }
 
@@ -27,32 +27,13 @@ class ImageConverter(
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
-  def convertMacroTargetFile(cwd: File, mcro: Macro): ConvertSchedulable[Macro] = {
-    val converter = mcro.attributes.named("converter")
-    project.resolve(cwd, mcro.attributes.target) flatMap { file =>
-      val content = file.contentAsString
-      convertString(converter, mcro.attributes, mcro.prov, content, cwd)
-    } match {
-      case None =>
-        new ConvertSchedulable(
-          mcro.copy(attributes =
-            mcro.attributes.copy(raw = mcro.attributes.raw.filterNot(
-              _.id == "converter"
-            ))
-          ),
-          None
-        )
-      case Some(res) => res
-    }
-  }
-
-  def convertBlock(cwd: File, tlb: Block): ConvertSchedulable[Sast] = {
+  def convertBlock(cwd: File, tlb: Block): ConvertSchedulable[Option[File]] = {
     val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
     convertString(converter, tlb.attributes, tlb.prov, content, cwd) match {
       case None =>
-        new ConvertSchedulable(tlb.copy(attributes = tlb.attributes.remove("converter")), None)
-      case Some(res) => res.map(identity)
+        new ConvertSchedulable(None, None)
+      case Some(res) => res.map(Some.apply)
 
     }
   }
@@ -132,12 +113,7 @@ class ImageConverter(
       prov: Prov,
       content: String,
       cwd: File
-  ): Option[ConvertSchedulable[Macro]] = {
-
-    def makeImageMacro(file: File): Macro = {
-      val relTarget = project.root.relativize(file)
-      Macro(MacroCommand.Image, attributes.remove("converter").append(List(Attribute("", s"/$relTarget"))), prov)
-    }
+  ): Option[ConvertSchedulable[File]] = {
 
     def applyConversion(data: (String, File, Option[ConvertTask])) = {
       val (_, _, convertTaskO) = data
@@ -155,8 +131,7 @@ class ImageConverter(
         case _               => None
       }
 
-      val mcro = makeImageMacro(resfile)
-      new ConvertSchedulable(mcro, combinedTask)
+      new ConvertSchedulable(resfile, combinedTask)
     }
 
     val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match {
@@ -177,15 +152,9 @@ class ImageConverter(
         Some(applyConversion(TexConverter.convert(templatedContent, project.cacheDir)))
 
       case gr @ rex"graphviz.*" =>
-        Some(Graphviz.convert(templatedContent, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat)
-          .map(img => makeImageMacro(img)))
+        Some(Graphviz.convert(templatedContent, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat))
       case rex"mermaid" =>
-        Some(Mermaid.convert(templatedContent, project.cacheDir, preferredFormat)
-          .map { img =>
-            val m = makeImageMacro(img)
-            m.copy(attributes = m.attributes.updated("style", "background-color: white"))
-          })
-
+        Some(Mermaid.convert(templatedContent, project.cacheDir, preferredFormat))
       case other =>
         scribe.warn(s"unknown converter $other")
         None

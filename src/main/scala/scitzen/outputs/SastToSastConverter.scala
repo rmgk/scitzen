@@ -3,6 +3,7 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.contexts.SastContext
+import scitzen.extern.Hashes
 import scitzen.generic.{Article, Document, SastRef}
 import scitzen.sast.MacroCommand.Image
 import scitzen.sast._
@@ -102,8 +103,10 @@ class SastToSastConverter(document: Document) {
         )
 
       case Fenced(text) =>
-        val ctx = if (ublock.attributes.named.contains("converter")) refctx.addConversionBlock(block) else refctx
-        ctx.ret(ublock)
+        val contentHash = Hashes.sha1hex(text)
+        val newBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
+        val ctx = if (newBlock.attributes.named.contains("converter")) refctx.addConversionBlock(newBlock) else refctx
+        ctx.ret(newBlock)
 
       case SpaceComment(_) => refctx.ret(ublock)
     }

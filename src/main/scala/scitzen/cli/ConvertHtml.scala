@@ -8,6 +8,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.sast.Attributes
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
@@ -33,15 +34,16 @@ object ConvertHtml {
 
     project.outputdir.createDirectories()
 
-    val converter = new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"), documentDirectory)
+    val converter =
+      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"), documentDirectory)
 
-    preprocessed.docCtx.foreach {
+    val blockImages: Map[Attributes, File] = preprocessed.docCtx.flatMap {
       case (doc, ctx) =>
-        ctx.convertBlocks
-           .map(converter.convertBlock(doc.file, _))
-      .foreach(t => t.task.foreach(_.run()))
-    }
-
+        val dedup = ctx.convertBlocks.map(b => b.attributes -> b).toMap.valuesIterator.toList
+        val tasks = dedup.map(converter.convertBlock(doc.file, _))
+        tasks.foreach(t => t.task.foreach(_.run()))
+        ((dedup.map(_.attributes) zip tasks.map(_.data)).collect{case (b, Some(f)) => b -> f })
+    }.toMap
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
@@ -75,7 +77,8 @@ object ConvertHtml {
             sync,
             nlp,
             preprocessed,
-            KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
+            KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _))),
+            blockImages,
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
       }
@@ -102,6 +105,7 @@ object ConvertHtml {
       sync = None,
       reporter = _ => "",
       preprocessed = preprocessed,
+      converted = Map(),
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
@@ -134,6 +138,7 @@ object ConvertHtml {
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
+      blockImages: Map[Attributes, File]
   ): ConversionContext[_] = {
 
     val biblio = makeBib(project, article)
@@ -145,6 +150,7 @@ object ConvertHtml {
       sync = sync,
       reporter = article.sourceDoc.reporter,
       preprocessed = preprocessed,
+      converted = blockImages,
     )
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 
