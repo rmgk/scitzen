@@ -145,39 +145,33 @@ class SastToTexConverter(
       case Paragraph(content) => inlineValuesToTex(content.inl).single :+ "" :+ ""
 
       case Parsed(_, blockContent) =>
-        tlblock.attributes.positional.headOption match {
-          case Some(blockname) =>
-            blockname match {
-              case "figure" =>
-                val (figContent, caption) = {
-                  blockContent.lastOption match {
-                    case Some(Block(_, Paragraph(content), _)) =>
-                      val captionstr = inlineValuesToTex(content.inl).data
-                      (blockContent.init, s"\\caption{$captionstr}")
-                    case _ =>
-                      scribe.warn(s"figure has no caption" + reporter(tlblock.prov))
-                      (blockContent, "")
-                  }
-                }
-                "\\begin{figure}" +:
-                  "\\centerfloat" +:
-                  sastSeqToTex(figContent) :++
-                  Chain(
-                    caption,
-                    tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
-                    "\\end{figure}"
-                  )
-
-              case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
-                texbox(name, tlblock.attributes, blockContent).useFeature("framed")
-
-              case name @ "abstract" => texbox(name, tlblock.attributes, blockContent)
-
-              case _ =>
-                sastSeqToTex(blockContent)
+        tlblock.command match {
+          case "figure" =>
+            val (figContent, caption) = {
+              blockContent.lastOption match {
+                case Some(Block(_, Paragraph(content), _)) =>
+                  val captionstr = inlineValuesToTex(content.inl).data
+                  (blockContent.init, s"\\caption{$captionstr}")
+                case _ =>
+                  scribe.warn(s"figure has no caption" + reporter(tlblock.prov))
+                  (blockContent, "")
+              }
             }
+            "\\begin{figure}" +:
+              "\\centerfloat" +:
+              sastSeqToTex(figContent) :++
+              Chain(
+                caption,
+                tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
+                "\\end{figure}"
+              )
 
-          case None =>
+          case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
+            texbox(name, tlblock.attributes, blockContent).useFeature("framed")
+
+          case name @ "abstract" => texbox(name, tlblock.attributes, blockContent)
+
+          case _ =>
             sastSeqToTex(blockContent)
         }
 
