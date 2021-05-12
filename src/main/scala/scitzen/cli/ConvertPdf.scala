@@ -3,7 +3,7 @@ package scitzen.cli
 import better.files.File
 import better.files.File.CopyOptions
 import scitzen.contexts.ConversionContext
-import scitzen.extern.TexConverter.latexmk
+import scitzen.extern.Latexmk
 import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
@@ -74,7 +74,7 @@ object ConvertPdf {
             templateSettings
           )
         temptexfile.write(documentString)
-        latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
+        Latexmk.latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
       }
   }
 }

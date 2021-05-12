@@ -1,12 +1,14 @@
 package scitzen.extern
 
-import better.files.File
+import better.files.{File, _}
 import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.{Attributes, Block, Fenced, Prov}
 
+import java.lang.ProcessBuilder.Redirect
+import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters._
 
 trait ConvertTask {
@@ -149,34 +151,94 @@ class ImageConverter(
 
     converter match {
       case "tex" =>
-        Some(applyConversion(TexConverter.convert(templatedContent, project.cacheDir)))
+        Some(applyConversion(texconvert(templatedContent, project.cacheDir)))
 
       case gr @ rex"graphviz.*" =>
-        Some(Graphviz.convert(templatedContent, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat))
+        Some(graphviz(templatedContent, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat))
       case rex"mermaid" =>
-        Some(Mermaid.convert(templatedContent, project.cacheDir, preferredFormat))
+        Some(mermaid(templatedContent, project.cacheDir, preferredFormat))
       case other =>
         scribe.warn(s"unknown converter $other")
         None
     }
   }
-}
 
-//  // explicit image conversions
-//case Image if attributes.named.contains("converter") && converter.isDefined =>
-//  val resctx = converter.get.convertMacroTargetFile(cwd, mcro).schedule(ctx)
-//  convertMacro(resctx.data)(resctx)
-//
-//// unsupported image format conversions
-//case Image if converter.isDefined && converter.get.requiresConversion(attributes.target) =>
-//  project.resolve(cwd, attributes.target).fold(ctx.ret(mcro)) { file =>
-//    val resctx    = converter.get.applyConversion(file).schedule(ctx)
-//    val reltarget = cwd.relativize(resctx.data)
-//    convertMacro(Macro(
-//      Image,
-//      attributes.copy(
-//        raw = attributes.raw.init :+ Attribute("", reltarget.toString)
-//      ),
-//      mcro.prov
-//    ))(resctx)
-//  }
+  def graphviz(content: String, working: File, layout: Option[String], format: String): ConvertSchedulable[File] = {
+    val bytes  = (s"//$layout\n" + content).getBytes(StandardCharsets.UTF_8)
+    val hash   = Hashes.sha1hex(bytes)
+    val dir    = working / hash
+    val target = dir / (hash + s".$format")
+    new ConvertSchedulable(
+      target,
+      if (target.exists) None
+      else
+        Some(new ConvertTask {
+          override def run(): Unit = {
+            dir.createDirectories()
+
+            val start = System.nanoTime()
+            val process = new ProcessBuilder(
+              "dot",
+              layout.map(l => s"-K$l").getOrElse("-Kdot"),
+              s"-T$format",
+              s"-o${target.pathAsString}"
+            )
+              .inheritIO().redirectInput(Redirect.PIPE).start()
+            process.getOutputStream.autoClosed.foreach { _.write(bytes) }
+            process.waitFor()
+            scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+          }
+        })
+    )
+  }
+
+  def mermaid(content: String, working: File, format: String): ConvertSchedulable[File] = {
+    val bytes         = content.getBytes(StandardCharsets.UTF_8)
+    val hash          = Hashes.sha1hex(bytes)
+    val dir           = working / hash
+    val target        = dir / (hash + s".$format")
+    val mermaidSource = dir / (hash + ".mermaid")
+    new ConvertSchedulable(
+      target,
+      if (target.exists) None
+      else
+        Some(new ConvertTask {
+          override def run(): Unit = {
+
+            val start = System.nanoTime()
+
+            mermaidSource.createIfNotExists(createParents = true)
+            mermaidSource.writeByteArray(bytes)
+
+            new ProcessBuilder("mmdc", "--input", mermaidSource.pathAsString, "--output", target.pathAsString)
+              .inheritIO().start().waitFor()
+            scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+          }
+        })
+    )
+  }
+
+  def texconvert(content: String, working: File): (String, File, Option[ConvertTask]) = {
+    val hash   = Hashes.sha1hex(content)
+    val dir    = working / hash
+    val target = dir / (hash + ".pdf")
+    (
+      hash,
+      target,
+      if (target.exists) None
+      else {
+        Some(new ConvertTask {
+          override def run(): Unit = {
+            val texbytes = content.getBytes(StandardCharsets.UTF_8)
+            val dir      = target.parent
+            dir.createDirectories()
+            val texfile = dir / (hash + ".tex")
+            texfile.writeByteArray(texbytes)
+            Latexmk.latexmk(dir, hash, texfile)
+          }
+        })
+      }
+    )
+  }
+
+}
