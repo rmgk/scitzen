@@ -41,8 +41,7 @@ object ConvertHtml {
       case (doc, ctx) =>
         val dedup = ctx.convertBlocks.map(b => b.attributes -> b).toMap.valuesIterator.toList
         val tasks = dedup.map(converter.convertBlock(doc.file, _))
-        tasks.foreach(t => t.task.foreach(_.run()))
-        ((dedup.map(_.attributes) zip tasks.map(_.data)).collect{case (b, Some(f)) => b -> f })
+        ((dedup.map(_.attributes) zip tasks).collect{case (b, Some(f)) => b -> f })
     }.toMap
 
     val katexmapfile = project.cacheDir / "katexmap.json"
