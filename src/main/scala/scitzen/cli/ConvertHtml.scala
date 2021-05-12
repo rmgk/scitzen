@@ -39,9 +39,18 @@ object ConvertHtml {
 
     val blockImages: Map[Attributes, File] = preprocessed.docCtx.flatMap {
       case (doc, ctx) =>
-        val dedup = ctx.convertBlocks.map(b => b.attributes -> b).toMap.valuesIterator.toList
-        val tasks = dedup.map(converter.convertBlock(doc.file, _))
-        ((dedup.map(_.attributes) zip tasks).collect{case (b, Some(f)) => b -> f })
+        val dedup      = ctx.convertBlocks.map(b => b.attributes -> b).toMap.valuesIterator.toList
+        val blockFiles = dedup.map(converter.convertBlock(doc.file, _))
+        val blockattr  = dedup.map(_.attributes).zip(blockFiles).collect { case (b, Some(f)) => b -> f }
+
+        val imageattr = ctx.imageMacros.map(_.attributes).toSet.iterator.flatMap { (attributes: Attributes) =>
+          val file = project.resolve(doc.file.parent, attributes.target)
+          if (converter.requiresConversion(attributes.target) && file.isDefined) {
+            Some(attributes -> converter.applyConversion(file.get))
+          } else None
+        }
+        blockattr ++ imageattr
+
     }.toMap
 
     val katexmapfile = project.cacheDir / "katexmap.json"
