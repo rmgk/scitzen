@@ -23,26 +23,11 @@ class ImageConverter(
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
-  def convertBlock(cwd: File, tlb: Block): Option[File] = {
-    val converter = tlb.attributes.named("converter")
-    val content   = tlb.content.asInstanceOf[Fenced].content
-    convertString(converter, tlb.attributes, tlb.prov, content, cwd)
-  }
-
   def applyConversion(file: File): File = {
     preferredFormat match {
-      case "svg" | "png" if (file.extension.contains(".pdf")) => {
-        pdfToCairo(file)
-      }
-      case "pdf" | "png" if (file.extension.contains(".svg")) => {
-        svgToCairo(file)
-      }
+      case "svg" | "png" if (file.extension.contains(".pdf")) => pdfToCairo(file)
+      case "pdf" | "png" if (file.extension.contains(".svg")) => svgToCairo(file)
     }
-
-  }
-
-  trait CommandFunction {
-    def genCommand(source: File, target: File): List[String]
   }
 
   def pdfToCairo(file: File): File = {
@@ -66,6 +51,19 @@ class ImageConverter(
     )
   }
 
+  def svgToCairo(file: File): File = {
+    convertExternal(
+      file,
+      (source, target) => {
+        List("cairosvg", source.pathAsString, "-o", target.pathAsString)
+      }
+    )
+  }
+
+  trait CommandFunction {
+    def genCommand(source: File, target: File): List[String]
+  }
+
   private def convertExternal(file: File, command: CommandFunction): File = {
     val relative = project.root.relativize(file.parent)
     val targetfile = File((project.cacheDir / "convertedImages")
@@ -82,13 +80,10 @@ class ImageConverter(
     targetfile
   }
 
-  def svgToCairo(file: File): File = {
-    convertExternal(
-      file,
-      (source, target) => {
-        List("cairosvg", source.pathAsString, "-o", target.pathAsString)
-      }
-    )
+  def convertBlock(cwd: File, tlb: Block): Option[File] = {
+    val converter = tlb.attributes.named("converter")
+    val content   = tlb.content.asInstanceOf[Fenced].content
+    convertString(converter, tlb.attributes, tlb.prov, content, cwd)
   }
 
   def convertString(
