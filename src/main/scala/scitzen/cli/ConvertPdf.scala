@@ -3,7 +3,7 @@ package scitzen.cli
 import better.files.File
 import better.files.File.CopyOptions
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{ImageSubstitutions, Latexmk}
+import scitzen.extern.{Hashes, ImageSubstitutions, Latexmk}
 import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
@@ -70,8 +70,17 @@ object ConvertPdf {
             article.named.get("texTemplate").orElse(project.config.texTemplate).get,
             templateSettings
           )
-        temptexfile.write(documentString)
-        Latexmk.latexmk(temptexdir, jobname, temptexfile).foreach(_.copyTo(targetfile, overwrite = true))
+
+        val successfile = temptexdir / "lastsuccess.sha1"
+        val scripthash = Hashes.sha1hex(documentString)
+        if (successfile.exists && successfile.contentAsString == scripthash) ()
+        else {
+          temptexfile.write(documentString)
+          val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
+          targetfile.delete(swallowIOExceptions = true)
+          res.foreach(_.linkTo(targetfile))
+          if (res.isDefined) successfile.write(scripthash)
+        }
       }
   }
 }
