@@ -171,7 +171,7 @@ class ImageConverter(
         else Some(pdffile)
 
       case gr @ rex"graphviz.*" =>
-        Some(graphviz(templatedContent, project.cacheDir, gr.split("\\s+", 2).lift(1), preferredFormat))
+        Some(graphviz(templatedContent, project.cacheDir, preferredFormat))
       case rex"mermaid" =>
         Some(mermaid(templatedContent, project.cacheDir, preferredFormat))
       case other =>
@@ -180,8 +180,8 @@ class ImageConverter(
     }
   }
 
-  def graphviz(content: String, working: File, layout: Option[String], format: String): File = {
-    val bytes  = (s"//$layout\n" + content).getBytes(StandardCharsets.UTF_8)
+  def graphviz(content: String, working: File, format: String): File = {
+    val bytes  = content.getBytes(StandardCharsets.UTF_8)
     val hash   = Hashes.sha1hex(bytes)
     val dir    = working / hash
     val target = dir / (hash + s".$format")
@@ -191,7 +191,6 @@ class ImageConverter(
       val start = System.nanoTime()
       val process = new ProcessBuilder(
         "dot",
-        layout.map(l => s"-K$l").getOrElse("-Kdot"),
         s"-T$format",
         s"-o${target.pathAsString}"
       )
