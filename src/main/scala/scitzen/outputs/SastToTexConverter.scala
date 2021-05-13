@@ -5,7 +5,9 @@ import cats.data.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{ImageSubstitutions, ImageTarget}
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.sast.MacroCommand.{
+  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
+}
 import scitzen.sast._
 
 class SastToTexConverter(
@@ -177,14 +179,14 @@ class SastToTexConverter(
 
       case Fenced(text) =>
         if (tlblock.attributes.named.contains("converter")) {
-          val filePath = project.relativizeToProject(imageSubstitutions.get(tlblock.attributes, ImageTarget.Tex).get).toString
+          val filePath =
+            project.relativizeToProject(imageSubstitutions.get(tlblock.attributes, ImageTarget.Tex).get).toString
           inlineToTex(Macro(
             Image,
             tlblock.attributes.remove("converter").append(List(Attribute("", filePath))),
             tlblock.prov
           ))(ctx)
-        }
-        tlblock.attributes.positional.headOption match {
+        } else tlblock.attributes.positional.headOption match {
 
           case Some("text") =>
             val latexenc = latexencode(text).trim
@@ -335,10 +337,9 @@ class SastToTexConverter(
 
             if (attributes.named.contains("converter") || ImageTarget.Tex.requiresConversion(target)) {
               val relpath = project.relativizeToProject(imageSubstitutions.get(attributes, ImageTarget.Tex).get)
-              inlineToTex(mcro.copy(attributes = attributes.remove("converter").append(List(Attribute("", relpath.toString)))))(ctx)
-            }
-
-            project.resolve(cwd, target) match {
+              inlineToTex(mcro.copy(attributes =
+                attributes.remove("converter").append(List(Attribute("", relpath.toString)))))(ctx)
+            } else project.resolve(cwd, target) match {
               case None =>
                 ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>
