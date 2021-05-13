@@ -8,7 +8,7 @@ object MacroCommand {
       "comment" -> Comment,
       "def"     -> Def,
       "image"   -> Image,
-      "addInclude" -> Include,
+      "include" -> Include,
       "link"    -> Link,
       "ref"     -> Ref,
       "code"    -> Code,
