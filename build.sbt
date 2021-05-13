@@ -26,7 +26,7 @@ lazy val scitzen = project.in(file("."))
     ),
     libraryDependencies ++= jsoniterScalaAll.value,
     SassKeys.cssStyle := Maxified,
-    nativeImageVersion := "21.0.0",
+    nativeImageVersion := "21.1.0",
     nativeImageOptions ++= Seq(
       "--initialize-at-build-time",
       "--no-fallback",
