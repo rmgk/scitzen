@@ -7,7 +7,7 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.extern.{ImageTarget}
+import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.MacroCommand._
 import scitzen.sast._
