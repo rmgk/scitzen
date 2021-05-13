@@ -72,7 +72,7 @@ object ConvertPdf {
           )
 
         val successfile = temptexdir / "lastsuccess.sha1"
-        val scripthash = Hashes.sha1hex(documentString)
+        val scripthash  = Hashes.sha1hex(documentString)
         if (successfile.exists && successfile.contentAsString == scripthash) ()
         else {
           temptexfile.write(documentString)

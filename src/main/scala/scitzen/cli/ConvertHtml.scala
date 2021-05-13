@@ -25,8 +25,12 @@ object ConvertHtml {
 
   val mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
 
-  def convertToHtml(project: Project, sync: Option[(File, Int)], preprocessed: PreprocessedResults, imageSubstitutions: ImageSubstitutions): Unit = {
-
+  def convertToHtml(
+      project: Project,
+      sync: Option[(File, Int)],
+      preprocessed: PreprocessedResults,
+      imageSubstitutions: ImageSubstitutions
+  ): Unit = {
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
@@ -89,7 +93,7 @@ object ConvertHtml {
       reporter = _ => "",
       preprocessed = preprocessed,
       imageSubstitutions = ImageSubstitutions(Map()),
-      ).convertSeq(generatedIndex)(ConversionContext(()))
+    ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
       .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), None)
@@ -134,7 +138,7 @@ object ConvertHtml {
       reporter = article.sourceDoc.reporter,
       preprocessed = preprocessed,
       imageSubstitutions = blockImages,
-      )
+    )
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 
     val convertedArticleCtx =

@@ -93,9 +93,8 @@ object ConvertProject {
 
     project.outputdir.createDirectories()
 
-
-
-    val imageSubstitutions: ImageSubstitutions = ImageConverter.preprocessImages(project, documentDirectory, List(ImageTarget.Html, ImageTarget.Tex), preprocessed)
+    val imageSubstitutions: ImageSubstitutions =
+      ImageConverter.preprocessImages(project, documentDirectory, List(ImageTarget.Html, ImageTarget.Tex), preprocessed)
 
     if (project.config.format.contains("content")) {
       Format.formatContents(documentDirectory)

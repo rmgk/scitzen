@@ -27,6 +27,6 @@ class PreprocessedResults(project: Project, val documents: List[Document]) {
     }.toMap
   }
 
-  val articles: List[Article] = preprocessedDocuments.flatMap{Article.articles}
+  val articles: List[Article] = preprocessedDocuments.flatMap { Article.articles }
 
 }

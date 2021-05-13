@@ -362,7 +362,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Image =>
             if (attrs.named.contains("converter") || ImageTarget.Html.requiresConversion(attrs.target)) {
               val relpath = pathManager.relativizeToProject(imageSubstitutions.get(attrs, ImageTarget.Html).get)
-              convertSingle(mcro.copy(attributes = attrs.remove("converter").append(List(Attribute("", relpath.toString)))))(ctx)
+              convertSingle(mcro.copy(attributes =
+                attrs.remove("converter").append(List(Attribute("", relpath.toString)))))(ctx)
             } else pathManager.project.resolve(pathManager.cwd, attrs.target) match {
               case Some(target) =>
                 val path = pathManager.relativizeImage(target)

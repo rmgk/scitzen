@@ -104,8 +104,8 @@ class SastToSastConverter(document: Document) {
 
       case Fenced(text) =>
         val contentHash = Hashes.sha1hex(text)
-        val newBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
-        val ctx = if (newBlock.attributes.named.contains("converter")) refctx.addConversionBlock(newBlock) else refctx
+        val newBlock    = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
+        val ctx         = if (newBlock.attributes.named.contains("converter")) refctx.addConversionBlock(newBlock) else refctx
         ctx.ret(newBlock)
 
       case SpaceComment(_) => refctx.ret(ublock)
@@ -126,8 +126,8 @@ class SastToSastConverter(document: Document) {
 
   def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] = {
     mcro.command match {
-      case Image   => ctx.addImage(mcro).ret(mcro)
-      case _       => ctx.ret(mcro)
+      case Image => ctx.addImage(mcro).ret(mcro)
+      case _     => ctx.ret(mcro)
     }
   }
 

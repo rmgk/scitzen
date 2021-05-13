@@ -10,11 +10,11 @@ object Latexmk {
     outputdir.createDirectories()
     val errorFile  = (outputdir / "latexmk.err")
     val returnCode =
-    //new ProcessBuilder(
-    //  "tectonic", "--keep-intermediates",
-    //  "--outdir", outputdir.toString(),
-    //  sourceFile.pathAsString
-    //)
+      //new ProcessBuilder(
+      //  "tectonic", "--keep-intermediates",
+      //  "--outdir", outputdir.toString(),
+      //  sourceFile.pathAsString
+      //)
       new ProcessBuilder(
         "latexmk",
         "-cd",
@@ -25,11 +25,11 @@ object Latexmk {
         "--output-directory=" + outputdir,
         "--jobname=" + jobname,
         sourceFile.pathAsString
-        )
-      .directory(outputdir.toJava)
-      .redirectOutput((outputdir / "latexmk.out").toJava)
-      .redirectError(errorFile.toJava)
-      .start().waitFor()
+      )
+        .directory(outputdir.toJava)
+        .redirectOutput((outputdir / "latexmk.out").toJava)
+        .redirectError(errorFile.toJava)
+        .start().waitFor()
     if (returnCode == 0) {
       scribe.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
       Some(outputdir / (jobname + ".pdf"))

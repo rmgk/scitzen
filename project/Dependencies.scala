@@ -98,7 +98,8 @@ object Dependencies {
     .map(n => "io.circe" %%% s"circe-$n" % V.circeCore))
 
   object loci {
-    def generic(n: String) = Def.setting("com.github.scala-loci.scala-loci" %%% s"scala-loci-$n" % V.scalaLociCommunication)
+    def generic(n: String) =
+      Def.setting("com.github.scala-loci.scala-loci" %%% s"scala-loci-$n" % V.scalaLociCommunication)
 
     val communication = generic("communication")
 
