@@ -17,14 +17,6 @@ object Scitzen
       name = "scitzen",
       header = "Static page generator",
       main = {
-        import scribe.format._
-        val myFormatter: Formatter = formatter"$message ($position)"
-        Logger.root.clearHandlers().withHandler(
-          formatter = myFormatter,
-          minimumLevel = Some(scribe.Level.Info),
-          outputFormat = ASCIIOutputFormat
-        ).replace()
-
         ConvertProject.command.options
       }
     )
@@ -49,8 +41,17 @@ object ConvertProject {
   val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
+        import scribe.format._
+        val myFormatter: Formatter = formatter"$message ($position)"
+        Logger.root.clearHandlers().withHandler(
+          formatter = myFormatter,
+          minimumLevel = Some(scribe.Level.Info),
+          outputFormat = ASCIIOutputFormat
+        ).replace()
+
         printJson match {
-          case Some(path) => println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))
+          case Some(path) =>
+            println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))
           case None =>
             Project.fromSource(File(sourcedirRel)) match {
               case None => scribe.error(s"could not find project for $sourcedirRel")

@@ -27,12 +27,15 @@ lazy val scitzen = project.in(file("."))
     libraryDependencies ++= jsoniterScalaAll.value,
     SassKeys.cssStyle := Maxified,
     nativeImageVersion := "21.1.0",
+    nativeImageJvm := "graalvm-java11",
     nativeImageOptions ++= Seq(
-      "--initialize-at-build-time",
       "--no-fallback",
-      "--no-server"
+      "--no-server",
+      "--initialize-at-build-time",
+      "--initialize-at-run-time=scala.util.Random"
     ),
   )
 
 // fix some linting nonsense
 Global / excludeLintKeys += nativeImageVersion
+Global / excludeLintKeys += nativeImageJvm
