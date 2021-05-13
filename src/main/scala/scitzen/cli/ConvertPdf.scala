@@ -54,6 +54,7 @@ object ConvertPdf {
 
         val jobname     = targetfile.nameWithoutExtension(includeAll = false)
         val temptexdir  = project.cacheDir / s"$articlename.outdir"
+        temptexdir.createDirectories()
         val temptexfile = temptexdir / (jobname + ".tex")
 
         val bibFile      = fileFromParam("bibliography")
