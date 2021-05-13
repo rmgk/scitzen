@@ -5,6 +5,7 @@ import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.extern.{ImageConverter, ImageTarget}
+import scitzen.generic.Project.ProjectConfig
 import scitzen.generic.{PreprocessedResults, Project}
 import scribe.Logger
 import scribe.output.format.ASCIIOutputFormat
@@ -49,7 +50,7 @@ object ConvertProject {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
         printJson match {
-          case Some(path) => println(JsonSast.jsonFor(File(path)))
+          case Some(path) => println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))
           case None =>
             Project.fromSource(File(sourcedirRel)) match {
               case None => scribe.error(s"could not find project for $sourcedirRel")

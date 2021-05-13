@@ -4,18 +4,20 @@ import better.files.File
 import cats.data.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
-import scitzen.generic.{Article, Document, SastRef}
-import scitzen.sast.MacroCommand.Image
+import scitzen.generic.{Article, Document, Project, SastRef}
+import scitzen.sast.MacroCommand.{Image, Include}
 import scitzen.sast._
 
-class SastToSastConverter(document: Document, targetPrediction: Option[ITargetPrediction]) {
+class SastToSastConverter(document: Document, project: Project) {
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
   type Cta    = Ctx[_]
 
-  def cwf: File   = document.file
-  val uid: String = Integer.toHexString(cwf.hashCode())
+  def cwf: File        = document.file
+  def cwd: File        = document.file.parent
+  val uid: String      = Integer.toHexString(cwf.hashCode())
+  val targetPrediction = ITargetPrediction(project, cwf.parent)
 
   def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
 
@@ -91,7 +93,9 @@ class SastToSastConverter(document: Document, targetPrediction: Option[ITargetPr
         val target          = SastRef(cwf, ublock, None)
         refAliases(resctx, aliases, target).ret(ublock)
     }
-    val ublock = refctx.data
+    val refblock      = refctx.data
+    val refattributes = refblock.attributes
+    val ublock        = makeAbsolute(refattributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
     ublock.content match {
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
@@ -103,20 +107,33 @@ class SastToSastConverter(document: Document, targetPrediction: Option[ITargetPr
         )
 
       case Fenced(text) =>
-          if (ublock.attributes.named.contains("converter")) {
-            val contentHash = Hashes.sha1hex(text)
-            val hashedBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
-            val newBlock = targetPrediction match {
-              case None => hashedBlock
-              case Some(tp) => hashedBlock.copy(attributes = tp.predictBlock(hashedBlock.attributes))
-            }
-            refctx.addConversionBlock(newBlock).ret(newBlock)
-          } else refctx.ret(ublock)
+        if (ublock.attributes.named.contains("converter")) {
+          val contentHash = Hashes.sha1hex(text)
+          val hashedBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
+          val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))
+          refctx.addConversionBlock(newBlock).ret(newBlock)
+        } else refctx.ret(ublock)
 
       case SpaceComment(_) => refctx.ret(ublock)
     }
   }
 
+  private def makeAbsolute(attributes: Attributes, select: String = ""): Option[Attributes] = {
+    val attr =
+      if (select == "")
+        attributes.positional.lastOption
+      else attributes.named.get(select)
+    attr.map { template =>
+      val abs = project.resolve(cwd, template)
+      val rel = project.relativizeToProject(abs.get)
+      if (select == "") {
+        Attributes(attributes.raw.map { attr =>
+          if (attr.id == "" && attr.value == attributes.target) Attribute("", rel.toString)
+          else attr
+        })
+      } else attributes.updated(select, rel.toString)
+    }
+  }
   private def refAliases(resctx: Ctx[_], aliases: List[String], target: SastRef): Ctx[Unit] = {
     aliases.foldLeft(resctx.ret(()))((c: Ctx[_], a) => c.addRefTarget(a, target).ret(()))
   }
@@ -129,13 +146,14 @@ class SastToSastConverter(document: Document, targetPrediction: Option[ITargetPr
       }
     }
 
-  def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] = {
+  def convertMacro(initial: Macro)(implicit ctx: Cta): Ctx[Macro] = {
+    val mcro = initial.command match {
+      case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a))
+      case _ => initial
+    }
     mcro.command match {
       case Image =>
-        val enhanced = targetPrediction match {
-          case Some(tp) => mcro.copy(attributes = tp.predictMacro(mcro.attributes))
-          case None     => mcro
-        }
+        val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))
         ctx.addImage(enhanced).ret(enhanced)
       case _ => ctx.ret(mcro)
     }

@@ -41,6 +41,7 @@ case class SpaceComment(content: String)                 extends BlockType
 
 case class Attributes(raw: Seq[Attribute]) {
 
+
   lazy val positionalT: Seq[Text] = raw.collect { case Attribute("", value) => value }
   lazy val argumentsT: Seq[Text]  = positionalT.dropRight(1)
   lazy val targetT: Text          = positionalT.last
@@ -62,6 +63,7 @@ case class Attributes(raw: Seq[Attribute]) {
   def updated(attribute: Attribute) = {
     remove(attribute.id).append(List(attribute))
   }
+
   override def toString: String =
     s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)})"
 }
