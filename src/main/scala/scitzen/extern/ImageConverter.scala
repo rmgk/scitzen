@@ -17,10 +17,18 @@ import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters._
 
 case class ImageSubstitutions(mapping: Map[Attributes, Map[ImageTarget, File]]) {
-  def get(attr: Attributes, target: ImageTarget = Undetermined): Option[File] = mapping.get(attr).flatMap(_.get(target))
+  def get(attr: Attributes, target: ImageTarget = Undetermined): Option[File] = {
+    mapping.get(attr).orElse {
+      scribe.warn(s"could not find $attr in converted files")
+      None
+    }.flatMap(_.get(target).orElse {
+      scribe.warn(s"could not find conversion for $target")
+      None
+    })
+  }
 }
 
-case class ImageTarget(preferredFormat: String, unsupportedFormat: List[String]) {
+sealed class ImageTarget(val preferredFormat: String, val unsupportedFormat: List[String]) {
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 }
 object ImageTarget {
@@ -42,7 +50,7 @@ object ImageConverter {
       scribe.warn(s"douplicate image »$x« and »$y« discarding later")
       y
     }
-    val blockImages: Map[Attributes, Map[ImageTarget, File]] = preprocessed.docCtx.flatMap {
+    val blockImages = preprocessed.docCtx.flatMap {
       case (doc, ctx) =>
         val dedup = ctx.convertBlocks.map(b => b.attributes -> b).toMap.valuesIterator.toList
         val blockmaps: Map[Attributes, Map[ImageTarget, File]] =
@@ -53,18 +61,42 @@ object ImageConverter {
             })
           })
 
-        val imageattr = Monoid.combineAll(ctx.imageMacros.map(_.attributes).toSet.iterator.map { (attributes: Attributes) =>
-          val file = project.resolve(doc.file.parent, attributes.target)
-          Map.from(targets.flatMap { t =>
-            if (t.requiresConversion(attributes.target) && file.isDefined) {
-              Some(attributes -> Map(t -> converters(t).applyConversion(file.get)))
-            } else None
-          })
-        })
-        Monoid.combine(blockmaps, imageattr)
+        val dedupMacros =
+          ctx.imageMacros.map(_.attributes).toSet.groupBy((attr: Attributes) => attr.named.contains("converter"))
 
-    }.toMap
-    ImageSubstitutions(blockImages)
+        val imageattr = Monoid.combineAll(dedupMacros.getOrElse(false, Set.empty).iterator.map {
+          (attributes: Attributes) =>
+            val file = project.resolve(doc.file.parent, attributes.target)
+            Map(attributes -> Map.from(targets.flatMap { t =>
+              if (t.requiresConversion(attributes.target) && file.isDefined) {
+                Some((t -> converters(t).applyConversion(file.get)))
+              } else None
+            }))
+        })
+
+        val imageconvert = Monoid.combineAll(dedupMacros.getOrElse(true, Set.empty).iterator.map {
+          (attributes: Attributes) =>
+            val file = project.resolve(doc.file.parent, attributes.target)
+            scribe.info(s"converting $file")
+            scribe.info(s"converting $attributes")
+            Map(attributes -> Map.from(targets.flatMap { t =>
+              if (file.isDefined) {
+                converters(t).convertString(
+                  attributes.named("converter"),
+                  attributes,
+                  Prov(),
+                  file.get.contentAsString,
+                  file.get
+                ).map(res => (t -> res))
+              } else None
+            }))
+        })
+
+        List(blockmaps, imageattr, imageconvert)
+
+    }
+
+    ImageSubstitutions(Monoid.combineAll(blockImages))
   }
 }
 

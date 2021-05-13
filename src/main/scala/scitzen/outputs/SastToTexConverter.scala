@@ -335,7 +335,7 @@ class SastToTexConverter(
 
             if (attributes.named.contains("converter") || ImageTarget.Tex.requiresConversion(target)) {
               val relpath = project.relativizeToProject(imageSubstitutions.get(attributes, ImageTarget.Tex).get)
-              inlineToTex(mcro.copy(attributes = attributes.append(List(Attribute("", relpath.toString)))))(ctx)
+              inlineToTex(mcro.copy(attributes = attributes.remove("converter").append(List(Attribute("", relpath.toString)))))(ctx)
             }
 
             project.resolve(cwd, target) match {
