@@ -7,7 +7,7 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.extern.{ImageSubstitutions, ImageTarget}
+import scitzen.extern.{ImageTarget}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.MacroCommand._
 import scitzen.sast._
@@ -19,7 +19,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     sync: Option[(File, Int)],
     reporter: Reporter,
     preprocessed: PreprocessedResults,
-    imageSubstitutions: ImageSubstitutions,
 ) {
 
   import bundle.all._
@@ -141,7 +140,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       sync,
                       doc.reporter,
                       preprocessed,
-                      imageSubstitutions,
                     ).convertSeq(doc.sast)(ctx)
                   case None =>
                     scribe.error(s"unknown include ${attributes.target}" + reporter(mcro.prov))

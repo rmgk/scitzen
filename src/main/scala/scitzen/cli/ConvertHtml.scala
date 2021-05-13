@@ -5,7 +5,7 @@ import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{Bibliography, ImageSubstitutions, KatexConverter}
+import scitzen.extern.{Bibliography, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 
@@ -29,7 +29,6 @@ object ConvertHtml {
       project: Project,
       sync: Option[(File, Int)],
       preprocessed: PreprocessedResults,
-      imageSubstitutions: ImageSubstitutions
   ): Unit = {
 
     val katexmapfile = project.cacheDir / "katexmap.json"
@@ -65,7 +64,6 @@ object ConvertHtml {
             nlp,
             preprocessed,
             KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _))),
-            imageSubstitutions,
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
       }
@@ -92,7 +90,6 @@ object ConvertHtml {
       sync = None,
       reporter = _ => "",
       preprocessed = preprocessed,
-      imageSubstitutions = ImageSubstitutions(Map()),
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
@@ -125,7 +122,6 @@ object ConvertHtml {
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
-      blockImages: ImageSubstitutions,
   ): ConversionContext[_] = {
 
     val biblio = makeBib(project, article)
@@ -137,7 +133,6 @@ object ConvertHtml {
       sync = sync,
       reporter = article.sourceDoc.reporter,
       preprocessed = preprocessed,
-      imageSubstitutions = blockImages,
     )
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 

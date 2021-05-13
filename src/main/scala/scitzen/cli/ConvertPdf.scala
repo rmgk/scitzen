@@ -3,7 +3,7 @@ package scitzen.cli
 import better.files.File
 import better.files.File.CopyOptions
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{Hashes, ImageSubstitutions, Latexmk}
+import scitzen.extern.{Hashes, Latexmk}
 import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
@@ -16,7 +16,6 @@ object ConvertPdf {
   def convertToPdf(
       project: Project,
       preprocessed: PreprocessedResults,
-      imageSubstitutions: ImageSubstitutions
   ): Unit = {
     preprocessed.articles
       .filter(_.header.attributes.named.contains("texTemplate"))
@@ -27,7 +26,6 @@ object ConvertPdf {
           article.sourceDoc.reporter,
           preprocessed.directory,
           preprocessed.labels,
-          imageSubstitutions,
         )
 
         val resultContext =
