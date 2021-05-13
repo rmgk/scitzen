@@ -7,6 +7,7 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
+import scitzen.extern.{ImageSubstitutions, ImageTarget}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.MacroCommand._
 import scitzen.sast._
@@ -18,7 +19,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     sync: Option[(File, Int)],
     reporter: Reporter,
     preprocessed: PreprocessedResults,
-    converted: Map[Attributes, File],
+    imageSubstitutions: ImageSubstitutions,
 ) {
 
   import bundle.all._
@@ -140,7 +141,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       sync,
                       doc.reporter,
                       preprocessed,
-                      converted,
+                      imageSubstitutions,
                     ).convertSeq(doc.sast)(ctx)
                   case None =>
                     scribe.error(s"unknown include ${attributes.target}" + reporter(mcro.prov))
@@ -198,10 +199,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Fenced(text) =>
         if (sBlock.attributes.named.contains("converter")) {
-          val filePath = pathManager.relativizeToProject(converted(sBlock.attributes)).toString
-          convertSingle(Macro(Image, sBlock.attributes.remove("converter").append(List(Attribute("", filePath))), sBlock.prov))(ctx)
-        }
-        else sBlock.command match {
+          val filePath = pathManager.relativizeToProject(imageSubstitutions.get(sBlock.attributes, ImageTarget.Html).get).toString
+          convertSingle(Macro(
+            Image,
+            sBlock.attributes.remove("converter").append(List(Attribute("", filePath))),
+            sBlock.prov
+          ))(ctx)
+        } else sBlock.command match {
           // Preformatted plaintext, preserve linebreaks,
           // but also wrap for linebreaks
           case "text" => ctx.retc(pre(text))

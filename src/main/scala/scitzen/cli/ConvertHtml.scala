@@ -5,13 +5,13 @@ import cats.implicits._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{Bibliography, ImageConverter, KatexConverter}
+import scitzen.extern.{Bibliography, ImageSubstitutions, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
-import scitzen.sast.Attributes
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
+import scala.annotation.tailrec
 import scala.util.Try
 
 object ConvertHtml {
@@ -25,33 +25,8 @@ object ConvertHtml {
 
   val mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
 
-  def convertToHtml(project: Project, sync: Option[(File, Int)], documentDirectory: DocumentDirectory): Unit = {
+  def convertToHtml(project: Project, sync: Option[(File, Int)], preprocessed: PreprocessedResults, imageSubstitutions: ImageSubstitutions): Unit = {
 
-    val preprocessed = new PreprocessedResults(
-      project,
-      documentDirectory.documents
-    )
-
-    project.outputdir.createDirectories()
-
-    val converter =
-      new ImageConverter(project, preferredFormat = "svg", unsupportedFormat = List("pdf"), documentDirectory)
-
-    val blockImages: Map[Attributes, File] = preprocessed.docCtx.flatMap {
-      case (doc, ctx) =>
-        val dedup      = ctx.convertBlocks.map(b => b.attributes -> b).toMap.valuesIterator.toList
-        val blockFiles = dedup.map(converter.convertBlock(doc.file, _))
-        val blockattr  = dedup.map(_.attributes).zip(blockFiles).collect { case (b, Some(f)) => b -> f }
-
-        val imageattr = ctx.imageMacros.map(_.attributes).toSet.iterator.flatMap { (attributes: Attributes) =>
-          val file = project.resolve(doc.file.parent, attributes.target)
-          if (converter.requiresConversion(attributes.target) && file.isDefined) {
-            Some(attributes -> converter.applyConversion(file.get))
-          } else None
-        }
-        blockattr ++ imageattr
-
-    }.toMap
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
@@ -68,7 +43,7 @@ object ConvertHtml {
       HtmlPathManager(project.root, project, articleOutput)
     }
 
-    @scala.annotation.tailrec
+    @tailrec
     def procRec(
         rem: List[Article],
         katexmap: Map[String, String],
@@ -86,7 +61,7 @@ object ConvertHtml {
             nlp,
             preprocessed,
             KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _))),
-            blockImages,
+            imageSubstitutions,
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
       }
@@ -113,8 +88,8 @@ object ConvertHtml {
       sync = None,
       reporter = _ => "",
       preprocessed = preprocessed,
-      converted = Map(),
-    ).convertSeq(generatedIndex)(ConversionContext(()))
+      imageSubstitutions = ImageSubstitutions(Map()),
+      ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
       .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), None)
@@ -146,7 +121,7 @@ object ConvertHtml {
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
-      blockImages: Map[Attributes, File]
+      blockImages: ImageSubstitutions,
   ): ConversionContext[_] = {
 
     val biblio = makeBib(project, article)
@@ -158,8 +133,8 @@ object ConvertHtml {
       sync = sync,
       reporter = article.sourceDoc.reporter,
       preprocessed = preprocessed,
-      converted = blockImages,
-    )
+      imageSubstitutions = blockImages,
+      )
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 
     val convertedArticleCtx =

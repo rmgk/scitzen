@@ -4,7 +4,8 @@ import better.files._
 import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
-import scitzen.generic.Project
+import scitzen.extern.{ImageConverter, ImageSubstitutions, ImageTarget}
+import scitzen.generic.{PreprocessedResults, Project}
 import scribe.Logger
 import scribe.output.format.ASCIIOutputFormat
 
@@ -84,6 +85,18 @@ object ConvertProject {
     val documentDirectory = Project.directory(project.root)
 
     scribe.info(s"parsed ${documentDirectory.documents.size} documents ${timediff()}")
+
+    val preprocessed = new PreprocessedResults(
+      project,
+      documentDirectory.documents
+    )
+
+    project.outputdir.createDirectories()
+
+
+
+    val imageSubstitutions: ImageSubstitutions = ImageConverter.preprocessImages(project, documentDirectory, List(ImageTarget.Html, ImageTarget.Tex), preprocessed)
+
     if (project.config.format.contains("content")) {
       Format.formatContents(documentDirectory)
       scribe.info(s"formatted contents ${timediff()}")
@@ -94,7 +107,7 @@ object ConvertProject {
     }
     if (project.config.outputType.contains("html")) {
       val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
-      ConvertHtml.convertToHtml(project, sync, documentDirectory)
+      ConvertHtml.convertToHtml(project, sync, preprocessed, imageSubstitutions)
       scribe.info(s"generated html ${timediff()}")
     }
     if (project.config.outputType.contains("pdf")) {

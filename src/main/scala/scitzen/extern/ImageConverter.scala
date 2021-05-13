@@ -1,11 +1,14 @@
 package scitzen.extern
 
 import better.files.{File, _}
+import scitzen.extern.ImageTarget.Undetermined
 import scitzen.generic.RegexContext.regexStringContext
-import scitzen.generic.{DocumentDirectory, Project}
+import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.{Attributes, Block, Fenced, Prov}
+import cats.kernel.{Monoid, Semigroup}
+import cats.instances.map.catsKernelStdMonoidForMap
 
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
@@ -13,12 +16,66 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters._
 
+case class ImageSubstitutions(mapping: Map[Attributes, Map[ImageTarget, File]]) {
+  def get(attr: Attributes, target: ImageTarget = Undetermined): Option[File] = mapping.get(attr).flatMap(_.get(target))
+}
+
+case class ImageTarget(preferredFormat: String, unsupportedFormat: List[String]) {
+  def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
+}
+object ImageTarget {
+  object Undetermined extends ImageTarget("", Nil)
+  object Html         extends ImageTarget("svg", List("pdf"))
+  object Tex          extends ImageTarget("pdf", List("svg"))
+  object Raster       extends ImageTarget("png", List("svg", "pdf"))
+}
+
+object ImageConverter {
+  def preprocessImages(
+      project: Project,
+      documentDirectory: DocumentDirectory,
+      targets: List[ImageTarget] = Nil,
+      preprocessed: PreprocessedResults
+  ): ImageSubstitutions = {
+    val converters = targets.map(t => t -> new ImageConverter(project, t, documentDirectory)).toMap
+    implicit val semigroupFile: Semigroup[File] = (x: File, y: File) => {
+      scribe.warn(s"douplicate image »$x« and »$y« discarding later")
+      y
+    }
+    val blockImages: Map[Attributes, Map[ImageTarget, File]] = preprocessed.docCtx.flatMap {
+      case (doc, ctx) =>
+        val dedup = ctx.convertBlocks.map(b => b.attributes -> b).toMap.valuesIterator.toList
+        val blockmaps: Map[Attributes, Map[ImageTarget, File]] =
+          Monoid.combineAll(converters.map { case (target, ic) =>
+            val blockFiles = dedup.map(ic.convertBlock(doc.file, _))
+            Map.from(dedup.map(_.attributes).zip(blockFiles).collect {
+              case (attr, Some(f)) => attr -> Map(target -> f)
+            })
+          })
+
+        val imageattr = Monoid.combineAll(ctx.imageMacros.map(_.attributes).toSet.iterator.map { (attributes: Attributes) =>
+          val file = project.resolve(doc.file.parent, attributes.target)
+          Map.from(targets.flatMap { t =>
+            if (t.requiresConversion(attributes.target) && file.isDefined) {
+              Some(attributes -> Map(t -> converters(t).applyConversion(file.get)))
+            } else None
+          })
+        })
+        Monoid.combine(blockmaps, imageattr)
+
+    }.toMap
+    ImageSubstitutions(blockImages)
+  }
+}
+
 class ImageConverter(
     project: Project,
-    val preferredFormat: String,
-    unsupportedFormat: List[String] = Nil,
-    documentDirectory: DocumentDirectory
+    imageTarget: ImageTarget,
+    documentDirectory: DocumentDirectory,
 ) {
+
+  def preferredFormat: String         = imageTarget.preferredFormat
+  def unsupportedFormat: List[String] = imageTarget.unsupportedFormat
 
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
