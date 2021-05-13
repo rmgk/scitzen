@@ -198,12 +198,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         }
 
       case Fenced(text) =>
-        if (sBlock.attributes.named.contains("converter")) {
-          val filePath =
-            pathManager.relativizeToProject(imageSubstitutions.get(sBlock.attributes, ImageTarget.Html).get).toString
+        if (sBlock.attributes.named.contains(ImageTarget.Html.name)) {
+          val target = sBlock.attributes.named(ImageTarget.Html.name)
           convertSingle(Macro(
             Image,
-            sBlock.attributes.remove("converter").append(List(Attribute("", filePath))),
+            sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))),
             sBlock.prov
           ))(ctx)
         } else sBlock.command match {
@@ -360,11 +359,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }
 
           case Image =>
-            if (attrs.named.contains("converter") || ImageTarget.Html.requiresConversion(attrs.target)) {
-              val relpath = pathManager.relativizeToProject(imageSubstitutions.get(attrs, ImageTarget.Html).get)
-              convertSingle(mcro.copy(attributes =
-                attrs.remove("converter").append(List(Attribute("", relpath.toString)))))(ctx)
-            } else pathManager.project.resolve(pathManager.cwd, attrs.target) match {
+            val target = attrs.named.getOrElse(ImageTarget.Html.name, attrs.target)
+            pathManager.project.resolve(pathManager.cwd, target) match {
               case Some(target) =>
                 val path = pathManager.relativizeImage(target)
                 val mw   = java.lang.Double.parseDouble(attrs.named.getOrElse("maxwidth", "1")) * 100
@@ -375,7 +371,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   else img(src := path.toString, style := s"max-width: $mw%")
                 }
               case None =>
-                scribe.warn(s"could not find path ${attrs.target}" + reporter(mcro))
+                scribe.warn(s"could not find path ${target}" + reporter(mcro))
                 ctx.empty
             }
 

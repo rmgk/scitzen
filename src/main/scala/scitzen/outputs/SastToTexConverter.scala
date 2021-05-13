@@ -178,12 +178,11 @@ class SastToTexConverter(
         }
 
       case Fenced(text) =>
-        if (tlblock.attributes.named.contains("converter")) {
-          val filePath =
-            project.relativizeToProject(imageSubstitutions.get(tlblock.attributes, ImageTarget.Tex).get).toString
+        if (tlblock.attributes.named.contains(ImageTarget.Tex.name)) {
+          val target = tlblock.attributes.named(ImageTarget.Tex.name)
           inlineToTex(Macro(
             Image,
-            tlblock.attributes.remove("converter").append(List(Attribute("", filePath))),
+            tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target))),
             tlblock.prov
           ))(ctx)
         } else tlblock.attributes.positional.headOption match {
@@ -333,13 +332,8 @@ class SastToTexConverter(
             ctx.retc(str)
 
           case Image =>
-            val target = attributes.target
-
-            if (attributes.named.contains("converter") || ImageTarget.Tex.requiresConversion(target)) {
-              val relpath = project.relativizeToProject(imageSubstitutions.get(attributes, ImageTarget.Tex).get)
-              inlineToTex(mcro.copy(attributes =
-                attributes.remove("converter").append(List(Attribute("", relpath.toString)))))(ctx)
-            } else project.resolve(cwd, target) match {
+            val target = attributes.named.getOrElse(ImageTarget.Tex.name, attributes.target)
+            project.resolve(cwd, target) match {
               case None =>
                 ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>

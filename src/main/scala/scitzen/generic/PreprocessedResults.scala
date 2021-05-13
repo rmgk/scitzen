@@ -1,5 +1,6 @@
 package scitzen.generic
 
+import scitzen.extern.ITargetPrediction
 import scitzen.outputs.SastToSastConverter
 
 class PreprocessedResults(project: Project, val documents: List[Document]) {
@@ -8,7 +9,7 @@ class PreprocessedResults(project: Project, val documents: List[Document]) {
 
   val preprocessedCtxs: List[SastToSastConverter#CtxCS] =
     documents.map { doc =>
-      new SastToSastConverter(doc).run()
+      new SastToSastConverter(doc, Some(ITargetPrediction(project, doc.file.parent))).run()
     }
 
   val docCtx: List[(Document, SastToSastConverter#CtxCS)] = documents.zip(preprocessedCtxs)

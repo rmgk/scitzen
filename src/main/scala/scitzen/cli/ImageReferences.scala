@@ -17,7 +17,7 @@ object ImageReferences {
       val cwf = doc.file
       val cwd = cwf.parent
 
-      val convertedCtx = new SastToSastConverter(doc).run()
+      val convertedCtx = new SastToSastConverter(doc, None).run()
 
       //val converter = new ImageConverter(
       //    project,

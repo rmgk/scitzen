@@ -1,14 +1,13 @@
 package scitzen.extern
 
 import better.files.{File, _}
+import cats.instances.map.catsKernelStdMonoidForMap
+import cats.kernel.{Monoid, Semigroup}
 import scitzen.extern.ImageTarget.Undetermined
-import scitzen.generic.RegexContext.regexStringContext
 import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.{Attributes, Block, Fenced, Prov}
-import cats.kernel.{Monoid, Semigroup}
-import cats.instances.map.catsKernelStdMonoidForMap
 
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
@@ -28,17 +27,41 @@ case class ImageSubstitutions(mapping: Map[Attributes, Map[ImageTarget, File]]) 
   }
 }
 
-sealed class ImageTarget(val preferredFormat: String, val unsupportedFormat: List[String]) {
+sealed class ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]) {
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 }
 object ImageTarget {
-  object Undetermined extends ImageTarget("", Nil)
-  object Html         extends ImageTarget("svg", List("pdf"))
-  object Tex          extends ImageTarget("pdf", List("svg"))
-  object Raster       extends ImageTarget("png", List("svg", "pdf"))
+  object Undetermined extends ImageTarget("undetermined target", "", Nil)
+  object Html         extends ImageTarget("html target", "svg", List("pdf", "tex"))
+  object Tex          extends ImageTarget("tex target", "pdf", List("svg", "tex"))
+  object Raster       extends ImageTarget("raster target", "png", List("svg", "pdf", "tex"))
+}
+
+case class ITargetPrediction(project: Project, cwd: File) {
+  import scitzen.extern.ImageTarget._
+  def predictMacro(attributes: Attributes): Attributes = {
+    List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
+      if (target.requiresConversion(attr.target)) {
+        val abs        = project.resolve(cwd, attr.target).get
+        val filename   = s"${abs.nameWithoutExtension(false)}.${target.preferredFormat}"
+        val rel        = project.root.relativize(abs)
+        val prediction = project.cacheDir / "convertedImages" / rel.toString / filename
+        attr.updated(s"${target.name}", project.relativizeToProject(prediction).toString)
+      } else attr
+    }
+  }
+
+  def predictBlock(attributes: Attributes): Attributes = {
+    List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
+      val hash       = attributes.named("content hash")
+      val prediction = project.cacheDir / hash / s"$hash.${target.preferredFormat}"
+      attr.updated(s"${target.name}", project.relativizeToProject(prediction).toString)
+    }
+  }
 }
 
 object ImageConverter {
+
   def preprocessImages(
       project: Project,
       documentDirectory: DocumentDirectory,
@@ -47,7 +70,7 @@ object ImageConverter {
   ): ImageSubstitutions = {
     val converters = targets.map(t => t -> new ImageConverter(project, t, documentDirectory)).toMap
     implicit val semigroupFile: Semigroup[File] = (x: File, y: File) => {
-      scribe.warn(s"douplicate image »$x« and »$y« discarding later")
+      scribe.warn(s"duplicate image »$x« and »$y« discarding later")
       y
     }
     val blockImages = preprocessed.docCtx.flatMap {
@@ -61,38 +84,18 @@ object ImageConverter {
             })
           })
 
-        val dedupMacros =
-          ctx.imageMacros.map(_.attributes).toSet.groupBy((attr: Attributes) => attr.named.contains("converter"))
-
-        val imageattr = Monoid.combineAll(dedupMacros.getOrElse(false, Set.empty).iterator.map {
+        val imageattr = Monoid.combineAll(ctx.imageMacros.map(_.attributes).toSet.iterator.map {
           (attributes: Attributes) =>
             val file = project.resolve(doc.file.parent, attributes.target)
             Map(attributes -> Map.from(targets.flatMap { t =>
               if (t.requiresConversion(attributes.target) && file.isDefined) {
-                Some((t -> converters(t).applyConversion(file.get)))
+                converters(t).applyConversion(file.get, attributes).map(f => (t -> f))
               } else None
             }))
         })
 
-        val imageconvert = Monoid.combineAll(dedupMacros.getOrElse(true, Set.empty).iterator.map {
-          (attributes: Attributes) =>
-            val file = project.resolve(doc.file.parent, attributes.target)
-            scribe.info(s"converting $file")
-            scribe.info(s"converting $attributes")
-            Map(attributes -> Map.from(targets.flatMap { t =>
-              if (file.isDefined) {
-                converters(t).convertString(
-                  attributes.named("converter"),
-                  attributes,
-                  Prov(),
-                  file.get.contentAsString,
-                  file.get
-                ).map(res => (t -> res))
-              } else None
-            }))
-        })
 
-        List(blockmaps, imageattr, imageconvert)
+        List(blockmaps, imageattr)
 
     }
 
@@ -112,10 +115,14 @@ class ImageConverter(
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
-  def applyConversion(file: File): File = {
+  def applyConversion(file: File, attributes: Attributes): Option[File] = {
     preferredFormat match {
-      case "svg" | "png" if (file.extension.contains(".pdf")) => pdfToCairo(file)
-      case "pdf" | "png" if (file.extension.contains(".svg")) => svgToCairo(file)
+      case "svg" | "png" if (file.extension.contains(".pdf")) => Some(pdfToCairo(file))
+      case "pdf" | "png" if (file.extension.contains(".svg")) => Some(svgToCairo(file))
+      case _ if (file.extension.contains(".tex")) =>
+        val dir = (project.cacheDir / "convertedImages").path.resolve(project.root.relativize(file))
+        val templated = applyTemplate(attributes, file.contentAsString, file.parent)
+        convertTemplated("tex", templated, dir, file.nameWithoutExtension(includeAll = false))
     }
   }
 
@@ -154,10 +161,13 @@ class ImageConverter(
   }
 
   private def convertExternal(file: File, command: CommandFunction): File = {
-    val relative = project.root.relativize(file.parent)
-    val targetfile = File((project.cacheDir / "convertedImages")
-      .path.resolve(relative)
-      .resolve(file.nameWithoutExtension + s".$preferredFormat"))
+    val relative = project.root.relativize(file)
+    val targetfile = {
+      if (project.cacheDir.isParentOf(file)) file.sibling(file.nameWithoutExtension(includeAll = false) + s".$preferredFormat")
+      else File((project.cacheDir / "convertedImages")
+           .path.resolve(relative)
+           .resolve(file.nameWithoutExtension + s".$preferredFormat"))
+    }
     val sourceModified = file.lastModifiedTime
     if (!targetfile.exists || targetfile.lastModifiedTime != sourceModified) {
       targetfile.parent.createDirectories()
@@ -172,51 +182,52 @@ class ImageConverter(
   def convertBlock(cwd: File, tlb: Block): Option[File] = {
     val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
-    convertString(converter, tlb.attributes, tlb.prov, content, cwd)
+    val templated = applyTemplate( tlb.attributes, content, cwd)
+    val hash =  tlb.attributes.named("content hash")
+    convertTemplated(converter, templated, project.cacheDir / hash, hash)
   }
 
-  def convertString(
+  def convertTemplated(
       converter: String,
-      attributes: Attributes,
-      prov: Prov,
-      content: String,
-      cwd: File
+      templatedContent: String,
+      dir: File,
+      name: String,
   ): Option[File] = {
-
-    val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match {
-      case None => content
-      case Some(templateFile) =>
-        val tc   = templateFile.contentAsString
-        val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
-        SastToTextConverter(
-          project.config.definitions ++ attributes.named + (
-            "template content" -> content
-          ),
-          Some(Includes(project, templateFile, documentDirectory))
-        ).convert(sast).mkString("\n")
-    }
 
     converter match {
       case "tex" =>
-        val pdffile = texconvert(templatedContent, project.cacheDir)
+        val pdffile = texconvert(templatedContent, dir, name)
         if (preferredFormat == "svg" || preferredFormat == "png") Some(pdfToCairo(pdffile))
         else Some(pdffile)
-
-      case gr @ rex"graphviz.*" =>
-        Some(graphviz(templatedContent, project.cacheDir, preferredFormat))
-      case rex"mermaid" =>
-        Some(mermaid(templatedContent, project.cacheDir, preferredFormat))
+      case gr @ "graphviz" =>
+        Some(graphviz(templatedContent, dir, name, preferredFormat))
+      case "mermaid" =>
+        Some(mermaid(templatedContent, dir, name, preferredFormat))
       case other =>
         scribe.warn(s"unknown converter $other")
         None
     }
   }
 
-  def graphviz(content: String, working: File, format: String): File = {
+  def applyTemplate(attributes: Attributes, content: String, cwd: File): String = {
+    val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match {
+      case None               => content
+      case Some(templateFile) =>
+        val tc   = templateFile.contentAsString
+        val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
+        SastToTextConverter(
+          project.config.definitions ++ attributes.named + (
+          "template content" -> content
+          ),
+          Some(Includes(project, templateFile, documentDirectory))
+          ).convert(sast).mkString("\n")
+    }
+    templatedContent
+  }
+
+  def graphviz(content: String, dir: File, name: String, format: String): File = {
     val bytes  = content.getBytes(StandardCharsets.UTF_8)
-    val hash   = Hashes.sha1hex(bytes)
-    val dir    = working / hash
-    val target = dir / (hash + s".$format")
+    val target = dir / (name + s".$format")
     if (!target.exists) {
       dir.createDirectories()
 
@@ -234,12 +245,10 @@ class ImageConverter(
     target
   }
 
-  def mermaid(content: String, working: File, format: String): File = {
+  def mermaid(content: String, dir: File, name: String, format: String): File = {
     val bytes         = content.getBytes(StandardCharsets.UTF_8)
-    val hash          = Hashes.sha1hex(bytes)
-    val dir           = working / hash
-    val target        = dir / (hash + s".$format")
-    val mermaidSource = dir / (hash + ".mermaid")
+    val target        = dir / (name + s".$format")
+    val mermaidSource = dir / (name + ".mermaid")
     if (!target.exists) {
       val start = System.nanoTime()
 
@@ -253,18 +262,16 @@ class ImageConverter(
     target
   }
 
-  def texconvert(content: String, working: File): File = {
-    val hash   = Hashes.sha1hex(content)
-    val dir    = working / hash
-    val target = dir / (hash + ".pdf")
+  def texconvert(content: String, dir: File, name: String): File = {
+    val target = dir / (name + ".pdf")
     if (target.exists) target
     else {
       val texbytes = content.getBytes(StandardCharsets.UTF_8)
       val dir      = target.parent
       dir.createDirectories()
-      val texfile = dir / (hash + ".tex")
+      val texfile = dir / (name + ".tex")
       texfile.writeByteArray(texbytes)
-      Latexmk.latexmk(dir, hash, texfile)
+      Latexmk.latexmk(dir, name, texfile)
     }
     target
   }

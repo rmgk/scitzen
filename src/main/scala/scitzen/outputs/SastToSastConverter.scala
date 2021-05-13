@@ -3,12 +3,12 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.contexts.SastContext
-import scitzen.extern.Hashes
+import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, SastRef}
 import scitzen.sast.MacroCommand.Image
 import scitzen.sast._
 
-class SastToSastConverter(document: Document) {
+class SastToSastConverter(document: Document, targetPrediction: Option[ITargetPrediction]) {
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
@@ -103,10 +103,15 @@ class SastToSastConverter(document: Document) {
         )
 
       case Fenced(text) =>
-        val contentHash = Hashes.sha1hex(text)
-        val newBlock    = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
-        val ctx         = if (newBlock.attributes.named.contains("converter")) refctx.addConversionBlock(newBlock) else refctx
-        ctx.ret(newBlock)
+          if (ublock.attributes.named.contains("converter")) {
+            val contentHash = Hashes.sha1hex(text)
+            val hashedBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
+            val newBlock = targetPrediction match {
+              case None => hashedBlock
+              case Some(tp) => hashedBlock.copy(attributes = tp.predictBlock(hashedBlock.attributes))
+            }
+            refctx.addConversionBlock(newBlock).ret(newBlock)
+          } else refctx.ret(ublock)
 
       case SpaceComment(_) => refctx.ret(ublock)
     }
@@ -126,8 +131,13 @@ class SastToSastConverter(document: Document) {
 
   def convertMacro(mcro: Macro)(implicit ctx: Cta): Ctx[Macro] = {
     mcro.command match {
-      case Image => ctx.addImage(mcro).ret(mcro)
-      case _     => ctx.ret(mcro)
+      case Image =>
+        val enhanced = targetPrediction match {
+          case Some(tp) => mcro.copy(attributes = tp.predictMacro(mcro.attributes))
+          case None     => mcro
+        }
+        ctx.addImage(enhanced).ret(enhanced)
+      case _ => ctx.ret(mcro)
     }
   }
 
