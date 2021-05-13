@@ -26,6 +26,7 @@ object Latexmk {
         "--jobname=" + jobname,
         sourceFile.pathAsString
         )
+      .directory(outputdir.toJava)
       .redirectOutput((outputdir / "latexmk.out").toJava)
       .redirectError(errorFile.toJava)
       .start().waitFor()
