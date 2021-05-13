@@ -111,7 +111,7 @@ object ConvertProject {
       scribe.info(s"generated html ${timediff()}")
     }
     if (project.config.outputType.contains("pdf")) {
-      ConvertPdf.convertToPdf(project, documentDirectory)
+      ConvertPdf.convertToPdf(project, preprocessed, imageSubstitutions)
       scribe.info(s"generated pdfs ${timediff()}")
     }
     if (imageFileMap) {

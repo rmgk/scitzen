@@ -199,7 +199,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Fenced(text) =>
         if (sBlock.attributes.named.contains("converter")) {
-          val filePath = pathManager.relativizeToProject(imageSubstitutions.get(sBlock.attributes, ImageTarget.Html).get).toString
+          val filePath =
+            pathManager.relativizeToProject(imageSubstitutions.get(sBlock.attributes, ImageTarget.Html).get).toString
           convertSingle(Macro(
             Image,
             sBlock.attributes.remove("converter").append(List(Attribute("", filePath))),
@@ -359,7 +360,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }
 
           case Image =>
-            pathManager.project.resolve(pathManager.cwd, attrs.target) match {
+            if (attrs.named.contains("converter") || ImageTarget.Html.requiresConversion(attrs.target)) {
+              val relpath = pathManager.relativizeToProject(imageSubstitutions.get(attrs, ImageTarget.Html).get)
+              convertSingle(mcro.copy(attributes = attrs.append(List(Attribute("", relpath.toString)))))(ctx)
+            } else pathManager.project.resolve(pathManager.cwd, attrs.target) match {
               case Some(target) =>
                 val path = pathManager.relativizeImage(target)
                 val mw   = java.lang.Double.parseDouble(attrs.named.getOrElse("maxwidth", "1")) * 100

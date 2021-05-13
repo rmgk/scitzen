@@ -3,10 +3,9 @@ package scitzen.outputs
 import better.files.File
 import cats.data.Chain
 import scitzen.contexts.ConversionContext
+import scitzen.extern.{ImageSubstitutions, ImageTarget}
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
-}
+import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.sast._
 
 class SastToTexConverter(
@@ -14,7 +13,8 @@ class SastToTexConverter(
     cwf: File,
     reporter: Reporter,
     includeResolver: DocumentDirectory,
-    labels: Map[String, List[SastRef]]
+    labels: Map[String, List[SastRef]],
+    imageSubstitutions: ImageSubstitutions,
 ) {
 
   val cwd = cwf.parent
@@ -118,7 +118,7 @@ class SastToTexConverter(
               case Some(doc) =>
                 val included = includeResolver.byPath(doc.file)
 
-                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver, labels)
+                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver, labels, imageSubstitutions)
                   .sastSeqToTex(included.sast)(ctx)
 
               case None =>
@@ -176,6 +176,14 @@ class SastToTexConverter(
         }
 
       case Fenced(text) =>
+        if (tlblock.attributes.named.contains("converter")) {
+          val filePath = project.relativizeToProject(imageSubstitutions.get(tlblock.attributes, ImageTarget.Tex).get).toString
+          inlineToTex(Macro(
+            Image,
+            tlblock.attributes.remove("converter").append(List(Attribute("", filePath))),
+            tlblock.prov
+          ))(ctx)
+        }
         tlblock.attributes.positional.headOption match {
 
           case Some("text") =>
@@ -324,6 +332,11 @@ class SastToTexConverter(
 
           case Image =>
             val target = attributes.target
+
+            if (attributes.named.contains("converter") || ImageTarget.Tex.requiresConversion(target)) {
+              val relpath = project.relativizeToProject(imageSubstitutions.get(attributes, ImageTarget.Tex).get)
+              inlineToTex(mcro.copy(attributes = attributes.append(List(Attribute("", relpath.toString)))))(ctx)
+            }
 
             project.resolve(cwd, target) match {
               case None =>

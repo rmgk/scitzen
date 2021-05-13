@@ -3,26 +3,21 @@ package scitzen.cli
 import better.files.File
 import better.files.File.CopyOptions
 import scitzen.contexts.ConversionContext
-import scitzen.extern.Latexmk
-import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
+import scitzen.extern.{ImageSubstitutions, Latexmk}
+import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
+import scala.jdk.CollectionConverters._
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  def convertToPdf(project: Project, documentDirectory: DocumentDirectory): Unit = {
-
-    val preprocessed = new PreprocessedResults(
-      project,
-      documentDirectory.documents
-    )
-
-    // val converter = new ImageConverter(project, "pdf", List("svg"), documentDirectory)
-
-
-    import scala.jdk.CollectionConverters._
+  def convertToPdf(
+      project: Project,
+      preprocessed: PreprocessedResults,
+      imageSubstitutions: ImageSubstitutions
+  ): Unit = {
     preprocessed.articles
       .filter(_.header.attributes.named.contains("texTemplate"))
       .asJava.parallelStream().forEach { article =>
@@ -31,7 +26,8 @@ object ConvertPdf {
           article.sourceDoc.file,
           article.sourceDoc.reporter,
           preprocessed.directory,
-          preprocessed.labels
+          preprocessed.labels,
+          imageSubstitutions,
         )
 
         val resultContext =
@@ -52,8 +48,8 @@ object ConvertPdf {
           article.named.get(param).map(s => article.sourceDoc.file.parent / s.trim)
         }
 
-        val jobname     = targetfile.nameWithoutExtension(includeAll = false)
-        val temptexdir  = project.cacheDir / s"$articlename.outdir"
+        val jobname    = targetfile.nameWithoutExtension(includeAll = false)
+        val temptexdir = project.cacheDir / s"$articlename.outdir"
         temptexdir.createDirectories()
         val temptexfile = temptexdir / (jobname + ".tex")
 
