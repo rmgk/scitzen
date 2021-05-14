@@ -12,6 +12,7 @@ lazy val parser = project.in(file("parser"))
       betterFiles.value,
       fastparse.value,
       catsCore.value,
+      tomlScala.value,
     ),
   )
 

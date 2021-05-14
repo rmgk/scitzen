@@ -1,12 +1,10 @@
 package scitzen.generic
 
 import java.nio.file.{Path, Paths}
-
 import better.files.File
-import scitzen.generic.Project.ProjectConfig
+import scitzen.compat.ProjectConfig
 import scitzen.parser.Parse
 import scitzen.sast.{Prov, Text}
-import toml.Codecs._
 
 case class Project(root: File, config: ProjectConfig, definitions: Map[String, Text]) {
 
@@ -38,19 +36,6 @@ case class Project(root: File, config: ProjectConfig, definitions: Map[String, T
 }
 
 object Project {
-
-  case class ProjectConfig(
-      output: String = "scitzen/out",
-      cache: String = "scitzen/cache",
-      stopwords: String = "scitzen",
-      format: List[String] = Nil,
-      outputType: List[String] = Nil,
-      revealTemplate: Option[String] = None,
-      definitions: Map[String, String] = Map.empty,
-      texTemplate: Option[String] = None,
-      notes: Option[String] = None,
-  )
-
   val scitzenconfig: String = "scitzen.toml"
 
   def findRoot(source: File): Option[File] = {
@@ -72,7 +57,15 @@ object Project {
   }
 
   def fromConfig(file: File): Option[Project] = {
-    Some(Project(file, ProjectConfig(), Map.empty))
+    scitzen.compat.Config.parse((file / scitzenconfig).contentAsString) match {
+      case Right(value) =>
+        val definitions = value.definitions.view.mapValues(s => Text(Parse.inlineUnwrap(s, Prov()))).toMap
+        Some(Project(file, value, definitions))
+      case Left((addr, mesg)) =>
+        val errormessage = s"could not parse config:\n$mesg\nat $addr"
+        scribe.error(errormessage)
+        None
+    }
   }
   def isScim(c: File): Boolean =
     c.isRegularFile &&

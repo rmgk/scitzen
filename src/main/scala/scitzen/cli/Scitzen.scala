@@ -5,7 +5,7 @@ import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.extern.{ImageConverter, ImageTarget}
-import scitzen.generic.Project.ProjectConfig
+import scitzen.compat.ProjectConfig
 import scitzen.generic.{PreprocessedResults, Project}
 
 import java.nio.file.{Path, Paths}
