@@ -5,11 +5,9 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import scalatags.Text.all._
 
-object Bibliography {
+import scitzen.compat.CiteProcCodecs._
 
-  case class Author(givenName: Option[String], familyName: Option[String]) {
-    def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")
-  }
+object Bibliography {
 
   case class BibEntry(
       id: String,
@@ -28,30 +26,18 @@ object Bibliography {
       frag(code(citekey), " ", formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
   }
 
-  case class CiteprocDate(`date-parts`: List[List[Int]]) {
-    def year: Option[Int] = `date-parts`.flatten.headOption
-  }
-  case class CiteprocAuthor(family: Option[String], `given`: Option[String]) {
-    def toAuthor: Author = Author(`given`, family)
-  }
-  case class CiteprocEntry(
-      id: String,
-      author: List[CiteprocAuthor],
-      issued: Option[CiteprocDate],
-      `container-title`: Option[String],
-      `type`: String,
-      title: Option[String]
-  ) {
-    def toBibEntry: BibEntry =
-      BibEntry(
-        id = id,
-        authors = author.map(_.toAuthor),
-        title = title,
-        year = issued.flatMap(_.year),
-        container = `container-title`,
-        `type` = `type`
+  def citeprocToBib(citeprocEntry: CiteprocEntry) = {
+    import citeprocEntry._
+    BibEntry(
+      id = id,
+      authors = author.map(_.toAuthor),
+      title = title,
+      year = issued.flatMap(_.year),
+      container = `container-title`,
+      `type` = `type`
       )
   }
+
 
   def parse(cacheDir: File)(source: File): List[BibEntry] = {
     val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
@@ -63,6 +49,8 @@ object Bibliography {
         .redirectOutput(cachefile.toJava).start().waitFor()
     }
 
-    Nil
+    val entries = com.github.plokhotnyuk.jsoniter_scala.core.readFromStream(cachefile.newInputStream)(citeprocCodec)
+
+    entries.map { citeprocToBib }
   }
 }

@@ -14,6 +14,7 @@ lazy val parser = project.in(file("parser"))
       catsCore.value,
       tomlScala.value,
     ),
+    libraryDependencies ++= jsoniterScalaAll.value,
   )
 
 lazy val scitzen = project.in(file("."))
