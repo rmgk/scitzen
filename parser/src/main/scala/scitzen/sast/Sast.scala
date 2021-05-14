@@ -1,6 +1,5 @@
 package scitzen.sast
 
-import scitzen.outputs.AttributesToScim
 import scitzen.sast.MacroCommand.{Emph, Strong}
 
 sealed trait Sast
@@ -64,8 +63,8 @@ case class Attributes(raw: Seq[Attribute]) {
     remove(attribute.id).append(List(attribute))
   }
 
-  override def toString: String =
-    s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)})"
+  //override def toString: String =
+  //  s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)})"
 }
 
 object Attributes {

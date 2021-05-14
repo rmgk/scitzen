@@ -299,7 +299,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
-            candidates.headOption.map[CtxCF] { targetDocument: SastRef =>
+            candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
               val nameOpt    = attrs.arguments.headOption
               val articleOpt = targetDocument.directArticle
               val fileRef = articleOpt match {
