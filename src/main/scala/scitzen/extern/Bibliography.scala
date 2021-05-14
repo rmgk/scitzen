@@ -3,8 +3,6 @@ package scitzen.extern
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import com.github.plokhotnyuk.jsoniter_scala.core._
-import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scalatags.Text.all._
 
 object Bibliography {
@@ -55,8 +53,6 @@ object Bibliography {
       )
   }
 
-  val citeprocCodec: JsonValueCodec[List[CiteprocEntry]] = JsonCodecMaker.make
-
   def parse(cacheDir: File)(source: File): List[BibEntry] = {
     val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
     cacheDir.createDirectories()
@@ -67,8 +63,6 @@ object Bibliography {
         .redirectOutput(cachefile.toJava).start().waitFor()
     }
 
-    val entries = readFromStream(cachefile.newInputStream)(citeprocCodec)
-
-    entries.map { _.toBibEntry }
+    Nil
   }
 }

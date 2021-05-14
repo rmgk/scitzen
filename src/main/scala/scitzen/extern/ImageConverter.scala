@@ -12,9 +12,10 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters._
 
-sealed class ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]) {
+class ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]) {
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 }
+
 object ImageTarget {
   object Undetermined extends ImageTarget("undetermined target", "", Nil)
   object Html         extends ImageTarget("html target", "svg", List("pdf", "tex"))

@@ -127,7 +127,7 @@ object AttributesToScim {
   def encodeValue(text: Text, isNamed: Boolean): String = {
     val value = SastToScimConverter.inlineToScim(text.inl)
     def parses(quoted: String): Boolean = {
-      def parser[_: P]: P[Attribute] =
+      def parser(implicit p: P[_]): P[Attribute] =
         if (isNamed) AttributesParser.positionalAttribute
         else AttributesParser.attribute
 

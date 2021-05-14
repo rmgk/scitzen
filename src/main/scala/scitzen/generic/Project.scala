@@ -72,16 +72,7 @@ object Project {
   }
 
   def fromConfig(file: File): Option[Project] = {
-    locally(stringCodec) // make tools believe the import is used
-    toml.Toml.parseAs[ProjectConfig]((file / scitzenconfig).contentAsString) match {
-      case Right(value) =>
-        val definitions = value.definitions.view.mapValues(s => Text(Parse.inlineUnwrap(s, Prov()))).toMap
-        Some(Project(file, value, definitions))
-      case Left((addr, mesg)) =>
-        val errormessage = s"could not parse config:\n$mesg\nat $addr"
-        scribe.error(errormessage)
-        None
-    }
+    Some(Project(file, ProjectConfig(), Map.empty))
   }
   def isScim(c: File): Boolean =
     c.isRegularFile &&
