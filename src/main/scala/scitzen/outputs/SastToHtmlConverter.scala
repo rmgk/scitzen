@@ -166,6 +166,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 div(id := "highlight") +: html
               else html
             }
+  end convertSingle
 
   def convertBlock(sBlock: Block)(implicit ctx: Cta): CtxCF =
     val innerCtx: CtxCF =
@@ -223,6 +224,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         innerCtx.data :+ p(`class` := "marginnote", content.toList)
       }
     }
+  end convertBlock
 
   def inlineValuesToHTML(inlines: Seq[Inline])(implicit ctx: Cta): CtxCF =
     ctx.fold(inlines) { (ctx, inline) => inlineToHTML(inline)(ctx) }
@@ -349,6 +351,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               case None =>
                 scribe.warn(s"could not find path ${target}" + reporter(mcro))
                 ctx.empty
+  end inlineToHTML
 
   def reportPos(m: Macro): String = reporter(m)
 
