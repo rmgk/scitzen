@@ -55,23 +55,23 @@ object ImageConverter {
       preprocessed: PreprocessedResults
   ): Unit = {
     val converters = targets.map(t => t -> new ImageConverter(project, t, documentDirectory)).toMap
-    val blocks = preprocessed.docCtx.flatMap {
-      case (doc, ctx) => ctx.convertBlocks.map(b => b.attributes -> (b -> doc))
+    val blocks = preprocessed.docCtx.flatMap { (doc, ctx) =>
+      ctx.convertBlocks.map(b => b.attributes -> (b -> doc))
     }.toMap
 
-    blocks.valuesIterator.foreach { case (block, doc) =>
-      converters.foreach { case (target, ic) =>
+    blocks.valuesIterator.foreach { (block, doc) =>
+      converters.foreach { (target, ic) =>
         ic.convertBlock(doc.file, block)
       }
     }
 
-    val macros = preprocessed.docCtx.flatMap {
-      case (doc, ctx) => ctx.imageMacros.map(m => m.attributes -> (m -> doc))
+    val macros = preprocessed.docCtx.flatMap { (doc, ctx) =>
+      ctx.imageMacros.map(m => m.attributes -> (m -> doc))
     }.toMap
 
-    macros.valuesIterator.foreach { case (mcro, doc) =>
+    macros.valuesIterator.foreach { (mcro, doc) =>
       val file = project.resolve(doc.file.parent, mcro.attributes.target)
-      converters.foreach { case (t, ic) =>
+      converters.foreach { (t, ic) =>
         if (t.requiresConversion(mcro.attributes.target) && file.isDefined) {
           converters(t).applyConversion(file.get, mcro.attributes).map(f => (t -> f))
         }
