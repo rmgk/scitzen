@@ -32,7 +32,7 @@ class SastToTexConverter(
     val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
     ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\maketitle{}")
 
-  def convert(mainSast: List[Sast])(implicit ctx: Cta): CtxCS =
+  def convert(mainSast: List[Sast])(ctx: Cta): CtxCS =
     sastSeqToTex(mainSast)(ctx)
 
   def latexencode(input: String): String =
@@ -52,7 +52,7 @@ class SastToTexConverter(
       }
     nomuch.replace(dummyForBSreplace, "\\textbackslash{}")
 
-  def sastSeqToTex(b: Seq[Sast])(implicit ctx: Cta): CtxCS =
+  def sastSeqToTex(b: Seq[Sast])(ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => sastToTex(sast)(ctx) }
 
   val sectioning: Int => String = nesting => {
@@ -62,9 +62,9 @@ class SastToTexConverter(
     sec
   }
 
-  def sastToTex(sast: Sast)(implicit ctx: Cta): CtxCS =
+  def sastToTex(sast: Sast)(ctx: Cta): CtxCS =
     sast match
-      case tlBlock: Block => blockToTex(tlBlock)
+      case tlBlock: Block => blockToTex(tlBlock)(ctx)
 
       case section @ Section(title, prefix, attr, _) =>
         val ilc = inlineValuesToTex(title.inl)(ctx)
@@ -120,20 +120,20 @@ class SastToTexConverter(
                 ctx.empty
 
           case other =>
-            inlineValuesToTex(List(mcro)).single
+            inlineValuesToTex(List(mcro))(ctx).single
 
-  def texbox(name: String, attributes: Attributes, content: Seq[Sast])(implicit ctx: Cta): CtxCS =
+  def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
     val args      = attributes.positional.tail
     val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
     val label     = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
-      sastSeqToTex(content) :+
+      sastSeqToTex(content)(ctx) :+
       s"\\end{$name}"
 
-  def blockToTex(tlblock: Block)(implicit ctx: Cta): CtxCS =
+  def blockToTex(tlblock: Block)(ctx: Cta): CtxCS =
     val innerCtx: CtxCS =
       tlblock.content match
-        case Paragraph(content) => inlineValuesToTex(content.inl).single :+ "" :+ ""
+        case Paragraph(content) => inlineValuesToTex(content.inl)(ctx).single :+ "" :+ ""
 
         case Parsed(_, blockContent) =>
           tlblock.command match
@@ -141,27 +141,27 @@ class SastToTexConverter(
               val (figContent, caption) =
                 blockContent.lastOption match
                   case Some(Block(_, Paragraph(content), _)) =>
-                    val captionstr = inlineValuesToTex(content.inl).data
-                    (blockContent.init, s"\\caption{$captionstr}")
+                    val captionstr = inlineValuesToTex(content.inl)(ctx)
+                    (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
                     scribe.warn(s"figure has no caption" + reporter(tlblock.prov))
-                    (blockContent, "")
+                    (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
                 "\\centerfloat" +:
-                sastSeqToTex(figContent) :++
+                sastSeqToTex(figContent)(caption) :++
                 Chain(
-                  caption,
+                  caption.data,
                   tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
                   "\\end{figure}"
                 )
 
             case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
-              texbox(name, tlblock.attributes, blockContent).useFeature("framed")
+              texbox(name, tlblock.attributes, blockContent)(ctx).useFeature("framed")
 
-            case name @ "abstract" => texbox(name, tlblock.attributes, blockContent)
+            case name @ "abstract" => texbox(name, tlblock.attributes, blockContent)(ctx)
 
             case _ =>
-              sastSeqToTex(blockContent)
+              sastSeqToTex(blockContent)(ctx)
 
         case Fenced(text) =>
           if tlblock.attributes.named.contains(ImageTarget.Tex.name) then
@@ -201,18 +201,18 @@ class SastToTexConverter(
         }.useFeature("sidepar")
       }
 
-  def nbrs(attributes: Attributes)(implicit ctx: Cta): Ctx[String] =
+  def nbrs(attributes: Attributes)(ctx: Cta): Ctx[String] =
     attributes.argumentsT match
       case Nil => ctx.ret("")
       case arg :: _ =>
-        inlineValuesToTex(attributes.argumentsT.head.inl).map { str =>
+        inlineValuesToTex(attributes.argumentsT.head.inl)(ctx).map { str =>
           s"${str}~"
         }
 
-  def inlineValuesToTex(inners: Seq[Inline])(implicit ctx: Cta): Ctx[String] =
+  def inlineValuesToTex(inners: Seq[Inline])(ctx: Cta): Ctx[String] =
     ctx.fold(inners) { (ctx: Ctx[Chain[String]], inline) => inlineToTex(inline)(ctx) }.map(_.toList.mkString(""))
 
-  def inlineToTex(inln: Inline)(implicit ctx: Cta): CtxCS =
+  def inlineToTex(inln: Inline)(ctx: Cta): CtxCS =
     inln match
       case InlineText(str) => ctx.retc(latexencode(str))
       case mcro: Macro =>
@@ -221,7 +221,7 @@ class SastToTexConverter(
           case Code           => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
           case Comment        => ctx.retc("")
           case Def            => ctx.retc("")
-          case Emph           => inlineValuesToTex(attributes.targetT.inl).mapc(str => s"\\emph{$str}")
+          case Emph           => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\emph{$str}")
           case Math           => ctx.retc(s"$$${attributes.target}$$")
           case Other("break") => ctx.retc(s"\\clearpage{}")
           case Other("rule") => inlineToTex(Macro(
@@ -232,14 +232,14 @@ class SastToTexConverter(
                 Attribute("", s"rule-${attributes.target}")
               )),
               mcro.prov
-            ))
+            ))(ctx)
           case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
           case Other("raw")       => ctx.retc(attributes.named.getOrElse("tex", ""))
           case Other("todo") =>
-            inlineValuesToTex(attributes.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
-          case Strong => inlineValuesToTex(attributes.targetT.inl).mapc(str => s"\\textbf{$str}")
+            inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"{\\color{red}TODO:${str}}")
+          case Strong => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\textbf{$str}")
           case Other("partition") =>
-            inlineValuesToTex(attributes.targetT.inl).mapc(str => s"\\part{${str}}")
+            inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\part{${str}}")
 
           case Cite =>
             val cmndCtx = attributes.named.get("style") match
@@ -272,7 +272,7 @@ class SastToTexConverter(
                     inlineValuesToTex(attributes.argumentsT.head.inl)(ctx).mapc { str =>
                       s"\\hyperref[${label}]{${str}}"
                     }
-                  case _ => nbrs(attributes).mapc { str => s"${str}\\ref{${label}}" }
+                  case _ => nbrs(attributes)(ctx).mapc { str => s"${str}\\ref{${label}}" }
 
           case Link =>
             ctx.retc {
@@ -292,7 +292,7 @@ class SastToTexConverter(
                 ctx.retc(latexencode(attributes.target))
 
           case Other("footnote") =>
-            inlineValuesToTex(attributes.targetT.inl).map(target => s"\\footnote{$target}").single
+            inlineValuesToTex(attributes.targetT.inl)(ctx).map(target => s"\\footnote{$target}").single
 
           case Other("tableofcontents") =>
             ctx.useFeature("tableofcontents").retc(

@@ -40,10 +40,10 @@ class SastToSastConverter(document: Document, project: Project):
     val aliases  = ref1 :: newLabel :: attr.named.get("aliases").toList.flatMap(_.split(',').toList)
     counter.ret((aliases, attr.updated("label", newLabel)))
 
-  def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCS =
+  def convertSeq(b: Seq[Sast])(ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
 
-  def convertSingle(sast: Sast)(implicit ctx: Cta): Ctx[Sast] =
+  def convertSingle(sast: Sast)(ctx: Cta): Ctx[Sast] =
     sast match
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
@@ -73,7 +73,7 @@ class SastToSastConverter(document: Document, project: Project):
         }
 
       case mcro: Macro =>
-        convertMacro(mcro).map(identity(_): Sast)
+        convertMacro(mcro)(ctx).map(identity(_): Sast)
 
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
     // make all blocks labellable
@@ -126,14 +126,14 @@ class SastToSastConverter(document: Document, project: Project):
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
 
-  def convertInlines(inners: Seq[Inline])(implicit ctx: Cta): Ctx[Chain[Inline]] =
+  def convertInlines(inners: Seq[Inline])(ctx: Cta): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>
       inline match
         case inlineText: InlineText => ctx.ret(Chain.one(inlineText))
         case m: Macro               => convertMacro(m)(ctx).single
     }
 
-  def convertMacro(initial: Macro)(implicit ctx: Cta): Ctx[Macro] =
+  def convertMacro(initial: Macro)(ctx: Cta): Ctx[Macro] =
     val mcro =
       initial.command match
         case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a))

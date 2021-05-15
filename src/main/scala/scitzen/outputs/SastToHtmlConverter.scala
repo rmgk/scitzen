@@ -35,7 +35,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     if sync.exists(_._1 == pathManager.cwf) then sync.get._2
     else Int.MaxValue
 
-  def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF =
+  def listItemToHtml(child: ListItem)(ctx: Cta): CtxCF =
     val textCtx = inlineValuesToHTML(child.text.inl)(ctx)
     textCtx.data ++: child.content.fold(textCtx.empty[Frag])(convertSingle(_)(textCtx))
 
@@ -65,8 +65,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
-  def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
-  def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF =
+  def convertSeq(b: Seq[Sast])(ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
+  def convertSingle(singleSast: Sast)(ctx: Cta): CtxCF =
     singleSast match
       case sec @ Section(title, level, _, _) =>
         inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
@@ -119,9 +119,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             attributes.arguments.headOption match
               case Some("code") =>
                 pathManager.resolve(attributes.target) match
-                  case None => inlineValuesToHTML(List(mcro))
+                  case None => inlineValuesToHTML(List(mcro))(ctx)
                   case Some(file) =>
-                    convertSingle(Block(attributes, Fenced(file.contentAsString), mcro.prov))
+                    convertSingle(Block(attributes, Fenced(file.contentAsString), mcro.prov))(ctx)
 
               case None =>
                 pathManager.resolve(attributes.target) match
@@ -144,13 +144,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 ctx.empty
 
           case other =>
-            inlineValuesToHTML(List(mcro))
+            inlineValuesToHTML(List(mcro))(ctx)
 
       case tLBlock: Block =>
         val positiontype = tLBlock.attributes.positional.headOption
         positiontype match
           case Some("quote") =>
-            convertBlock(tLBlock).map { innerHtml =>
+            convertBlock(tLBlock)(ctx).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
               // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
               val bq = blockquote(innerHtml.toList)
@@ -160,7 +160,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }
           case _ =>
             val prov = tLBlock.prov
-            convertBlock(tLBlock).map { html =>
+            convertBlock(tLBlock)(ctx).map { html =>
               if prov.start <= syncPos && syncPos <= prov.end then
                 scribe.info(s"highlighting $syncPos: $prov")
                 div(id := "highlight") +: html
@@ -168,14 +168,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }
   end convertSingle
 
-  def convertBlock(sBlock: Block)(implicit ctx: Cta): CtxCF =
+  def convertBlock(sBlock: Block)(ctx: Cta): CtxCF =
     val innerCtx: CtxCF =
       sBlock.content match
 
-        case Paragraph(text) => inlineValuesToHTML(text.inl).map(cf => Chain(p(cf.toList)))
+        case Paragraph(text) => inlineValuesToHTML(text.inl)(ctx).map(cf => Chain(p(cf.toList)))
 
         case Parsed(delimiter, blockContent) =>
-          convertSeq(blockContent).map { blockContent =>
+          convertSeq(blockContent)(ctx).map { blockContent =>
             if delimiter.isBlank then blockContent
             else
               val tag = if sBlock.command == "figure" then figure else section
@@ -226,10 +226,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     }
   end convertBlock
 
-  def inlineValuesToHTML(inlines: Seq[Inline])(implicit ctx: Cta): CtxCF =
+  def inlineValuesToHTML(inlines: Seq[Inline])(ctx: Cta): CtxCF =
     ctx.fold(inlines) { (ctx, inline) => inlineToHTML(inline)(ctx) }
 
-  def inlineToHTML(inlineSast: Inline)(implicit ctx: Cta): CtxCF =
+  def inlineToHTML(inlineSast: Inline)(ctx: Cta): CtxCF =
     inlineSast match
       case InlineText(str) => ctx.retc(stringFrag(str))
 
@@ -293,7 +293,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   case _ => ""
 
               targetDocument.sast match
-                case sec @ Section(title, _, _, _) => inlineValuesToHTML(title.inl).map { inner =>
+                case sec @ Section(title, _, _, _) => inlineValuesToHTML(title.inl)(ctx).map { inner =>
                     Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
                   }
                 case Block(attr, _, _) =>
