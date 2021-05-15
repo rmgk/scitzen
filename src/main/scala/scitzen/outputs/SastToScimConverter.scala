@@ -52,7 +52,7 @@ object SastToScimConverter:
         case head :: tail =>
           val stripped = head.stripTrailing()
           if stripped.isEmpty then tail else stripped :: tail)
-      .reverse
+        .reverse
     )
 
   def addIndent(lines: String, delimiter: String): String =
@@ -148,6 +148,5 @@ object AttributesToScim:
     if !(spacy && attributes.raw.size > 1) then
       if light && attributes.positional.isEmpty then pairs.mkString("", "; ", "\n")
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
-    else
-      if light && attributes.positional.isEmpty then pairs.mkString("", "\n", "\n")
-      else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
+    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", "\n")
+    else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")

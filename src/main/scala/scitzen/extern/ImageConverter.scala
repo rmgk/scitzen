@@ -12,39 +12,6 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters.*
 
-class ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]) {
-  def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
-}
-
-object ImageTarget {
-  object Undetermined extends ImageTarget("undetermined target", "", Nil)
-  object Html         extends ImageTarget("html target", "svg", List("pdf", "tex"))
-  object Tex          extends ImageTarget("tex target", "pdf", List("svg", "tex"))
-  object Raster       extends ImageTarget("raster target", "png", List("svg", "pdf", "tex"))
-}
-
-case class ITargetPrediction(project: Project, cwd: File) {
-  import scitzen.extern.ImageTarget.*
-  def predictMacro(attributes: Attributes): Attributes = {
-    List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
-      if target.requiresConversion(attr.target) then {
-        val abs        = project.resolve(cwd, attr.target).get
-        val filename   = s"${abs.nameWithoutExtension(false)}.${target.preferredFormat}"
-        val rel        = project.root.relativize(abs)
-        val prediction = project.cacheDir / "convertedImages" / rel.toString / filename
-        attr.updated(s"${target.name}", project.relativizeToProject(prediction).toString)
-      } else attr
-    }
-  }
-
-  def predictBlock(attributes: Attributes): Attributes = {
-    List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
-      val hash       = attributes.named("content hash")
-      val prediction = project.cacheDir / hash / s"$hash.${target.preferredFormat}"
-      attr.updated(s"${target.name}", project.relativizeToProject(prediction).toString)
-    }
-  }
-}
 
 object ImageConverter {
 
