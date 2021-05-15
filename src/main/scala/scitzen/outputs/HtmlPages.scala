@@ -53,7 +53,7 @@ class HtmlPages(cssPath: String) {
     htmlDocument(html(tHead)(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,
-      main(content)(language.map(lang := _).toSeq: _*)
+      main(content)(language.map(lang := _).toSeq*)
     )))
   }
 

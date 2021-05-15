@@ -2,12 +2,12 @@ package scitzen.generic
 
 import java.nio.file.Path
 
-import better.files._
+import better.files.*
 import scitzen.cli.Format
 
 case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File) {
 
-  val cwd = if (cwf.isDirectory) cwf else cwf.parent
+  val cwd = if cwf.isDirectory then cwf else cwf.parent
 
   def resolve(path: String): Option[File] = project.resolve(cwd, path)
 
@@ -34,7 +34,7 @@ case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File) 
     resources.foreach {
       case (img, path) =>
         val target = File(articleOutputDir.path.resolve(path))
-        if (!target.exists) {
+        if !target.exists then {
           scribe.info(s"hardlink $img to $target")
           target.parent.createDirectoryIfNotExists()
           img.linkTo(target, symbolic = false)

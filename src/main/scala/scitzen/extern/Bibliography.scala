@@ -3,9 +3,9 @@ package scitzen.extern
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import scalatags.Text.all._
+import scalatags.Text.all.*
 
-import scitzen.compat.Codecs._
+import scitzen.compat.Codecs.*
 
 object Bibliography {
 
@@ -20,14 +20,14 @@ object Bibliography {
   ) {
     def formatAuthors: Option[String] = {
       val res = authors.map(_.full).mkString(", ")
-      if (res.nonEmpty) Some(res) else None
+      if res.nonEmpty then Some(res) else None
     }
     def format: Frag =
       frag(code(citekey), " ", formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
   }
 
   def citeprocToBib(citeprocEntry: CiteprocEntry) = {
-    import citeprocEntry._
+    import citeprocEntry.*
     BibEntry(
       id = id,
       authors = author.map(_.toAuthor),
@@ -42,7 +42,7 @@ object Bibliography {
     val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
     cacheDir.createDirectories()
     val cachefile = cacheDir / (hash + ".json")
-    if (!cachefile.exists) {
+    if !cachefile.exists then {
       new ProcessBuilder("pandoc-citeproc", "--bib2json", source.pathAsString)
         .inheritIO()
         .redirectOutput(cachefile.toJava).start().waitFor()

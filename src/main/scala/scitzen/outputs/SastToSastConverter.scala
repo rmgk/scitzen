@@ -6,13 +6,13 @@ import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, Project, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
-import scitzen.sast._
+import scitzen.sast.*
 
 class SastToSastConverter(document: Document, project: Project) {
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
-  type Cta    = Ctx[_]
+  type Cta    = Ctx[?]
 
   def cwf: File        = document.file
   def cwd: File        = document.file.parent
@@ -33,7 +33,7 @@ class SastToSastConverter(document: Document, project: Project) {
       attr: Attributes,
   ): Ctx[(List[String], Attributes)] = {
     val counter =
-      if (ctx.labelledThings.contains(ref1)) {
+      if ctx.labelledThings.contains(ref1) then {
         ctx.nextId.map(_.toString)
       } else {
         ctx.ret("")
@@ -107,7 +107,7 @@ class SastToSastConverter(document: Document, project: Project) {
         )
 
       case Fenced(text) =>
-        if (ublock.attributes.named.contains("converter")) {
+        if ublock.attributes.named.contains("converter") then {
           val contentHash = Hashes.sha1hex(text)
           val hashedBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
           val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))
@@ -120,22 +120,22 @@ class SastToSastConverter(document: Document, project: Project) {
 
   private def makeAbsolute(attributes: Attributes, select: String = ""): Option[Attributes] = {
     val attr =
-      if (select == "")
+      if select == "" then
         attributes.positional.lastOption
       else attributes.named.get(select)
     attr.map { template =>
       val abs = project.resolve(cwd, template)
       val rel = project.relativizeToProject(abs.get)
-      if (select == "") {
+      if select == "" then {
         Attributes(attributes.raw.map { attr =>
-          if (attr.id == "" && attr.value == attributes.target) Attribute("", rel.toString)
+          if attr.id == "" && attr.value == attributes.target then Attribute("", rel.toString)
           else attr
         })
       } else attributes.updated(select, rel.toString)
     }
   }
-  private def refAliases(resctx: Ctx[_], aliases: List[String], target: SastRef): Ctx[Unit] = {
-    aliases.foldLeft(resctx.ret(()))((c: Ctx[_], a) => c.addRefTarget(a, target).ret(()))
+  private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] = {
+    aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
   }
 
   def convertInlines(inners: Seq[Inline])(implicit ctx: Cta): Ctx[Chain[Inline]] =

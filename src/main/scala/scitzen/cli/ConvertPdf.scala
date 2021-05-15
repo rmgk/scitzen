@@ -8,7 +8,7 @@ import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object ConvertPdf {
   implicit val charset: Charset = StandardCharsets.UTF_8
@@ -71,13 +71,13 @@ object ConvertPdf {
 
         val successfile = temptexdir / "lastsuccess.sha1"
         val scripthash  = Hashes.sha1hex(documentString)
-        if (successfile.exists && successfile.contentAsString == scripthash) ()
+        if successfile.exists && successfile.contentAsString == scripthash then ()
         else {
           temptexfile.write(documentString)
           val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
           targetfile.delete(swallowIOExceptions = true)
           res.foreach(_.linkTo(targetfile))
-          if (res.isDefined) successfile.write(scripthash)
+          if res.isDefined then successfile.write(scripthash)
         }
       }
   }

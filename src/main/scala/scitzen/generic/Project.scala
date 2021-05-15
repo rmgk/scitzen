@@ -19,7 +19,7 @@ case class Project(root: File, config: ProjectConfig, definitions: Map[String, T
   def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File = {
     val rawPath = Paths.get(pathString)
     val res =
-      if (rawPath.isAbsolute) File(root, Paths.get("/").relativize(rawPath).toString)
+      if rawPath.isAbsolute then File(root, Paths.get("/").relativize(rawPath).toString)
       else currentWorkingDirectory / pathString
     scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
     res
@@ -39,18 +39,18 @@ object Project {
   val scitzenconfig: String = "scitzen.toml"
 
   def findRoot(source: File): Option[File] = {
-    if ((source / scitzenconfig).isRegularFile) Some(source)
+    if (source / scitzenconfig).isRegularFile then Some(source)
     else source.parentOption.flatMap(findRoot)
   }
 
   def fromSource(file: File): Option[Project] = {
-    if (isScim(file)) {
+    if isScim(file) then {
       findRoot(file) match {
         case None       => Some(Project(file.parent, ProjectConfig(), Map.empty))
         case Some(file) => fromConfig(file)
       }
-    } else if (file.isDirectory) {
-      if ((file / scitzenconfig).isRegularFile) {
+    } else if file.isDirectory then {
+      if (file / scitzenconfig).isRegularFile then {
         fromConfig(file)
       } else Some(Project(file, ProjectConfig(), Map.empty))
     } else None
@@ -73,7 +73,7 @@ object Project {
 
   val fileEnding = "scim"
   def discoverSources(source: File): List[File] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     source match {
       case f if f.isRegularFile => List(f)
       case f if f.isDirectory =>

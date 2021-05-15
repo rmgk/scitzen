@@ -33,7 +33,7 @@ object Format {
   def formatContent(file: File, originalContent: String, sast: Seq[Sast]): Unit = {
     val result    = SastToScimConverter.toScimS(sast)
     val resultStr = result.iterator.mkString("", "\n", "\n")
-    if (resultStr != originalContent) {
+    if resultStr != originalContent then {
       scribe.info(s"formatting ${file.name}")
       file.write(resultStr)
     }
@@ -42,7 +42,7 @@ object Format {
   def renameFileFromHeader(f: File, sdoc: Article): Unit = {
     val newName: String = canonicalName(sdoc) + ".scim"
 
-    if (newName != f.name) {
+    if newName != f.name then {
       scribe.info(s"rename ${f.name} to $newName")
       f.renameTo(newName)
     }

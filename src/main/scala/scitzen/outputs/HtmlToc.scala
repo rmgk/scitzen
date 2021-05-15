@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scalatags.Text.all._
+import scalatags.Text.all.*
 import scitzen.sast.Section
 
 object HtmlToc {
@@ -14,7 +14,7 @@ object HtmlToc {
         case Nil => None
         case (head @ Section(title, _, attr, prov)) :: rest =>
           val (sub, other) = rest.span(e => e > head)
-          val subtags      = if (depth < maxdepth) recurse(sub, depth + 1) else None
+          val subtags      = if depth < maxdepth then recurse(sub, depth + 1) else None
           val label        = attr.named.getOrElse("label", title.str)
           val thistag      = li(a(href := s"#$label", title.str), subtags.map(ol(_)))
           val nexttag      = recurse(other, depth)

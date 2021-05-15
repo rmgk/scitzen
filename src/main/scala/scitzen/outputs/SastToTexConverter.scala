@@ -8,7 +8,7 @@ import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporte
 import scitzen.sast.MacroCommand.{
   Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
 }
-import scitzen.sast._
+import scitzen.sast.*
 
 class SastToTexConverter(
     project: Project,
@@ -22,11 +22,11 @@ class SastToTexConverter(
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
-  type Cta    = Ctx[_]
+  type Cta    = Ctx[?]
 
   def articleHeader(article: Article, cta: Cta): CtxCS = {
     val hasToc = cta.features.contains("tableofcontents")
-    val fm     = if (hasToc) Chain("\\frontmatter") else Chain.empty
+    val fm     = if hasToc then Chain("\\frontmatter") else Chain.empty
 
     val ilc    = inlineValuesToTex(article.header.title.inl)(cta)
     val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
@@ -75,7 +75,7 @@ class SastToTexConverter(
         val ilc = inlineValuesToTex(title.inl)(ctx)
 
         val pushed   = ilc.push(section)
-        val numbered = if (attr.named.get("style").contains("unnumbered")) "*" else ""
+        val numbered = if attr.named.get("style").contains("unnumbered") then "*" else ""
         val header = prefix match {
           case "==" =>
             s"\\chapter$numbered[${ilc.data}]{${ilc.data}}"
@@ -94,7 +94,7 @@ class SastToTexConverter(
           case Nil => ctx.ret(Chain.nil)
 
           case ListItem(marker, _, None | Some(Slist(_))) :: _ =>
-            val listType = if (marker.contains(".")) "enumerate" else "itemize"
+            val listType = if marker.contains(".") then "enumerate" else "itemize"
             s"\\begin{$listType}" +:
               ctx.fold[ListItem, String](children) { (ctx, child) =>
                 val inlineCtx  = inlineValuesToTex(child.text.inl)(ctx).map(s => Chain(s"\\item{$s}"))
@@ -134,7 +134,7 @@ class SastToTexConverter(
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(implicit ctx: Cta): CtxCS = {
     val args      = attributes.positional.tail
-    val optionals = if (args.isEmpty) "" else args.mkString("[", "; ", "]")
+    val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
     val label     = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
       sastSeqToTex(content) :+
@@ -177,7 +177,7 @@ class SastToTexConverter(
         }
 
       case Fenced(text) =>
-        if (tlblock.attributes.named.contains(ImageTarget.Tex.name)) {
+        if tlblock.attributes.named.contains(ImageTarget.Tex.name) then {
           val target = tlblock.attributes.named(ImageTarget.Tex.name)
           inlineToTex(Macro(
             Image,
@@ -200,7 +200,7 @@ class SastToTexConverter(
                   text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
               }
               val restext =
-                if (!tlblock.attributes.positional.contains("highlight")) labeltext
+                if !tlblock.attributes.positional.contains("highlight") then labeltext
                 else {
                   labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
                 }
@@ -212,7 +212,7 @@ class SastToTexConverter(
 
     }
 
-    if (project.config.notes.contains("hide")) innerCtx
+    if project.config.notes.contains("hide") then innerCtx
     else {
       tlblock.attributes.namedT.get("note").fold(innerCtx) { note =>
         inlineValuesToTex(note.inl)(innerCtx).map { (content: String) =>
@@ -277,7 +277,7 @@ class SastToTexConverter(
             val scope      = attributes.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
             val candidates = References.filterCandidates(scope, labels.getOrElse(attributes.target, Nil))
 
-            if (candidates.sizeIs > 1)
+            if candidates.sizeIs > 1 then
               scribe.error(
                 s"multiple resolutions for ${attributes.target}" +
                   reporter(mcro) +
@@ -304,7 +304,7 @@ class SastToTexConverter(
           case Link =>
             ctx.retc {
               val target = attributes.target
-              if (attributes.positional.size > 1) {
+              if attributes.positional.size > 1 then {
                 val name = "{" + latexencode(attributes.positional.head) + "}"
                 s"\\href{$target}{$name}"
               } else s"\\url{$target}"

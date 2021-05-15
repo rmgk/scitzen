@@ -1,6 +1,6 @@
 package scitzen.cli
 
-import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.core.*
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
 import scitzen.sast.MacroCommand

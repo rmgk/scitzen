@@ -34,11 +34,11 @@ case class SastToTextConverter(
                 attr.named.get("equals").forall(_ == value)
               case None => false
             }
-            if (attr.named.contains("not")) !res else res
+            if attr.named.contains("not") then !res else res
           case _ => true
         }
 
-        if (!filterBlock) Nil
+        if !filterBlock then Nil
         else {
           blockType match {
             case Paragraph(content)      => List(convertInline(content.inl))
@@ -53,7 +53,7 @@ case class SastToTextConverter(
         mcro.command match {
 
           case Lookup =>
-            if (!definitions.contains(attributes.target)) scribe.error(s"could not resolve ${attributes.target}")
+            if !definitions.contains(attributes.target) then scribe.error(s"could not resolve ${attributes.target}")
             List(definitions(attributes.target))
 
           case Include =>

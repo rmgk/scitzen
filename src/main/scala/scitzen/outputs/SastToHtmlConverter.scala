@@ -1,16 +1,16 @@
 package scitzen.outputs
 
-import better.files._
+import better.files.*
 import cats.data.Chain
-import cats.implicits._
+import cats.implicits.*
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand._
-import scitzen.sast._
+import scitzen.sast.MacroCommand.*
+import scitzen.sast.*
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
@@ -21,18 +21,18 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     preprocessed: PreprocessedResults,
 ) {
 
-  import bundle.all._
+  import bundle.all.*
   import bundle.tags2.{article, section, time}
 
   type CtxCF  = ConversionContext[Chain[Frag]]
   type Ctx[T] = ConversionContext[T]
-  type Cta    = Ctx[_]
+  type Cta    = Ctx[?]
 
   def includeResolver: DocumentDirectory = preprocessed.directory
   def articles: List[Article]            = preprocessed.articles
 
   val syncPos: Int =
-    if (sync.exists(_._1 == pathManager.cwf)) sync.get._2
+    if sync.exists(_._1 == pathManager.cwf) then sync.get._2
     else Int.MaxValue
 
   def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF = {
@@ -42,7 +42,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   def categoriesSpan(categories: Seq[String]): Option[Tag] = {
     Option.when(categories.nonEmpty)(
-      span(cls := "category")(categories.map(c => stringFrag(s" $c ")): _*)
+      span(cls := "category")(categories.map(c => stringFrag(s" $c "))*)
     )
   }
 
@@ -58,7 +58,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         categoriesSpan(categories) ++
         article.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
 
-    if (metalist.nonEmpty) div(cls := "metadata")(metalist.toSeq: _*) else frag()
+    if metalist.nonEmpty then div(cls := "metadata")(metalist.toSeq*) else frag()
   }
 
   def articleHeader(article: Article)(ctx: Cta): Ctx[Frag] = {
@@ -75,7 +75,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case sec @ Section(title, level, _, _) =>
         inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
           val addDepth: Int =
-            if (level.contains("=")) 0
+            if level.contains("=") then 0
             else
               ctx.sections.iterator
                 .map(_.prefix)
@@ -87,7 +87,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case Slist(Nil) => ctx.empty
       case Slist(children) => children.head.content match {
           case None | Some(Slist(_)) =>
-            val listTag = if (children.head.marker.contains(".")) ol else ul
+            val listTag = if children.head.marker.contains(".") then ol else ul
             ctx.fold[ListItem, Frag](children) { (ctx, c) =>
               listItemToHtml(c)(ctx).map(i => Chain(li(i.toList)))
             }.map(i => Chain(listTag(i.toList)))
@@ -95,7 +95,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             ctx.fold[ListItem, Frag](children) { (ctx, c) =>
               val inlinesCtx = inlineValuesToHTML(c.text.inl)(ctx)
               c.content.fold(inlinesCtx.empty[Frag])(convertSingle(_)(inlinesCtx)).map { innerFrags =>
-                Chain(dt(inlinesCtx.data.toList: _*), dd(innerFrags.toList))
+                Chain(dt(inlinesCtx.data.toList*), dd(innerFrags.toList))
               }
             }.map(i => Chain(dl(i.toList)))
         }
@@ -165,12 +165,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               val bq = blockquote(innerHtml.toList)
               // first argument is "quote" we concat the rest and treat them as a single entity
               val title = tLBlock.attributes.positional.drop(1)
-              Chain(if (title.nonEmpty) bq(cite(title)) else bq)
+              Chain(if title.nonEmpty then bq(cite(title)) else bq)
             }
           case _ =>
             val prov = tLBlock.prov
             convertBlock(tLBlock).map { html =>
-              if (prov.start <= syncPos && syncPos <= prov.end) {
+              if prov.start <= syncPos && syncPos <= prov.end then {
                 scribe.info(s"highlighting $syncPos: $prov")
                 div(id := "highlight") +: html
               } else html
@@ -187,16 +187,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent).map { blockContent =>
-          if (delimiter.isBlank) blockContent
+          if delimiter.isBlank then blockContent
           else {
-            val tag = if (sBlock.command == "figure") figure else section
+            val tag = if sBlock.command == "figure" then figure else section
             val fig = tag(blockContent.toList)
             Chain(sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l)))
           }
         }
 
       case Fenced(text) =>
-        if (sBlock.attributes.named.contains(ImageTarget.Html.name)) {
+        if sBlock.attributes.named.contains(ImageTarget.Html.name) then {
           val target = sBlock.attributes.named(ImageTarget.Html.name)
           convertSingle(Macro(
             Image,
@@ -213,13 +213,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             // It may wrap to fit the screen content
             case _ =>
               val labeltext = {
-                if (!sBlock.attributes.named.contains("label")) text
+                if !sBlock.attributes.named.contains("label") then text
                 else {
                   text.replaceAll(""":§([^§]*?)§""", "")
                 }
               }
               val initTag: Tag =
-                if (!sBlock.attributes.positional.contains("highlight")) pre(code(labeltext))
+                if !sBlock.attributes.positional.contains("highlight") then pre(code(labeltext))
                 else {
                   val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
                     _._2 + 1
@@ -277,7 +277,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 code(bibid.trim)
             }
             val cctx = ctx.cite(citations.flatMap(_._2))
-            if (attrs.arguments.nonEmpty) {
+            if attrs.arguments.nonEmpty then {
               cctx.retc(frag(s"${attrs.arguments.head}\u00A0", anchors))
             } else cctx.retc(anchors)
 
@@ -293,7 +293,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val scope      = attrs.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
             val candidates = References.filterCandidates(scope, preprocessed.labels.getOrElse(attrs.target, Nil))
 
-            if (candidates.sizeIs > 1)
+            if candidates.sizeIs > 1 then
               scribe.error(
                 s"multiple resolutions for ${attrs.target}" +
                   reporter(mcro.prov) +
@@ -328,7 +328,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }
 
           case Lookup =>
-            if (pathManager.project.definitions.contains(attrs.target))
+            if pathManager.project.definitions.contains(attrs.target) then
               inlineValuesToHTML(pathManager.project.definitions(attrs.target).inl)(ctx)
             else {
               scribe.warn(s"unknown name ${attrs.target}" + reporter(mcro))
@@ -365,7 +365,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 val mw   = java.lang.Double.parseDouble(attrs.named.getOrElse("maxwidth", "1")) * 100
                 ctx.requireInOutput(target, path).retc {
                   val filename = path.getFileName.toString
-                  if (videoEndings.exists(filename.endsWith))
+                  if videoEndings.exists(filename.endsWith) then
                     video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
                   else img(src := path.toString, style := s"max-width: $mw%")
                 }

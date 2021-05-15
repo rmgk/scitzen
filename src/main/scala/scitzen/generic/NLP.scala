@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import better.files.File
-import cats.implicits._
+import cats.implicits.*
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Sast
 

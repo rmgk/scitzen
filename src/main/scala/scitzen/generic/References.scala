@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import scitzen.sast.{Block, Sast, Section}
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 case class SastRef(scope: File, sast: Sast, directArticle: Option[Article])
 
@@ -24,7 +24,7 @@ object References {
 
         val best     = sorted.head._2
         val bestOnly = sorted.takeWhile(_._2 == best)
-        (if (bestOnly.size == 1) bestOnly else sorted).map(_._1)
+        (if bestOnly.size == 1 then bestOnly else sorted).map(_._1)
     }
 
   }

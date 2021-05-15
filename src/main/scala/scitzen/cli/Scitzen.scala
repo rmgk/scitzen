@@ -1,7 +1,7 @@
 package scitzen.cli
 
-import better.files._
-import cats.implicits._
+import better.files.*
+import cats.implicits.*
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.extern.{ImageConverter, ImageTarget}
@@ -87,24 +87,24 @@ object ConvertProject {
 
     ImageConverter.preprocessImages(project, documentDirectory, List(ImageTarget.Html, ImageTarget.Tex), preprocessed)
 
-    if (project.config.format.contains("content")) {
+    if project.config.format.contains("content") then {
       Format.formatContents(documentDirectory)
       scribe.info(s"formatted contents ${timediff()}")
     }
-    if (project.config.format.contains("filename")) {
+    if project.config.format.contains("filename") then {
       Format.formatRename(documentDirectory)
       scribe.info(s"formatted filenames ${timediff()}")
     }
-    if (project.config.outputType.contains("html")) {
+    if project.config.outputType.contains("html") then {
       val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
       ConvertHtml.convertToHtml(project, sync, preprocessed)
       scribe.info(s"generated html ${timediff()}")
     }
-    if (project.config.outputType.contains("pdf")) {
+    if project.config.outputType.contains("pdf") then {
       ConvertPdf.convertToPdf(project, preprocessed)
       scribe.info(s"generated pdfs ${timediff()}")
     }
-    if (imageFileMap) {
+    if imageFileMap then {
       ImageReferences.listAll(project, documentDirectory)
       scribe.info(s"generated imagemap ${timediff()}")
     }

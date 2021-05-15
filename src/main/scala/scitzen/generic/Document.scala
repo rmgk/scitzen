@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import better.files.File
-import cats.implicits._
+import cats.implicits.*
 import scitzen.parser.Parse
 import scitzen.sast.{Macro, Prov, Sast}
 
@@ -36,7 +36,7 @@ final class FileReporter(file: File, content: String) extends Reporter {
   lazy val newLines: Seq[Int] = {
     def findNL(idx: Int, found: List[Int]): Array[Int] = {
       val res = content.indexOf('\n', idx + 1)
-      if (res >= 0) findNL(res, res :: found)
+      if res >= 0 then findNL(res, res :: found)
       else found.toArray.reverse
     }
 
@@ -45,7 +45,7 @@ final class FileReporter(file: File, content: String) extends Reporter {
 
   def indexToPosition(idx: Int): (Int, Int) = {
     val ip     = newLines.search(idx).insertionPoint
-    val offset = if (ip == 0) 0 else newLines(ip - 1)
+    val offset = if ip == 0 then 0 else newLines(ip - 1)
     (ip + 1, idx - offset)
   }
 

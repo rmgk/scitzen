@@ -1,13 +1,13 @@
 package scitzen.cli
 
-import better.files._
-import cats.implicits._
+import better.files.*
+import cats.implicits.*
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Bibliography, KatexConverter}
-import scitzen.generic._
+import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.compat.Codecs.mapCodec
-import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.core.*
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
@@ -102,7 +102,7 @@ object ConvertHtml {
   }
 
   private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any = {
-    if (katexMap.nonEmpty) {
+    if katexMap.nonEmpty then {
       katexmapfile.parent.createDirectories()
       katexmapfile.writeByteArray(writeToArray[Map[String, String]](
         katexMap,
@@ -120,7 +120,7 @@ object ConvertHtml {
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
-  ): ConversionContext[_] = {
+  ): ConversionContext[?] = {
 
     val biblio = makeBib(project, article)
 
@@ -140,7 +140,7 @@ object ConvertHtml {
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
     val citations =
-      if (bibEntries.isEmpty) Nil
+      if bibEntries.isEmpty then Nil
       else {
         import scalatags.Text.all.{SeqFrag, h1, id, li, stringAttr, stringFrag, ul}
         List(h1("Bibliography"), ul(bibEntries.map { be => li(id := be.id, be.format) }))

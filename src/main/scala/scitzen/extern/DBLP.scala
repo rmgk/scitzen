@@ -5,7 +5,7 @@ import java.net.URI
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
-import scala.jdk.FutureConverters._
+import scala.jdk.FutureConverters.*
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object DBLP {

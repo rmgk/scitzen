@@ -1,6 +1,6 @@
 package scitzen.extern
 
-import better.files.{File, _}
+import better.files.{File, *}
 import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
@@ -10,7 +10,7 @@ import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]) {
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
@@ -24,10 +24,10 @@ object ImageTarget {
 }
 
 case class ITargetPrediction(project: Project, cwd: File) {
-  import scitzen.extern.ImageTarget._
+  import scitzen.extern.ImageTarget.*
   def predictMacro(attributes: Attributes): Attributes = {
     List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
-      if (target.requiresConversion(attr.target)) {
+      if target.requiresConversion(attr.target) then {
         val abs        = project.resolve(cwd, attr.target).get
         val filename   = s"${abs.nameWithoutExtension(false)}.${target.preferredFormat}"
         val rel        = project.root.relativize(abs)
@@ -72,7 +72,7 @@ object ImageConverter {
     macros.valuesIterator.foreach { (mcro, doc) =>
       val file = project.resolve(doc.file.parent, mcro.attributes.target)
       converters.foreach { (t, ic) =>
-        if (t.requiresConversion(mcro.attributes.target) && file.isDefined) {
+        if t.requiresConversion(mcro.attributes.target) && file.isDefined then {
           converters(t).applyConversion(file.get, mcro.attributes).map(f => (t -> f))
         }
       }
@@ -141,14 +141,15 @@ class ImageConverter(
   private def convertExternal(file: File, command: CommandFunction): File = {
     val relative = project.root.relativize(file)
     val targetfile = {
-      if (project.cacheDir.isParentOf(file))
+      if project.cacheDir.isParentOf(file) then
         file.sibling(file.nameWithoutExtension(includeAll = false) + s".$preferredFormat")
-      else File((project.cacheDir / "convertedImages")
-        .path.resolve(relative)
-        .resolve(file.nameWithoutExtension + s".$preferredFormat"))
+      else
+        File((project.cacheDir / "convertedImages")
+          .path.resolve(relative)
+          .resolve(file.nameWithoutExtension + s".$preferredFormat"))
     }
     val sourceModified = file.lastModifiedTime
-    if (!targetfile.exists || targetfile.lastModifiedTime != sourceModified) {
+    if !targetfile.exists || targetfile.lastModifiedTime != sourceModified then {
       targetfile.parent.createDirectories()
       scribe.debug(s"converting $file to $targetfile")
       new ProcessBuilder(command.genCommand(file, targetfile).asJava)
@@ -176,7 +177,7 @@ class ImageConverter(
     converter match {
       case "tex" =>
         val pdffile = texconvert(templatedContent, dir, name)
-        if (preferredFormat == "svg" || preferredFormat == "png") Some(pdfToCairo(pdffile))
+        if preferredFormat == "svg" || preferredFormat == "png" then Some(pdfToCairo(pdffile))
         else Some(pdffile)
       case gr @ "graphviz" =>
         Some(graphviz(templatedContent, dir, name, preferredFormat))
@@ -207,7 +208,7 @@ class ImageConverter(
   def graphviz(content: String, dir: File, name: String, format: String): File = {
     val bytes  = content.getBytes(StandardCharsets.UTF_8)
     val target = dir / (name + s".$format")
-    if (!target.exists) {
+    if !target.exists then {
       dir.createDirectories()
 
       val start = System.nanoTime()
@@ -228,7 +229,7 @@ class ImageConverter(
     val bytes         = content.getBytes(StandardCharsets.UTF_8)
     val target        = dir / (name + s".$format")
     val mermaidSource = dir / (name + ".mermaid")
-    if (!target.exists) {
+    if !target.exists then {
       val start = System.nanoTime()
 
       mermaidSource.createIfNotExists(createParents = true)
@@ -243,7 +244,7 @@ class ImageConverter(
 
   def texconvert(content: String, dir: File, name: String): File = {
     val target = dir / (name + ".pdf")
-    if (target.exists) target
+    if target.exists then target
     else {
       val texbytes = content.getBytes(StandardCharsets.UTF_8)
       val dir      = target.parent
