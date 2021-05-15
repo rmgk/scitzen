@@ -3,14 +3,14 @@ package scitzen.outputs
 import scalatags.Text.all.*
 import scitzen.sast.Section
 
-object HtmlToc {
+object HtmlToc:
 
   val maxdepth = 2
 
-  def tableOfContents(docsections: List[Section]): Option[Frag] = {
+  def tableOfContents(docsections: List[Section]): Option[Frag] =
 
-    def recurse(remaining: List[Section], depth: Int): Option[Frag] = {
-      remaining match {
+    def recurse(remaining: List[Section], depth: Int): Option[Frag] =
+      remaining match
         case Nil => None
         case (head @ Section(title, _, attr, prov)) :: rest =>
           val (sub, other) = rest.span(e => e > head)
@@ -19,9 +19,5 @@ object HtmlToc {
           val thistag      = li(a(href := s"#$label", title.str), subtags.map(ol(_)))
           val nexttag      = recurse(other, depth)
           Some(SeqFrag(thistag :: nexttag.toList))
-      }
-    }
 
     recurse(docsections, 1).map(ol(_))
-  }
-}

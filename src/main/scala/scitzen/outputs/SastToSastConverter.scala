@@ -8,7 +8,7 @@ import scitzen.generic.{Article, Document, Project, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
 import scitzen.sast.*
 
-class SastToSastConverter(document: Document, project: Project) {
+class SastToSastConverter(document: Document, project: Project):
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
@@ -21,44 +21,39 @@ class SastToSastConverter(document: Document, project: Project) {
 
   def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
 
-  def findArticle(ctx: Cta, self: Section): Option[Article] = {
+  def findArticle(ctx: Cta, self: Section): Option[Article] =
     (self +: ctx.sections).find(!Article.notArticleHeader(_)).collect {
       case sect @ Section(_, "=", _, _) => Article(sect, Nil, Document(cwf, "", Nil))
     }
-  }
 
   def ensureUniqueRef[A <: Sast](
       ctx: Cta,
       ref1: String,
       attr: Attributes,
-  ): Ctx[(List[String], Attributes)] = {
+  ): Ctx[(List[String], Attributes)] =
     val counter =
-      if ctx.labelledThings.contains(ref1) then {
+      if ctx.labelledThings.contains(ref1) then
         ctx.nextId.map(_.toString)
-      } else {
+      else
         ctx.ret("")
-      }
     val newLabel = s"$ref1 ($uid${counter.data})"
     val aliases  = ref1 :: newLabel :: attr.named.get("aliases").toList.flatMap(_.split(',').toList)
     counter.ret((aliases, attr.updated("label", newLabel)))
-  }
 
-  def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCS = {
+  def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
-  }
 
   def convertSingle(sast: Sast)(implicit ctx: Cta): Ctx[Sast] =
-    sast match {
+    sast match
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _, _) =>
-        val ctxWithRef = {
+        val ctxWithRef =
           val resctx          = ensureUniqueRef(ctx, sec.ref, sec.attributes)
           val (aliases, attr) = resctx.data
           val ublock          = sec.copy(attributes = attr)
           val target          = SastRef(cwf, ublock, findArticle(ctx, sec))
           refAliases(resctx, aliases, target).ret(ublock)
-        }
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
@@ -67,24 +62,22 @@ class SastToSastConverter(document: Document, project: Project) {
 
       case Slist(children) =>
         ctx.fold[ListItem, ListItem](children) { (ctx, child) =>
-          child.content match {
+          child.content match
             case None => ctx.ret(Chain(child))
             case Some(content) =>
               convertSingle(content)(ctx).map { con =>
                 Chain(ListItem(child.marker, child.text, Some(con)))
               }
-          }
         }.map { cs =>
           scitzen.sast.Slist(cs.iterator.toSeq)
         }
 
       case mcro: Macro =>
         convertMacro(mcro).map(identity(_): Sast)
-    }
 
-  def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] = {
+  def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
     // make all blocks labellable
-    val refctx: Ctx[Block] = block.attributes.named.get("label") match {
+    val refctx: Ctx[Block] = block.attributes.named.get("label") match
       case None => ctx.ret(block)
       case Some(ref) =>
         val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
@@ -92,11 +85,10 @@ class SastToSastConverter(document: Document, project: Project) {
         val ublock          = block.copy(attributes = attr)
         val target          = SastRef(cwf, ublock, None)
         refAliases(resctx, aliases, target).ret(ublock)
-    }
     val refblock      = refctx.data
     val refattributes = refblock.attributes
     val ublock        = makeAbsolute(refattributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
-    ublock.content match {
+    ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
           .map(il => Block(ublock.attributes, Paragraph(Text(il.toList)), ublock.prov): Sast)
@@ -107,18 +99,16 @@ class SastToSastConverter(document: Document, project: Project) {
         )
 
       case Fenced(text) =>
-        if ublock.attributes.named.contains("converter") then {
+        if ublock.attributes.named.contains("converter") then
           val contentHash = Hashes.sha1hex(text)
           val hashedBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
           val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))
           refctx.addConversionBlock(newBlock).ret(newBlock)
-        } else refctx.ret(ublock)
+        else refctx.ret(ublock)
 
       case SpaceComment(_) => refctx.ret(ublock)
-    }
-  }
 
-  private def makeAbsolute(attributes: Attributes, select: String = ""): Option[Attributes] = {
+  private def makeAbsolute(attributes: Attributes, select: String = ""): Option[Attributes] =
     val attr =
       if select == "" then
         attributes.positional.lastOption
@@ -126,37 +116,30 @@ class SastToSastConverter(document: Document, project: Project) {
     attr.map { template =>
       val abs = project.resolve(cwd, template)
       val rel = project.relativizeToProject(abs.get)
-      if select == "" then {
+      if select == "" then
         Attributes(attributes.raw.map { attr =>
           if attr.id == "" && attr.value == attributes.target then Attribute("", rel.toString)
           else attr
         })
-      } else attributes.updated(select, rel.toString)
+      else attributes.updated(select, rel.toString)
     }
-  }
-  private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] = {
+  private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
-  }
 
   def convertInlines(inners: Seq[Inline])(implicit ctx: Cta): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>
-      inline match {
+      inline match
         case inlineText: InlineText => ctx.ret(Chain.one(inlineText))
         case m: Macro               => convertMacro(m)(ctx).single
-      }
     }
 
-  def convertMacro(initial: Macro)(implicit ctx: Cta): Ctx[Macro] = {
-    val mcro = initial.command match {
-      case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a))
-      case _               => initial
-    }
-    mcro.command match {
+  def convertMacro(initial: Macro)(implicit ctx: Cta): Ctx[Macro] =
+    val mcro =
+      initial.command match
+        case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a))
+        case _               => initial
+    mcro.command match
       case Image =>
         val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))
         ctx.addImage(enhanced).ret(enhanced)
       case _ => ctx.ret(mcro)
-    }
-  }
-
-}

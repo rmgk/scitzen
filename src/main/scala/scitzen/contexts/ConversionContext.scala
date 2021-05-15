@@ -16,12 +16,11 @@ case class ConversionContext[T](
     usedCitations: List[BibEntry] = Nil,
     sections: List[Section] = Nil,
     features: Set[String] = Set.empty,
-) {
+):
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
 
-  def requireInOutput(source: File, relative: Path): ConversionContext[T] = {
+  def requireInOutput(source: File, relative: Path): ConversionContext[T] =
     copy(resourceMap = resourceMap.updated(source, relative))
-  }
 
   def useFeature(name: String): ConversionContext[T] = copy(features = features.incl(name))
 
@@ -52,9 +51,6 @@ case class ConversionContext[T](
       nctx.map(data => ctx.data ++ data)
     }
 
-  def katex(key: String): ConversionContext[String] = {
+  def katex(key: String): ConversionContext[String] =
     val (res, kconv) = katexConverter.convert(key)
     kconv.fold(this)(kc => copy(katexConverter = kc)).ret(res)
-  }
-
-}

@@ -14,20 +14,19 @@ import java.nio.file.Path
 import scala.annotation.tailrec
 import scala.util.Try
 
-object ConvertHtml {
+object ConvertHtml:
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
   // loading ressource statically allows Graal AOT to inline on build
-  val stylesheet: Array[Byte] = {
+  val stylesheet: Array[Byte] =
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
-  }
 
   def convertToHtml(
       project: Project,
       sync: Option[(File, Int)],
       preprocessed: PreprocessedResults,
-  ): Unit = {
+  ): Unit =
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
@@ -38,19 +37,18 @@ object ConvertHtml {
         NLP.loadFrom(project.nlpdir)
       }
 
-    val pathManager = {
+    val pathManager =
       val articleOutput = project.outputdir / "articles"
       articleOutput.createDirectories()
       HtmlPathManager(project.root, project, articleOutput)
-    }
 
     @tailrec
     def procRec(
         rem: List[Article],
         katexmap: Map[String, String],
         resourcemap: Map[File, Path]
-    ): (Map[String, String], Map[File, Path]) = {
-      rem match {
+    ): (Map[String, String], Map[File, Path]) =
+      rem match
         case Nil => (katexmap, resourcemap)
         case article :: rest =>
           val cctx = convertArticle(
@@ -64,22 +62,19 @@ object ConvertHtml {
             KatexConverter(katexmap, article.named.get("katexMacros").flatMap(project.resolve(project.root, _))),
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
-      }
-    }
 
     val (katexRes, resources) = procRec(preprocessed.articles, loadKatex(katexmapfile), Map.empty)
     pathManager.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
 
     makeindex(project, preprocessed, cssfile, pathManager)
-  }
 
   private def makeindex(
       project: Project,
       preprocessed: PreprocessedResults,
       cssfile: File,
       pathManager: HtmlPathManager
-  ): Unit = {
+  ): Unit =
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager)
     val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
@@ -93,23 +88,19 @@ object ConvertHtml {
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
       .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), None)
     project.outputdir./("index.html").write(res)
-  }
 
-  private def loadKatex(katexmapfile: File): Map[String, String] = {
+  private def loadKatex(katexmapfile: File): Map[String, String] =
     Try {
       readFromStream[Map[String, String]](katexmapfile.newInputStream)(mapCodec)
     }.getOrElse(Map())
-  }
 
-  private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any = {
-    if katexMap.nonEmpty then {
+  private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any =
+    if katexMap.nonEmpty then
       katexmapfile.parent.createDirectories()
       katexmapfile.writeByteArray(writeToArray[Map[String, String]](
         katexMap,
         WriterConfig.withIndentionStep(2)
       )(mapCodec))
-    }
-  }
 
   def convertArticle(
       article: Article,
@@ -120,7 +111,7 @@ object ConvertHtml {
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
-  ): ConversionContext[?] = {
+  ): ConversionContext[?] =
 
     val biblio = makeBib(project, article)
 
@@ -141,14 +132,13 @@ object ConvertHtml {
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
     val citations =
       if bibEntries.isEmpty then Nil
-      else {
+      else
         import scalatags.Text.all.{SeqFrag, h1, id, li, stringAttr, stringFrag, ul}
         List(h1("Bibliography"), ul(bibEntries.map { be => li(id := be.id, be.format) }))
-      }
 
     val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 
-    val res = article.header.attributes.named.get("htmlTemplate") match {
+    val res = article.header.attributes.named.get("htmlTemplate") match
       case None =>
         val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
 
@@ -173,18 +163,14 @@ object ConvertHtml {
           templatePath,
           templateSettings
         )
-    }
     val target = pathManager.articleOutputPath(article)
     target.write(res)
     convertedArticleCtx
-  }
 
-  def makeBib(project: Project, article: Article): Map[String, Bibliography.BibEntry] = {
+  def makeBib(project: Project, article: Article): Map[String, Bibliography.BibEntry] =
     article.named.get("bibliography").map { p =>
       val path = article.sourceDoc.file.parent / p
       Bibliography.parse(project.cacheDir)(path)
     }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
       case (be, i) => be.id -> be.copy(citekey = Some((i + 1).toString))
     }.toMap
-  }
-}

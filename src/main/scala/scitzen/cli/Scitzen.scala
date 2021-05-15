@@ -14,12 +14,11 @@ object Scitzen
     extends CommandApp(
       name = "scitzen",
       header = "Static page generator",
-      main = {
+      main =
         ConvertProject.command.options
-      }
     )
 
-object ConvertProject {
+object ConvertProject:
 
   val args = (
     Opts.argument[Path](metavar = "path")
@@ -39,38 +38,34 @@ object ConvertProject {
   val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
-        printJson match {
+        printJson match
           case Some(path) =>
             println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))
           case None =>
-            Project.fromSource(File(sourcedirRel)) match {
+            Project.fromSource(File(sourcedirRel)) match
               case None => scribe.error(s"could not find project for $sourcedirRel")
               case Some(project) =>
                 executeConversions(syncFileRelOption, syncPos, imageFileMap, project)
-            }
-        }
     }
   }
 
-  def makeTimediff(): () => String = {
+  def makeTimediff(): () => String =
     val starttime = System.nanoTime()
     var lasttime  = starttime
-    def timediff: String = {
+    def timediff: String =
       val now           = System.nanoTime()
       def diff(t: Long) = (now - t) / 1000000
       val res           = s"(${diff(starttime)}ms|${diff(lasttime)}ms)"
       lasttime = now
       res
-    }
     () => timediff
-  }
 
   private def executeConversions(
       syncFileRelOption: Option[Path],
       syncPos: Option[Int],
       imageFileMap: Boolean,
       project: Project
-  ): Unit = {
+  ): Unit =
     val timediff = makeTimediff()
 
     scribe.info(s"found project in ${project.root} ${timediff()}")
@@ -87,26 +82,19 @@ object ConvertProject {
 
     ImageConverter.preprocessImages(project, documentDirectory, List(ImageTarget.Html, ImageTarget.Tex), preprocessed)
 
-    if project.config.format.contains("content") then {
+    if project.config.format.contains("content") then
       Format.formatContents(documentDirectory)
       scribe.info(s"formatted contents ${timediff()}")
-    }
-    if project.config.format.contains("filename") then {
+    if project.config.format.contains("filename") then
       Format.formatRename(documentDirectory)
       scribe.info(s"formatted filenames ${timediff()}")
-    }
-    if project.config.outputType.contains("html") then {
+    if project.config.outputType.contains("html") then
       val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
       ConvertHtml.convertToHtml(project, sync, preprocessed)
       scribe.info(s"generated html ${timediff()}")
-    }
-    if project.config.outputType.contains("pdf") then {
+    if project.config.outputType.contains("pdf") then
       ConvertPdf.convertToPdf(project, preprocessed)
       scribe.info(s"generated pdfs ${timediff()}")
-    }
-    if imageFileMap then {
+    if imageFileMap then
       ImageReferences.listAll(project, documentDirectory)
       scribe.info(s"generated imagemap ${timediff()}")
-    }
-  }
-}

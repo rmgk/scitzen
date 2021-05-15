@@ -7,9 +7,9 @@ import scitzen.sast.MacroCommand
 import scitzen.compat.Codecs.Reference
 import scitzen.compat.Codecs.rferenceRW
 
-object ImageReferences {
+object ImageReferences:
 
-  def listAll(project: Project, documentDirectory: DocumentDirectory): Unit = {
+  def listAll(project: Project, documentDirectory: DocumentDirectory): Unit =
     val fileImageMap: Map[String, List[Reference]] = documentDirectory.documents.map { doc =>
       val cwf = doc.file
       val cwd = cwf.parent
@@ -25,14 +25,13 @@ object ImageReferences {
 
       val images = convertedCtx.imageMacros.filter(_.command == MacroCommand.Image).flatMap { mcro =>
         val path = mcro.attributes.target
-        project.resolve(cwd, path) match {
+        project.resolve(cwd, path) match
           case Some(target) =>
             //val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
             Some(Reference(target.pathAsString, mcro.prov.start, mcro.prov.end))
           case None =>
             scribe.warn(s"could not find $path in $cwd")
             None
-        }
       }
       cwf.pathAsString -> images
     }.filter(_._2.nonEmpty).toMap
@@ -40,5 +39,3 @@ object ImageReferences {
       fileImageMap,
       WriterConfig.withIndentionStep(2)
     )(rferenceRW))
-  }
-}

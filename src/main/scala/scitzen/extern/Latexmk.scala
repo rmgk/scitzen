@@ -2,9 +2,9 @@ package scitzen.extern
 
 import better.files.File
 
-object Latexmk {
+object Latexmk:
 
-  def latexmk(outputdir: File, jobname: String, sourceFile: File): Option[File] = {
+  def latexmk(outputdir: File, jobname: String, sourceFile: File): Option[File] =
     val start = System.nanoTime()
     scribe.info(s"compiling $sourceFile")
     outputdir.createDirectories()
@@ -30,12 +30,9 @@ object Latexmk {
         .redirectOutput((outputdir / "latexmk.out").toJava)
         .redirectError(errorFile.toJava)
         .start().waitFor()
-    if returnCode == 0 then {
+    if returnCode == 0 then
       scribe.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
       Some(outputdir / (jobname + ".pdf"))
-    } else {
+    else
       scribe.error(s"error tex compiling »$sourceFile« see »$errorFile«")
       None
-    }
-  }
-}

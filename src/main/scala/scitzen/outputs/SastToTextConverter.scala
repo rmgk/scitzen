@@ -12,9 +12,9 @@ case class Includes(project: Project, cwf: File, includeResolver: DocumentDirect
 case class SastToTextConverter(
     definitions: Map[String, String] = Map.empty,
     includes: Option[Includes] = None
-) {
+):
 
-  def convert(b: Seq[Sast]): Seq[String] = {
+  def convert(b: Seq[Sast]): Seq[String] =
     b.flatMap {
       case Section(title, _, _, _) =>
         List(convertInline(title.inl))
@@ -27,40 +27,38 @@ case class SastToTextConverter(
         }
 
       case Block(attr, blockType, _) =>
-        val filterBlock = attr.positional match {
-          case "if" :: parameter :: _ =>
-            val res = definitions.get(parameter) match {
-              case Some(value) =>
-                attr.named.get("equals").forall(_ == value)
-              case None => false
-            }
-            if attr.named.contains("not") then !res else res
-          case _ => true
-        }
+        val filterBlock =
+          attr.positional match
+            case "if" :: parameter :: _ =>
+              val res =
+                definitions.get(parameter) match
+                  case Some(value) =>
+                    attr.named.get("equals").forall(_ == value)
+                  case None => false
+              if attr.named.contains("not") then !res else res
+            case _ => true
 
         if !filterBlock then Nil
-        else {
-          blockType match {
+        else
+          blockType match
             case Paragraph(content)      => List(convertInline(content.inl))
             case Parsed(_, blockContent) => convert(blockContent)
             case Fenced(text)            => List(text)
             case SpaceComment(_)         => Nil
-          }
-        }
 
       case mcro: Macro =>
         val attributes = mcro.attributes
-        mcro.command match {
+        mcro.command match
 
           case Lookup =>
             if !definitions.contains(attributes.target) then scribe.error(s"could not resolve ${attributes.target}")
             List(definitions(attributes.target))
 
           case Include =>
-            includes match {
+            includes match
               case None => Nil
               case Some(Includes(project, cwf, includeResolver)) =>
-                project.resolve(cwf.parent, attributes.target).flatMap(includeResolver.byPath.get) match {
+                project.resolve(cwf.parent, attributes.target).flatMap(includeResolver.byPath.get) match
                   case Some(doc) =>
                     val included = includeResolver.byPath(doc.file)
 
@@ -70,14 +68,10 @@ case class SastToTextConverter(
                   case None =>
                     scribe.error(s"unknown addInclude ${attributes.target} in template ${cwf}")
                     Nil
-                }
-            }
 
           case _ => Nil
-        }
 
     }
-  }
 
   def convertInline(inners: Seq[Inline]): String =
     inners.map {
@@ -86,4 +80,3 @@ case class SastToTextConverter(
         definitions.get(attr.target).orElse(attr.named.get("default")).get
       case _: Macro => ""
     }.mkString("")
-}

@@ -4,16 +4,15 @@ import java.lang.ProcessBuilder.Redirect
 
 import better.files.*
 
-case class KatexConverter(cache: Map[String, String], katexdefs: Option[File]) {
+case class KatexConverter(cache: Map[String, String], katexdefs: Option[File]):
 
-  def convert(str: String): (String, Option[KatexConverter]) = {
-    cache.get(str) match {
+  def convert(str: String): (String, Option[KatexConverter]) =
+    cache.get(str) match
       case Some(res) => (res, None)
       case None =>
-        val pb = katexdefs match {
+        val pb = katexdefs match
           case None       => new ProcessBuilder("katex")
           case Some(file) => new ProcessBuilder("katex", "--macro-file", file.pathAsString)
-        }
         val process = pb.redirectInput(Redirect.PIPE)
           .redirectOutput(Redirect.PIPE)
           .start()
@@ -21,7 +20,3 @@ case class KatexConverter(cache: Map[String, String], katexdefs: Option[File]) {
         process.waitFor()
         val res = process.getInputStream.asString()
         (res, Some(copy(cache = cache.updated(str, res))))
-    }
-  }
-
-}

@@ -12,17 +12,16 @@ case class SastContext[T](
     imageMacros: List[Macro] = Nil,
     convertBlocks: List[Block] = Nil,
     sections: List[Section] = Nil,
-) {
+):
   def addImage(mcro: Macro): SastContext[T]            = copy(imageMacros = mcro :: imageMacros)
   def addConversionBlock(block: Block): SastContext[T] = copy(convertBlocks = block :: convertBlocks)
   def addSection(section: Section): SastContext[T]     = copy(sections = section :: sections)
 
   def nextId: SastContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
 
-  def addRefTarget(ref: String, secref: SastRef): SastContext[SastRef] = {
+  def addRefTarget(ref: String, secref: SastRef): SastContext[SastRef] =
     val old = labelledThings.getOrElse(ref, Nil)
     copy(labelledThings = labelledThings.updated(ref, secref :: old), data = secref)
-  }
 
   def ret[U](d: U): SastContext[U]      = copy(data = d)
   def map[U](f: T => U): SastContext[U] = ret(f(data))
@@ -34,4 +33,3 @@ case class SastContext[T](
       val nctx = f(ctx, elem)
       nctx.map(data => ctx.data ++ data)
     }
-}

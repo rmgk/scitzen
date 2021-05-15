@@ -2,7 +2,7 @@ package scitzen.generic
 
 import scitzen.outputs.SastToSastConverter
 
-class PreprocessedResults(project: Project, val documents: List[Document]) {
+class PreprocessedResults(project: Project, val documents: List[Document]):
 
   project.cacheDir.createDirectories()
 
@@ -19,14 +19,11 @@ class PreprocessedResults(project: Project, val documents: List[Document]) {
 
   val directory: DocumentDirectory = DocumentDirectory(preprocessedDocuments)
 
-  val labels: Map[String, List[SastRef]] = {
+  val labels: Map[String, List[SastRef]] =
     val all     = preprocessedCtxs.map(_.labelledThings)
     val allKeys = all.iterator.flatMap(_.keysIterator).toSet
     allKeys.iterator.map { key =>
       key -> all.flatMap(_.getOrElse(key, Nil))
     }.toMap
-  }
 
   val articles: List[Article] = preprocessedDocuments.flatMap { Article.articles }
-
-}

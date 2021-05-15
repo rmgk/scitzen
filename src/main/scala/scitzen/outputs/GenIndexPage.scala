@@ -4,7 +4,7 @@ import scitzen.generic.{Article, HtmlPathManager}
 import scitzen.sast.MacroCommand.Other
 import scitzen.sast.{Attribute, Attributes, Block, InlineText, Macro, Parsed, Prov, Sast, Section, Text}
 
-object GenIndexPage {
+object GenIndexPage:
 
   val months = Array(
     "January",
@@ -24,10 +24,10 @@ object GenIndexPage {
   def makeIndex(
       articles: List[Article],
       htmlPathManager: HtmlPathManager,
-  ): List[Sast] = {
+  ): List[Sast] =
     def ordering[T: Ordering]: Ordering[T] = Ordering[T].reverse
 
-    def sectionBy(pdocs: List[Article])(f: Article => String)(cont: List[Article] => List[Sast]): List[Sast] = {
+    def sectionBy(pdocs: List[Article])(f: Article => String)(cont: List[Article] => List[Sast]): List[Sast] =
       val sectionTitle = pdocs.groupBy(f)
       sectionTitle.toList.sortBy(_._1)(ordering).flatMap {
         case (key, docs) =>
@@ -37,14 +37,12 @@ object GenIndexPage {
             Block(Attributes(Nil), Parsed("", inner), Prov())
           )
       }
-    }
 
-    def secmon(fd: Article): String = {
+    def secmon(fd: Article): String =
       fd.date.fold("Dateless") { date =>
         val m = date.date.month
         s"${date.year}-$m " + months(m.toInt - 1)
       }
-    }
 
     sectionBy(articles)(secmon) { idocs =>
       idocs.sortBy(_.date)(ordering).flatMap { doc =>
@@ -66,6 +64,3 @@ object GenIndexPage {
         ))
       }
     }
-  }
-
-}

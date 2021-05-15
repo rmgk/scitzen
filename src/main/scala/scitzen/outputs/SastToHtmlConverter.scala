@@ -19,7 +19,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     sync: Option[(File, Int)],
     reporter: Reporter,
     preprocessed: PreprocessedResults,
-) {
+):
 
   import bundle.all.*
   import bundle.tags2.{article, section, time}
@@ -35,18 +35,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     if sync.exists(_._1 == pathManager.cwf) then sync.get._2
     else Int.MaxValue
 
-  def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF = {
+  def listItemToHtml(child: ListItem)(implicit ctx: Cta): CtxCF =
     val textCtx = inlineValuesToHTML(child.text.inl)(ctx)
     textCtx.data ++: child.content.fold(textCtx.empty[Frag])(convertSingle(_)(textCtx))
-  }
 
-  def categoriesSpan(categories: Seq[String]): Option[Tag] = {
+  def categoriesSpan(categories: Seq[String]): Option[Tag] =
     Option.when(categories.nonEmpty)(
       span(cls := "category")(categories.map(c => stringFrag(s" $c "))*)
     )
-  }
 
-  def tMeta(article: Article): generic.Frag[Builder, FragT] = {
+  def tMeta(article: Article): generic.Frag[Builder, FragT] =
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
@@ -59,19 +57,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         article.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
 
     if metalist.nonEmpty then div(cls := "metadata")(metalist.toSeq*) else frag()
-  }
 
-  def articleHeader(article: Article)(ctx: Cta): Ctx[Frag] = {
+  def articleHeader(article: Article)(ctx: Cta): Ctx[Frag] =
     inlineValuesToHTML(article.header.title.inl)(ctx).map { innerFrags =>
       frag(h1(id := article.header.ref, innerFrags.toList), tMeta(article))
     }
-  }
 
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
   def convertSeq(b: Seq[Sast])(implicit ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
-  def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF = {
-    singleSast match {
+  def convertSingle(singleSast: Sast)(implicit ctx: Cta): CtxCF =
+    singleSast match
       case sec @ Section(title, level, _, _) =>
         inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
           val addDepth: Int =
@@ -85,7 +81,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         }.push(sec)
 
       case Slist(Nil) => ctx.empty
-      case Slist(children) => children.head.content match {
+      case Slist(children) => children.head.content match
           case None | Some(Slist(_)) =>
             val listTag = if children.head.marker.contains(".") then ol else ul
             ctx.fold[ListItem, Frag](children) { (ctx, c) =>
@@ -98,11 +94,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 Chain(dt(inlinesCtx.data.toList*), dd(innerFrags.toList))
               }
             }.map(i => Chain(dl(i.toList)))
-        }
 
       case mcro: Macro =>
         val attributes = mcro.attributes
-        mcro.command match {
+        mcro.command match
           case Other("break") =>
             ctx.ret(Chain(hr))
 
@@ -121,16 +116,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             )))
 
           case Include =>
-            attributes.arguments.headOption match {
+            attributes.arguments.headOption match
               case Some("code") =>
-                pathManager.resolve(attributes.target) match {
+                pathManager.resolve(attributes.target) match
                   case None => inlineValuesToHTML(List(mcro))
                   case Some(file) =>
                     convertSingle(Block(attributes, Fenced(file.contentAsString), mcro.prov))
-                }
 
               case None =>
-                pathManager.resolve(attributes.target) match {
+                pathManager.resolve(attributes.target) match
                   case Some(file) =>
                     val doc = includeResolver.byPath(file)
                     new SastToHtmlConverter(
@@ -144,20 +138,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   case None =>
                     scribe.error(s"unknown include ${attributes.target}" + reporter(mcro.prov))
                     ctx.empty
-                }
 
               case Some(other) =>
                 scribe.error(s"unknown include type $other" + reporter(mcro.prov))
                 ctx.empty
-            }
 
           case other =>
             inlineValuesToHTML(List(mcro))
-        }
 
       case tLBlock: Block =>
         val positiontype = tLBlock.attributes.positional.headOption
-        positiontype match {
+        positiontype match
           case Some("quote") =>
             convertBlock(tLBlock).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
@@ -170,89 +161,79 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case _ =>
             val prov = tLBlock.prov
             convertBlock(tLBlock).map { html =>
-              if prov.start <= syncPos && syncPos <= prov.end then {
+              if prov.start <= syncPos && syncPos <= prov.end then
                 scribe.info(s"highlighting $syncPos: $prov")
                 div(id := "highlight") +: html
-              } else html
+              else html
             }
-        }
 
-    }
-  }
+  def convertBlock(sBlock: Block)(implicit ctx: Cta): CtxCF =
+    val innerCtx: CtxCF =
+      sBlock.content match
 
-  def convertBlock(sBlock: Block)(implicit ctx: Cta): CtxCF = {
-    val innerCtx: CtxCF = sBlock.content match {
+        case Paragraph(text) => inlineValuesToHTML(text.inl).map(cf => Chain(p(cf.toList)))
 
-      case Paragraph(text) => inlineValuesToHTML(text.inl).map(cf => Chain(p(cf.toList)))
-
-      case Parsed(delimiter, blockContent) =>
-        convertSeq(blockContent).map { blockContent =>
-          if delimiter.isBlank then blockContent
-          else {
-            val tag = if sBlock.command == "figure" then figure else section
-            val fig = tag(blockContent.toList)
-            Chain(sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l)))
-          }
-        }
-
-      case Fenced(text) =>
-        if sBlock.attributes.named.contains(ImageTarget.Html.name) then {
-          val target = sBlock.attributes.named(ImageTarget.Html.name)
-          convertSingle(Macro(
-            Image,
-            sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))),
-            sBlock.prov
-          ))(ctx)
-        } else
-          sBlock.command match {
-            // Preformatted plaintext, preserve linebreaks,
-            // but also wrap for linebreaks
-            case "text" => ctx.retc(pre(text))
-            // Code listing
-            // Use this for monospace, space preserving, line preserving text
-            // It may wrap to fit the screen content
-            case _ =>
-              val labeltext = {
-                if !sBlock.attributes.named.contains("label") then text
-                else {
-                  text.replaceAll(""":§([^§]*?)§""", "")
-                }
-              }
-              val initTag: Tag =
-                if !sBlock.attributes.positional.contains("highlight") then pre(code(labeltext))
-                else {
-                  val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
-                    _._2 + 1
-                  }.mkString(",")
-                  val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
-                  pre(code(txt, attr("data-line-numbers") := lines))
-                }
-
-              val respre = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
-              val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
-              ctx.retc(res)
+        case Parsed(delimiter, blockContent) =>
+          convertSeq(blockContent).map { blockContent =>
+            if delimiter.isBlank then blockContent
+            else
+              val tag = if sBlock.command == "figure" then figure else section
+              val fig = tag(blockContent.toList)
+              Chain(sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l)))
           }
 
-      case SpaceComment(_) => ctx.empty
-    }
+        case Fenced(text) =>
+          if sBlock.attributes.named.contains(ImageTarget.Html.name) then
+            val target = sBlock.attributes.named(ImageTarget.Html.name)
+            convertSingle(Macro(
+              Image,
+              sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))),
+              sBlock.prov
+            ))(ctx)
+          else
+            sBlock.command match
+              // Preformatted plaintext, preserve linebreaks,
+              // but also wrap for linebreaks
+              case "text" => ctx.retc(pre(text))
+              // Code listing
+              // Use this for monospace, space preserving, line preserving text
+              // It may wrap to fit the screen content
+              case _ =>
+                val labeltext =
+                  if !sBlock.attributes.named.contains("label") then text
+                  else
+                    text.replaceAll(""":§([^§]*?)§""", "")
+                val initTag: Tag =
+                  if !sBlock.attributes.positional.contains("highlight") then pre(code(labeltext))
+                  else
+                    val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
+                      _._2 + 1
+                    }.mkString(",")
+                    val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
+                    pre(code(txt, attr("data-line-numbers") := lines))
+
+                val respre = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
+                val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
+                ctx.retc(res)
+
+        case SpaceComment(_) => ctx.empty
 
     sBlock.attributes.namedT.get("note").fold(innerCtx) { note =>
       inlineValuesToHTML(note.inl)(innerCtx).map { content =>
         innerCtx.data :+ p(`class` := "marginnote", content.toList)
       }
     }
-  }
 
   def inlineValuesToHTML(inlines: Seq[Inline])(implicit ctx: Cta): CtxCF =
     ctx.fold(inlines) { (ctx, inline) => inlineToHTML(inline)(ctx) }
 
   def inlineToHTML(inlineSast: Inline)(implicit ctx: Cta): CtxCF =
-    inlineSast match {
+    inlineSast match
       case InlineText(str) => ctx.retc(stringFrag(str))
 
       case mcro: Macro =>
         val attrs = mcro.attributes
-        mcro.command match {
+        mcro.command match
           case Strong => ctx.retc(strong(attrs.target))
           case Emph   => ctx.retc(em(attrs.target))
           case Code   => ctx.retc(code(attrs.target))
@@ -277,9 +258,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 code(bibid.trim)
             }
             val cctx = ctx.cite(citations.flatMap(_._2))
-            if attrs.arguments.nonEmpty then {
+            if attrs.arguments.nonEmpty then
               cctx.retc(frag(s"${attrs.arguments.head}\u00A0", anchors))
-            } else cctx.retc(anchors)
+            else cctx.retc(anchors)
 
           case Link =>
             val target = attrs.target
@@ -303,13 +284,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
               val nameOpt    = attrs.arguments.headOption
               val articleOpt = targetDocument.directArticle
-              val fileRef = articleOpt match {
-                case Some(article) =>
-                  pathManager.relativeArticleTarget(article).toString
-                case _ => ""
-              }
+              val fileRef =
+                articleOpt match
+                  case Some(article) =>
+                    pathManager.relativeArticleTarget(article).toString
+                  case _ => ""
 
-              targetDocument.sast match {
+              targetDocument.sast match
                 case sec @ Section(title, _, _, _) => inlineValuesToHTML(title.inl).map { inner =>
                     Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
                   }
@@ -321,7 +302,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 case other =>
                   scribe.error(s"can not refer to $other")
                   ctx.empty
-              }
             }.getOrElse {
               scribe.error(s"no resolutions for »${attrs.target}«${reporter(mcro)}")
               ctx.retc(code(SastToScimConverter.macroToScim(mcro)))
@@ -330,13 +310,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Lookup =>
             if pathManager.project.definitions.contains(attrs.target) then
               inlineValuesToHTML(pathManager.project.definitions(attrs.target).inl)(ctx)
-            else {
+            else
               scribe.warn(s"unknown name ${attrs.target}" + reporter(mcro))
               ctx.retc(code(attrs.target))
-            }
 
           case Other(otherCommand) =>
-            otherCommand match {
+            otherCommand match
               case "footnote" =>
                 val target =
                   SastToTextConverter(
@@ -355,11 +334,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
               case _ => ctx.retc(unknownMacroOutput(mcro))
 
-            }
-
           case Image =>
             val target = attrs.named.getOrElse(ImageTarget.Html.name, attrs.target)
-            pathManager.project.resolve(pathManager.cwd, target) match {
+            pathManager.project.resolve(pathManager.cwd, target) match
               case Some(target) =>
                 val path = pathManager.relativizeImage(target)
                 val mw   = java.lang.Double.parseDouble(attrs.named.getOrElse("maxwidth", "1")) * 100
@@ -372,18 +349,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               case None =>
                 scribe.warn(s"could not find path ${target}" + reporter(mcro))
                 ctx.empty
-            }
-
-        }
-
-    }
 
   def reportPos(m: Macro): String = reporter(m)
 
-  def unknownMacroOutput(im: Macro): Tag = {
+  def unknownMacroOutput(im: Macro): Tag =
     val str = SastToScimConverter.macroToScim(im)
     scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)
-  }
-
-}

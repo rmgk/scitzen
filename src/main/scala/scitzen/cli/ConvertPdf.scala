@@ -10,13 +10,13 @@ import scitzen.outputs.SastToTexConverter
 import java.nio.charset.{Charset, StandardCharsets}
 import scala.jdk.CollectionConverters.*
 
-object ConvertPdf {
+object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8
 
   def convertToPdf(
       project: Project,
       preprocessed: PreprocessedResults,
-  ): Unit = {
+  ): Unit =
     preprocessed.articles
       .filter(_.header.attributes.named.contains("texTemplate"))
       .asJava.parallelStream().forEach { article =>
@@ -42,9 +42,8 @@ object ConvertPdf {
 
         val targetfile = outputdir / s"$articlename.pdf"
 
-        def fileFromParam(param: String): Option[File] = {
+        def fileFromParam(param: String): Option[File] =
           article.named.get(param).map(s => article.sourceDoc.file.parent / s.trim)
-        }
 
         val jobname    = targetfile.nameWithoutExtension(includeAll = false)
         val temptexdir = project.cacheDir / s"$articlename.outdir"
@@ -72,13 +71,10 @@ object ConvertPdf {
         val successfile = temptexdir / "lastsuccess.sha1"
         val scripthash  = Hashes.sha1hex(documentString)
         if successfile.exists && successfile.contentAsString == scripthash then ()
-        else {
+        else
           temptexfile.write(documentString)
           val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
           targetfile.delete(swallowIOExceptions = true)
           res.foreach(_.linkTo(targetfile))
           if res.isDefined then successfile.write(scripthash)
-        }
       }
-  }
-}

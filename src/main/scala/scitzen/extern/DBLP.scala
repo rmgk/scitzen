@@ -8,8 +8,8 @@ import java.time.Duration
 import scala.jdk.FutureConverters.*
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object DBLP {
-  def lookup(key: String) = {
+object DBLP:
+  def lookup(key: String) =
 
     val client = HttpClient.newBuilder.connectTimeout(Duration.ofSeconds(20)).build
 
@@ -21,6 +21,3 @@ object DBLP {
     System.out.println(response.body)
 
     client.sendAsync(request, BodyHandlers.ofString).asScala.foreach { r => println(r.body()) }
-
-  }
-}

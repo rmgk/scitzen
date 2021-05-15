@@ -7,20 +7,18 @@ import scalatags.Text.implicits.{Tag, raw, stringAttr}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{aside, main, nav}
 
-object HtmlPages {
+object HtmlPages:
   def apply(cssPath: String): HtmlPages = new HtmlPages(cssPath)
-}
 
-class HtmlPages(cssPath: String) {
+class HtmlPages(cssPath: String):
 
-  val tHead: Tag = {
+  val tHead: Tag =
     head(
       title := "Scitzen",
       link(href := cssPath, rel := "stylesheet", `type` := "text/css"),
       meta(name := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
       meta(charset := "UTF-8")
     )
-  }
 
   def htmlDocument(tag: Tag): String =
     "<!DOCTYPE html>\n" + tag.render
@@ -48,13 +46,9 @@ class HtmlPages(cssPath: String) {
       bodyClass: String,
       sidebar: Option[Frag],
       language: Option[String] = None
-  ): String = {
-
+  ): String =
     htmlDocument(html(tHead)(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,
       main(content)(language.map(lang := _).toSeq*)
     )))
-  }
-
-}
