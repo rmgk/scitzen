@@ -8,7 +8,7 @@ import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporte
 import scitzen.sast.MacroCommand.{
   Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
 }
-import scitzen.sast.*
+import scitzen.sast._
 
 class SastToTexConverter(
     project: Project,

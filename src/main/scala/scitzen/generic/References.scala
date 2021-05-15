@@ -3,7 +3,7 @@ package scitzen.generic
 import better.files.File
 import scitzen.sast.{Block, Sast, Section}
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 case class SastRef(scope: File, sast: Sast, directArticle: Option[Article])
 

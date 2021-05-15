@@ -1,13 +1,13 @@
 package scitzen.cli
 
-import better.files.*
-import cats.implicits.*
+import better.files._
+import cats.implicits._
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Bibliography, KatexConverter}
-import scitzen.generic.*
+import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.compat.Codecs.mapCodec
-import com.github.plokhotnyuk.jsoniter_scala.core.*
+import com.github.plokhotnyuk.jsoniter_scala.core._
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path

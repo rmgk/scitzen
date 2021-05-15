@@ -2,7 +2,7 @@ package scitzen.generic
 
 import java.nio.file.Path
 
-import better.files.*
+import better.files._
 import scitzen.cli.Format
 
 case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File):

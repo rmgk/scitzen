@@ -10,7 +10,7 @@ import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 object ImageConverter:
 

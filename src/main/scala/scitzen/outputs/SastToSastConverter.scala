@@ -6,7 +6,7 @@ import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, Project, SastRef}
 import scitzen.sast.MacroCommand.{Image, Include}
-import scitzen.sast.*
+import scitzen.sast._
 
 class SastToSastConverter(document: Document, project: Project):
 

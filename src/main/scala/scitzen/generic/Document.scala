@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import better.files.File
-import cats.implicits.*
+import cats.implicits._
 import scitzen.parser.Parse
 import scitzen.sast.{Macro, Prov, Sast}
 

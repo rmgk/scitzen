@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import better.files.File
-import cats.implicits.*
+import cats.implicits._
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Sast
 
@@ -38,7 +38,7 @@ case class NLP(stopwords: Map[String, Set[String]]):
 
 object NLP:
   def loadFrom(dir: File): NLP =
-    val stopwords = dir.glob("stopwords.*").map { sw =>
+    val stopwords = dir.glob("stopwords._").map { sw =>
       val lang  = sw.extension(includeDot = false).getOrElse("unknown")
       val words = sw.lines.toSet
       lang -> words

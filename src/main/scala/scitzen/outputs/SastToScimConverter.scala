@@ -1,11 +1,11 @@
 package scitzen.outputs
 
 import cats.data.Chain
-import cats.implicits.*
+import cats.implicits._
 import fastparse.P
 import scitzen.parser.AttributesParser
 import scitzen.sast.MacroCommand.Comment
-import scitzen.sast.*
+import scitzen.sast._
 
 import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex

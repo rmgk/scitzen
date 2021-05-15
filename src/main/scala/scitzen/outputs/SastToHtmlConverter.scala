@@ -1,16 +1,16 @@
 package scitzen.outputs
 
-import better.files.*
+import better.files._
 import cats.data.Chain
-import cats.implicits.*
+import cats.implicits._
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand.*
-import scitzen.sast.*
+import scitzen.sast.MacroCommand._
+import scitzen.sast._
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
@@ -21,7 +21,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     preprocessed: PreprocessedResults,
 ):
 
-  import bundle.all.*
+  import bundle.all._
   import bundle.tags2.{article, section, time}
 
   type CtxCF  = ConversionContext[Chain[Frag]]

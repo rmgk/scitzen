@@ -1,10 +1,10 @@
 package scitzen.cli
 
 import better.files.File
-import com.github.plokhotnyuk.jsoniter_scala.core.*
+import com.github.plokhotnyuk.jsoniter_scala.core._
 import scitzen.generic.{Document, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.parser.*
+import scitzen.parser._
 import scitzen.sast.{Prov}
 import scitzen.compat.Codecs.SastEncoder
 

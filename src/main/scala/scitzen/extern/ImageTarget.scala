@@ -10,8 +10,8 @@ import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
-import scala.jdk.CollectionConverters.*
-import scitzen.extern.ImageTarget.*
+import scala.jdk.CollectionConverters._
+import scitzen.extern.ImageTarget._
 
 
 enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]):

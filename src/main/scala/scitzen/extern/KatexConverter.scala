@@ -2,7 +2,7 @@ package scitzen.extern
 
 import java.lang.ProcessBuilder.Redirect
 
-import better.files.*
+import better.files._
 
 case class KatexConverter(cache: Map[String, String], katexdefs: Option[File]):
 

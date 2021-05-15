@@ -8,7 +8,7 @@ import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8

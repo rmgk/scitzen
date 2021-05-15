@@ -3,9 +3,9 @@ package scitzen.extern
 import java.nio.charset.StandardCharsets
 
 import better.files.File
-import scalatags.Text.all.*
+import scalatags.Text.all._
 
-import scitzen.compat.Codecs.*
+import scitzen.compat.Codecs._
 
 object Bibliography:
 
@@ -25,7 +25,7 @@ object Bibliography:
       frag(code(citekey), " ", formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
 
   def citeprocToBib(citeprocEntry: CiteprocEntry) =
-    import citeprocEntry.*
+    import citeprocEntry._
     BibEntry(
       id = id,
       authors = author.map(_.toAuthor),

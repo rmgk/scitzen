@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scalatags.Text.all.*
+import scalatags.Text.all._
 import scitzen.sast.Section
 
 object HtmlToc:

@@ -1,7 +1,7 @@
 package scitzen.cli
 
-import better.files.*
-import cats.implicits.*
+import better.files._
+import cats.implicits._
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.extern.{ImageConverter, ImageTarget}
