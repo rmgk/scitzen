@@ -1,8 +1,9 @@
 package scitzen.compat
 
+import scitzen.sast._
 import toml.Codecs._
 import com.github.plokhotnyuk.jsoniter_scala.core._
-import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
+import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
 
 case class ProjectConfig(
     output: String = "scitzen/out",
@@ -21,10 +22,18 @@ object Config {
     toml.Toml.parseAs[ProjectConfig](content)
   }
 
-  val mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
 }
 
-object CiteProcCodecs {
+object Codecs {
+
+  implicit val SastEncoder: JsonValueCodec[List[Sast]] =
+    JsonCodecMaker.make(CodecMakerConfig.withAllowRecursiveTypes(true))
+
+  val mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
+
+  case class Reference(file: String, start: Int, end: Int)
+
+  implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
   case class Author(givenName: Option[String], familyName: Option[String]) {
     def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")

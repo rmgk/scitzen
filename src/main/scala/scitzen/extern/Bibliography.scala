@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import better.files.File
 import scalatags.Text.all._
 
-import scitzen.compat.CiteProcCodecs._
+import scitzen.compat.Codecs._
 
 object Bibliography {
 

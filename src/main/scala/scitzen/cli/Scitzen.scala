@@ -39,10 +39,16 @@ object ConvertProject {
   val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
-        Project.fromSource(File(sourcedirRel)) match {
-          case None => scribe.error(s"could not find project for $sourcedirRel")
-          case Some(project) =>
-            executeConversions(syncFileRelOption, syncPos, imageFileMap, project)
+
+        printJson match {
+          case Some(path) =>
+            println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))
+          case None =>
+            Project.fromSource(File(sourcedirRel)) match {
+              case None => scribe.error(s"could not find project for $sourcedirRel")
+              case Some(project) =>
+                executeConversions(syncFileRelOption, syncPos, imageFileMap, project)
+            }
         }
     }
   }
@@ -98,6 +104,10 @@ object ConvertProject {
     if (project.config.outputType.contains("pdf")) {
       ConvertPdf.convertToPdf(project, preprocessed)
       scribe.info(s"generated pdfs ${timediff()}")
+    }
+    if (imageFileMap) {
+      ImageReferences.listAll(project, documentDirectory)
+      scribe.info(s"generated imagemap ${timediff()}")
     }
   }
 }

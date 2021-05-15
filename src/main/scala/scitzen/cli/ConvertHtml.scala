@@ -6,7 +6,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.{Bibliography, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
-import scitzen.compat.Config.mapCodec
+import scitzen.compat.Codecs.mapCodec
 import com.github.plokhotnyuk.jsoniter_scala.core._
 
 import java.nio.charset.{Charset, StandardCharsets}
