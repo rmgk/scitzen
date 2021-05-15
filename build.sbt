@@ -29,13 +29,8 @@ lazy val scitzen = project.in(file("."))
     strictCompile,
     libraryDependencies ++= Seq(
       decline.value.cross(CrossVersion.for3Use2_13),
-      betterFiles.value.cross(CrossVersion.for3Use2_13),
       scalatags.value.cross(CrossVersion.for3Use2_13),
-      scalatest.value.cross(CrossVersion.for3Use2_13),
-      scalacheck.value,
-      catsCore.value.cross(CrossVersion.for3Use2_13),
       normalizecss.value,
-      tomlScala.value.cross(CrossVersion.for3Use2_13),
     ),
     // libraryDependencies ++= jsoniterScalaAll.value,
     SassKeys.cssStyle := Maxified,
