@@ -57,7 +57,7 @@ object Project {
   }
 
   def fromConfig(file: File): Option[Project] = {
-    scitzen.compat.Config.parse((file / scitzenconfig).contentAsString) match {
+    scitzen.compat.ProjectConfig.parse((file / scitzenconfig).contentAsString) match {
       case Right(value) =>
         val definitions = value.definitions.view.mapValues(s => Text(Parse.inlineUnwrap(s, Prov()))).toMap
         Some(Project(file, value, definitions))

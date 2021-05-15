@@ -1,28 +1,8 @@
 package scitzen.compat
 
-import scitzen.sast._
-import toml.Codecs._
-import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
-
-case class ProjectConfig(
-    output: String = "scitzen/out",
-    cache: String = "scitzen/cache",
-    stopwords: String = "scitzen",
-    format: List[String] = Nil,
-    outputType: List[String] = Nil,
-    revealTemplate: Option[String] = None,
-    definitions: Map[String, String] = Map.empty,
-    texTemplate: Option[String] = None,
-    notes: Option[String] = None,
-)
-
-object Config {
-  def parse(content: String) = {
-    toml.Toml.parseAs[ProjectConfig](content)
-  }
-
-}
+import scitzen.sast.Sast
 
 object Codecs {
 
