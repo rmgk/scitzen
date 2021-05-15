@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters.*
+import scitzen.extern.ImageTarget.*
+
 
 enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]):
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
@@ -20,7 +22,6 @@ enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedF
   case Raster       extends ImageTarget("raster target", "png", List("svg", "pdf", "tex"))
 
 case class ITargetPrediction(project: Project, cwd: File):
-  import scitzen.extern.ImageTarget.*
   def predictMacro(attributes: Attributes): Attributes =
     List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
       if target.requiresConversion(attr.target) then
