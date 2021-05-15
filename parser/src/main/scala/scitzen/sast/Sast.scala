@@ -40,7 +40,6 @@ case class SpaceComment(content: String)                 extends BlockType
 
 case class Attributes(raw: Seq[Attribute]) {
 
-
   lazy val positionalT: Seq[Text] = raw.collect { case Attribute("", value) => value }
   lazy val argumentsT: Seq[Text]  = positionalT.dropRight(1)
   lazy val targetT: Text          = positionalT.last

@@ -13,7 +13,12 @@ object Parse {
   type Result[T] = Either[ParsingAnnotation, T]
 
   def parseResult[T](content: String, parser: P[_] => P[T], prov: Prov): Result[T] = {
-    val parsed = fastparse.parse(content, { p: P[_] => p.misc("provenanceOffset") = prov; parser(p) })
+    val parsed = fastparse.parse(
+      content,
+      { p: P[_] =>
+        p.misc("provenanceOffset") = prov; parser(p)
+      }
+    )
     parsed match {
       case Success(value, _) => value.asRight
       case f: Failure =>

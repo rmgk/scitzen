@@ -149,7 +149,7 @@ class SastToSastConverter(document: Document, project: Project) {
   def convertMacro(initial: Macro)(implicit ctx: Cta): Ctx[Macro] = {
     val mcro = initial.command match {
       case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a))
-      case _ => initial
+      case _               => initial
     }
     mcro.command match {
       case Image =>

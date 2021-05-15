@@ -39,7 +39,6 @@ object ConvertProject {
   val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
     args.mapN {
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
-
         printJson match {
           case Some(path) =>
             println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))

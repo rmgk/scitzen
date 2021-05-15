@@ -99,7 +99,10 @@ object Settings {
 }
 
 object Resolvers {
-  val stg     = resolvers += ("STG old bintray repo" at "http://www.st.informatik.tu-darmstadt.de/maven/").withAllowInsecureProtocol(true)
+  val stg =
+    resolvers += ("STG old bintray repo" at "http://www.st.informatik.tu-darmstadt.de/maven/").withAllowInsecureProtocol(
+      true
+    )
   val jitpack = resolvers += "jitpack" at "https://jitpack.io"
 
   /*

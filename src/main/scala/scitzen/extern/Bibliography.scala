@@ -35,9 +35,8 @@ object Bibliography {
       year = issued.flatMap(_.year),
       container = `container-title`,
       `type` = `type`
-      )
+    )
   }
-
 
   def parse(cacheDir: File)(source: File): List[BibEntry] = {
     val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))

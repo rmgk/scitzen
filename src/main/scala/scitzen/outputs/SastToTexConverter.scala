@@ -184,28 +184,29 @@ class SastToTexConverter(
             tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target))),
             tlblock.prov
           ))(ctx)
-        } else tlblock.attributes.positional.headOption match {
+        } else
+          tlblock.attributes.positional.headOption match {
 
-          case Some("text") =>
-            val latexenc = latexencode(text).trim
-              .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
-              .replace("\n", "\\newline{}\n")
-            ctx.ret(Chain("\\noindent", latexenc))
+            case Some("text") =>
+              val latexenc = latexencode(text).trim
+                .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
+                .replace("\n", "\\newline{}\n")
+              ctx.ret(Chain("\\noindent", latexenc))
 
-          case _ =>
-            val labeltext = tlblock.attributes.named.get("label") match {
-              case None => text
-              case Some(label) =>
-                text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
-            }
-            val restext =
-              if (!tlblock.attributes.positional.contains("highlight")) labeltext
-              else {
-                labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
+            case _ =>
+              val labeltext = tlblock.attributes.named.get("label") match {
+                case None => text
+                case Some(label) =>
+                  text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
               }
-            ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
+              val restext =
+                if (!tlblock.attributes.positional.contains("highlight")) labeltext
+                else {
+                  labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
+                }
+              ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
 
-        }
+          }
 
       case SpaceComment(_) => ctx.empty
 

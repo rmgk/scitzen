@@ -203,34 +203,35 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))),
             sBlock.prov
           ))(ctx)
-        } else sBlock.command match {
-          // Preformatted plaintext, preserve linebreaks,
-          // but also wrap for linebreaks
-          case "text" => ctx.retc(pre(text))
-          // Code listing
-          // Use this for monospace, space preserving, line preserving text
-          // It may wrap to fit the screen content
-          case _ =>
-            val labeltext = {
-              if (!sBlock.attributes.named.contains("label")) text
-              else {
-                text.replaceAll(""":§([^§]*?)§""", "")
+        } else
+          sBlock.command match {
+            // Preformatted plaintext, preserve linebreaks,
+            // but also wrap for linebreaks
+            case "text" => ctx.retc(pre(text))
+            // Code listing
+            // Use this for monospace, space preserving, line preserving text
+            // It may wrap to fit the screen content
+            case _ =>
+              val labeltext = {
+                if (!sBlock.attributes.named.contains("label")) text
+                else {
+                  text.replaceAll(""":§([^§]*?)§""", "")
+                }
               }
-            }
-            val initTag: Tag =
-              if (!sBlock.attributes.positional.contains("highlight")) pre(code(labeltext))
-              else {
-                val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
-                  _._2 + 1
-                }.mkString(",")
-                val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
-                pre(code(txt, attr("data-line-numbers") := lines))
-              }
+              val initTag: Tag =
+                if (!sBlock.attributes.positional.contains("highlight")) pre(code(labeltext))
+                else {
+                  val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
+                    _._2 + 1
+                  }.mkString(",")
+                  val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
+                  pre(code(txt, attr("data-line-numbers") := lines))
+                }
 
-            val respre = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
-            val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
-            ctx.retc(res)
-        }
+              val respre = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
+              val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
+              ctx.retc(res)
+          }
 
       case SpaceComment(_) => ctx.empty
     }
