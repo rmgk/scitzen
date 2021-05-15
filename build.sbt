@@ -27,7 +27,6 @@ lazy val scitzen = project.in(file("."))
     scalaVersion_3,
     Compile / resources ++= (Assets / SassKeys.sassify).value,
     strictCompile,
-    scalacOptions ++= List("-rewrite", "-source", "3.0-migration"),
     libraryDependencies ++= Seq(
       decline.value.cross(CrossVersion.for3Use2_13),
       betterFiles.value.cross(CrossVersion.for3Use2_13),
