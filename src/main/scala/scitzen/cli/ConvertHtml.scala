@@ -6,6 +6,8 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.{Bibliography, KatexConverter}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.compat.Config.mapCodec
+import com.github.plokhotnyuk.jsoniter_scala.core._
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
@@ -65,8 +67,9 @@ object ConvertHtml {
       }
     }
 
-    val (katexRes, resources) = procRec(preprocessed.articles, Map.empty, Map.empty)
+    val (katexRes, resources) = procRec(preprocessed.articles, loadKatex(katexmapfile), Map.empty)
     pathManager.copyResources(resources)
+    writeKatex(katexmapfile, katexRes)
 
     makeindex(project, preprocessed, cssfile, pathManager)
   }
@@ -90,6 +93,22 @@ object ConvertHtml {
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
       .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), None)
     project.outputdir./("index.html").write(res)
+  }
+
+  private def loadKatex(katexmapfile: File): Map[String, String] = {
+    Try {
+      readFromStream[Map[String, String]](katexmapfile.newInputStream)(mapCodec)
+    }.getOrElse(Map())
+  }
+
+  private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any = {
+    if (katexMap.nonEmpty) {
+      katexmapfile.parent.createDirectories()
+      katexmapfile.writeByteArray(writeToArray[Map[String, String]](
+        katexMap,
+        WriterConfig.withIndentionStep(2)
+      )(mapCodec))
+    }
   }
 
   def convertArticle(

@@ -21,6 +21,7 @@ object Config {
     toml.Toml.parseAs[ProjectConfig](content)
   }
 
+  val mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
 }
 
 object CiteProcCodecs {
