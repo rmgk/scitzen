@@ -8,7 +8,7 @@ object Dependencies {
     val akkaActors               = "2.6.10"
     val akkaHttp                 = "10.2.2"
     val betterFiles              = "3.9.1"
-    val catsCore                 = "2.6.0"
+    val catsCore                 = "2.6.1"
     val catsCollection           = "0.9.2"
     val circeCore                = "0.13.0"
     val decline                  = "2.0.0"
@@ -17,7 +17,7 @@ object Dependencies {
     val jline                    = "2.14.6"
     val jodaConvert              = "2.2.1"
     val jodaTime                 = "2.10.3"
-    val jsoniterScalaCore        = "2.8.1"
+    val jsoniterScalaCore        = "2.8.2"
     val jsoup                    = "1.13.1"
     val jsr166y                  = "1.7.0"
     val kaleidoscope             = "0.1.0"
@@ -27,11 +27,11 @@ object Dependencies {
     val pprint                   = "0.6.5"
     val reactiveStreams          = "1.0.3"
     val retypecheck              = "0.8.0"
-    val scala211                 = "2.11.11"
+    val scala211                 = "2.11.12"
     val scala212                 = "2.12.13"
-    val scala213                 = "2.13.5"
+    val scala213                 = "2.13.6"
     val scala3                   = "3.0.0"
-    val scalaJavaTime            = "2.2.2"
+    val scalaJavaTime            = "2.3.0"
     val scalaLociCommunication   = "8778bfc575813bfb223ae36f376b83ffef63a96d"
     val scalaParallelCollections = "1.0.0"
     val scalaSwing               = "3.0.0"
@@ -40,12 +40,12 @@ object Dependencies {
     val scalactic                = "3.0.0"
     val scalajsDom               = "1.1.0"
     val scalatags                = "0.9.4"
-    val scalatest                = "3.2.8"
-    val scalatestpluscheck       = "3.2.2.0"
-    val scribe                   = "3.5.4"
-    val sourcecode               = "0.2.6"
+    val scalatest                = "3.2.9"
+    val scalatestpluscheck       = "3.2.9.0"
+    val scribe                   = "3.5.5"
+    val sourcecode               = "0.2.7"
     val tomlScala                = "0.2.2"
-    val upickle                  = "1.3.12"
+    val upickle                  = "1.3.15"
   }
 
   import Dependencies.{Versions => V}
@@ -77,7 +77,7 @@ object Dependencies {
   val scalaSwing         = Def.setting("org.scala-lang.modules" %% "scala-swing" % V.scalaSwing)
   val scalatags          = Def.setting("com.lihaoyi" %%% "scalatags" % V.scalatags)
   val scalatest          = Def.setting("org.scalatest" %%% "scalatest" % V.scalatest % "test")
-  val scalatestpluscheck = Def.setting("org.scalatestplus" %%% "scalacheck-1-14" % V.scalatestpluscheck % "test")
+  val scalatestpluscheck = Def.setting("org.scalatestplus" %%% "scalacheck-1-15" % V.scalatestpluscheck % "test")
   val scalaXml           = Def.setting("org.scala-lang.modules" %% "scala-xml" % V.scalaXml)
   val scribe             = Def.setting("com.outr" %%% "scribe" % V.scribe)
   val scribeSlf4j        = Def.setting("com.outr" %% "scribe-slf4j" % V.scribe)
@@ -86,8 +86,8 @@ object Dependencies {
   val upickle            = Def.setting("com.lihaoyi" %% "upickle" % V.upickle)
 
   val jsoniterScalaAll = Def.setting(Seq(
-    ("com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core"   % V.jsoniterScalaCore exclude ("io.github.cquiroz", s"scala-java-time-tzdb_sjs1_${scalaVersion.value.substring(0, 4)}")),
-    "com.github.plokhotnyuk.jsoniter-scala"   %% "jsoniter-scala-macros" % V.jsoniterScalaCore % "provided"
+    ("com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % V.jsoniterScalaCore exclude ("io.github.cquiroz", s"scala-java-time-tzdb_sjs1_${scalaVersion.value.substring(0, 4)}")),
+    "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % V.jsoniterScalaCore
   ))
 
   val akkaHttpAll = Def.setting(Seq("akka-http-core", "akka-http")
@@ -103,12 +103,13 @@ object Dependencies {
 
     val communication = generic("communication")
 
-    val circe     = generic("serializer-circe")
-    val tcp       = generic("communicator-tcp")
-    val upickle   = generic("serializer-upickle")
-    val webrtc    = generic("communicator-webrtc")
-    val wsAkka    = generic("communicator-ws-akka")
-    val wsJavalin = generic("communicator-ws-javalin")
+    val circe         = generic("serializer-circe")
+    val tcp           = generic("communicator-tcp")
+    val upickle       = generic("serializer-upickle")
+    val jsoniterScala = generic("serializer-jsoniter-scala")
+    val webrtc        = generic("communicator-webrtc")
+    val wsAkka        = generic("communicator-ws-akka")
+    val wsJavalin     = generic("communicator-ws-javalin")
   }
 
 }
