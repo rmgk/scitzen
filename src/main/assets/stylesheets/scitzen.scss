@@ -5,14 +5,14 @@
 // define here for media queries, same as css variable below …
 // a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm
 // but use flexible width for font differences
-$main-content-width: 70ch;
+$main-content-width: 17cm;
 
 :root {
   --theme-color: hsl(0, 50%, 50%);
   --light-theme-color: hsla(0, 50%, 50%, 0.4);
   --color-subdued: hsl(0, 0%, 60%);
 
-  --main-content-width: 70ch;
+  --main-content-width: 17cm;
   --sidebar-max-width: 20em;
 
   color-scheme: light dark;
@@ -52,13 +52,13 @@ body {
     // the content has a fixed minimum width to force a scrollbar on the content at some point
     // note that everything breaks if --main-content-width is smaller than the minimum here,
     // which is why the minimum is not min-content
-    grid-template-columns: [image-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [image-end];
+    grid-template-columns: [image-start] minmax(0, 0.5fr) [header-start] minmax(0, 0.5fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 0.5fr) [header-end] minmax(0, 0.5fr) [image-end];
   }
 }
 
 main {
   // outer edge to keep everything from hugging the screen
-  padding: 1em;
+  padding: 0 1em;
   // allow overscrolling past the end of the content
   margin-bottom: calc(100vh - 3.5em);
 }
@@ -121,9 +121,7 @@ a {
   text-decoration: none;
   color: var(--theme-color);
 
-  // add a “addSection down” effect when hovering links
   &:hover {
-    transform: translateX(4px);
     filter: brightness(75%);
   }
 }
@@ -181,9 +179,8 @@ main figure > pre {
 
 h1, h2, h3, h4, h5, h6 {
     line-height: 1.1;
-    font-weight: 700;
     margin-top: 2rem;
-    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
 }
 
 h1 { font-size: 2.35em }
@@ -194,12 +191,45 @@ h5 { font-size: 1.25em }
 h6 { font-size: 1em }
 
 
-h1, h2, h3, h4, h5, h6 {
-  text-align: center;
+
+
+h3, h4, h5, h6 {
+  font-style: italic;
 }
+
+
+h1, h2, h3, h4, h5, h6 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  grid-column: header-start / header-end;
+}
+
+h1 {
+  border-bottom: 1px solid var(--theme-color);
+}
+
+h2:before,
+h2:after {
+  content: '';
+  border-top: 1px solid var(--theme-color);
+  flex-grow: 1;
+  flex-shrink: 0.1;
+  flex-basis: 10%;
+}
+
+h2:before {
+  margin-right: 1rem;
+}
+h2:after {
+  margin-left: 1rem;
+}
+
 
 main > *:first-child {
   margin-top: 0;
+  padding-top: 0.5em;
 }
 
 pre {
@@ -234,7 +264,7 @@ li > p:only-child {
   margin: 0;
 }
 
-img {
+img, video {
   // why is this not the default?
   image-orientation: from-image;
 
@@ -243,7 +273,7 @@ img {
 
   display: block;
   height: auto;
-  max-height: 40em;
+  max-height: 90vh;
   margin: auto;
   max-width: 100%;
 }
@@ -391,6 +421,18 @@ body {
       padding-right: 0.5em;
 
       border-right: 1px solid var(--theme-color);
+
+      & > a {
+        margin-left: 0.5em;
+        display-inline: block;
+      }
+
+      // makes the individual texts more compact which seems to require the inline block and then requires to fix vertical-align
+      a {
+        line-height: 1.1;
+        display: inline-block;
+        vertical-align: text-top;
+      }
 
       ol {
         list-style: disc;

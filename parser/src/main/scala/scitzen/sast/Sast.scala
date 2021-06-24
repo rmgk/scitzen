@@ -22,6 +22,7 @@ case class Text(inl: Seq[Inline]) {
 }
 case class Section(title: Text, prefix: String, attributes: Attributes, prov: Prov) extends Sast with Ordered[Section] {
   def ref: String = attributes.named.getOrElse("label", title.str)
+  def id: String = attributes.named.getOrElse("label", title.str)
   override def compare(that: Section): Int = {
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
     Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))

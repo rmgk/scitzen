@@ -15,8 +15,7 @@ object HtmlToc:
         case (head @ Section(title, _, attr, prov)) :: rest =>
           val (sub, other) = rest.span(e => e > head)
           val subtags      = if depth < maxdepth then recurse(sub, depth + 1) else None
-          val label        = attr.named.getOrElse("label", title.str)
-          val thistag      = li(a(href := s"#$label", title.str), subtags.map(ol(_)))
+          val thistag      = li(a(href := s"#${head.id}", title.str), subtags.map(ol(_)))
           val nexttag      = recurse(other, depth)
           Some(SeqFrag(thistag :: nexttag.toList))
 

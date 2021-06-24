@@ -138,6 +138,8 @@ object ConvertHtml:
 
     val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 
+    import scalatags.Text.all.{SeqFrag, a, href, stringAttr, stringFrag, Frag, frag}
+
     val res = article.header.attributes.named.get("htmlTemplate") match
       case None =>
         val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
@@ -145,12 +147,12 @@ object ConvertHtml:
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           "fullpost",
-          toc,
+          toc.map(c => frag(a(href := s"#${article.header.id}", article.title): Frag, c: Frag)),
           article.language
             .orElse(nlp.flatMap(_.language(article.content)))
         )
       case Some(templatePath) =>
-        val content = scalatags.Text.all.SeqFrag(convertedArticleCtx.data.toList).render
+        val content = SeqFrag(convertedArticleCtx.data.toList).render
 
         val templateSettings =
           project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
