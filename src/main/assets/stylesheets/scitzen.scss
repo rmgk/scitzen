@@ -7,6 +7,9 @@
 // but use flexible width for font differences
 $main-content-width: 17cm;
 
+// stolen from bootstrap
+$small-screen-width: 575px;
+
 :root {
   --theme-color: hsl(0, 50%, 50%);
   --light-theme-color: hsla(0, 50%, 50%, 0.4);
@@ -457,9 +460,17 @@ body {
     }
   }
 
-  // remove sidebar nav content
+  // remove sidebar nav content depending on screen size and clicked status …
   #sidebar-switch:checked ~ nav {
     display: none;
+  }
+  @media (max-width: $small-screen-width) {
+    #sidebar-switch ~ nav {
+      display: none;
+    }
+    #sidebar-switch:checked ~ nav {
+      display: block;
+    }
   }
 }
 
