@@ -25,10 +25,11 @@ body {
   line-height: calc(30/18);
 }
 
-* {
-  // causes words to be broken in the middle, if required for no overflow to occur
-  overflow-wrap: break-word;
-}
+// causes words to be broken in the middle, if required for no overflow to occur
+// break-word causes still correct min-width computations, meaning that the sidbar will not shrink if not explicitly necessary
+// anywhere means that things even inside other things will shrink aggressively
+aside * { overflow-wrap: break-word; }
+main * { overflow-wrap: anywhere; }
 
 .fullpost main {
   hyphens: auto;
@@ -52,7 +53,7 @@ body {
     // the content has a fixed minimum width to force a scrollbar on the content at some point
     // note that everything breaks if --main-content-width is smaller than the minimum here,
     // which is why the minimum is not min-content
-    grid-template-columns: [image-start] minmax(0, 0.5fr) [header-start] minmax(0, 0.5fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 0.5fr) [header-end] minmax(0, 0.5fr) [image-end];
+    grid-template-columns: [image-start] minmax(0, 1fr) [header-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(0, 1fr) [image-end];
   }
 }
 
