@@ -12,8 +12,7 @@ object DelimitedBlockParsers {
   def makeDelimited[_: P](start: => P[String]): P[Block] =
     (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass).flatMap {
       case (delimiter, command, attr) =>
-        def closing = eol ~ delimiter ~ spaceLine
-        (withProv(untilE(closing, min = 0)) ~ closing)
+        (withProv(untilI(eol ~ delimiter ~ spaceLine, min = 0)))
           .map {
             case (text, prov) =>
               val (isStripped, strippedText) = stripIfPossible(text, delimiter.length)
@@ -47,7 +46,7 @@ object DelimitedBlockParsers {
   }
 
   def whitespaceLiteral[_: P]: P[Block] =
-    P(withProv((Index ~ significantVerticalSpaces.! ~ !eol ~ untilI(eol).!).flatMap { case (index, indentation, start) =>
+    P(withProv((Index ~ significantSpaceLine.rep ~ significantVerticalSpaces.! ~ !eol ~ untilI(eol).!).flatMap { case (index, indentation, start) =>
       ((indentation ~ untilI(eol).!) | (significantSpaceLine.rep.! ~ &(indentation))).rep(0)
         .map { lines =>
           val sast: Seq[Sast] = Parse.documentUnwrap( (start +: lines).mkString, Prov(index, indent = indentation.length))
