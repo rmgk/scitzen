@@ -42,18 +42,12 @@ object ConvertPdf:
 
         val targetfile = outputdir / s"$articlename.pdf"
 
-        def fileFromParam(param: String): Option[File] = {
-          article.named.get(param).flatMap(s => project.resolve(article.sourceDoc.file.parent, s.trim))
-            .orElse(project.definitions.get(param).flatMap(s => project.resolve(project.root, s.str)))
-        }
-
         val jobname    = targetfile.nameWithoutExtension(includeAll = false)
         val temptexdir = project.cacheDir / s"$articlename.outdir"
         temptexdir.createDirectories()
         val temptexfile = temptexdir / (jobname + ".tex")
 
-        val bibFile = fileFromParam("bibliography")
-        bibFile.foreach(_.copyTo(temptexdir / "bibliography.bib")(copyOptions = CopyOptions(overwrite = true)))
+        project.bibfile.foreach(_.copyTo(temptexdir / "bibliography.bib")(copyOptions = CopyOptions(overwrite = true)))
 
         val templateSettings =
           project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(

@@ -15,7 +15,6 @@ import scitzen.sast._
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
     pathManager: HtmlPathManager,
-    bibliography: Map[String, BibEntry],
     sync: Option[(File, Int)],
     reporter: Reporter,
     preprocessed: PreprocessedResults,
@@ -130,7 +129,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                     new SastToHtmlConverter(
                       bundle,
                       pathManager.changeWorkingFile(file),
-                      bibliography,
                       sync,
                       doc.reporter,
                       preprocessed,
@@ -251,7 +249,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
           case Cite =>
             val citations = attrs.target.split(",").toList.map { bibid =>
-              bibid -> bibliography.get(bibid.trim)
+              bibid -> pathManager.project.bibliography.get(bibid.trim)
             }
             val anchors = citations.sortBy(_._2.map(_.citekey)).map {
               case (bibid, Some(bib)) => a(href := s"#$bibid", bib.citekey)

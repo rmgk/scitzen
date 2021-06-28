@@ -3,6 +3,7 @@ package scitzen.generic
 import java.nio.file.{Path, Paths}
 import better.files.File
 import scitzen.compat.ProjectConfig
+import scitzen.extern.Bibliography
 import scitzen.parser.Parse
 import scitzen.sast.{Prov, Text}
 
@@ -11,6 +12,9 @@ case class Project(root: File, config: ProjectConfig, definitions: Map[String, T
   val cacheDir: File  = root / config.cache
   val outputdir: File = root / config.output
   val nlpdir: File    = root / config.stopwords
+
+  lazy val bibfile: Option[File]                            = config.bibliography.flatMap(s => resolve(root, s))
+  lazy val bibliography: Map[String, Bibliography.BibEntry] = Bibliography.makeBib(this)
 
   def relativizeToProject(target: File): Path =
     Paths.get("/").resolve(root.relativize(target))

@@ -54,7 +54,6 @@ object ConvertHtml:
           val cctx = convertArticle(
             article,
             pathManager.changeWorkingFile(article.sourceDoc.file),
-            project,
             cssfile,
             sync,
             nlp,
@@ -79,7 +78,6 @@ object ConvertHtml:
     val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,
-      bibliography = Map(),
       sync = None,
       reporter = _ => "",
       preprocessed = preprocessed,
@@ -105,7 +103,6 @@ object ConvertHtml:
   def convertArticle(
       article: Article,
       pathManager: HtmlPathManager,
-      project: Project,
       cssfile: File,
       sync: Option[(File, Int)],
       nlp: Option[NLP],
@@ -113,12 +110,9 @@ object ConvertHtml:
       katexConverter: KatexConverter,
   ): ConversionContext[?] =
 
-    val biblio = makeBib(project, article)
-
     val converter = new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,
-      bibliography = biblio,
       sync = sync,
       reporter = article.sourceDoc.reporter,
       preprocessed = preprocessed,
@@ -155,12 +149,12 @@ object ConvertHtml:
         val content = SeqFrag(convertedArticleCtx.data.toList).render
 
         val templateSettings =
-          project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
+          pathManager.project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
             Some("template content" -> content)
           ).flatten ++ convertedArticleCtx.features.toList.map(s => s"feature $s" -> "")
 
         ConvertTemplate.fillTemplate(
-          project,
+          pathManager.project,
           preprocessed.directory,
           templatePath,
           templateSettings
@@ -168,14 +162,3 @@ object ConvertHtml:
     val target = pathManager.articleOutputPath(article)
     target.write(res)
     convertedArticleCtx
-
-  def makeBib(project: Project, article: Article): Map[String, Bibliography.BibEntry] =
-    def fileFromParam(param: String): Option[File] = {
-      article.named.get(param).flatMap(s => project.resolve(article.sourceDoc.file.parent, s.trim))
-        .orElse(project.definitions.get(param).flatMap(s => project.resolve(project.root, s.str)))
-    }
-    fileFromParam("bibliography").map { path =>
-      Bibliography.parse(project.cacheDir)(path)
-    }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
-      case (be, i) => be.id -> be.copy(citekey = Some((i + 1).toString))
-    }.toMap

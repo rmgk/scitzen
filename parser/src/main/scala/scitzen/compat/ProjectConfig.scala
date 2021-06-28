@@ -12,6 +12,7 @@ case class ProjectConfig(
     definitions: Map[String, String] = Map.empty,
     texTemplate: Option[String] = None,
     notes: Option[String] = None,
+    bibliography: Option[String] = None,
 )
 
 object ProjectConfig {

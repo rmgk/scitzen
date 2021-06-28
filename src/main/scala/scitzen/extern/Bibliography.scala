@@ -1,11 +1,11 @@
 package scitzen.extern
 
 import java.nio.charset.StandardCharsets
-
 import better.files.File
 import scalatags.Text.all._
-
 import scitzen.compat.Codecs._
+import scitzen.generic.Project
+import cats.implicits._
 
 object Bibliography:
 
@@ -47,3 +47,10 @@ object Bibliography:
     val entries = com.github.plokhotnyuk.jsoniter_scala.core.readFromStream(cachefile.newInputStream)(citeprocCodec)
 
     entries.map { citeprocToBib }
+
+  def makeBib(project: Project): Map[String, Bibliography.BibEntry] =
+    project.bibfile.map { path =>
+      Bibliography.parse(project.cacheDir)(path)
+    }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
+      case (be, i) => be.id -> be.copy(citekey = Some((i + 1).toString))
+    }.toMap
