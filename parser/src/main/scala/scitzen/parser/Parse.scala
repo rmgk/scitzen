@@ -16,7 +16,8 @@ object Parse {
     val parsed = fastparse.parse(
       content,
       { p: P[_] =>
-        p.misc("provenanceOffset") = prov; parser(p)
+        p.misc("provenanceOffset") = prov
+        parser(p)
       }
     )
     parsed match {
