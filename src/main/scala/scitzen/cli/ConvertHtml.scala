@@ -170,8 +170,11 @@ object ConvertHtml:
     convertedArticleCtx
 
   def makeBib(project: Project, article: Article): Map[String, Bibliography.BibEntry] =
-    article.named.get("bibliography").map { p =>
-      val path = article.sourceDoc.file.parent / p
+    def fileFromParam(param: String): Option[File] = {
+      article.named.get(param).flatMap(s => project.resolve(article.sourceDoc.file.parent, s.trim))
+        .orElse(project.definitions.get(param).flatMap(s => project.resolve(project.root, s.str)))
+    }
+    fileFromParam("bibliography").map { path =>
       Bibliography.parse(project.cacheDir)(path)
     }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
       case (be, i) => be.id -> be.copy(citekey = Some((i + 1).toString))
