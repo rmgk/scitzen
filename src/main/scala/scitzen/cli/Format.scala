@@ -22,7 +22,7 @@ object Format:
         case List(article) if (article.date.isDefined) =>
           renameFileFromHeader(parsed.file, article)
         case _ =>
-          scribe.info(
+          scribe.debug(
             s"could not format ${parsed.file}, did not contain a single article with a date"
           )
     }
