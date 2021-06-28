@@ -18,6 +18,13 @@ $small-screen-width: 575px;
   --main-content-width: 17cm;
   --sidebar-max-width: 20em;
 
+  --color-marker-red: #ea9999;
+  //--color-marker-yellow: #ffe599;
+  --color-marker-green: #b6d7a8;
+  //--color-marker-blue: #a4c2f4;
+  //--color-marker-purple: #b4a7d6;
+
+
   color-scheme: light dark;
 }
 
@@ -29,7 +36,7 @@ body {
 }
 
 // causes words to be broken in the middle, if required for no overflow to occur
-// break-word causes still correct min-width computations, meaning that the sidbar will not shrink if not explicitly necessary
+// break-word causes still correct min-width computations, meaning that the sidebar will not shrink if not explicitly necessary
 // anywhere means that things even inside other things will shrink aggressively
 aside * { overflow-wrap: break-word; }
 main * { overflow-wrap: anywhere; }
@@ -183,29 +190,17 @@ main figure > pre {
 
 h1, h2, h3, h4, h5, h6 {
     line-height: 1.1;
-    margin-top: 2rem;
+    // we usually disable margins because they do not fold in grids, but add them just for the top of headers
+    margin-top: revert;
     padding-bottom: 0.5rem;
 }
 
-h1 { font-size: 2.35em }
-h2 { font-size: 2.00em }
-h3 { font-size: 1.75em }
-h4 { font-size: 1.5em }
-h5 { font-size: 1.25em }
-h6 { font-size: 1em }
 
+h4 { font-style: italic; }
 
-
-
-h3, h4, h5, h6 {
-  font-style: italic;
-}
 
 
 h1, h2, h3, h4, h5, h6 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   text-align: center;
   grid-column: header-start / header-end;
 }
@@ -214,20 +209,22 @@ h1 {
   border-bottom: 1px solid var(--theme-color);
 }
 
-h2:before,
-h2:after {
-  content: '';
-  border-top: 1px solid var(--theme-color);
-  flex-grow: 1;
-  flex-shrink: 0.1;
-  flex-basis: 10%;
-}
+h2 {
+  display: flex;
+  // align the text and the left/right lines vertically
+  align-items: center;
+  // put the text box centered horizontally
+  justify-content: center;
 
-h2:before {
-  margin-right: 1rem;
-}
-h2:after {
-  margin-left: 1rem;
+  &:before, &:after {
+    content: '';
+    border-top: 1px solid var(--theme-color);
+    flex-grow: 1;
+    flex-shrink: 0.1;
+    flex-basis: 10%;
+  }
+  &:before {margin-right: 1rem;}
+  &:after {margin-left: 1rem;}
 }
 
 
@@ -310,11 +307,11 @@ cite::before {
 
 ins {
   text-decoration: none;
-  color: darkgreen;
+  color: var(--color-marker-green);
 }
 
 del {
-  color: darkred;
+  color: var(--color-marker-red);
 }
 
 
