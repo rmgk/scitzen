@@ -12,7 +12,7 @@ object DelimitedBlockParsers {
   def makeDelimited[_: P](start: => P[String]): P[Block] =
     (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass).flatMap {
       case (delimiter, command, attr) =>
-        (withProv(untilI(eol ~ delimiter ~ spaceLine, min = 0)))
+        (withProv(untilI(eol ~ delimiter ~ spaceLine)))
           .map {
             case (text, prov) =>
               val (isStripped, strippedText) = stripIfPossible(text, delimiter.length)

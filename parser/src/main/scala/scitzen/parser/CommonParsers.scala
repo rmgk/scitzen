@@ -18,8 +18,8 @@ object CommonParsers {
   def untilE[_: P](closing: => P[Unit], min: Int = 1): P[String] =
     P(((!closing) ~ AnyChar).rep(min).!)
 
-  def untilI[_: P](closing: => P[Unit], min: Int = 0): P[String] =
-    untilE(closing, min) ~ closing
+  def untilI[_: P](closing: => P[Unit]): P[String] =
+    untilE(closing, 0) ~ closing
 
   object Identifier {
     def startIdentifier[_: P]: P[Unit] = P(CharPred(Character.isLetter)).opaque("<start identifier>")
