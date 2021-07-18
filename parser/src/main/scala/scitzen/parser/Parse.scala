@@ -1,6 +1,5 @@
 package scitzen.parser
 
-import cats.implicits._
 import fastparse.NoWhitespace._
 import fastparse.Parsed.{Failure, Success, TracedFailure}
 import fastparse._
@@ -21,13 +20,13 @@ object Parse {
       }
     )
     parsed match {
-      case Success(value, _) => value.asRight
+      case Success(value, _) => Right(value)
       case f: Failure =>
         val traced = f.trace()
         println(
           s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(0, math.min(80, content.length))}..."
         )
-        ParsingAnnotation(content, traced).asLeft
+        Left(ParsingAnnotation(content, traced))
     }
   }
 

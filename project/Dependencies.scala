@@ -11,7 +11,7 @@ object Dependencies {
     val catsCore                 = "2.6.1"
     val catsCollection           = "0.9.2"
     val circeCore                = "0.13.0"
-    val decline                  = "2.0.0"
+    val decline                  = "2.1.0"
     val fastparse                = "2.3.2"
     val javalin                  = "3.13.7"
     val jline                    = "2.14.6"
@@ -30,7 +30,7 @@ object Dependencies {
     val scala211                 = "2.11.12"
     val scala212                 = "2.12.13"
     val scala213                 = "2.13.6"
-    val scala3                   = "3.0.0"
+    val scala3                   = "3.0.1"
     val scalaJavaTime            = "2.3.0"
     val scalaLociCommunication   = "33e7a65a3ca29551e440abfdb6903a062c7dab70"
     val scalaParallelCollections = "1.0.0"
@@ -45,7 +45,7 @@ object Dependencies {
     val scribe                   = "3.5.5"
     val sourcecode               = "0.2.7"
     val tomlScala                = "0.2.2"
-    val upickle                  = "1.3.15"
+    val upickle                  = "1.4.0"
   }
 
   import Dependencies.{Versions => V}

@@ -11,7 +11,6 @@ lazy val parser = project.in(file("parser"))
     libraryDependencies ++= Seq(
       betterFiles.value,
       fastparse.value,
-      catsCore.value,
       tomlScala.value,
     ),
     libraryDependencies ++= jsoniterScalaAll.value,
@@ -28,7 +27,7 @@ lazy val scitzen = project.in(file("."))
     Compile / resources ++= (Assets / SassKeys.sassify).value,
     strictCompile,
     libraryDependencies ++= Seq(
-      decline.value.cross(CrossVersion.for3Use2_13),
+      decline.value,
       scalatags.value.cross(CrossVersion.for3Use2_13),
       normalizecss.value,
     ),
