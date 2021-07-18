@@ -17,6 +17,8 @@ object Document:
     val content = file.contentAsString
     try
       val sast = Parse.documentUnwrap(content, Prov(0, content.length))
+      val sast2 = scitzen.parser3.Parse.documentUnwrap(content, Prov(0, content.length))
+      assert(sast == sast2)
       Document(file, content, sast.toList)
     catch
       case NonFatal(e) =>

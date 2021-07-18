@@ -30,6 +30,7 @@ lazy val scitzen = project.in(file("."))
       decline.value,
       scalatags.value.cross(CrossVersion.for3Use2_13),
       normalizecss.value,
+      "org.typelevel" %%% "cats-parse" % "0.3.4",
     ),
     // libraryDependencies ++= jsoniterScalaAll.value,
     SassKeys.cssStyle := Maxified,
