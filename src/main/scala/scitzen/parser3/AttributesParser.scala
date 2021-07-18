@@ -7,48 +7,40 @@ import cats.parse.Numbers.digits
 import cats.parse.Rfc5234.sp
 import cats.parse.Parser.*
 import scitzen.sast.Prov
-import CommonParsers.*
+import scitzen.parser3.CommonParsers.*
 import scitzen.sast.{Attribute, Inline, Text}
 
 object AttributesParser {
-  val start: P[Unit] = open
 
-  val open  = "{"
-  val close = "}"
-
-  val terminationCheck: P0[Unit] = peek(";" | close | eol)
-  val unquotedInlines            = InlineParsers(s";\n$close", terminationCheck, allowEmpty = true)
-  val unquotedValue: P[(Seq[Inline], String)] = (unquotedInlines.full)
+  val terminationCheck: P[Unit]              = charIn(s";\n$attrClose").void
+  val unquotedValue: P[(Seq[Inline], String)] = InlineParsers.full(terminationCheck, allowEmpty = true).withContext("unquoted")
 
   /** value is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
     */
   val value: P[Text] = {
-    (anySpaces.with1 *> ("\"".rep.string ~ "[".string.?).flatMap {
+    (anySpaces.with1 *> (("\"".rep0.string ~ "[".string.?).with1.flatMap {
       case ("", None) => unquotedValue
       case (quotes, Some(_)) =>
-        InlineParsers("]", (s"]$quotes" ~ verticalSpaces ~ terminationCheck).void, allowEmpty = true).full
+        InlineParsers.full((s"]$quotes" ~ verticalSpaces ~ terminationCheck).void, allowEmpty = true)
       case (quotes, None) =>
-        InlineParsers("\"", (quotes ~ verticalSpaces ~ terminationCheck).void, allowEmpty = true).full
-      //(("[" ~ untilI("]" ~ quotes ~ verticalSpaces ~ &(terminator)))
-      //  | (if (quotes.isEmpty) unquotedValue
-      //     else untilI(quotes ~ verticalSpaces ~ &(terminator))))
-    }).map(r => scitzen.sast.Text(r._1))
+        InlineParsers.full((quotes ~ verticalSpaces ~ terminationCheck).void, allowEmpty = true)
+    }).map(r => scitzen.sast.Text(r._1)))
   }
 
   val namedAttribute: P[Attribute] =
-    ((verticalSpaces.with1 *> identifier.string <* verticalSpaces <* "=") ~ value)
-      .map { (id: String, v: Text) => scitzen.sast.Attribute(id, v) }
+    (((verticalSpaces.with1 *> identifier.string <* verticalSpaces).soft <* "=") ~ value)
+      .map { (id: String, v: Text) => scitzen.sast.Attribute(id, v) }.withContext("named")
 
-  val positionalAttribute: P[Attribute] = (value).map(v => scitzen.sast.Attribute("", v))
+  val positionalAttribute: P[Attribute] = (value).map(v => scitzen.sast.Attribute("", v)).withContext("positional")
 
-  val attribute: P[Attribute] = (namedAttribute | positionalAttribute)
+  val attribute: P[Attribute] = (namedAttribute | positionalAttribute).withContext("attribute")
 
   def listOf(elem: P[Attribute], min: Int): P0[List[Attribute]] =
     (verticalSpaces *> elem.repSep0(sep = ";" | newline, min = min) <* ";".?)
 
   val braces: P[List[Attribute]] =
-    (open *> anySpaces *> listOf(attribute, min = 0) <* anySpaces <* close)
+    (attrOpen *> anySpaces *> listOf(attribute, min = 0) <* anySpaces <* attrClose).withContext("braces")
 
   val noBraces: P0[List[Attribute]] = (listOf(namedAttribute, min = 1) <* spaceLine <* spaceLine)
 

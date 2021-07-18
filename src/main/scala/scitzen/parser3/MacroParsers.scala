@@ -6,23 +6,18 @@ import cats.implicits.*
 import cats.parse.Numbers.digits
 import cats.parse.Rfc5234.sp
 import cats.parse.Parser.*
-import CommonParsers._
+import scitzen.parser3.CommonParsers.*
 import scitzen.sast.MacroCommand.Comment
 import scitzen.sast.{Attribute, Attributes, Macro, MacroCommand}
 
 object MacroParsers {
-  val detectStart: P[Unit]    = (":" ~ identifier.? ~ scitzen.parser3.AttributesParser.start).void
   val macroCommand: P[String] = (identifier.string)
 
   val full: P[Macro] =
     (withProv(":" *> macroCommand.? ~ scitzen.parser3.AttributesParser.braces)).map {
       case ((name, attributes), prov) =>
         Macro(MacroCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes), prov)
-    }
-
-  val commentStart: P[Unit] = (":%")
-
-  val syntaxStart: P[Unit] = (commentStart | MacroParsers.detectStart)
+    }.withContext("macro")
 
   val comment: P[Macro] =
     (withProv(restOfLine(start = commentStart).map(_._2)))

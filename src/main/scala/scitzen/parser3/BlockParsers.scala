@@ -12,14 +12,14 @@ import scitzen.sast.{Attribute, Attributes, Block, Inline, Paragraph, Prov, Sast
 
 object BlockParsers {
 
-  val paragraphInlines = InlineParsers("\n", (eol ~ spaceLine).void)
+  val paragraphInlines = InlineParsers.full((eol ~ spaceLine).void, allowEmpty = false)
 
-  val sectionInlines = InlineParsers("\n", eol)
+  val sectionInlines = InlineParsers.full(eol, allowEmpty = false)
 
   val paragraph: P[Block] =
     ((
       (scitzen.parser3.AttributesParser.braces <* spaceLine).?.with1 ~
-        withProv(paragraphInlines.full)
+        withProv(paragraphInlines)
     ).map {
       case (attrOpt, ((inlines, _), prov)) =>
         //val endline = if (end.contains('\n')) inlines :+ InlineText("\n") else inlines
@@ -29,7 +29,7 @@ object BlockParsers {
   val sectionStart: P[String] = (charIn("=#").rep ~ " ").string
   val sectionTitle: P[Section] =
     (sectionStart
-      ~ withProv(sectionInlines.full)
+      ~ withProv(sectionInlines)
       ~ (scitzen.parser3.AttributesParser.braces <* spaceLine | scitzen.parser3.AttributesParser.noBraces).?)
       .map { (data: (((String, ((Seq[scitzen.sast.Inline], String), scitzen.sast.Prov)), Option[List[scitzen.sast.Attribute]]))) =>
         val (((prefix: String, ((inlines: List[Inline], _), prov: Prov)), attrl: Option[List[Attribute]])) = data
@@ -47,11 +47,11 @@ object BlockParsers {
     }
 
   val alternatives: P[Sast] =
-    (extendedWhitespace |
-      scitzen.parser3.ListParsers.list |
-      scitzen.parser3.DelimitedBlockParsers.anyDelimited |
-      sectionTitle |
-      scitzen.parser3.MacroParsers.full <* spaceLine |
-      paragraph)
+    (extendedWhitespace.backtrack.withContext("whitespace") |
+      scitzen.parser3.ListParsers.list.backtrack.withContext("list") |
+      scitzen.parser3.DelimitedBlockParsers.anyDelimited.backtrack.withContext("delimited block") |
+      sectionTitle.backtrack.withContext("section") |
+     (scitzen.parser3.MacroParsers.full <* spaceLine).backtrack.withContext("macro") |
+      paragraph.withContext("paragraph"))
 
 }

@@ -37,7 +37,7 @@ object ListParsers {
       }
 
   val list: P[Slist] =
-    (withProv((descriptionListItem | simpleListItem).rep(1))).map {
+    (withProv((descriptionListItem.backtrack | simpleListItem).rep(1))).map {
       case (listItems, _) =>
         ListConverter.listtoSast(listItems.toList)
     }

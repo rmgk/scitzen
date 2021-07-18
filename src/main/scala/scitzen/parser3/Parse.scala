@@ -11,10 +11,9 @@ object Parse {
   type Result[T] = Either[ParsingAnnotation, T]
 
   def parseResult[T](content: String, parser: Parser[T], prov: Prov): Result[T] = {
-    val parsed = CommonParsers.providenceOffset.withValue(prov){parser.parseAll(content)}
+    val parsed = CommonParsers.providenceOffset.withValue(prov) { parser.parseAll(content) }
     parsed.left.map { err =>
-        println(err)
-        ParsingAnnotation(content, err)
+      ParsingAnnotation(content, err)
     }
   }
 
@@ -24,9 +23,7 @@ object Parse {
     parseResult(blockContent, parserDocument, prov).toTry.get
   }
 
-  val allInlines = InlineParsers("", Parser.end)
-
   def inlineUnwrap(paragraphString: String, prov: Prov): Seq[Inline] = {
-    parseResult(paragraphString, allInlines.full, prov).toTry.get._1
+    parseResult(paragraphString, InlineParsers.full(Parser.end, allowEmpty = false), prov).toTry.get._1
   }
 }

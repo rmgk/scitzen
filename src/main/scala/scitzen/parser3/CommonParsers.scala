@@ -23,8 +23,11 @@ object CommonParsers {
   val significantAnySpaces: P[Unit]      = anySpace.rep.void
   val digits: P[Unit]                    = charWhere(_.isDigit).rep.void
 
-  implicit def stringParser(str: String): P[Unit] = string(str)
+  val commentStart: P[Unit] = ":%"
+  val attrOpen              = "{"
+  val attrClose             = "}"
 
+  implicit def stringParser(str: String): P[Unit] = string(str)
 
   def untilI(closing: P[Unit]): P[String] =
     until0(closing).with1 <* closing
@@ -34,11 +37,14 @@ object CommonParsers {
 
   object Identifier {
     val startIdentifier: P[Unit] = charsWhile(Character.isLetter).void
-    val inIdentifier: P0[Unit]    = charsWhile0(Character.isJavaIdentifierPart).void
+    val inIdentifier: P0[Unit]   = charsWhile0(Character.isJavaIdentifierPart).void
     val identifier: P[Unit]      = (startIdentifier ~ inIdentifier).void
   }
 
   val identifier: P[Unit] = Identifier.identifier
+
+  val macroStart : P[Unit] = (":" ~ identifier.? ~ attrOpen).void
+  val syntaxStart: P[Unit] = commentStart | macroStart
 
   def withProv[T](parser: P[T]): P[(T, Prov)] =
     (index.with1 ~ parser ~ index).map { case ((s, r), e) => r -> withOffset(s, e) }

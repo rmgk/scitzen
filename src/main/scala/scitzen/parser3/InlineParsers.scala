@@ -6,32 +6,26 @@ import cats.implicits.*
 import cats.parse.Numbers.digits
 import cats.parse.Rfc5234.sp
 import cats.parse.Parser.*
-import CommonParsers.{eol, withProv, stringParser}
+import scitzen.parser3.CommonParsers.{commentStart, eol, stringParser, syntaxStart, withProv}
 import scitzen.sast.MacroCommand.Comment
-import MacroParsers.commentStart
 import scitzen.sast.{Attribute, Inline, InlineText, Macro}
 
-case class InlineParsers(endChars: String, ending: P0[Unit], allowEmpty: Boolean = false) {
+object InlineParsers:
 
-  val comment: P[Macro] =
-    (withProv(commentStart *> (until0(eol) ~ (peek(ending) | eol)).string))
-      .map { (text, prov) => Macro(Comment, Attribute("", text).toAttributes, prov) }
+  def full(ending: P0[Unit], allowEmpty: Boolean): P[(List[Inline], String)] =
+    val comment: P[Macro] =
+      (withProv(commentStart *> (until0(eol) ~ (peek(ending) | eol)).string))
+        .map { (text, prov) => Macro(Comment, Attribute("", text).toAttributes, prov) }
 
-  private val notSyntax: P[String] =
-    (
-      charsWhile(c => c != ':' && !endChars.contains(c)).void |
-        (not(scitzen.parser3.MacroParsers.syntaxStart).with1 ~ ":").void |
-        (not(ending).with1 *> charWhere(endChars.contains(_))).void
-    ).rep(1).string
+    val notSyntax: P[String] =
+      until(syntaxStart | ending)
 
-  val simpleText: P[InlineText] = {
-    (notSyntax).map(InlineText)
-  }
+    val simpleText: P[InlineText] = {
+      notSyntax.string.map(InlineText)
+    }
 
-  val inlineSequence: P[List[Inline]] =
-    ((comment | scitzen.parser3.MacroParsers.full | simpleText).rep(if (allowEmpty) 0 else 1)).map(_.toList)
+    val base = (comment | scitzen.parser3.MacroParsers.full | simpleText)
+    if (allowEmpty&& ending.isInstanceOf[P[Unit]])
+      base.rep0.map(_.toList).with1 ~ ending.asInstanceOf[P[Unit]].string
+    else base.rep.map(_.toList) ~ ending.string
 
-  val full: P[(Seq[Inline], String)] =
-    (inlineSequence ~ ending.string)
-
-}

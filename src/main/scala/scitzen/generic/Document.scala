@@ -1,8 +1,9 @@
 package scitzen.generic
 
 import better.files.File
-import cats.implicits._
+import cats.implicits.*
 import scitzen.parser.Parse
+import scitzen.parser3.Prettyprint
 import scitzen.sast.{Macro, Prov, Sast}
 
 import scala.collection.immutable.ArraySeq
@@ -21,6 +22,10 @@ object Document:
       assert(sast == sast2)
       Document(file, content, sast.toList)
     catch
+      case e @ scitzen.parser3.ParsingAnnotation(content, failure) =>
+        val pp = new Prettyprint(file.name, content)
+        println(pp.prettyprint(failure))
+        throw e
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")
         throw e
