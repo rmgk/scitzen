@@ -43,7 +43,7 @@ object CommonParsers {
     val identifier: P[Unit]      = (startIdentifier ~ inIdentifier).void
   }
 
-  val identifier: P[Unit] = Identifier.identifier
+  val identifier: P[Unit] = Identifier.identifier.withContext("identifier")
 
   val macroStart : P[Unit] = (":" ~ identifier.? ~ attrOpen).void
   val syntaxStart: P[Unit] = commentStart | macroStart
