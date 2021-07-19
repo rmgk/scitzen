@@ -29,7 +29,7 @@ object AttributesParser {
   }
 
   val namedAttribute: P[Attribute] =
-    (((verticalSpaces.with1 *> identifier.string <* verticalSpaces).soft <* "=") ~ value)
+    (((verticalSpaces.with1 *> identifier.string <* verticalSpaces).backtrack.soft <* "=") ~ value)
       .map { (id: String, v: Text) => scitzen.sast.Attribute(id, v) }.withContext("named")
 
   val positionalAttribute: P[Attribute] = (value).map(v => scitzen.sast.Attribute("", v)).withContext("positional")
