@@ -21,7 +21,7 @@ object CommonParsers {
   val verticalSpaces: P0[Unit]           = verticalSpace.rep0.void
   val significantVerticalSpaces: P[Unit] = verticalSpace.rep.void
   val spaceLine: P0[Unit]                = (verticalSpaces ~ eol).void
-  val significantSpaceLine: P[Unit]      = (newline orElse (significantVerticalSpaces ~ eol)).void
+  val significantSpaceLine: P[Unit]      = (newline orElse (significantVerticalSpaces ~ eol)).void.backtrack.withContext("significant space line")
   val anySpaces: P0[Unit]                = anySpace.rep0.void
   val significantAnySpaces: P[Unit]      = anySpace.rep.void
   val digits: P[Unit]                    = charWhere(_.isDigit).rep.void
@@ -35,7 +35,7 @@ object CommonParsers {
     until0(closing).with1 <* closing
 
   def restOfLine[R](start: P[R]): P[(R, String)] =
-    start ~ until(eol).string <* eol
+    start ~ (until(eol) ~ eol).string
 
   object Identifier {
     val startIdentifier: P[Unit] = charsWhile(Character.isLetter).void

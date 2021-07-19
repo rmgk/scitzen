@@ -15,7 +15,7 @@ object DelimitedBlockParsers {
   val anyStart: P[String] = (charIn(":`").rep(2).string)
 
   def makeDelimited(start: P[String]): P[Block] =
-    (start ~ scitzen.parser3.MacroParsers.macroCommand.? ~ scitzen.parser3.AttributesParser.braces.? <* spaceLine).flatMap {
+    (start.backtrack ~ identifier.string.? ~ scitzen.parser3.AttributesParser.braces.? <* spaceLine).flatMap {
       case ((delimiter, command), attr) =>
         (withProv(untilI(eol.with1 <* delimiter <* spaceLine)))
           .map {
@@ -37,7 +37,7 @@ object DelimitedBlockParsers {
           }
     }
 
-  val anyDelimited: P[Block] = (makeDelimited(anyStart))
+  val anyDelimited: P[Block] = makeDelimited(anyStart).withContext("delimited block")
 
   val spaceNewline = " *\\n?$".r
 
@@ -51,15 +51,23 @@ object DelimitedBlockParsers {
   }
 
   val whitespaceLiteral: P[Block] =
-    (withProv(((index.with1 <* significantSpaceLine.rep) ~ restOfLine(start = significantVerticalSpaces.string <* !eol)).flatMap { case (index, (indentation, start)) =>
-      ((restOfLine(start = indentation)) | (significantSpaceLine.rep.string ~ peek(indentation))).rep(0)
-        .map { lines =>
-          val sast: Seq[Sast] = scitzen.parser3.Parse.documentUnwrap((start :: lines).toList.mkString, Prov(index, indent = indentation.length))
-          scitzen.sast.Parsed(indentation, sast)
+    (withProv(
+      ((index <* significantSpaceLine.rep0).withContext("skip empty").with1 ~
+        restOfLine(start = significantVerticalSpaces.string <* !eol).withContext("find indent"))
+        .flatMap { case (index, (indentation, start)) =>
+          val spaceBetween = (significantSpaceLine.rep0.string <* peek(indentation)).withContext("between")
+          val more         = (spaceBetween.with1 ~ restOfLine(start = indentation).map(_._2)).withContext("more")
+          more.backtrack.map(t => List(t._1, t._2)).rep0.map { (lines: List[List[String]]) =>
+            val sast: Seq[Sast] = scitzen.parser3.Parse.documentUnwrap(
+              (List(start).iterator ++ lines.iterator.flatten).mkString,
+              Prov(index, indent = indentation.length)
+            )
+            scitzen.sast.Parsed(indentation, sast)
+          }
         }
-    }).map {
+    ).map {
       case (parsed, prov) =>
         scitzen.sast.Block(Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))
-    })
+    }).withContext("whitespace block")
 
 }

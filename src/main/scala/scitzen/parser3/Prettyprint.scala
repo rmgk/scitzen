@@ -38,7 +38,7 @@ class Prettyprint(filename: String, input: String) {
       s"${row.toString map { _ => ' ' }} | ${" " * col}^"
     val main = s"""
       |$filename:$r:$c: error: ${description(x)}
-      |$r | $line
+      |$r | ${line.replace('\t', '␉')}
       |$offending""".stripMargin
     main
     //x match {

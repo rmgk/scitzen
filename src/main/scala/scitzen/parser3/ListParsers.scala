@@ -23,24 +23,24 @@ object ListParsers {
     (simpleMarker ~ withProv(until(eol ~ (spaceLine | simpleMarker).map(_ => ()))) <* eol).map {
       case (marker, (content, prov)) =>
         ParsedListItem(marker, content, prov, None)
-    }
+    }.withContext("marker")
 
   val descriptionListContent: P[(String, Prov)] =
-    (withProv(until(":" ~ verticalSpaces ~ eol | eol) <* ":" <* verticalSpaces <* eol))
+    withProv(until(":" ~ verticalSpaces ~ eol | eol) <* ":" <* verticalSpaces <* eol).withContext("content")
 
   val descriptionListItem: P[ParsedListItem] =
-    (simpleMarker ~ descriptionListContent ~
+    ((simpleMarker ~ descriptionListContent).backtrack ~
       scitzen.parser3.DelimitedBlockParsers.whitespaceLiteral.?)
       .map {
         case ((marker, (str, prov)), innerBlock) =>
           ParsedListItem(marker, str, prov, innerBlock)
-      }
+      }.withContext("description")
 
   val list: P[Slist] =
-    (withProv((descriptionListItem.backtrack | simpleListItem).rep(1))).map {
+    (withProv((descriptionListItem | simpleListItem).rep(1))).map {
       case (listItems, _) =>
         ListConverter.listtoSast(listItems.toList)
-    }
+    }.withContext("list")
 
   case class ParsedListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
 

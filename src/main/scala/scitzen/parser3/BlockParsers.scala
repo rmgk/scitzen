@@ -26,7 +26,7 @@ object BlockParsers {
         Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
     })
 
-  val sectionStart: P[String] = (charIn("=#").rep.string <* " ")
+  val sectionStart: P[String] = (charIn("=#").rep.string <* " ").backtrack
   val sectionTitle: P[Section] =
     (sectionStart
       ~ withProv(sectionInlines)
@@ -35,7 +35,7 @@ object BlockParsers {
         val (((prefix: String, ((inlines: List[Inline], _), prov: Prov)), attrl: Option[List[Attribute]])) = data
           //val inlines = Parse.inlineUnwrap(inl, prov)
           Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)), prov)
-      }
+      }.withContext("section")
 
   val extendedWhitespace: P[Block] =
     (withProv(
@@ -44,14 +44,14 @@ object BlockParsers {
     )).map {
       case (str, prov) =>
         Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
-    }
+    }.withContext("whitespace")
 
   val alternatives: P[Sast] =
-    (extendedWhitespace.backtrack.withContext("whitespace") |
-      scitzen.parser3.ListParsers.list.backtrack.withContext("list") |
-      scitzen.parser3.DelimitedBlockParsers.anyDelimited.backtrack.withContext("delimited block") |
-      sectionTitle.backtrack.withContext("section") |
-     (scitzen.parser3.MacroParsers.full <* spaceLine).backtrack.withContext("macro") |
+    (extendedWhitespace.backtrack |
+      scitzen.parser3.ListParsers.list |
+      scitzen.parser3.DelimitedBlockParsers.anyDelimited |
+      sectionTitle |
+     (scitzen.parser3.MacroParsers.full.backtrack <* spaceLine) |
       paragraph.withContext("paragraph"))
 
 }
