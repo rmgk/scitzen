@@ -12,19 +12,19 @@ import scitzen.sast.{Attribute, Inline, InlineText, Macro}
 
 object InlineParsers:
 
-  def full(ending: P0[Unit], allowEmpty: Boolean): P[(List[Inline], String)] =
+  transparent inline def full(ending: P0[Unit], allowEmpty: Boolean): P0[(List[Inline], String)] =
     val comment: P[Macro] =
       (withProv(commentStart *> (until0(eol) ~ (peek(ending) | eol)).string))
         .map { (text, prov) => Macro(Comment, Attribute("", text).toAttributes, prov) }
 
     val notSyntax: P[String] =
-      until(syntaxStart | ending)
+      until(syntaxStart | ending).withContext("not syntax")
 
     val simpleText: P[InlineText] = {
-      notSyntax.string.map(InlineText)
+      notSyntax.string.map(InlineText).withContext("simple text")
     }
 
-    val base = (comment | MacroParsers.full | simpleText)
-    if allowEmpty && ending.isInstanceOf[P[Unit]] then
-      base.rep0.map(_.toList).with1 ~ ending.asInstanceOf[P[Unit]].string
-    else base.rep.map(_.toList) ~ ending.string
+    val base = (comment | MacroParsers.full | simpleText).withContext("base")
+    if allowEmpty then
+      (base.rep0.map(_.toList) ~ ending.string).withContext("inlines")
+    else (base.rep.map(_.toList) ~ ending.string).withContext("inlines")

@@ -20,8 +20,8 @@ object CommonParsers {
   val eol: P0[Unit]                      = newline.orElse(end)
   val verticalSpaces: P0[Unit]           = verticalSpace.rep0.void
   val significantVerticalSpaces: P[Unit] = verticalSpace.rep.void
-  val spaceLine: P0[Unit]                = (verticalSpaces ~ eol).void
-  val significantSpaceLine: P[Unit]      = (newline orElse (significantVerticalSpaces ~ eol)).void.backtrack.withContext("significant space line")
+  val spaceLine: P0[Unit]                = (verticalSpaces.soft ~ eol).void
+  val significantSpaceLine: P[Unit]      = (newline orElse (significantVerticalSpaces.soft ~ eol)).void.withContext("significant space line")
   val anySpaces: P0[Unit]                = anySpace.rep0.void
   val significantAnySpaces: P[Unit]      = anySpace.rep.void
   val digits: P[Unit]                    = charWhere(_.isDigit).rep.void

@@ -14,7 +14,7 @@ object BlockParsers {
 
   val paragraphInlines = InlineParsers.full((eol ~ spaceLine).void, allowEmpty = false)
 
-  val sectionInlines = InlineParsers.full(eol, allowEmpty = false)
+  val sectionInlines = InlineParsers.full(eol, allowEmpty = false).withContext("section inline")
 
   val paragraph: P[Block] =
     ((
@@ -26,7 +26,7 @@ object BlockParsers {
         Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
     })
 
-  val sectionStart: P[String] = (charIn("=#").rep.string <* " ").backtrack
+  val sectionStart: P[String] = (charIn("=#").rep.string <* " ").backtrack.withContext("section start")
   val sectionTitle: P[Section] =
     (sectionStart
       ~ withProv(sectionInlines)
@@ -51,7 +51,7 @@ object BlockParsers {
       scitzen.parser3.ListParsers.list |
       scitzen.parser3.DelimitedBlockParsers.anyDelimited |
       sectionTitle |
-     (scitzen.parser3.MacroParsers.full.backtrack <* spaceLine) |
+     (scitzen.parser3.MacroParsers.full <* spaceLine).backtrack |
       paragraph.withContext("paragraph"))
 
 }
