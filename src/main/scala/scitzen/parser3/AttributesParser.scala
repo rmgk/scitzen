@@ -41,13 +41,12 @@ object AttributesParser {
 
   def listOf(elem: P0[Attribute], min: Int): P0[List[Attribute]] =
     val sep = charIn(";\n")
-    val elemOn1: P0[Option[Attribute]] = (if min == 0 then elem.? else elem.map(Some(_)))
-    ((elem.with1 <* sep).backtrack.rep0(min = math.max(min - 1, 0)) ~ elemOn1)
+    ((elem.with1 <* sep).backtrack.rep0(min = min) ~ elem.?)
     .map(_ ++ _).withContext("listof")
 
   val braces: P[List[Attribute]] =
     (attrOpen *> anySpaces *> listOf(attribute, min = 0) <* anySpaces <* attrClose).withContext("braces")
 
-  val noBraces: P0[List[Attribute]] = (listOf(namedAttribute, min = 1) <* spaceLine <* spaceLine).withContext("no braces")
+  val noBraces: P0[List[Attribute]] = (listOf(namedAttribute, min = 1) <* spaceLine).withContext("no braces")
 
 }
