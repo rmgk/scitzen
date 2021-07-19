@@ -19,7 +19,11 @@ object Document:
     try
       val sast = Parse.documentUnwrap(content, Prov(0, content.length))
       val sast2 = scitzen.parser3.Parse.documentUnwrap(content, Prov(0, content.length))
-      assert(sast == sast2)
+      if (sast != sast2)
+        pprint.pprintln(sast)
+        println("===============f")
+        pprint.pprintln(sast2)
+        assert(false)
       Document(file, content, sast.toList)
     catch
       case e @ scitzen.parser3.ParsingAnnotation(content, failure) =>

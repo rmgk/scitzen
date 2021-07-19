@@ -26,7 +26,7 @@ object BlockParsers {
         Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
     })
 
-  val sectionStart: P[String] = (charIn("=#").rep ~ " ").string
+  val sectionStart: P[String] = (charIn("=#").rep.string <* " ")
   val sectionTitle: P[Section] =
     (sectionStart
       ~ withProv(sectionInlines)

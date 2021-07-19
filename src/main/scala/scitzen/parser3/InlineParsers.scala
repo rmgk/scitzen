@@ -24,8 +24,7 @@ object InlineParsers:
       notSyntax.string.map(InlineText)
     }
 
-    val base = (comment | scitzen.parser3.MacroParsers.full | simpleText)
-    if (allowEmpty&& ending.isInstanceOf[P[Unit]])
+    val base = (comment | MacroParsers.full | simpleText)
+    if allowEmpty && ending.isInstanceOf[P[Unit]] then
       base.rep0.map(_.toList).with1 ~ ending.asInstanceOf[P[Unit]].string
     else base.rep.map(_.toList) ~ ending.string
-

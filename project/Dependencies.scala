@@ -24,7 +24,7 @@ object Dependencies {
     val magnolia                 = "0.15.0"
     val normalizecss             = "8.0.1"
     val okHttp                   = "4.9.1"
-    val pprint                   = "0.6.5"
+    val pprint                   = "0.6.6"
     val reactiveStreams          = "1.0.3"
     val retypecheck              = "0.8.0"
     val scala211                 = "2.11.12"

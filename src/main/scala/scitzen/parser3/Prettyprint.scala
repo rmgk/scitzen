@@ -31,7 +31,7 @@ class Prettyprint(filename: String, input: String) {
   }
 
   def prettyprint(x: Expectation): String = {
-    val (row, col) = locmap.toLineCol(x.offset).get
+    val (row, col) = locmap.toLineCol(x.offset).orElse(locmap.toLineCol(input.length-1)).get
     val (r, c)     = (row + 1, col + 1)
     val line       = locmap.getLine(row).get
     val offending =

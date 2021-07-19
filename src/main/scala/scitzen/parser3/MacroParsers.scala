@@ -14,7 +14,7 @@ object MacroParsers {
   val macroCommand: P[String] = (identifier.string)
 
   val full: P[Macro] =
-    (withProv(":" *> macroCommand.? ~ scitzen.parser3.AttributesParser.braces)).map {
+    (withProv(":" *> macroCommand.? ~ AttributesParser.braces)).map {
       case ((name, attributes), prov) =>
         Macro(MacroCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes), prov)
     }.withContext("macro")

@@ -13,7 +13,7 @@ import scitzen.sast.{Attribute, Inline, Text}
 object AttributesParser {
 
   val terminationCheck: P[Unit]              = charIn(s";\n$attrClose").void
-  val unquotedValue: P[(Seq[Inline], String)] = InlineParsers.full(terminationCheck, allowEmpty = true).withContext("unquoted")
+  val unquotedValue: P[(Seq[Inline], String)] = defer(InlineParsers.full(peek(terminationCheck), allowEmpty = true).withContext("unquoted"))
 
   /** value is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote

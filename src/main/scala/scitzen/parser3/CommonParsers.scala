@@ -11,6 +11,9 @@ import scitzen.sast.Prov
 import scala.util.DynamicVariable
 
 object CommonParsers {
+
+  implicit def stringParser(str: String): P[Unit] = string(str)
+
   val verticalSpace: P[Unit]             = Rfc5234.wsp
   val newline: P[Unit]                   = char('\n')
   val anySpace: P[Unit]                  = charIn("\n\t ").void
@@ -27,7 +30,6 @@ object CommonParsers {
   val attrOpen              = "{"
   val attrClose             = "}"
 
-  implicit def stringParser(str: String): P[Unit] = string(str)
 
   def untilI(closing: P[Unit]): P[String] =
     until0(closing).with1 <* closing
