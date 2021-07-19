@@ -13,10 +13,10 @@ import scitzen.sast.{Block, ListItem, Prov, Slist, Text}
 object ListParsers {
 
   val simpleMarker: P[String] =
-    (verticalSpaces.with1
+    ((verticalSpaces.with1
       ~ ("-" | "•"
         | "*"
-        | (digits.?.with1 ~ "."))
+        | (digits.?.with1.soft ~ "."))).soft
       ~ verticalSpace).string
 
   val simpleListItem: P[ParsedListItem] =
