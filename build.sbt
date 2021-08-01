@@ -2,6 +2,9 @@ import Dependencies._
 import Settings._
 import org.irundaia.sass.Maxified
 
+lazy val root = project.in(file(".")).aggregate(parser, scitzen)
+  .settings(publishArtifact := false)
+
 lazy val parser = project.in(file("parser"))
   .settings(
     name := "scitzen-parser",
@@ -16,12 +19,12 @@ lazy val parser = project.in(file("parser"))
     libraryDependencies ++= jsoniterScalaAll.value,
   )
 
-lazy val scitzen = project.in(file("."))
+lazy val scitzen = project.in(file("cli"))
   .enablePlugins(NativeImagePlugin)
   .enablePlugins(SbtSassify)
   .dependsOn(parser)
   .settings(
-    name := "scitzen",
+    name := "scitzen-cli",
     organization := "de.rmgk",
     scalaVersion_3,
     Compile / resources ++= (Assets / SassKeys.sassify).value,
