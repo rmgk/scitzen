@@ -77,6 +77,6 @@ case class SastToTextConverter(
     inners.map {
       case InlineText(str) => str
       case Macro(Lookup, attr, _) =>
-        definitions.get(attr.target).orElse(attr.named.get("default")).get
+        definitions.get(attr.target).orElse(attr.named.get("default")).getOrElse("")
       case _: Macro => ""
     }.mkString("")
