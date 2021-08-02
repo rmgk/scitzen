@@ -32,7 +32,7 @@ object AttributesParser {
   }
 
   def namedAttribute[_: P]: P[Attribute] =
-    P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~ value)
+    P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~/ value)
       .map { case (id, v) => scitzen.sast.Attribute(id, v) }
 
   def positionalAttribute[_: P]: P[Attribute] = P(value).map(v => scitzen.sast.Attribute("", v))
@@ -40,7 +40,7 @@ object AttributesParser {
   def attribute[_: P]: P[Attribute] = P(namedAttribute | positionalAttribute)
 
   def listOf[_: P](elem: => P[Attribute], min: Int): P[Seq[Attribute]] =
-    P(verticalSpaces ~ elem.rep(sep = ";" | newline, min = min) ~ ";".?)
+    P(elem.rep(sep = ";" | newline, min = min) ~ ";".?)
 
   def braces[_: P]: P[Seq[Attribute]] =
     P(open ~ anySpaces ~ listOf(attribute, min = 0) ~ anySpaces ~ close)

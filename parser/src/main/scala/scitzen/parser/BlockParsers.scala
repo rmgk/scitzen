@@ -31,7 +31,7 @@ object BlockParsers {
   def sectionTitle[_: P]: P[Section] =
     P(sectionStart
       ~ withProv(sectionInlines.full)
-      ~ (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
+      ~/ (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
       .map {
         case (prefix, ((inlines, _), prov), attrl) =>
           //val inlines = Parse.inlineUnwrap(inl, prov)
@@ -52,7 +52,7 @@ object BlockParsers {
       ListParsers.list |
       DelimitedBlockParsers.anyDelimited |
       sectionTitle |
-      MacroParsers.full ~ spaceLine |
+      NoCut(MacroParsers.full) ~ spaceLine |
       paragraph)
 
 }
