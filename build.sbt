@@ -3,7 +3,11 @@ import Settings._
 import org.irundaia.sass.Maxified
 
 lazy val root = project.in(file(".")).aggregate(parser, scitzen)
-  .settings(publishArtifact := false)
+  .settings(
+    publishArtifact := false,
+    name := "scitzen-root",
+    organization := "de.rmgk"
+  )
 
 lazy val parser = project.in(file("parser"))
   .settings(
@@ -24,7 +28,7 @@ lazy val scitzen = project.in(file("cli"))
   .enablePlugins(SbtSassify)
   .dependsOn(parser)
   .settings(
-    name := "scitzen-cli",
+    name := "scitzen",
     organization := "de.rmgk",
     scalaVersion_3,
     Compile / resources ++= (Assets / SassKeys.sassify).value,
