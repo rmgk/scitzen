@@ -17,13 +17,13 @@ jobs:
         include:
           - os: macOS-latest
             uploaded_filename: scitzen-x86_64-apple-darwin
-            local_path: target/native-image/scitzen
+            local_path: cli/target/native-image/scitzen
           - os: ubuntu-latest
             uploaded_filename: scitzen-x86_64-pc-linux
-            local_path: target/native-image/scitzen
+            local_path: cli/target/native-image/scitzen
           - os: windows-latest
             uploaded_filename: scitzen-x86_64-pc-win32.exe
-            local_path: target\native-image\scitzen.exe
+            local_path: cli\target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
