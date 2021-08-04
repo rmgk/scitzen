@@ -10,6 +10,25 @@ import scitzen.sast.MacroCommand.{
 }
 import scitzen.sast._
 
+import SastToTexConverter.latexencode
+
+object SastToTexConverter {
+  def latexencode(input: String): String =
+    // replace `\` with dummy first, because `\textbackslash{}` requires the `{}`, which would be replaced in the next step
+    val dummyForBSreplace = '\u0011'
+    val nobs              = input.replace('\\', dummyForBSreplace)
+    val nosimple          = nobs.replaceAll("""([&%$#_{}])""", "\\\\$1")
+    List(
+      "~"                        -> "\\textasciitilde{}",
+      "^"                        -> "\\textasciicircum{}",
+      "`"                        -> "\\textasciigrave{}",
+      dummyForBSreplace.toString -> "\\textbackslash{}"
+    ).foldLeft(nosimple) {
+      case (acc, (char, rep)) =>
+        acc.replace(char, rep)
+    }
+}
+
 class SastToTexConverter(
     project: Project,
     cwf: File,
@@ -34,23 +53,6 @@ class SastToTexConverter(
 
   def convert(mainSast: List[Sast])(ctx: Cta): CtxCS =
     sastSeqToTex(mainSast)(ctx)
-
-  def latexencode(input: String): String =
-    val dummyForBSreplace = "»§ dummy to replace later ℓ«"
-    val nobs              = input.replace("\\", dummyForBSreplace)
-    val nosimple = "&%$#_{}".toList.map(_.toString).foldLeft(nobs) { (acc, char) =>
-      acc.replace(char, s"\\$char")
-    }
-    val nomuch = List(
-      "~" -> "\\textasciitilde{}",
-      "^" -> "\\textasciicircum{}",
-      "`" -> "\\textasciigrave{}"
-    )
-      .foldLeft(nosimple) {
-        case (acc, (char, rep)) =>
-          acc.replace(char, rep)
-      }
-    nomuch.replace(dummyForBSreplace, "\\textbackslash{}")
 
   def sastSeqToTex(b: Seq[Sast])(ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => sastToTex(sast)(ctx) }
