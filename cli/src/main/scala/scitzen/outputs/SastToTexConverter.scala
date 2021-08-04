@@ -176,9 +176,9 @@ class SastToTexConverter(
 
               case Some("text") =>
                 val latexenc = latexencode(text).trim
-                  .replaceAll("\n{2,}", """\\newline{}\\noindent{}""")
                   .replace("\n", "\\newline{}\n")
-                ctx.ret(Chain("\\noindent", latexenc))
+                // appending the empty string adds another newline in the source code to separate the paragraph from the following text – the latexenc text does not have any newlines at the end because of the .trim
+                ctx.ret(Chain("\\noindent", latexenc, ""))
 
               case _ =>
                 val labeltext = tlblock.attributes.named.get("label") match
