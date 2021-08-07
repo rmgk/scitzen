@@ -113,15 +113,16 @@ class SastToSastConverter(document: Document, project: Project):
       if select == "" then
         attributes.positional.lastOption
       else attributes.named.get(select)
-    attr.map { template =>
+    attr.flatMap { template =>
       val abs = project.resolve(cwd, template)
-      val rel = project.relativizeToProject(abs.get)
-      if select == "" then
-        Attributes(attributes.raw.map { attr =>
-          if attr.id == "" && attr.value == attributes.target then Attribute("", rel.toString)
-          else attr
-        })
-      else attributes.updated(select, rel.toString)
+      abs.map(project.relativizeToProject).map { rel =>
+        if select == "" then
+          Attributes(attributes.raw.map { attr =>
+            if attr.id == "" && attr.value == attributes.target then Attribute("", rel.toString)
+            else attr
+          })
+        else attributes.updated(select, rel.toString)
+      }
     }
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
