@@ -10,22 +10,22 @@ object Latexmk:
     outputdir.createDirectories()
     val errorFile  = (outputdir / "latexmk.err")
     val returnCode =
-      //new ProcessBuilder(
-      //  "tectonic", "--keep-intermediates",
-      //  "--outdir", outputdir.toString(),
-      //  sourceFile.pathAsString
-      //)
       new ProcessBuilder(
-        "latexmk",
-        "-cd",
-        "-halt-on-error",
-        "-xelatex",
-        "-interaction=nonstopmode",
-        //"-synctex=1",
-        "--output-directory=" + outputdir,
-        "--jobname=" + jobname,
+        "tectonic", "--keep-intermediates",
+        "--outdir", outputdir.toString(),
         sourceFile.pathAsString
       )
+      //new ProcessBuilder(
+      //  "latexmk",
+      //  "-cd",
+      //  "-halt-on-error",
+      //  "-xelatex",
+      //  "-interaction=nonstopmode",
+      //  //"-synctex=1",
+      //  "--output-directory=" + outputdir,
+      //  "--jobname=" + jobname,
+      //  sourceFile.pathAsString
+      //)
         .directory(outputdir.toJava)
         .redirectOutput((outputdir / "latexmk.out").toJava)
         .redirectError(errorFile.toJava)
