@@ -11,8 +11,8 @@ object AttributesParser {
   val open  = "{"
   val close = "}"
 
-  def terminationCheck[_p: P]                        = P(&(";" | close | eol))
-  val unquotedInlines                               = InlineParsers(s";\n$close", terminationCheck(_), allowEmpty = true)
+  def terminationCheck[_p: P] = P(&(";" | close | eol))
+  val unquotedInlines         = InlineParsers(s";\n$close", terminationCheck(_), allowEmpty = true)
   def unquotedValue[_p: P]: P[(Seq[Inline], String)] = P(unquotedInlines.full)
 
   /** value is in the general form of ""[content]"" where all of the quoting is optional,

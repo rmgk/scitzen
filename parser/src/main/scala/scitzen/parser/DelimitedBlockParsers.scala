@@ -46,12 +46,14 @@ object DelimitedBlockParsers {
   }
 
   def whitespaceLiteral[_p: P]: P[Block] =
-    P(withProv((Index ~ significantSpaceLine.rep ~ significantVerticalSpaces.! ~ !eol ~ untilI(eol).!).flatMap { case (index, indentation, start) =>
-      ((indentation ~ untilI(eol).!) | (significantSpaceLine.rep.! ~ &(indentation))).rep(0)
-        .map { lines =>
-          val sast: Seq[Sast] = Parse.documentUnwrap( (start +: lines).mkString, Prov(index, indent = indentation.length))
-          scitzen.sast.Parsed(indentation, sast)
-        }
+    P(withProv((Index ~ significantSpaceLine.rep ~ significantVerticalSpaces.! ~ !eol ~ untilI(eol).!).flatMap {
+      case (index, indentation, start) =>
+        ((indentation ~ untilI(eol).!) | (significantSpaceLine.rep.! ~ &(indentation))).rep(0)
+          .map { lines =>
+            val sast: Seq[Sast] =
+              Parse.documentUnwrap((start +: lines).mkString, Prov(index, indent = indentation.length))
+            scitzen.sast.Parsed(indentation, sast)
+          }
     }).map {
       case (parsed, prov) =>
         scitzen.sast.Block(Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))
