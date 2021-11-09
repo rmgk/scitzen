@@ -7,9 +7,9 @@ import scitzen.sast.{Attribute, Attributes, Block, Fenced, Prov, Sast}
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
-  def anyStart[_: P]: P[String] = P(CharIn(":`").rep(2).!)
+  def anyStart[_p: P]: P[String] = P(CharIn(":`").rep(2).!)
 
-  def makeDelimited[_: P](start: => P[String]): P[Block] =
+  def makeDelimited[_p: P](start: => P[String]): P[Block] =
     (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass).flatMap {
       case (delimiter, command, attr) =>
         (withProv(untilI(eol ~ delimiter ~ spaceLine)))
@@ -32,7 +32,7 @@ object DelimitedBlockParsers {
           }
     }
 
-  def anyDelimited[_: P]: P[Block] = P(makeDelimited(anyStart))
+  def anyDelimited[_p: P]: P[Block] = P(makeDelimited(anyStart))
 
   val spaceNewline = " *\\n?$".r
 
@@ -45,7 +45,7 @@ object DelimitedBlockParsers {
     }.mkString
   }
 
-  def whitespaceLiteral[_: P]: P[Block] =
+  def whitespaceLiteral[_p: P]: P[Block] =
     P(withProv((Index ~ significantSpaceLine.rep ~ significantVerticalSpaces.! ~ !eol ~ untilI(eol).!).flatMap { case (index, indentation, start) =>
       ((indentation ~ untilI(eol).!) | (significantSpaceLine.rep.! ~ &(indentation))).rep(0)
         .map { lines =>

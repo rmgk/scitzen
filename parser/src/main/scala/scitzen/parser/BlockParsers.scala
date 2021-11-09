@@ -17,7 +17,7 @@ object BlockParsers {
 
   val sectionInlines = InlineParsers("\n", eol(_))
 
-  def paragraph[_: P]: P[Block] =
+  def paragraph[_p: P]: P[Block] =
     P((
       (AttributesParser.braces ~ spaceLine).? ~
         withProv(paragraphInlines.full)
@@ -27,8 +27,8 @@ object BlockParsers {
         Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
     })
 
-  def sectionStart[_: P]: P[String] = P(CharsWhileIn("=#").! ~ " ")
-  def sectionTitle[_: P]: P[Section] =
+  def sectionStart[_p: P]: P[String] = P(CharsWhileIn("=#").! ~ " ")
+  def sectionTitle[_p: P]: P[Section] =
     P(sectionStart
       ~ withProv(sectionInlines.full)
       ~/ (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
@@ -38,7 +38,7 @@ object BlockParsers {
           Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)), prov)
       }
 
-  def extendedWhitespace[_: P]: P[Block] =
+  def extendedWhitespace[_p: P]: P[Block] =
     P(withProv(
       (significantSpaceLine.rep(1) |
         MacroParsers.comment.rep(1)).rep(1).!
@@ -47,7 +47,7 @@ object BlockParsers {
         Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
     }
 
-  def alternatives[_: P]: P[Sast] =
+  def alternatives[_p: P]: P[Sast] =
     P(extendedWhitespace |
       ListParsers.list |
       DelimitedBlockParsers.anyDelimited |

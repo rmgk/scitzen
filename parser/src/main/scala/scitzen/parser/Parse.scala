@@ -30,7 +30,7 @@ object Parse {
     }
   }
 
-  def parserDocument[_: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
+  def parserDocument[_p: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
 
   def documentUnwrap(blockContent: String, prov: Prov): Seq[Sast] = {
     parseResult(blockContent, parserDocument(_), prov) match {

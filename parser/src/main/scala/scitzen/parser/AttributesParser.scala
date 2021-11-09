@@ -6,19 +6,19 @@ import scitzen.parser.CommonParsers._
 import scitzen.sast.{Attribute, Inline, Text}
 
 object AttributesParser {
-  def start[_: P]: P[Unit] = P(open)
+  def start[_p: P]: P[Unit] = P(open)
 
   val open  = "{"
   val close = "}"
 
-  def terminationCheck[_: P]                        = P(&(";" | close | eol))
+  def terminationCheck[_p: P]                        = P(&(";" | close | eol))
   val unquotedInlines                               = InlineParsers(s";\n$close", terminationCheck(_), allowEmpty = true)
-  def unquotedValue[_: P]: P[(Seq[Inline], String)] = P(unquotedInlines.full)
+  def unquotedValue[_p: P]: P[(Seq[Inline], String)] = P(unquotedInlines.full)
 
   /** value is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
     */
-  def value[_: P]: P[Text] = {
+  def value[_p: P]: P[Text] = {
     P(anySpaces ~ ("\"".rep.! ~ "[".!.?).flatMap {
       case ("", None) => unquotedValue
       case (quotes, Some(_)) =>
@@ -31,20 +31,20 @@ object AttributesParser {
     }).map(r => scitzen.sast.Text(r._1))
   }
 
-  def namedAttribute[_: P]: P[Attribute] =
+  def namedAttribute[_p: P]: P[Attribute] =
     P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~/ value)
       .map { case (id, v) => scitzen.sast.Attribute(id, v) }
 
-  def positionalAttribute[_: P]: P[Attribute] = P(value).map(v => scitzen.sast.Attribute("", v))
+  def positionalAttribute[_p: P]: P[Attribute] = P(value).map(v => scitzen.sast.Attribute("", v))
 
-  def attribute[_: P]: P[Attribute] = P(namedAttribute | positionalAttribute)
+  def attribute[_p: P]: P[Attribute] = P(namedAttribute | positionalAttribute)
 
-  def listOf[_: P](elem: => P[Attribute], min: Int): P[Seq[Attribute]] =
+  def listOf[_p: P](elem: => P[Attribute], min: Int): P[Seq[Attribute]] =
     P(elem.rep(sep = ";" | newline, min = min) ~ ";".?)
 
-  def braces[_: P]: P[Seq[Attribute]] =
+  def braces[_p: P]: P[Seq[Attribute]] =
     P(open ~ anySpaces ~ listOf(attribute, min = 0) ~ anySpaces ~ close)
 
-  def noBraces[_: P]: P[Seq[Attribute]] = P(listOf(namedAttribute, min = 1) ~ spaceLine ~ spaceLine)
+  def noBraces[_p: P]: P[Seq[Attribute]] = P(listOf(namedAttribute, min = 1) ~ spaceLine ~ spaceLine)
 
 }

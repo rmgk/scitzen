@@ -7,22 +7,22 @@ import scitzen.sast.{Block, ListItem, Prov, Slist, Text}
 
 object ListParsers {
 
-  def simpleMarker[_: P]: P[String] =
+  def simpleMarker[_p: P]: P[String] =
     P(verticalSpaces
       ~ ("-" | "•"
         | "*"
         | (digits.? ~ "."))
       ~ verticalSpace).!
 
-  def simpleListItem[_: P]: P[ParsedListItem] =
+  def simpleListItem[_p: P]: P[ParsedListItem] =
     P(simpleMarker ~ withProv(untilE(eol ~ (spaceLine | simpleMarker).map(_ => ()))) ~ eol).map {
       case (marker, (content, prov)) =>
         ParsedListItem(marker, content, prov, None)
     }
 
-  def descriptionListContent[_: P]: P[(String, Prov)] =
+  def descriptionListContent[_p: P]: P[(String, Prov)] =
     P(withProv(untilE(":" ~ verticalSpaces ~ eol | eol) ~ ":" ~ verticalSpaces ~ eol))
-  def descriptionListItem[_: P]: P[ParsedListItem] =
+  def descriptionListItem[_p: P]: P[ParsedListItem] =
     P(simpleMarker ~ descriptionListContent ~
       DelimitedBlockParsers.whitespaceLiteral.?)
       .map {
@@ -30,7 +30,7 @@ object ListParsers {
           ParsedListItem(marker, str, prov, innerBlock)
       }
 
-  def list[_: P]: P[Slist] =
+  def list[_p: P]: P[Slist] =
     P(withProv((descriptionListItem | simpleListItem).rep(1))).map {
       case (listItems, _) =>
         ListConverter.listtoSast(listItems)

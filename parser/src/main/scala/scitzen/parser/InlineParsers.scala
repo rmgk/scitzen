@@ -9,27 +9,27 @@ import scitzen.sast.{Attribute, Inline, InlineText, Macro}
 
 case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit], allowEmpty: Boolean = false) {
 
-  def ending[_: P]: P[Unit] = endingFun(implicitly)
+  def ending[_p: P]: P[Unit] = endingFun(implicitly)
 
-  def comment[_: P]: P[Macro] =
+  def comment[_p: P]: P[Macro] =
     P(withProv(commentStart ~ (untilE(eol, min = 0) ~ (&(ending) | eol)).!))
       .map { case (text, prov) => Macro(Comment, Attribute("", text).toAttributes, prov) }
 
-  private def notSyntax[_: P]: P[String] =
+  private def notSyntax[_p: P]: P[String] =
     P((
       CharsWhile(c => c != ':' && !endChars.contains(c)) | (!MacroParsers.syntaxStart ~ ":") | (!ending ~ CharPred(
         endChars.contains(_)
       ))
     ).rep(1).!)
 
-  def simpleText[_: P]: P[InlineText] = {
+  def simpleText[_p: P]: P[InlineText] = {
     P(notSyntax.!).map(InlineText)
   }
 
-  def inlineSequence[_: P]: P[Seq[Inline]] =
+  def inlineSequence[_p: P]: P[Seq[Inline]] =
     P((comment | MacroParsers.full | simpleText).rep(if (allowEmpty) 0 else 1))
 
-  def full[_: P]: P[(Seq[Inline], String)] =
+  def full[_p: P]: P[(Seq[Inline], String)] =
     P(inlineSequence ~ ending.!)
 
 }
