@@ -10,7 +10,7 @@ A single Scitzen document can be separated into multiple files and then compiled
 
 # Whats the point then?
 
-The original motivation behind Scitzen were twofold. First, configuring static site generators and their plugins to produce the result you want is much harder than writing your own. Second, Markdown was to limited as a language, and Asciidoc was way too complicated and I could never remember what punctuation did what.
+The original motivation behind Scitzen were twofold. First, configuring static site generators and their plugins to produce the result you want is much harder than writing your own. Second, Markdown was too limited as a language, and Asciidoc was way too complicated and I could never remember what punctuation did what.
 
 The current version of Scitzen uses very little punctuation ( basically these symbols: `=:{};` ) and most complicated things just have names (like macros in LaTeX) to make them easier to remember. A lot of current thinking goes into how the structure of documents looks like, and how to express them in a way that they look “right” no matter if published as a research paper, or as a blog post. 
 
