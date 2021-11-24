@@ -1,0 +1,4 @@
+{
+	"target": "scitzen_build",
+	"file_patterns": ["*.scim"],
+}

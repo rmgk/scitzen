@@ -1,0 +1,147 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+file_extensions:
+  - scim
+version: 2
+scope: text.scim
+
+contexts:
+  # The prototype context is prepended to all contexts but those setting
+  # meta_include_prototype: false.
+  prototype:
+    - include: comments
+
+  main:
+    # The main context is the initial starting point of our syntax.
+    # Include other contexts from here (or specify them directly).
+    - include: sections
+    - include: block_source_fenced_macro
+    - include: block_source_fenced_plain
+    - include: block_parsed_macro
+    - include: block_parsed_plain
+    - include: macros
+
+  sections:
+    - match: '^([=#]+)(?:{.*})? (.*)$'
+      scope: markup.heading.scim
+      captures:
+        1: punctuation.definition.heading.scim
+        2: entity.name.section.scim
+      push: light_attributes
+
+  light_attributes:
+    - match: '^\s*(\w+)\s*(=)(.+)$'
+      captures:
+        1: entity.other.attribute-name.scim
+        2: keyword.operator.assignment.scim
+        3: string.quoted.double.scim
+    - match: '(?=^[^=]*$)'
+      pop: true
+
+  macros:
+    - match: '(:)(\w*)(\{)'
+      captures:
+        1: keyword.operator.macro.scim
+        2: variable.function.scim
+        3: keyword.operator.braces.scim punctuation.section.braces.begin.scim
+      push: inside_macro
+
+  inside_macro:
+    - include: strings
+    - match: '\s*(\w+)\s*(=)'
+      captures:
+        1: entity.other.attribute-name.scim
+        2: keyword.operator.assignment.scim
+    - include: macros
+    - match: ';'
+      scope: keyword.operator.separator.scim punctuation.separator.scim
+    - match: '(?=[^;}])'
+      push: inside_unquoted
+    - match: '(\})'
+      captures:
+        1: keyword.operator.parameters.end.scim punctuation.section.braces.end.scim
+      pop: true
+
+  block_parsed_macro:
+    - match: '^(\s*)(::+)(\w*)(\{)'
+      captures:
+        2: keyword.operator.block.scim
+        3: variable.function.scim
+        4: keyword.operator.braces.scim punctuation.section.braces.begin.scim
+      push: 
+        - block_parsed_inside
+        - inside_macro
+
+  block_parsed_plain:
+    - match: '^(\s*)(::+)(\w*)'
+      captures:
+        2: keyword.operator.block.scim
+        3: variable.function.scim
+        4: keyword.operator.braces.scim punctuation.section.braces.begin.scim
+      push: 
+        - block_parsed_inside
+
+  block_parsed_inside:
+  - meta_scope: meta.block.scim markup.raw.block.scim
+  - match: '^\1(\2)\s*$'
+    captures:
+      1: keyword.operator.block.scim
+    pop: true
+  - include: main
+
+  block_source_fenced_macro:
+    - match: '^(\s*)(``+)(\w*)(\{)'
+      captures:
+        2: keyword.operator.block.scim
+        3: variable.function.scim
+        4: keyword.operator.braces.scim punctuation.section.braces.begin.scim
+      push: 
+        - block_source_inside
+        - inside_macro
+
+  block_source_fenced_plain:
+    - match: '^(\s*)(``+)(\w*)'
+      captures:
+        2: keyword.operator.block.scim
+        3: variable.function.scim
+        4: keyword.operator.braces.scim punctuation.section.braces.begin.scim
+      push:
+        - block_source_inside
+
+  block_source_inside:
+  - meta_scope: meta.block.scim markup.raw.block.scim
+  - match: '^\1(\2)\s*$'
+    captures:
+      1: keyword.operator.block.scim
+    pop: true
+
+  inside_unquoted:
+    - meta_scope: string.quoted.double.scim
+    - include: macros
+    - match: '[^;}]'
+      pop: true
+
+  strings:
+    # Strings begin and end with quotes, and use backslashes as an escape
+    # character.
+    - match: '"'
+      scope: punctuation.definition.string.begin.scim
+      push: inside_string
+
+  inside_string:
+    - meta_include_prototype: false
+    - include: macros
+    - meta_scope: string.quoted.double.scim
+    - match: '"'
+      scope: punctuation.definition.string.end.scim
+      pop: true
+
+  comments:
+    - match: ':%'
+      scope: punctuation.definition.comment.scim
+      push:
+        # This is an anonymous context push for brevity.
+        - meta_scope: comment.line.double-slash.scim
+        - match: $\n?
+          pop: true
