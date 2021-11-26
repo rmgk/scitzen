@@ -24,7 +24,7 @@ There is also a very interesting tradeoff between having a notation to write suc
 
 Well … `sbt run` works. Or `sbt nativeImage` to generate a binary. Probably needs linux. Has a lot of optional dependencies on tools to convert other markup (Mermaid, Katex, Graphviz, Inkscape, Cairo, … ).
 
-Also, you would probably have to figure out the syntax, because I am currently to lazy to write that down 😛.
+Also, you would probably have to figure out the syntax, because I am currently to lazy to write that down 😛. However, [my dissertation](https://github.com/rmgk/dissertation-scitzen-example) is available as an example document, just keep in mind that it uses many custom macros and settings a feature that is not yet available without changing scitzen sourcecode.
 
 # So, why is the readme still written in Markdown?
 
