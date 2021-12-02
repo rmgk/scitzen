@@ -52,7 +52,7 @@ object ConvertPdf:
         val templateSettings =
           project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
             Some("template content"  -> content.iterator.mkString("\n")),
-            Some("bibliography path" -> "bibliography.bib")
+            project.bibfile.map( _ => "bibliography path" -> "bibliography.bib")
           ).flatten ++ resultContext.features.toList.map(s => s"feature $s" -> "")
 
         val documentString: String =
