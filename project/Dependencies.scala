@@ -1,3 +1,6 @@
+/* This file is shared between multiple projects
+ * and may contain unused dependencies */
+
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt._
 import sbt.Keys._
@@ -17,20 +20,20 @@ object Dependencies {
     val jline                    = "2.14.6"
     val jodaConvert              = "2.2.1"
     val jodaTime                 = "2.10.3"
-    val jsoniterScalaCore        = "2.11.1"
+    val jsoniterScalaCore        = "2.12.0"
     val jsoup                    = "1.14.3"
     val jsr166y                  = "1.7.0"
     val kaleidoscope             = "0.1.0"
     val magnolia                 = "0.15.0"
     val normalizecss             = "8.0.1"
-    val okHttp                   = "4.9.2"
+    val okHttp                   = "4.9.3"
     val pprint                   = "0.6.6"
     val reactiveStreams          = "1.0.3"
-    val retypecheck              = "0.8.0"
+    val retypecheck              = "0.9.0"
     val scala211                 = "2.11.12"
     val scala212                 = "2.12.15"
     val scala213                 = "2.13.7"
-    val scala3                   = "3.0.1"
+    val scala3                   = "3.1.0"
     val scalaJavaTime            = "2.3.0"
     val scalaLociCommunication   = "33e7a65a3ca29551e440abfdb6903a062c7dab70"
     val scalaParallelCollections = "1.0.0"
@@ -67,7 +70,7 @@ object Dependencies {
   val okHttp          = Def.setting("com.squareup.okhttp3" % "okhttp" % V.okHttp)
   val pprint          = Def.setting("com.lihaoyi" %%% "pprint" % V.pprint)
   val reactiveStreams = Def.setting("org.reactivestreams" % "reactive-streams" % V.reactiveStreams)
-  val retypecheck     = Def.setting("de.tuda.stg" %% "retypecheck" % V.retypecheck)
+  val retypecheck     = Def.setting("io.github.scala-loci" %% "retypecheck" % V.retypecheck)
   val scalacheck      = Def.setting("org.scalacheck" %%% "scalacheck" % V.scalacheck % "test")
   val scalactic       = Def.setting("org.scalactic" %% "scalactic" % V.scalactic)
   val scalaJavaTime   = Def.setting("io.github.cquiroz" %%% "scala-java-time" % V.scalaJavaTime)
