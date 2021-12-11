@@ -1,13 +1,24 @@
 package scitzen.extern
 
-import java.nio.charset.StandardCharsets
-import better.files.File
-import scalatags.Text.all._
-import scitzen.compat.Codecs._
+import better.files.*
+import cats.implicits.*
+import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
+import de.undercouch.citeproc.csl.CSLItemData
+import de.undercouch.citeproc.helper.json.{StringJsonBuilder, StringJsonBuilderFactory}
+import org.jbibtex.{BibTeXDatabase, BibTeXParser}
+import scalatags.Text.all.*
+import scitzen.compat.Codecs.*
 import scitzen.generic.Project
-import cats.implicits._
+
+import java.io.FileInputStream
+import java.nio.charset.StandardCharsets
+import scala.jdk.CollectionConverters.*
 
 object Bibliography:
+
+  case class Author(givenName: Option[String], familyName: Option[String]) {
+    def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")
+  }
 
   case class BibEntry(
       id: String,
@@ -24,29 +35,23 @@ object Bibliography:
     def format: Frag =
       frag(code(citekey), " ", formatAuthors, ". ", br, em(title), ". ", br, container, ". ", year, ". ")
 
-  def citeprocToBib(citeprocEntry: CiteprocEntry) =
-    import citeprocEntry._
+  def citeprocToBib(entry: CSLItemData) =
     BibEntry(
-      id = id,
-      authors = author.map(_.toAuthor),
-      title = title,
-      year = issued.flatMap(_.year),
-      container = `container-title`,
-      `type` = `type`
+      id = entry.getId,
+      authors = Option(entry.getAuthor).map(_.toList).getOrElse(Nil).map(a =>
+        Author(Option(a.getGiven), Option(a.getFamily))
+      ).toList,
+      title = Option(entry.getTitle),
+      year = Option(entry.getIssued).flatMap(_.getDateParts.flatten.headOption),
+      container = Option(entry.getContainerTitle),
+      `type` = Option(entry.getType).map(_.toString).getOrElse("unknown-csl-type")
     )
 
-  def parse(cacheDir: File)(source: File): List[BibEntry] =
-    val hash = scitzen.extern.Hashes.sha1hex(source.contentAsString.getBytes(StandardCharsets.UTF_8))
-    cacheDir.createDirectories()
-    val cachefile = cacheDir / (hash + ".json")
-    if !cachefile.exists then
-      new ProcessBuilder("pandoc-citeproc", "--bib2json", source.pathAsString)
-        .inheritIO()
-        .redirectOutput(cachefile.toJava).start().waitFor()
-
-    val entries = com.github.plokhotnyuk.jsoniter_scala.core.readFromStream(cachefile.newInputStream)(citeprocCodec)
-
-    entries.map { citeprocToBib }
+  def parse(cacheDir: File)(source: File): List[BibEntry] = {
+    val converter = BibTeXConverter()
+    val items     = converter.toItemData(source.fileInputStream(converter.loadDatabase)).asScala
+    items.valuesIterator.map { citeprocToBib }.toList
+  }
 
   def makeBib(project: Project): Map[String, Bibliography.BibEntry] =
     project.bibfile.map { path =>
