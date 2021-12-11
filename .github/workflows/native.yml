@@ -26,7 +26,7 @@ jobs:
             local_path: cli\target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
-      - uses: coursier/setup-action@v1
+      - uses: rmgk/coursier-setup-action@v1
         with:
           jvm: graalvm-java17:21.3.0
           apps: sbt
