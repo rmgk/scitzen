@@ -68,7 +68,6 @@ case class Attributes(raw: Seq[Attribute]) {
 }
 
 object Attributes {
-  def synthetic(attr: Attribute*): Attributes = Attributes(attr)
   def target(string: String): Attributes      = Attribute("", string).toAttributes
 }
 
