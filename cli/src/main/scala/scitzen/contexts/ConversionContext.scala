@@ -3,7 +3,7 @@ package scitzen.contexts
 import better.files.File
 import cats.data.Chain
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.extern.{KatexConverter, KatexLibrary}
+import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.sast.Section
 
 import java.nio.file.Path

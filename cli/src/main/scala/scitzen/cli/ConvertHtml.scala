@@ -3,7 +3,8 @@ package scitzen.cli
 import better.files._
 import cats.implicits._
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{Bibliography, KatexConverter, KatexLibrary}
+import scitzen.extern.{Bibliography}
+import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.generic._
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.compat.Codecs.mapCodec
