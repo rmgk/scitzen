@@ -26,9 +26,11 @@ jobs:
             local_path: cli\target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
+      - uses: coursier/cache-action@v6
+      - uses: coursier/setup-action@v1
         with:
-          java-version: graalvm-java17@21.3.0
+          jvm: graalvm-java17:21.3.0
+          apps: sbt
       - run: git fetch --tags || true
       - name: generate native image (linux)
         run: sbt nativeImage
