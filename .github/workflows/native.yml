@@ -28,7 +28,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: coursier/setup-action@v1
         with:
-          jvm: graalvm-java11:21.1.0
           apps: sbt
       - run: git fetch --tags || true
       - name: generate native image (linux)
