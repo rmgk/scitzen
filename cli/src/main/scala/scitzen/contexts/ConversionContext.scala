@@ -3,7 +3,7 @@ package scitzen.contexts
 import better.files.File
 import cats.data.Chain
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.extern.KatexConverter
+import scitzen.extern.{KatexConverter, KatexLibrary}
 import scitzen.sast.Section
 
 import java.nio.file.Path
@@ -11,7 +11,7 @@ import java.nio.file.Path
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[T](
     data: T,
-    katexConverter: KatexConverter = KatexConverter(Map.empty, None),
+    katexConverter: KatexConverter = KatexConverter(Map.empty, new KatexLibrary(None)),
     resourceMap: Map[File, Path] = Map.empty,
     usedCitations: List[BibEntry] = Nil,
     sections: List[Section] = Nil,

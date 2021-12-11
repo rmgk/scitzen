@@ -23,6 +23,8 @@ lazy val parser = project.in(file("parser"))
     libraryDependencies ++= jsoniterScalaAll.value,
   )
 
+lazy val fetchJSDependencies = TaskKey[File]("fetchJSDependencies", "manually fetches JS dependencies")
+
 lazy val scitzen = project.in(file("cli"))
   .enablePlugins(NativeImagePlugin)
   .enablePlugins(SbtSassify)
@@ -42,14 +44,22 @@ lazy val scitzen = project.in(file("cli"))
     ),
     // libraryDependencies ++= jsoniterScalaAll.value,
     SassKeys.cssStyle  := Maxified,
-    nativeImageVersion := "21.1.0",
-    nativeImageJvm     := "graalvm-java11",
+    nativeImageVersion := "21.3.0",
+    nativeImageJvm     := "graalvm-java17",
     nativeImageOptions ++= Seq(
       "--no-fallback",
       "--no-server",
       "--initialize-at-build-time",
-      "--initialize-at-run-time=scala.util.Random"
+      "--initialize-at-run-time=scala.util.Random",
+      "--language:js",
     ),
+    fetchJSDependencies := {
+      CustomUtil.fetchResource("https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js", "60bf7b560459a4af660e5cd9c4350d7766e9de63", (Compile / managedResourceDirectories).value.head.toPath.resolve("katex.min.js"))
+    },
+    (Compile / compile) := {
+      fetchJSDependencies.value
+      (Compile / compile).value
+    }
   )
 
 lazy val benchmarks = project.in(file("benchmarks"))
