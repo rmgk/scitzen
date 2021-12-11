@@ -23,8 +23,6 @@ lazy val parser = project.in(file("parser"))
     libraryDependencies ++= jsoniterScalaAll.value,
   )
 
-lazy val fetchJSDependencies = TaskKey[File]("fetchJSDependencies", "manually fetches JS dependencies")
-
 lazy val scitzen = project.in(file("cli"))
   .enablePlugins(NativeImagePlugin)
   .enablePlugins(SbtSassify)
@@ -40,9 +38,9 @@ lazy val scitzen = project.in(file("cli"))
       scalatags.value.cross(CrossVersion.for3Use2_13),
       normalizecss.value,
       pprint.value.cross(CrossVersion.for3Use2_13),
-      "org.typelevel" %%% "cats-parse" % "0.3.4",
-      "org.jbibtex" % "jbibtex" % "1.0.19",
-      ("de.undercouch" % "citeproc-java" % "2.0.0")
+      "org.typelevel" %%% "cats-parse"    % "0.3.4",
+      "org.jbibtex"     % "jbibtex"       % "1.0.19",
+      ("de.undercouch"  % "citeproc-java" % "2.0.0")
         .exclude("org.graalvm.js", "js")
         .exclude("org.graalvm.sdk", "graal-sdk19.2.1")
     ),
@@ -58,13 +56,11 @@ lazy val scitzen = project.in(file("cli"))
       "--language:js",
       "-H:+ReportExceptionStackTraces",
     ),
-    fetchJSDependencies := {
-      CustomUtil.fetchResource("https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js", "60bf7b560459a4af660e5cd9c4350d7766e9de63", (Compile / managedResourceDirectories).value.head.toPath.resolve("katex.min.js"))
-    },
-    (Compile / compile) := {
-      fetchJSDependencies.value
-      (Compile / compile).value
-    }
+    (Compile / resources) += CustomUtil.fetchResource(
+      "https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js",
+      "60bf7b560459a4af660e5cd9c4350d7766e9de63",
+      (Compile / managedResourceDirectories).value.head.toPath.resolve("katex.min.js")
+    ),
   )
 
 lazy val benchmarks = project.in(file("benchmarks"))
