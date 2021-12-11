@@ -56,6 +56,7 @@ lazy val scitzen = project.in(file("cli"))
       "--initialize-at-build-time",
       "--initialize-at-run-time=scala.util.Random",
       "--language:js",
+      "-H:+ReportExceptionStackTraces",
     ),
     fetchJSDependencies := {
       CustomUtil.fetchResource("https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js", "60bf7b560459a4af660e5cd9c4350d7766e9de63", (Compile / managedResourceDirectories).value.head.toPath.resolve("katex.min.js"))
