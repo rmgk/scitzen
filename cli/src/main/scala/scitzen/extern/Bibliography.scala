@@ -29,6 +29,7 @@ object Bibliography:
       container: Option[String],
       `type`: String,
       url: Option[String],
+      issue: Option[String],
       citekey: Option[String] = None
   ):
     def formatAuthors: Option[String] =
@@ -41,7 +42,7 @@ object Bibliography:
         if inside.isEmpty then None else Some(p(cls:=name, inside))
       frag(line("authors", formatAuthors.map(stringFrag), year.map(_.toString)),
            line("title", title.map(t => url.fold(stringFrag(t))(u => a(href := u, t)))),
-           line("container", container.map(stringFrag)))
+           line("container", container.map(stringFrag), issue.map(stringFrag)))
     def authorYear: Option[String] =
       authors.headOption.flatMap(_.familyName).combine(year.map(_.toString))
 
@@ -55,14 +56,15 @@ object Bibliography:
       year = Option(entry.getIssued).flatMap(_.getDateParts.flatten.headOption),
       container = Option(entry.getContainerTitle),
       `type` = Option(entry.getType).map(_.toString).getOrElse("unknown-csl-type"),
-      url = Option(entry.getURL)
+      url = Option(entry.getURL),
+      issue = Option(entry.getIssue),
     )
 
   def parse(cacheDir: File)(source: File): List[BibEntry] = {
     val converter = BibTeXConverter()
     val db = source.fileInputStream(converter.loadDatabase)
     val items     = converter.toItemData(db).asScala
-    //val published = extractHowpublished(db)
+    items.valuesIterator.map(_.toJson(StringJsonBuilderFactory().createJsonBuilder())).foreach{println}
     items.valuesIterator.map { citeprocToBib }.toList
   }
 
