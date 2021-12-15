@@ -104,6 +104,9 @@ class SastToSastConverter(document: Document, project: Project):
           val hashedBlock = ublock.copy(attributes = ublock.attributes.updated("content hash", contentHash))
           val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))
           refctx.addConversionBlock(newBlock).ret(newBlock)
+        else if ublock.command == "execute" && ublock.attributes.named.get("lang").contains("js") then
+          val res = scitzen.extern.JsRunner().run(text, ublock.attributes)
+          refctx.ret(ublock.copy(content = Fenced(res.toString)))
         else refctx.ret(ublock)
 
       case SpaceComment(_) => refctx.ret(ublock)
