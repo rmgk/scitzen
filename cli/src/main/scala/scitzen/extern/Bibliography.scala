@@ -64,7 +64,6 @@ object Bibliography:
     val converter = BibTeXConverter()
     val db = source.fileInputStream(converter.loadDatabase)
     val items     = converter.toItemData(db).asScala
-    items.valuesIterator.map(_.toJson(StringJsonBuilderFactory().createJsonBuilder())).foreach{println}
     items.valuesIterator.map { citeprocToBib }.toList
   }
 
