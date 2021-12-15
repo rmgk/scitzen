@@ -1,0 +1,11 @@
+\documentclass[11pt, class=memoir]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes,backgrounds,calc,positioning}
+\usepackage{pgfplots}
+
+\begin{document}
+
+:{template content}
+
+\end{document}
+
