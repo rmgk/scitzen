@@ -63,20 +63,8 @@ object Bibliography:
     val db = source.fileInputStream(converter.loadDatabase)
     val items     = converter.toItemData(db).asScala
     //val published = extractHowpublished(db)
-    items.valuesIterator.map { citeprocToBib } /*.map(be => be.copy(url = be.url.orElse(published.get(be.id))))*/.toList
+    items.valuesIterator.map { citeprocToBib }.toList
   }
-
-  //def extractHowpublished(db: BibTeXDatabase): Map[String, String] = {
-  //  val latexParser  = LaTeXParser()
-  //  val laTeXPrinter = LaTeXPrinter()
-  //  def extractUrl(e: BibTeXEntry) =
-  //    Option(e.getField(Key("howpublished")))
-  //      .map{v =>
-  //        println(s"konverting ${v.toUserString}")
-  //        laTeXPrinter.print(latexParser.parse(v.toUserString))}
-  //
-  //  db.getEntries.asScala.map((k, v) =>extractUrl(v).map(k.getValue -> _)).flatten.toMap
-  //}
 
   def makeBib(project: Project): Map[String, Bibliography.BibEntry] =
     project.bibfile.map { path =>
