@@ -38,7 +38,7 @@ lazy val scitzen = project.in(file("cli"))
       scalatags.value.cross(CrossVersion.for3Use2_13),
       normalizecss.value,
       pprint.value.cross(CrossVersion.for3Use2_13),
-      "org.typelevel" %%% "cats-parse"    % "0.3.4",
+      "org.typelevel" %%% "cats-parse"    % "0.3.6",
       "org.jbibtex"     % "jbibtex"       % "1.0.19",
       ("de.undercouch"  % "citeproc-java" % "2.0.0")
         .exclude("org.graalvm.js", "js")
