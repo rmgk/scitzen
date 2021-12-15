@@ -14,11 +14,14 @@ case class Document(file: File, content: String, sast: List[Sast]):
   lazy val reporter: FileReporter = new FileReporter(file, content)
 
 object Document:
-  def apply(file: File): Document =
+  def apply(file: File, useCatsParse: Boolean): Document =
     val content = file.contentAsString
     try
-      val sast = Parse.documentUnwrap(content, Prov(0, content.length))
-      //val sast = scitzen.parser3.Parse.documentUnwrap(content, Prov(0, content.length))
+      val sast =
+        if useCatsParse then
+          scitzen.parser3.Parse.documentUnwrap(content, Prov(0, content.length))
+        else
+          Parse.documentUnwrap(content, Prov(0, content.length))
       Document(file, content, sast.toList)
     catch
       case e @ scitzen.parser3.ParsingAnnotation(content, failure) =>

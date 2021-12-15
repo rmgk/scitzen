@@ -21,8 +21,7 @@ object Scitzen
 object ConvertProject:
 
   val args = (
-    Opts.argument[Path](metavar = "path")
-      .withDefault(Paths.get("")),
+    Opts.argument[Path](metavar = "path").withDefault(Paths.get("")),
     Opts.option[Path]("sync-file", metavar = "file", visibility = Partial, help = "file to show in output").orNone,
     Opts.option[Int](
       "sync-position",
@@ -31,13 +30,13 @@ object ConvertProject:
       help = "character offset to show in output"
     ).orNone,
     Opts.flag("image-file-map", visibility = Partial, help = "character offset to show in output").orFalse,
-    Opts.option[Path](long = "json", metavar = "path", help = "print single file structure as json")
-      .orNone,
+    Opts.option[Path](long = "json", metavar = "path", help = "print single file structure as json").orNone,
+    Opts.flag("use-cats-parse", visibility = Partial, help = "use cats parse instead of fastparse").orFalse,
   )
 
   val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
     args.mapN {
-      (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson) =>
+      (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson, useCatsParse) =>
         printJson match
           case Some(path) =>
             println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))
@@ -45,7 +44,7 @@ object ConvertProject:
             Project.fromSource(File(sourcedirRel)) match
               case None => scribe.error(s"could not find project for $sourcedirRel")
               case Some(project) =>
-                executeConversions(syncFileRelOption, syncPos, imageFileMap, project)
+                executeConversions(syncFileRelOption, syncPos, imageFileMap, project, useCatsParse)
     }
   }
 
@@ -64,12 +63,13 @@ object ConvertProject:
       syncFileRelOption: Option[Path],
       syncPos: Option[Int],
       imageFileMap: Boolean,
-      project: Project
+      project: Project,
+      useCatsParse: Boolean,
   ): Unit =
     val timediff = makeTimediff()
 
     scribe.info(s"found project in ${project.root} ${timediff()}")
-    val documentDirectory = Project.directory(project.root)
+    val documentDirectory = Project.directory(project.root, useCatsParse)
 
     scribe.info(s"parsed ${documentDirectory.documents.size} documents ${timediff()}")
 
