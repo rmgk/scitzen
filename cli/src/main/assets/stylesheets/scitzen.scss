@@ -315,6 +315,23 @@ del {
 }
 
 
+.bibliography {
+
+  li {
+    margin-top: 1em;
+  }
+
+  p {
+    line-height: initial;
+    margin: 0;
+    margin-top: 0.5em;
+  }
+  .container {
+    font-style: italic;
+  }
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // index page styling
