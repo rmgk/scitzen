@@ -15,7 +15,7 @@ class JsRunner:
 
   def run(javascript: String, attributes: Attributes) =
     val os = ByteArrayOutputStream()
-    val ctx = Context.newBuilder("js").out(os).build()
+    val ctx = Context.newBuilder("js").engine(engine).out(os).build()
     val bindings = ctx.getBindings("js")
     attributes.named.foreach((k, v) => bindings.putMember(k, v))
     val argv: Array[String] = attributes.positional.tail.toArray
