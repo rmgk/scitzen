@@ -56,9 +56,9 @@ lazy val scitzen = project.in(file("cli"))
       "-J-Xmx24G",
       "--language:js",
       "-H:+ReportExceptionStackTraces",
-      "-H:IncludeResources='META-INF/resources/webjars/prism/components/.*.min.js$'",
-      "-H:IncludeResources='META-INF/resources/webjars/prism/themes/.*.css$'",
-      "-H:IncludeResources='META-INF/resources/webjars/katex/.*/dist/katex.min.js$'",
+      "-H:IncludeResources=META-INF/resources/webjars/prism/components/.*.min.js$",
+      "-H:IncludeResources=META-INF/resources/webjars/prism/themes/.*.css$",
+      "-H:IncludeResources=META-INF/resources/webjars/katex/.*/dist/katex.min.js$",
     ),
     (Compile / resources) += CustomUtil.fetchResource(
       "https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js",
