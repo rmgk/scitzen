@@ -26,9 +26,12 @@ jobs:
             local_path: cli\target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
+      - uses: DeLaGuardo/setup-graalvm@5.0
+        with:
+          graalvm: '21.3.0'
+          java: 'java17'
       - uses: coursier/setup-action@v1
         with:
-          jvm: adopt:11
           apps: sbt
       - run: git fetch --tags || true
       - name: generate native image (linux)
