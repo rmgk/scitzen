@@ -36,11 +36,11 @@ lazy val scitzen = project.in(file("cli"))
       decline.value,
       scalatags.value.cross(CrossVersion.for3Use2_13),
       normalizecss.value,
-      "org.webjars.bowergithub.prismjs" % "prism" % "1.25.0",
-      pprint.value.cross(CrossVersion.for3Use2_13),
-      "org.typelevel" %%% "cats-parse"    % "0.3.6",
-      "org.jbibtex"     % "jbibtex"       % "1.0.19",
-      ("de.undercouch"  % "citeproc-java" % "2.0.0")
+      "org.webjars.bowergithub.prismjs" % "prism"         % "1.25.0",
+      "org.webjars.npm"                 % "katex"         % "0.15.1",
+      "org.typelevel"                 %%% "cats-parse"    % "0.3.6",
+      "org.jbibtex"                     % "jbibtex"       % "1.0.19",
+      ("de.undercouch"                  % "citeproc-java" % "2.0.0")
         .exclude("org.graalvm.js", "js")
         .exclude("org.graalvm.sdk", "graal-sdk")
     ),
@@ -56,7 +56,9 @@ lazy val scitzen = project.in(file("cli"))
       "-J-Xmx24G",
       "--language:js",
       "-H:+ReportExceptionStackTraces",
-      "-H:IncludeResources='META-INF/resources/webjars/prism/components/.*.min.js$'"
+      "-H:IncludeResources='META-INF/resources/webjars/prism/components/.*.min.js$'",
+      "-H:IncludeResources='META-INF/resources/webjars/prism/themes/.*.css$'",
+      "-H:IncludeResources='META-INF/resources/webjars/katex/.*/dist/katex.min.js$'",
     ),
     (Compile / resources) += CustomUtil.fetchResource(
       "https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js",
