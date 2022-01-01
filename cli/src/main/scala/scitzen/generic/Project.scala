@@ -1,11 +1,12 @@
 package scitzen.generic
 
-import java.nio.file.{Path, Paths}
 import better.files.File
 import scitzen.compat.ProjectConfig
 import scitzen.extern.Bibliography
 import scitzen.parser.Parse
 import scitzen.sast.{Prov, Text}
+
+import java.nio.file.{Path, Paths}
 
 case class Project(root: File, config: ProjectConfig, definitions: Map[String, Text]):
 
@@ -35,7 +36,7 @@ case class Project(root: File, config: ProjectConfig, definitions: Map[String, T
     Some(res).filter(p => root.isParentOf(p) && p.isRegularFile)
 
 object Project:
-  val scitzenconfig: String = "scitzen.toml"
+  val scitzenconfig: String = "scitzen.project/config"
 
   def findRoot(source: File): Option[File] =
     if (source / scitzenconfig).isRegularFile then Some(source)
@@ -44,30 +45,26 @@ object Project:
   def fromSource(file: File): Option[Project] =
     if isScim(file) then
       findRoot(file) match
-        case None       => Some(Project(file.parent, ProjectConfig(), Map.empty))
+        case None       => Some(Project(file.parent, ProjectConfig.parse(""), Map.empty))
         case Some(file) => fromConfig(file)
     else if file.isDirectory then
       if (file / scitzenconfig).isRegularFile then
         fromConfig(file)
-      else Some(Project(file, ProjectConfig(), Map.empty))
+      else Some(Project(file, ProjectConfig.parse(""), Map.empty))
     else None
 
   def fromConfig(file: File): Option[Project] =
-    scitzen.compat.ProjectConfig.parse((file / scitzenconfig).contentAsString) match
-      case Right(value) =>
-        val definitions = value.definitions.view.mapValues(s => Text(Parse.inlineUnwrap(s, Prov()))).toMap
-        Some(Project(file, value, definitions))
-      case Left((addr, mesg)) =>
-        val errormessage = s"could not parse config:\n$mesg\nat $addr"
-        scribe.error(errormessage)
-        None
+    val value       = scitzen.compat.ProjectConfig.parse((file / scitzenconfig).contentAsString)
+    val definitions = value.definitions.view.mapValues(s => Text(Parse.inlineUnwrap(s, Prov()))).toMap
+    Some(Project(file, value, definitions))
+
   def isScim(c: File): Boolean =
     c.isRegularFile &&
       c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
 
   val fileEnding = "scim"
   def discoverSources(source: File): List[File] =
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     source match
       case f if f.isRegularFile => List(f)
       case f if f.isDirectory =>

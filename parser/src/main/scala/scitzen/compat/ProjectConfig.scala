@@ -1,11 +1,13 @@
 package scitzen.compat
 
-import toml.Codecs._
+
+import scitzen.parser.{AttributesParser, Parse}
+import scitzen.sast.{Attributes, Macro, Prov}
 
 case class ProjectConfig(
-    output: String = "scitzen/out",
-    cache: String = "scitzen/cache",
-    stopwords: String = "scitzen",
+    output: String,
+    cache: String = "scitzen.cache",
+    stopwords: String = "scitzen.project",
     format: List[String] = Nil,
     outputType: List[String] = Nil,
     revealTemplate: Option[String] = None,
@@ -16,7 +18,26 @@ case class ProjectConfig(
 )
 
 object ProjectConfig {
-  def parse(content: String) = {
-    toml.Toml.parseAs[ProjectConfig](content)
+  def parse(content: String): ProjectConfig = {
+    Parse.parseResult(content, AttributesParser.noBraces(_), Prov()) match {
+      case Left(value)  => throw value
+      case Right(value) =>
+        val attrs = Attributes(value)
+        ProjectConfig(
+        output = attrs.named.getOrElse("output", "scitzen.out"),
+        cache = attrs.named.getOrElse("cache", "scitzen.cache"),
+        stopwords = attrs.named.getOrElse("stopwords", "scitzen.project"),
+        format = attrs.named.getOrElse("format", "").split(',').toList.map(_.trim),
+        outputType = attrs.named.getOrElse("outputType", "").split(',').toList.map(_.trim),
+        revealTemplate = attrs.named.get("revealTemplate"),
+        texTemplate = attrs.named.get("texTemplate"),
+        notes = attrs.named.get("notes"),
+        bibliography = attrs.named.get("bibliography"),
+        definitions = attrs.namedT.get("definitions") match {
+          case Some(Seq(Macro(_, attributes, _))) => attributes.named
+          case _ => Map.empty
+        }
+      )
+    }
   }
 }

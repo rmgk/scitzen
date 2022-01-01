@@ -18,7 +18,6 @@ lazy val parser = project.in(file("parser"))
     libraryDependencies ++= Seq(
       betterFiles.value,
       fastparse.value,
-      tomlScala.value,
     ),
     libraryDependencies ++= jsoniterScalaAll.value,
   )

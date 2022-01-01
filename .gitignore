@@ -4,6 +4,6 @@ target/
 .metals
 node_modules/
 package-lock.json
-out/
 .bsp/
-Examples/scitzen
+Examples/scitzen.cache/
+Examples/scitzen.out/

@@ -1,2 +1,0 @@
-format = ["filename", "content"]
-outputType = ["html", "pdf"]

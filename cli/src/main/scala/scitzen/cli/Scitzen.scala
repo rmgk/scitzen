@@ -39,7 +39,7 @@ object ConvertProject:
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson, useCatsParse) =>
         printJson match
           case Some(path) =>
-            println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig(), Map.empty)))
+            println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig.parse(""), Map.empty)))
           case None =>
             Project.fromSource(File(sourcedirRel)) match
               case None => scribe.error(s"could not find project for $sourcedirRel")
