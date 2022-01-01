@@ -43,7 +43,7 @@ lazy val scitzen = project.in(file("cli"))
       "org.jbibtex"     % "jbibtex"       % "1.0.19",
       ("de.undercouch"  % "citeproc-java" % "2.0.0")
         .exclude("org.graalvm.js", "js")
-        .exclude("org.graalvm.sdk", "graal-sdk19.2.1")
+        .exclude("org.graalvm.sdk", "graal-sdk")
     ),
     // libraryDependencies ++= jsoniterScalaAll.value,
     SassKeys.cssStyle  := Maxified,
