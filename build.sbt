@@ -1,5 +1,5 @@
-import Dependencies._
-import Settings._
+import Dependencies.*
+import Settings.*
 import org.irundaia.sass.Maxified
 
 lazy val root = project.in(file(".")).aggregate(parser, scitzen)
@@ -37,6 +37,7 @@ lazy val scitzen = project.in(file("cli"))
       decline.value,
       scalatags.value.cross(CrossVersion.for3Use2_13),
       normalizecss.value,
+      "org.webjars.bowergithub.prismjs" % "prism" % "1.25.0",
       pprint.value.cross(CrossVersion.for3Use2_13),
       "org.typelevel" %%% "cats-parse"    % "0.3.6",
       "org.jbibtex"     % "jbibtex"       % "1.0.19",
@@ -53,13 +54,15 @@ lazy val scitzen = project.in(file("cli"))
       "--no-server",
       "--initialize-at-build-time",
       "--initialize-at-run-time=scala.util.Random",
+      "-J-Xmx24G",
       "--language:js",
       "-H:+ReportExceptionStackTraces",
+      "-H:IncludeResources='META-INF/resources/webjars/prism/components/.*.min.js$'"
     ),
     (Compile / resources) += CustomUtil.fetchResource(
       "https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js",
       "60bf7b560459a4af660e5cd9c4350d7766e9de63",
-      (Compile / managedResourceDirectories).value.head.toPath.resolve("katex.min.js")
+      (Compile / managedResourceDirectories).value.head.toPath.resolve("scitzen/katex.min.js")
     ),
   )
 

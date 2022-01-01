@@ -1,14 +1,16 @@
 package scitzen.cli
 
-import better.files._
-import cats.implicits._
+import better.files.*
+import cats.implicits.*
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{Bibliography}
+import scitzen.extern.Bibliography
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
-import scitzen.generic._
+import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.compat.Codecs.mapCodec
-import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.core.*
+import scalatags.Text.all.raw
+import scalatags.Text.tags2.style
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
@@ -140,7 +142,7 @@ object ConvertHtml:
         val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
 
         HtmlPages(cssrelpath).wrapContentHtml(
-          contentFrag,
+          style(raw(Resource.getAsString("META-INF/resources/webjars/prism/themes/prism.css"))) +: contentFrag,
           "fullpost",
           toc.map(c => frag(a(href := s"#${article.header.id}", article.title): Frag, c: Frag)),
           article.language

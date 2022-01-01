@@ -10,7 +10,7 @@ import com.github.plokhotnyuk.jsoniter_scala.core.writeToString
 
 object Katex:
   // this MUST be inlined by native image to work
-  private val katexstr: String = Resource.getAsString("katex.min.js")
+  private val katexstr: String = Resource.getAsString("scitzen/katex.min.js")
 
   case class KatexConverter(cache: Map[String, String], katex: KatexLibrary):
 

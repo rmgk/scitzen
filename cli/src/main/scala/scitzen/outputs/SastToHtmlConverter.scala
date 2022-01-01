@@ -1,16 +1,16 @@
 package scitzen.outputs
 
-import better.files._
+import better.files.*
 import cats.data.Chain
-import cats.implicits._
+import cats.implicits.*
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
-import scitzen.extern.ImageTarget
+import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand._
-import scitzen.sast._
+import scitzen.sast.MacroCommand.*
+import scitzen.sast.*
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
@@ -203,17 +203,20 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   else
                     text.replaceAll(""":§([^§]*?)§""", "")
                 val initTag: Tag =
-                  if !sBlock.attributes.positional.contains("highlight") then pre(code(labeltext))
+                  if !sBlock.attributes.positional.contains("highlight") then
+                    sBlock.attributes.named.get("lang") match
+                      case None => code(labeltext)
+                      case Some(lang) => code(raw(Prism.highlight(labeltext, lang)))
                   else
                     val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
                       _._2 + 1
                     }.mkString(",")
                     val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
-                    pre(code(txt, attr("data-line-numbers") := lines))
+                    code(txt, attr("data-line-numbers") := lines)
 
-                val respre = sBlock.attributes.named.get("lang").fold(initTag)(l => initTag(cls := l))
+                val respre = sBlock.attributes.named.get("lang").fold(pre(initTag))(l => pre(initTag()))
                 val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
-                ctx.retc(res)
+                ctx.useFeature("prism").retc(res)
 
         case SpaceComment(_) => ctx.empty
 
