@@ -12,6 +12,7 @@ case class InlineText(str: String)                                          exte
 case class Macro(command: MacroCommand, attributes: Attributes, prov: Prov) extends Inline with Sast
 
 case class Text(inl: Seq[Inline]) {
+  
   lazy val str = {
     inl.map {
       case Macro(Strong | Emph, attributes, _) => attributes.target

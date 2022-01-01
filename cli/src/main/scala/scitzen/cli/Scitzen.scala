@@ -1,12 +1,11 @@
 package scitzen.cli
 
-import better.files._
-import cats.implicits._
+import better.files.*
+import cats.implicits.*
 import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.extern.{ImageConverter, ImageTarget}
-import scitzen.compat.ProjectConfig
-import scitzen.generic.{PreprocessedResults, Project}
+import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
 
 import java.nio.file.{Path, Paths}
 
@@ -39,7 +38,7 @@ object ConvertProject:
       (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson, useCatsParse) =>
         printJson match
           case Some(path) =>
-            println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig.parse(""), Map.empty)))
+            println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig.parse("b=c"), Map.empty)))
           case None =>
             Project.fromSource(File(sourcedirRel)) match
               case None => scribe.error(s"could not find project for $sourcedirRel")

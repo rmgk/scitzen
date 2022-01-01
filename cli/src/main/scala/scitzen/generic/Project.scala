@@ -1,7 +1,6 @@
 package scitzen.generic
 
 import better.files.File
-import scitzen.compat.ProjectConfig
 import scitzen.extern.Bibliography
 import scitzen.parser.Parse
 import scitzen.sast.{Prov, Text}
@@ -45,17 +44,19 @@ object Project:
   def fromSource(file: File): Option[Project] =
     if isScim(file) then
       findRoot(file) match
-        case None       => Some(Project(file.parent, ProjectConfig.parse(""), Map.empty))
+        case None       => Some(Project(file.parent, ProjectConfig.parse("a=b"), Map.empty))
         case Some(file) => fromConfig(file)
     else if file.isDirectory then
       if (file / scitzenconfig).isRegularFile then
         fromConfig(file)
-      else Some(Project(file, ProjectConfig.parse(""), Map.empty))
+      else Some(Project(file, ProjectConfig.parse("c=d"), Map.empty))
     else None
 
   def fromConfig(file: File): Option[Project] =
-    val value       = scitzen.compat.ProjectConfig.parse((file / scitzenconfig).contentAsString)
-    val definitions = value.definitions.view.mapValues(s => Text(Parse.inlineUnwrap(s, Prov()))).toMap
+    val configContent = (file / scitzenconfig).contentAsString
+    val value       = ProjectConfig.parse(configContent)
+    val definitions = value.definitions.view.map{(k, v) =>
+      k -> Text(Parse.inlineUnwrap(v, Prov()))}.toMap
     Some(Project(file, value, definitions))
 
   def isScim(c: File): Boolean =
