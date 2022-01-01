@@ -26,6 +26,8 @@ jobs:
             local_path: cli\target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
+      - uses: coursier/cache-action@v6
+        continue-on-error: true
       - uses: DeLaGuardo/setup-graalvm@5.0
         with:
           graalvm: '21.3.0'
