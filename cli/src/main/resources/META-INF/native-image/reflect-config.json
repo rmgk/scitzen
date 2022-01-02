@@ -3,9 +3,6 @@
   "name":"[Ljava.lang.String;"}
 ,
 {
-  "name":"[Ljava.nio.file.CopyOption;"}
-,
-{
   "name":"[Ljava.nio.file.FileVisitOption;"}
 ,
 {
@@ -27,6 +24,10 @@
 {
   "name":"java.lang.invoke.VarHandle",
   "methods":[{"name":"releaseFence","parameterTypes":[] }]}
+,
+{
+  "name":"scitzen.extern.Katex$",
+  "fields":[{"name":"0bitmap$1"}]}
 ,
 {
   "name":"scitzen.extern.Katex$KatexLibrary",

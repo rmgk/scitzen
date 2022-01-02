@@ -54,14 +54,13 @@ lazy val scitzen = project.in(file("cli"))
       "--no-server",
       // "--initialize-at-build-time",
       // "--initialize-at-run-time=scala.util.Random",
-      // "--initialize-at-build-time=scitzen.cli.Scitzen,cats.Later,scala.runtime,scala.Predef$,scala.collection,scala.package$,scala.reflect,scala.math",
       "-J-Xmx16G",
       "--language:js",
       "-H:+ReportExceptionStackTraces",
       "-H:IncludeResources=META-INF/resources/webjars/prism/components/.*.min.js$",
-      // "-H:IncludeResources=META-INF/resources/webjars/prism/themes/.*.css$",
-      // "-H:IncludeResources=META-INF/resources/webjars/katex/.*/dist/katex.min.js$",
-      // "-H:IncludeResources=scitzen.css",
+      "-H:IncludeResources=META-INF/resources/webjars/prism/themes/.*.css$",
+      "-H:IncludeResources=META-INF/resources/webjars/katex/.*/dist/katex.min.js$",
+      "-H:IncludeResources=scitzen.css",
     ),
   )
 
