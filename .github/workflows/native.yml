@@ -41,7 +41,7 @@ jobs:
         shell: bash
         if: ${{ matrix.os != 'windows-latest' }}
         env:
-          JAVA_OPTS: -Xmx4g
+          JAVA_OPTS: -Xmx1g
       - name: generate native image (windows)
         shell: cmd
         if: ${{ matrix.os == 'windows-latest' }}
@@ -50,7 +50,7 @@ jobs:
           Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && sbt
           nativeImage
         env:
-          JAVA_OPTS: -Xmx4g
+          JAVA_OPTS: -Xmx1g
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}

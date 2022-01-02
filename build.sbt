@@ -54,7 +54,7 @@ lazy val scitzen = project.in(file("cli"))
       "--no-server",
       // "--initialize-at-build-time",
       // "--initialize-at-run-time=scala.util.Random",
-      "-J-Xmx16G",
+      "-J-Xmx7G",
       "--language:js",
       "-H:+ReportExceptionStackTraces",
       "-H:IncludeResources=META-INF/resources/webjars/prism/components/.*.min.js$",
