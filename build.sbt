@@ -63,11 +63,6 @@ lazy val scitzen = project.in(file("cli"))
       // "-H:IncludeResources=META-INF/resources/webjars/katex/.*/dist/katex.min.js$",
       // "-H:IncludeResources=scitzen.css",
     ),
-    (Compile / resources) += CustomUtil.fetchResource(
-      "https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js",
-      "60bf7b560459a4af660e5cd9c4350d7766e9de63",
-      (Compile / managedResourceDirectories).value.head.toPath.resolve("scitzen/katex.min.js")
-    ),
   )
 
 lazy val benchmarks = project.in(file("benchmarks"))
