@@ -1,0 +1,67 @@
+[
+{
+  "name":"[Ljava.lang.String;"}
+,
+{
+  "name":"[Ljava.nio.file.CopyOption;"}
+,
+{
+  "name":"[Ljava.nio.file.FileVisitOption;"}
+,
+{
+  "name":"[Ljava.nio.file.LinkOption;"}
+,
+{
+  "name":"[Ljava.nio.file.OpenOption;"}
+,
+{
+  "name":"[Ljava.nio.file.attribute.FileAttribute;"}
+,
+{
+  "name":"cats.Later",
+  "fields":[{"name":"0bitmap$1"}]}
+,
+{
+  "name":"java.lang.ClassValue"}
+,
+{
+  "name":"java.lang.invoke.VarHandle",
+  "methods":[{"name":"releaseFence","parameterTypes":[] }]}
+,
+{
+  "name":"scitzen.extern.Katex$KatexLibrary",
+  "fields":[{"name":"0bitmap$2"}]}
+,
+{
+  "name":"scitzen.extern.Prism$",
+  "fields":[{"name":"0bitmap$1"}]}
+,
+{
+  "name":"scitzen.generic.Article",
+  "fields":[{"name":"0bitmap$1"}]}
+,
+{
+  "name":"scitzen.generic.Document",
+  "fields":[{"name":"0bitmap$1"}]}
+,
+{
+  "name":"scitzen.generic.DocumentDirectory",
+  "fields":[{"name":"0bitmap$1"}]}
+,
+{
+  "name":"scitzen.generic.FileReporter",
+  "fields":[{"name":"0bitmap$2"}]}
+,
+{
+  "name":"scitzen.generic.Project",
+  "fields":[{"name":"0bitmap$1"}]}
+,
+{
+  "name":"sun.misc.Unsafe",
+  "allDeclaredFields":true}
+,
+{
+  "name":"sun.security.provider.SHA",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+
+]
