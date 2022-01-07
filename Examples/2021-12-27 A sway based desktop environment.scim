@@ -1,0 +1,118 @@
+= A sway based desktop environment
+date = 2021-12-27
+
+:link{Sway; https://swaywm.org/} is a Wayland compositor, that is, the piece of software responsible for arranging and drawing windows on your Linux desktop. See the website for a demo video.
+
+Sway has many advantages over other environment the two most important ones for me are its stability and its ease of use.
+
+Stability in this context means that your desktop environment is not going to change, not going to behave differently, and not doing anything else you do not want it to do. Sway is a drop-in replacement for i3, the latter of which I have used unchanged since 2010. Sway still works exactly the same, and parts of the configuration have also been unchanged since then. You never have to learn new keybindings, suffer through new animations, or are otherwise a victim to the whims of some random new marketing decisions needing a random “refresh”.
+
+Ease of use in sway is due to everything being handled in a logical and uniform manner. You have a single configuration file that is well documented and allows you to configure your inputs (such as mouse and keyboard settings), outputs (monitors and layouts), startup programs, and keybindings for launching, moving, and closing applications. The defaults work well, but are also explicitly spelled out in the configuration file, so you can easily adapt them in case you have a new workflow. Plug in a monitor, mouse, or keyboard, and it just works, but if you have advanced needs (different keyboards with different layouts, multiple mice with different accelerations, multiple monitor setups where specific windows should always appear on specific monitors) these are straightforward to configure.
+
+However, Sway is not a desktop environment, it does not handle anything except you interacting with your windows. As you are also not subject to the whims of someone else making decisions for you, you will have to make decisions yourself. Decisions such as which applications to use for functionality such as quickly launching desktop applications, or showing you password prompts for GTK applications. No one can make these decisions for you, because no one knows what kinds of applications you are going to use inside Sway. To help you out, let me explain my view, and my decisions.
+
+# Understanding default Ubuntu, to bend it to our will.
+
+When Ubuntu boots, it starts the service manager: systemd. Systemd does two things (well, actually it does :link{ALOT of things; https://www.freedesktop.org/software/systemd/man/index.html}, but I simplify those into these two categories), it starts other services and it handles a lot of basic functionality of the computer itself. For better or for worse, systemd does a lot, and its always a good point to start if one wants to enable or change a certain feature (this may include network settings, time synchronization, suspend and hibernation, and many many more).
+
+Systemd will start GDM the gnome login manager which ask the user for their password and starts a graphical session selected by the user. Login as a user will further trigger systemd to also start any user services (such as pulseaudio or pipewire which handle your audio).
+
+Another central piece of infrastructure is DBus (which is part of systemd and Gnome) which handles somewhat loosely coupled communication between multiple processes. Most notably for our case, DBus allows processes to call services which are currently not running, but will be started by DBus.
+
+Finally, on standard Ubuntu, the graphical session is Gnome. Gnome interacts with systemd and DBus, but also has many of its own services and handlers. Generally, Gnome does a lot of hard to understand things.
+
+For this article, we keep everything except Gnome itself.
+
+
+# Better integrated desktop experience for Sway on Ubuntu
+
+The sway package on Ubuntu installs a session file for your login manager (GDM) at :code{/usr/local/share/wayland-sessions/sway.desktop}. This is usually configured to directly launch the sway executable, but it is usually a good idea to instead launch a custom script that sets certain environment variables for better system integration. Here is my sway launch script and I am going to explain each part in order.
+
+::figure
+  ``{label=sway-extend.fish}
+    #!/usr/bin/fish
+
+    # fuck GDM and explicitly import the language settings
+    export (systemctl --user show-environment | rg '^(LC_|LANG)')
+
+    # we already have another hack setting the window manager in the sway config, but that seems to still have some grab keyboard issues, so lets try this as well
+    export _JAVA_AWT_WM_NONREPARENTING=1
+
+    # used at least for desktop portals, is set here and then exported to dbus and systemd in the sway config along with other sway variables
+    # https://github.com/emersion/xdg-desktop-portal-wlr/wiki/%22It-doesn't-work%22-Troubleshooting-Checklist
+    export XDG_CURRENT_DESKTOP=sway
+
+    # library path is for manually installed sways
+    export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
+
+    # keyring control is set like this by gnome-keyring-daemon, but not returned in the call below, so just do it manually
+    export GNOME_KEYRING_CONTROL=$XDG_RUNTIME_DIR/keyring
+
+    # start the secrets service and the ssh agent, returns the SSH_SOCK (and maybe other environment?)
+    # note that keypass can do the secrets integration, but is not quite an ssh agent so … meh
+    export (gnome-keyring-daemon --start --components=ssh,secrets)
+
+    # start sway!
+    exec sway
+  ``
+::
+
+
+# Setting environment variables (and locales)
+
+Environment variables in Linux handle an annoying amount of different things, and it is super hard to set them consistently. The issue is that these variables are by default only inherited to sub processes of the current running process. That is, the variables in the environment of any process differ depending on how it was started. Practically speaking, this means we somehow have to ensure that processes started by systemd, DBus, sway, and your shell somehow agree in a way that is useful.
+
+There are two strategies to do so. The first one is set the variables in your shell, and make sure that everything first starts your shell before starting something else. This generally ignores variables for systemd and DBus, but that is often fine, as they do not often start software the user interacts with directly.
+
+The second approach (and the one I am currently using) is to use the systemd :link{environment.d; https://www.freedesktop.org/software/systemd/man/environment.d.html} configuration files – which are read by systemd and dbus, and then import them into your shell using :code{systemctl --user show-environment}. In :ref{sway-extend.fish; line=3}, the first thing we do is loading all the language related settings and exporting them back into the current scope. Actually, GDM should pass all user variables to Sway, and does so for everything except the language settings.
+
+I also use the following in my fish configuration file to import the variables into fish shells:
+
+``
+  if set -q SSH_CLIENT; or status is-login
+    # export is a wrapper around set --export and basically parses the output of the systemctl environment with some special handling for correctly importing $PATH variables and similar
+    # see environment.d for definitions
+    export (systemctl --user show-environment)
+  end
+``
+
+The code is only executed for non-interactive SSH sessions or for login shells (both SSH and on a TTY) because in all other circumstances the shell should be started by something that already has the correct environment variables.
+
+
+# Fix some Java issues
+
+The next line in :ref{sway startup file; sway-extend.fish; line=6}, is a workaround because Java applications, most notably the IntelliJ family have some issues with tiling window managers such as Sway. There are still some remaining issues as IntelliJ does not natively support Wayland, and it will depend on your tolerance wether you consider it fine for daily work (as I do) or completely broken (as some windows will just auto close).
+
+# Enable screen sharing and other DBus integrations
+
+In the age of Zoom, Teams, and Discord, screen sharing is a quite important feature. The way screen sharing on Wayland works was designed by Gnome for Flatpak (as far as I can tell) and is thus somewhat contrived. You need to install the relevant :link{xdg desktop portal; https://github.com/emersion/xdg-desktop-portal-wlr} and tell DBus that you want to have your sway session handled, which will make DBus start the relevant portal which will then talk to sway to stream the content of a screen to the requesting application.
+
+The way I do this is to set the relevant environment variable before sway starts in :ref{sway-extend.fish; line=11}. Then during sway startup, that variable along with other information about the current session is passed to DBus (which is also asked to forward the information to systemd). For this I have the following in my sway config file.
+
+``
+    exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
+``
+
+The two display variables are such that systemd and dbus started services know which output they should be started on, the :code{SWAYSOCK} enables sways IPC mechanism, and the current desktop one is for the screen sharing. A useful effect of exporting these here is that they will also be imported by SSH sessions, allowing them to remotely interact with the currently running graphical session.
+
+
+# Custom sway installs
+
+Sadly, sway in Debian (and thus Ubuntu) is currently super old, because of the Debian freeze in early 2021. The included Firefox however assumes a more recent version of Sway, thus issues such as flickering ensues. To fix this, I use a :link{custom sway installation; https://github.com/luispabon/sway-ubuntu} which installs the relevant binaries into a custom path, which is set in :ref{sway-extend.fish; line=14}.
+
+# Gnome keyring integration
+
+Although I do use KeepassXC to manually manage my passwords, I use gnome keyring to manage automated things on a local machine, such as managing ssh keys (with passphrases), gpg key passphrases, and password storage for email clients, firefox, and other applications.
+
+The way this works is (surprisingly not DBus based) that there are Unix sockets waiting for interaction at positions defined by more environment variables. We first set the gnome keyring variable in :ref{sway-extend.fish; line=17} and then start the service with the relevant components in :ref{sway-extend.fish; line=21}. Starting the service returns more environment variables which are also reexported.
+
+# Polkit password prompts
+
+Sometimes graphical applications want to do something to your system and need elevated privileges. This is handled by polkit, which will show you a password prompt. To do so, there must be a polkit agent running in your session. I use the following in my sway configuration file:
+
+``
+  exec lxqt-policykit-agent
+``
+
+This is the agent used by the lxqt desktop environment, and seems to be the only one that survives running outside of its own desktop environment.
+
