@@ -10,6 +10,7 @@ import scitzen.extern.Bibliography.BibEntry
 import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.*
+import scitzen.sast.Attribute.Plain
 import scitzen.sast.MacroCommand.*
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
@@ -114,7 +115,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 attributes.target
               ),
               " ",
-              categoriesSpan(attributes.raw.filter(_.id == "category").map(_.value))
+              categoriesSpan(attributes.raw.collect{case Plain("category", value) => value})
             )))
 
           case Include =>
@@ -148,7 +149,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             inlineValuesToHTML(List(mcro))(ctx)
 
       case tLBlock: Block =>
-        val positiontype = tLBlock.attributes.positional.headOption
+        val positiontype = tLBlock.attributes.legacyPositional.headOption
         positiontype match
           case Some("quote") =>
             convertBlock(tLBlock)(ctx).map { innerHtml =>
@@ -156,7 +157,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
               val bq = blockquote(innerHtml.toList)
               // first argument is "quote" we concat the rest and treat them as a single entity
-              val title = tLBlock.attributes.positional.drop(1)
+              val title = tLBlock.attributes.legacyPositional.drop(1)
               Chain(if title.nonEmpty then bq(cite(title)) else bq)
             }
           case _ =>
@@ -206,7 +207,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   else
                     text.replaceAll(""":§([^§]*?)§""", "")
                 val initTag: Tag =
-                  if !sBlock.attributes.positional.contains("highlight") then
+                  if !sBlock.attributes.legacyPositional.contains("highlight") then
                     sBlock.attributes.named.get("lang") match
                       case None       => code(labeltext)
                       case Some(lang) => code(raw(Prism.highlight(labeltext, lang)))
@@ -223,8 +224,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
         case SpaceComment(_) => ctx.empty
 
-    sBlock.attributes.namedT.get("note").fold(innerCtx) { note =>
-      inlineValuesToHTML(note.inl)(innerCtx).map { content =>
+    sBlock.attributes.nested.get("note").fold(innerCtx) { note =>
+      inlineValuesToHTML(note.targetT.inl)(innerCtx).map { content =>
         innerCtx.data :+ p(`class` := "marginnote", content.toList)
       }
     }
@@ -270,8 +271,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
           case Link =>
             val target = attrs.target
-            val content = attrs.positionalT.headOption
-              .fold(ctx.retc(stringFrag(target))) { txt =>
+            val content = attrs.positional.headOption
+                               .fold(ctx.retc(stringFrag(target))) { txt =>
                 inlineValuesToHTML(txt.inl)(ctx)
               }
             content.retc(a(href := target)(content.data.toList))
@@ -284,7 +285,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               scribe.error(
                 s"multiple resolutions for ${attrs.target}" +
                   reporter(mcro.prov) +
-                  s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
@@ -331,7 +332,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 ctx.retc(a(title := target, "※"))
 
               case tagname @ ("ins" | "del") =>
-                ctx.retc(tag(tagname)(attrs.positional.mkString(", ")))
+                ctx.retc(tag(tagname)(attrs.legacyPositional.mkString(", ")))
 
               case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
               case "tableofcontents" => ctx.empty

@@ -5,8 +5,9 @@ import cats.data.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, Project, SastRef}
+import scitzen.sast.*
+import scitzen.sast.Attribute.Positional
 import scitzen.sast.MacroCommand.{Image, Include}
-import scitzen.sast._
 
 class SastToSastConverter(document: Document, project: Project):
 
@@ -119,15 +120,15 @@ class SastToSastConverter(document: Document, project: Project):
   private def makeAbsolute(attributes: Attributes, select: String = ""): Option[Attributes] =
     val attr =
       if select == "" then
-        attributes.positional.lastOption
+        attributes.legacyPositional.lastOption
       else attributes.named.get(select)
     attr.flatMap { template =>
       val abs = project.resolve(cwd, template)
       abs.map(project.relativizeToProject).map { rel =>
         if select == "" then
-          Attributes(attributes.raw.map { attr =>
-            if attr.id == "" && attr.value == attributes.target then Attribute("", rel.toString)
-            else attr
+          Attributes(attributes.raw.map {
+            case Positional(text, Some(value)) if value == attributes.target => Attribute("", rel.toString)
+            case other                                             => other
           })
         else attributes.updated(select, rel.toString)
       }

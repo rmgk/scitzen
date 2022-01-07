@@ -17,10 +17,10 @@ object AttributesParser {
   val unquotedValue: P0[(Seq[Inline], String)] =
     defer0(InlineParsers.full(terminationCheck, allowEmpty = true).withContext("unquoted"))
 
-  /** value is in the general form of ""[content]"" where all of the quoting is optional,
+  /** text is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
     */
-  val value: P0[Text] = {
+  val text: P0[Text] = {
     (anySpaces *> (("\"".rep0.string ~ "[".string.?).flatMap {
       case ("", None) => unquotedValue
       case (quotes, Some(_)) =>
@@ -31,11 +31,11 @@ object AttributesParser {
   }
 
   val namedAttribute: P[Attribute] =
-    (((verticalSpaces.with1 *> identifier.string <* verticalSpaces).backtrack.soft <* "=") ~ value)
-      .map { (id: String, v: Text) => scitzen.sast.Attribute(id, v) }.withContext("named")
+    (((verticalSpaces.with1 *> identifier.string <* verticalSpaces).backtrack.soft <* "=") ~ text)
+      .map { (id: String, v: Text) => scitzen.sast.Attribute.Plain(id, v.str /*TODO: this should not be str, but the actual string */) }.withContext("named")
 
   val positionalAttribute: P0[Attribute] =
-    value.map(v => scitzen.sast.Attribute("", v)).withContext("positional")
+    text.map(v => scitzen.sast.Attribute("", v.str /*TODO: this should not be str, but the actual string */)).withContext("positional")
 
   val attribute: P0[Attribute] = (namedAttribute | positionalAttribute).withContext("attribute")
 

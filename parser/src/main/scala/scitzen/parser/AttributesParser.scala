@@ -3,7 +3,7 @@ package scitzen.parser
 import fastparse.NoWhitespace._
 import fastparse._
 import scitzen.parser.CommonParsers._
-import scitzen.sast.{Attribute, Inline, Text}
+import scitzen.sast.{Attribute, Attributes, Inline, Text}
 
 object AttributesParser {
   def start[_p: P]: P[Unit] = P(open)
@@ -13,29 +13,43 @@ object AttributesParser {
 
   def terminationCheck[_p: P] = P(&(";" | close | eol))
   val unquotedInlines         = InlineParsers(s";\n$close", terminationCheck(_), allowEmpty = true)
-  def unquotedValue[_p: P]: P[(Seq[Inline], String)] = P(unquotedInlines.full)
+  def unquotedText[_p: P]: P[(Seq[Inline], String)] = P(unquotedInlines.full)
 
-  /** value is in the general form of ""[content]"" where all of the quoting is optional,
+  /** text is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
     */
-  def value[_p: P]: P[Text] = {
+  def text[_p: P]: P[Text] = {
     P(anySpaces ~ ("\"".rep.! ~ "[".!.?).flatMap {
-      case ("", None) => unquotedValue
-      case (quotes, Some(_)) =>
-        InlineParsers("]", _ => s"]$quotes" ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
-      case (quotes, None) =>
-        InlineParsers("\"", _ => quotes ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
-      //(("[" ~ untilI("]" ~ quotes ~ verticalSpaces ~ &(terminator)))
-      //  | (if (quotes.isEmpty) unquotedValue
-      //     else untilI(quotes ~ verticalSpaces ~ &(terminator))))
+      case ("", None) => unquotedText
+      case (quotes, bracket) =>
+        val closing = bracket.fold(quotes)(_ => s"]$quotes")
+        InlineParsers(closing.substring(0,1), _ => closing ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
     }).map(r => scitzen.sast.Text(r._1))
   }
 
-  def namedAttribute[_p: P]: P[Attribute] =
-    P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~/ value)
-      .map { case (id, v) => scitzen.sast.Attribute(id, v) }
+  def stringValue[_p: P]: P[String] = {
+    P(anySpaces ~ ("\"".rep.! ~ "[".!.?).flatMap {
+      case ("", None) => CharsWhile(c => c != ';' && c != '}' && c != '\n').?.!
+      case (quotes, bracket) =>
+        val b = bracket.fold("")(_ => "]")
+        untilE(s"$b$quotes" ~ verticalSpaces ~ terminationCheck) ~ s"$b$quotes"
+    })
+  }
 
-  def positionalAttribute[_p: P]: P[Attribute] = P(value).map(v => scitzen.sast.Attribute("", v))
+  def namedAttribute[_p: P]: P[Attribute] =
+    P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~/ (braces.map(Left.apply) | stringValue.map(Right.apply)))
+      .map {
+        case (id, Left(attr)) => scitzen.sast.Attribute.Nested(id, Attributes(attr))
+        case (id, Right(value)) => scitzen.sast.Attribute.Plain(id, value)
+      }
+
+  def positionalAttribute[_p: P]: P[Attribute] = {
+    // unclear to me if there is any way to acquire a parsed value AND the parsed string from fastparse
+    var hack: Text = null
+    P(text).map{v => hack = v}.!.map{value =>
+      scitzen.sast.Attribute.Positional(hack, Some(value))
+    }
+  }
 
   def attribute[_p: P]: P[Attribute] = P(namedAttribute | positionalAttribute)
 

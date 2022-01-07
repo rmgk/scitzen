@@ -28,7 +28,7 @@ case class SastToTextConverter(
 
       case Block(attr, blockType, _) =>
         val filterBlock =
-          attr.positional match
+          attr.legacyPositional match
             case "if" :: parameter :: _ =>
               val res =
                 definitions.get(parameter) match

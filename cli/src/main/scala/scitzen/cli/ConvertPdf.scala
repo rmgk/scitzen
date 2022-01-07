@@ -50,7 +50,7 @@ object ConvertPdf:
         project.bibfile.foreach(_.copyTo(temptexdir / "bibliography.bib")(copyOptions = CopyOptions(overwrite = true)))
 
         val templateSettings =
-          project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
+          project.config.definitions ++ article.header.attributes.named ++ List(
             Some("template content"  -> content.iterator.mkString("\n")),
             project.bibfile.map( _ => "bibliography path" -> "bibliography.bib")
           ).flatten ++ resultContext.features.toList.map(s => s"feature $s" -> "")

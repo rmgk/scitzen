@@ -33,12 +33,7 @@ object ProjectConfig {
           texTemplate = attrs.named.get("texTemplate"),
           notes = attrs.named.get("notes"),
           bibliography = attrs.named.get("bibliography"),
-          definitions = attrs.namedT.get("definitions") match {
-            case Some(Text(List(Macro(_, attributes, _)))) => attributes.namedT.view.mapValues(t => SastToScimConverter.inlineToScim(t.inl).mkString("")).toMap
-            case other =>
-              println(s"definitions was $other")
-              Map.empty
-          }
+          definitions = attrs.nested.get("definitions").map(_.named).getOrElse(Map.empty)
         )
     }
   }

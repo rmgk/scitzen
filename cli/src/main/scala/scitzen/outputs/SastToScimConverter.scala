@@ -1,11 +1,12 @@
 package scitzen.outputs
 
 import cats.data.Chain
-import cats.implicits._
+import cats.implicits.*
 import fastparse.P
 import scitzen.parser.AttributesParser
+import scitzen.sast.*
+import scitzen.sast.Attribute.{Nested, Plain, Positional}
 import scitzen.sast.MacroCommand.Comment
-import scitzen.sast._
 
 import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex
@@ -51,7 +52,8 @@ object SastToScimConverter:
         case Nil => Nil
         case head :: tail =>
           val stripped = head.stripTrailing()
-          if stripped.isEmpty then tail else stripped :: tail)
+          if stripped.isEmpty then tail else stripped :: tail
+      )
         .reverse
     )
 
@@ -62,9 +64,9 @@ object SastToScimConverter:
     }.mkString
 
   def convertBlock(sb: Block): Chain[String] =
-    val (remattr, command) = sb.attributes.raw.headOption match
-      case Some(Attribute("", command)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), command)
-      case _                            => (sb.attributes, Text(Nil))
+    val (remattr, command: String) = sb.attributes.raw.headOption match
+      case Some(Positional(_, Some(value))) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), value)
+      case _                                => (sb.attributes, "")
     sb.content match
 
       case Paragraph(content) =>
@@ -76,7 +78,7 @@ object SastToScimConverter:
         delimiter.charAt(0) match
           case ':' =>
             Chain(
-              "::" + command.str +
+              "::" + command +
                 AttributesToScim.convert(remattr, force = false, spacy = false),
               content.map(addIndent(_, "  ")).iterator.mkString("\n").stripTrailing(),
               "::"
@@ -93,7 +95,7 @@ object SastToScimConverter:
       case Fenced(text) =>
         val delimiter = "``"
         Chain(
-          delimiter + command.str + AttributesToScim.convert(remattr, spacy = false, force = false),
+          delimiter + command + AttributesToScim.convert(remattr, spacy = false, force = false),
           addIndent(text, " ".repeat(delimiter.length)),
           delimiter
         )
@@ -113,16 +115,29 @@ object SastToScimConverter:
 object AttributesToScim:
   val countQuotes: Regex = """(]"*)""".r
 
-  def encodeValue(text: Text, isNamed: Boolean): String =
+  def encodeText(text: Text): String =
     val value = SastToScimConverter.inlineToScim(text.inl)
     def parses(quoted: String): Boolean =
-      def parser(implicit p: P[?]): P[Attribute] =
-        if isNamed then AttributesParser.positionalAttribute
-        else AttributesParser.attribute
+      val parsedAttr = fastparse.parse(quoted, AttributesParser.attribute(_))
+      parsedAttr.get.value match {
+        case Positional(`text`, _) => true
+        case other => false
+      }
 
-      val parsedAttr  = fastparse.parse(quoted, parser(_))
-      val reformatted = SastToScimConverter.inlineToScim(parsedAttr.get.value.text.inl)
-      reformatted == value
+    def pickFirst(candidate: (() => String)*): Option[String] =
+      candidate.view.map(_.apply()).find(parses)
+
+    pickFirst(() => value, () => s""""$value"""", () => s"[$value]").getOrElse {
+      val mi         = countQuotes.findAllIn(value)
+      val quoteCount = if mi.isEmpty then 0 else mi.map(_.length).max
+      val quotes     = "\"" * quoteCount
+      s"""$quotes[$value]$quotes"""
+    }
+
+  def encodeString(value: String): String =
+    def parses(quoted: String): Boolean =
+      val parsedAttr = fastparse.parse(quoted, AttributesParser.stringValue(_))
+      parsedAttr.get.value == value
 
     def pickFirst(candidate: (() => String)*): Option[String] =
       candidate.view.map(_.apply()).find(parses)
@@ -136,17 +151,27 @@ object AttributesToScim:
 
   def convert(attributes: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String =
     if !force && attributes.raw.isEmpty then return ""
-    val keylen = (0 +: attributes.raw.map(_.id.length)).max
+    val keylen = (attributes.raw.map {
+      case Plain(id, _)  => id.length
+      case Nested(id, _) => id.length
+      case other         => 0
+    }).maxOption.getOrElse(0)
     val pairs = attributes.raw.map {
-      case Attribute("", v) => encodeValue(v, isNamed = false)
-      case Attribute(k, v) =>
+      case Positional(v, _) => encodeText(v)
+      case Plain(k, v) =>
         val spaces = " " * math.max(keylen - k.length, 0)
-        if spacy then s"""$k $spaces= ${encodeValue(v, isNamed = true)}"""
-        else s"""$k=${encodeValue(v, isNamed = true)}"""
+        if spacy then s"""$k $spaces= ${encodeString(v)}"""
+        else s"""$k=${encodeString(v)}"""
+      case Nested(k, v) =>
+        val spaces = " " * math.max(keylen - k.length, 0)
+        if spacy then s"""$k $spaces= ${convert(v, spacy, force, light)}"""
+        else s"""$k=${convert(v, spacy, force, light)}"""
     }
 
     if !(spacy && attributes.raw.size > 1) then
-      if light && attributes.positional.isEmpty then pairs.mkString("", "; ", "\n")
+      if light && attributes.legacyPositional.isEmpty then pairs.mkString("", "; ", "\n")
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
-    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", "\n")
+    else if light && attributes.legacyPositional.isEmpty then pairs.mkString("", "\n", "\n")
     else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
+
+

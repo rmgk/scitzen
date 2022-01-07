@@ -153,7 +153,7 @@ object ConvertHtml:
         val content = SeqFrag(convertedArticleCtx.data.toList).render
 
         val templateSettings =
-          pathManager.project.config.definitions ++ article.header.attributes.raw.map(a => (a.id -> a.value)) ++ List(
+          pathManager.project.config.definitions ++ article.header.attributes.named ++ List(
             Some("template content" -> content)
           ).flatten ++ convertedArticleCtx.features.toList.map(s => s"feature $s" -> "")
 

@@ -5,12 +5,10 @@ import cats.data.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand.{
-  Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong
-}
-import scitzen.sast._
-
-import SastToTexConverter.latexencode
+import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.sast.*
+import scitzen.outputs.SastToTexConverter.latexencode
+import scitzen.sast.Attribute.{Plain, Positional}
 
 object SastToTexConverter {
   def latexencode(input: String): String =
@@ -125,7 +123,7 @@ class SastToTexConverter(
             inlineValuesToTex(List(mcro))(ctx).single
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
-    val args      = attributes.positional.tail
+    val args      = attributes.legacyPositional.tail
     val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
     val label     = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
@@ -174,7 +172,7 @@ class SastToTexConverter(
               tlblock.prov
             ))(ctx)
           else
-            tlblock.attributes.positional.headOption match
+            tlblock.attributes.legacyPositional.headOption match
 
               case Some("text") =>
                 val latexenc = latexencode(text).trim
@@ -188,7 +186,7 @@ class SastToTexConverter(
                   case Some(label) =>
                     text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
                 val restext =
-                  if !tlblock.attributes.positional.contains("highlight") then labeltext
+                  if !tlblock.attributes.legacyPositional.contains("highlight") then labeltext
                   else
                     labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
                 ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
@@ -197,8 +195,8 @@ class SastToTexConverter(
 
     if project.config.notes.contains("hide") then innerCtx
     else
-      tlblock.attributes.namedT.get("note").fold(innerCtx) { note =>
-        inlineValuesToTex(note.inl)(innerCtx).map { (content: String) =>
+      tlblock.attributes.nested.get("note").fold(innerCtx) { note =>
+        inlineValuesToTex(note.targetT.inl)(innerCtx).map { (content: String) =>
           s"\\sidepar{$content}%" +: innerCtx.data
         }.useFeature("sidepar")
       }
@@ -229,10 +227,10 @@ class SastToTexConverter(
           case Other("rule") => inlineToTex(Macro(
               Ref,
               attributes.copy(raw = Seq(
-                Attribute("", Text(Seq(Macro(Other("smallcaps"), attributes, mcro.prov)))),
-                Attribute("style", "plain"),
-                Attribute("", s"rule-${attributes.target}")
-              )),
+                Positional(Text(Seq(Macro(Other("smallcaps"), attributes, mcro.prov))), None),
+                Plain("style", "plain"),
+                Positional(s"rule-${attributes.target}")
+                )),
               mcro.prov
             ))(ctx)
           case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
@@ -259,7 +257,7 @@ class SastToTexConverter(
               scribe.error(
                 s"multiple resolutions for ${attributes.target}" +
                   reporter(mcro) +
-                  s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption match
@@ -279,8 +277,8 @@ class SastToTexConverter(
           case Link =>
             ctx.retc {
               val target = attributes.target
-              if attributes.positional.size > 1 then
-                val name = "{" + latexencode(attributes.positional.head) + "}"
+              if attributes.legacyPositional.size > 1 then
+                val name = "{" + latexencode(attributes.legacyPositional.head) + "}"
                 s"\\href{$target}{$name}"
               else s"\\url{$target}"
             }.useFeature("href")
