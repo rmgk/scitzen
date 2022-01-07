@@ -388,11 +388,6 @@ body {
     max-width: var(--sidebar-max-width);
     min-width: min-content;
 
-    // input label pair to allow hiding the sidebar content (nav)
-    & > input {
-      display: none;
-    }
-
     & > label {
       // the label is marked as hidden in the HTML,
       // because it makes no sense to show it if the stylesheet is not present
@@ -406,7 +401,6 @@ body {
       cursor: pointer;
       width: 1.5em;
       height: 1.5em;
-      display: block;
       padding: 0.5em;
       z-index: 1;
 
