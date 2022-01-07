@@ -87,7 +87,7 @@ object ConvertHtml:
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
-      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), None)
+      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), "Index", None)
     project.outputdir./("index.html").write(res)
 
   private def loadKatex(katexmapfile: File): Map[String, String] =
@@ -135,7 +135,7 @@ object ConvertHtml:
 
     val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 
-    import scalatags.Text.all.{SeqFrag, a, href, stringAttr, stringFrag, Frag, frag}
+    import scalatags.Text.all.{SeqFrag, a, href, stringAttr, stringFrag, Frag, frag, div}
 
     val res = article.header.attributes.named.get("htmlTemplate") match
       case None =>
@@ -145,6 +145,7 @@ object ConvertHtml:
           style(raw(Resource.getAsString("META-INF/resources/webjars/prism/themes/prism.css"))) +: contentFrag,
           "fullpost",
           toc.map(c => frag(a(href := s"#${article.header.id}", article.title): Frag, c: Frag)),
+          article.title,
           article.language
             .orElse(nlp.flatMap(_.language(article.content)))
         )

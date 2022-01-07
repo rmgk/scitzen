@@ -41,7 +41,10 @@ body {
 aside * { overflow-wrap: break-word; }
 main * { overflow-wrap: anywhere; }
 
-.fullpost main {
+// enable hyphenation everywhere
+// this is required for the main text as that has justified content,
+// but the navigation also profits from better use of space
+html {
   hyphens: auto;
 }
 
@@ -386,7 +389,8 @@ body {
     flex: 0 100 max-content;
     // max width, because sidebar with very long header names does not look great
     max-width: var(--sidebar-max-width);
-    min-width: min-content;
+    // seems unnecessary now?
+    // min-width: min-content;
 
     & > label {
       // the label is marked as hidden in the HTML,
@@ -424,21 +428,20 @@ body {
       min-width: min-content;
 
       // box sizing together with height makes it occupy the full height pixel perfect
+      // except for some broken mobile environments like the android web view
       box-sizing: border-box;
       height: 100vh;
 
       padding: 0;
       padding-top: 0.5em;
-      // for the srcoll bar
+      // for the srcoll bar; firefox desktop does assign space for the scrollbar by itself, but mobile browsers often do not
       padding-right: 0.5em;
+      // make things also not hug the srceen on the left
+      padding-left: 0.5em;
 
       border-right: 1px solid var(--theme-color);
 
-      & > a {
-        margin-left: 0.5em;
-      }
-
-      // makes the individual texts more compact which seems to require the inline block and then requires to fix vertical-align
+      // makes the individual text of the links more compact which seems to require the inline block and then requires to fix vertical-align
       a {
         line-height: 1.1;
         display: inline-block;
@@ -448,7 +451,7 @@ body {
       ol {
         list-style: disc;
         margin: 0;
-        margin-left: 1.5em;
+        margin-left: 1em;
         padding: 0;
       }
 

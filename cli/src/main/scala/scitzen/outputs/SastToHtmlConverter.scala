@@ -9,8 +9,8 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.Bibliography.BibEntry
 import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand.*
 import scitzen.sast.*
+import scitzen.sast.MacroCommand.*
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
@@ -20,7 +20,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     preprocessed: PreprocessedResults,
 ):
 
-  import bundle.all._
+  import bundle.all.*
   import bundle.tags2.{article, section, time}
 
   type CtxCF  = ConversionContext[Chain[Frag]]
@@ -105,13 +105,16 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
             val aref = attributes.named("target")
 
-            ctx.ret(Chain(a(
-              href := aref,
-              article(
-                timeShort(attributes.named.get("datetime")),
-                span(cls := "title", attributes.target),
-                categoriesSpan(attributes.raw.filter(_.id == "category").map(_.value))
-              )
+            ctx.ret(Chain(article(
+              timeShort(attributes.named.get("datetime")),
+              " ", // whitespace prevents elements from hugging
+              a(
+                cls  := "title",
+                href := aref,
+                attributes.target
+              ),
+              " ",
+              categoriesSpan(attributes.raw.filter(_.id == "category").map(_.value))
             )))
 
           case Include =>
@@ -205,7 +208,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 val initTag: Tag =
                   if !sBlock.attributes.positional.contains("highlight") then
                     sBlock.attributes.named.get("lang") match
-                      case None => code(labeltext)
+                      case None       => code(labeltext)
                       case Some(lang) => code(raw(Prism.highlight(labeltext, lang)))
                   else
                     val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
@@ -346,7 +349,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 ctx.requireInOutput(target, path).retc {
                   val filename = path.getFileName.toString
                   if videoEndings.exists(filename.endsWith) then
-                    video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
+                    video(src  := path.toString, attr("loop").empty, attr("autoplay").empty)
                   else img(src := path.toString, style := s"max-width: $mw%")
                 }
               case None =>
