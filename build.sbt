@@ -51,7 +51,6 @@ lazy val scitzen = project.in(file("cli"))
     nativeImageJvm     := "graalvm-java17",
     nativeImageOptions ++= Seq(
       "--no-fallback",
-      "--no-server",
       // "--initialize-at-build-time",
       // "--initialize-at-run-time=scala.util.Random",
       "-J-Xmx7G",
