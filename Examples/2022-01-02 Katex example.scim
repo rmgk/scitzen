@@ -1,5 +1,5 @@
 = Katex example
 date = 2022-01-02 01:28:19
 
-Can use :math{\katex} for fun things :math{\Sigma_x^y \delta}
+Can use :math{\KaTeX} for fun things :math{\Sigma_x^y \delta}
 
