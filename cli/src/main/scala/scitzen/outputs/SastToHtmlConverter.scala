@@ -108,7 +108,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
             ctx.ret(Chain(article(
               timeShort(attributes.named.get("datetime")),
-              " ", // whitespace prevents elements from hugging
+              " ", // whitespace prevents elements from hugging without stylesheet
               a(
                 cls  := "title",
                 href := aref,

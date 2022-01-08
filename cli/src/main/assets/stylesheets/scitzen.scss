@@ -11,9 +11,13 @@ $main-content-width: 17cm;
 $small-screen-width: 575px;
 
 :root {
-  --theme-color: hsl(0, 50%, 50%);
-  --light-theme-color: hsla(0, 50%, 50%, 0.4);
-  --color-subdued: hsl(0, 0%, 60%);
+  --theme-hue: 100;
+  --theme-saturation: 50%;
+  --theme-lightness: 40%;
+
+  --theme-color: hsl(var(--theme-hue), var(--theme-saturation), var(--theme-lightness));
+  --light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);
+  --color-subdued: GrayText;
 
   --main-content-width: 17cm;
   --sidebar-max-width: 20em;
@@ -340,7 +344,7 @@ del {
 // index page styling
 /////////////////////////////////////////////////////////////////////////////
 
-a > article {
+article {
   display: flex;
 
   @media screen and (max-width: $main-content-width) {
@@ -354,8 +358,9 @@ a > article {
   }
 
   // space between the items of the article
+  // while this is part of the html, its eaten by the flex
   & > * {
-    margin-right: 0.5em;
+    margin-right: 0.2em;
   }
 
   // make the title get most of the space,
@@ -501,4 +506,13 @@ body {
 #highlight {
   border-top: 30vh transparent solid;
   margin-top: -30vh;
+}
+
+
+
+@keyframes fade-target {
+  0%, 30% { background: var(--light-theme-color) }
+}
+*:target {
+  animation: 1s ease 0s 1 fade-target;
 }
