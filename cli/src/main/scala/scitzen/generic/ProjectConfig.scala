@@ -3,6 +3,7 @@ package scitzen.generic
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.{AttributesParser, Parse}
 import scitzen.sast.{Attributes, Macro, Prov, Text}
+import scala.util.chaining.scalaUtilChainingOps
 
 case class ProjectConfig(
     output: String,
@@ -19,7 +20,7 @@ case class ProjectConfig(
 
 object ProjectConfig {
   def parse(content: String): ProjectConfig = {
-    Parse.parseResult(content, AttributesParser.noBraces(_), Prov()) match {
+    Parse.parseResult(content, AttributesParser.configFile(_), Prov()) match {
       case Left(value) => throw value
       case Right(value) =>
         val attrs = Attributes(value)

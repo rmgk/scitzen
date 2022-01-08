@@ -119,8 +119,12 @@ object AttributesToScim:
     val value = SastToScimConverter.inlineToScim(text.inl)
     def parses(quoted: String): Boolean =
       val parsedAttr = fastparse.parse(quoted, AttributesParser.attribute(_))
+
       parsedAttr.get.value match {
-        case Positional(`text`, _) => true
+        case Positional(t, _) =>
+          // format again to remove unimportant differences (mostly providence)
+          val transformedValue = SastToScimConverter.inlineToScim(t.inl)
+          value == transformedValue
         case other => false
       }
 

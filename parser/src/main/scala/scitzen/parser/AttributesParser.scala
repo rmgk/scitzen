@@ -37,7 +37,7 @@ object AttributesParser {
   }
 
   def namedAttribute[_p: P]: P[Attribute] =
-    P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~/ (braces.map(Left.apply) | stringValue.map(Right.apply)))
+    P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~/ ((anySpaces ~ braces.map(Left.apply)) | stringValue.map(Right.apply)))
       .map {
         case (id, Left(attr)) => scitzen.sast.Attribute.Nested(id, Attributes(attr))
         case (id, Right(value)) => scitzen.sast.Attribute.Plain(id, value)
@@ -60,5 +60,7 @@ object AttributesParser {
     P(open ~ anySpaces ~ listOf(attribute, min = 0) ~ anySpaces ~ close)
 
   def noBraces[_p: P]: P[Seq[Attribute]] = P(listOf(namedAttribute, min = 1) ~ spaceLine ~ spaceLine)
+
+  def configFile[_p: P]: P[Seq[Attribute]] = P(noBraces ~ anySpaces)
 
 }
