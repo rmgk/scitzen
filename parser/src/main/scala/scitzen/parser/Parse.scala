@@ -24,7 +24,7 @@ object Parse {
       case f: Failure =>
         val traced = f.trace()
         println(
-          s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(0, math.min(80, content.length))}..."
+          s"failed to parse ${traced.longMsg}\nwhile parsing: ${content.substring(traced.index, math.min(80, content.length))}..."
         )
         Left(ParsingAnnotation(content, traced))
     }

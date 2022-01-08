@@ -6,7 +6,7 @@ import fastparse.P
 import scitzen.parser.AttributesParser
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
-import scitzen.sast.MacroCommand.Comment
+import scitzen.sast.DCommand.Comment
 
 import scala.collection.immutable.ArraySeq
 import scala.util.matching.Regex
@@ -42,7 +42,7 @@ object SastToScimConverter:
             )
         }
 
-      case mcro: Macro => Chain(macroToScim(mcro))
+      case mcro: Directive => Chain(macroToScim(mcro))
 
       case tlb: Block => convertBlock(tlb)
 
@@ -100,16 +100,16 @@ object SastToScimConverter:
           delimiter
         )
 
-  def macroToScim(mcro: Macro, spacy: Boolean = false): String =
+  def macroToScim(mcro: Directive, spacy: Boolean = false): String =
     mcro match
-      case Macro(Comment, attributes) => s":%${attributes.target}"
-      case _ =>
-        s":${MacroCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
+      case Directive(Comment, attributes) => s":%${attributes.target}"
+      case _                              =>
+        s":${DCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
 
   def inlineToScim(inners: Seq[Inline]): String =
     inners.map {
       case InlineText(str) => str
-      case m: Macro        => macroToScim(m)
+      case m: Directive    => macroToScim(m)
     }.mkString("")
 
 object AttributesToScim:

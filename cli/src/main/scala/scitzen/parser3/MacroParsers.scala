@@ -7,20 +7,20 @@ import cats.parse.Rfc5234.sp
 import cats.parse.{Numbers, Rfc5234, Parser as P, Parser0 as P0}
 import cats.syntax.*
 import scitzen.parser3.CommonParsers.*
-import scitzen.sast.MacroCommand.Comment
-import scitzen.sast.{Attribute, Attributes, Macro, MacroCommand}
+import scitzen.sast.DCommand.Comment
+import scitzen.sast.{Attribute, Attributes, Directive, DCommand}
 
 object MacroParsers {
   val macroCommand: P[String] = (identifier.string)
 
-  val full: P[Macro] =
+  val full: P[Directive] =
     (withProv(":" *> macroCommand.? ~ AttributesParser.braces)).map {
       case ((name, attributes), prov) =>
-        Macro(MacroCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes))(prov)
+        Directive(DCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes))(prov)
     }.withContext("macro")
 
-  val comment: P[Macro] =
+  val comment: P[Directive] =
     (withProv(restOfLine(start = commentStart).map(_._2)))
-      .map { case (text, prov) => Macro(Comment, Attribute("", text).toAttributes)(prov) }
+      .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
 }

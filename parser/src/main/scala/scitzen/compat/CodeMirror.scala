@@ -26,7 +26,7 @@ object MirrorToSast {
 
   def convertInline(value: C.Inline): Inline = value match {
     case CodeMirror.text(text, marks) => InlineText(text)
-    case CodeMirror.image(attrs)      => Macro(MacroCommand.Image, Attributes.target(attrs.src))(Prov())
+    case CodeMirror.image(attrs)      => Directive(DCommand.Image, Attributes.target(attrs.src))(Prov())
   }
 }
 

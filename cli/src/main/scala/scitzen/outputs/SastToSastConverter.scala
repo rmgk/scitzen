@@ -7,7 +7,7 @@ import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, Project, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Positional
-import scitzen.sast.MacroCommand.{Image, Include}
+import scitzen.sast.DCommand.{Image, Include}
 
 class SastToSastConverter(document: Document, project: Project):
 
@@ -73,7 +73,7 @@ class SastToSastConverter(document: Document, project: Project):
           scitzen.sast.Slist(cs.iterator.toSeq)
         }
 
-      case mcro: Macro =>
+      case mcro: Directive =>
         convertMacro(mcro)(ctx).map(identity(_): Sast)
 
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
@@ -140,10 +140,10 @@ class SastToSastConverter(document: Document, project: Project):
     ctx.fold(inners) { (ctx, inline) =>
       inline match
         case inlineText: InlineText => ctx.ret(Chain.one(inlineText))
-        case m: Macro               => convertMacro(m)(ctx).single
+        case m: Directive           => convertMacro(m)(ctx).single
     }
 
-  def convertMacro(initial: Macro)(ctx: Cta): Ctx[Macro] =
+  def convertMacro(initial: Directive)(ctx: Cta): Ctx[Directive] =
     val mcro =
       initial.command match
         case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a)(initial.prov))

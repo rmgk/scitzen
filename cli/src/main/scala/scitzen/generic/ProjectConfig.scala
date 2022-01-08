@@ -2,7 +2,7 @@ package scitzen.generic
 
 import scitzen.outputs.SastToScimConverter
 import scitzen.parser.{AttributesParser, Parse}
-import scitzen.sast.{Attributes, Macro, Prov, Text}
+import scitzen.sast.{Attributes, Directive, Prov, Text}
 import scala.util.chaining.scalaUtilChainingOps
 
 case class ProjectConfig(

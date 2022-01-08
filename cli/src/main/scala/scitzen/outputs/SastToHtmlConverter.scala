@@ -11,7 +11,7 @@ import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
-import scitzen.sast.MacroCommand.*
+import scitzen.sast.DCommand.*
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
@@ -95,7 +95,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               }
             }.map(i => Chain(dl(i.toList)))
 
-      case mcro: Macro =>
+      case mcro: Directive =>
         val attributes = mcro.attributes
         mcro.command match
           case Other("break") =>
@@ -188,7 +188,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         case Fenced(text) =>
           if sBlock.attributes.named.contains(ImageTarget.Html.name) then
             val target = sBlock.attributes.named(ImageTarget.Html.name)
-            convertSingle(Macro(
+            convertSingle(Directive(
               Image,
               sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))))(
               sBlock.prov
@@ -238,7 +238,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     inlineSast match
       case InlineText(str) => ctx.retc(stringFrag(str))
 
-      case mcro: Macro =>
+      case mcro: Directive =>
         val attrs = mcro.attributes
         mcro.command match
           case Strong => ctx.retc(strong(attrs.target))
@@ -358,9 +358,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 ctx.empty
   end inlineToHTML
 
-  def reportPos(m: Macro): String = reporter(m)
+  def reportPos(m: Directive): String = reporter(m)
 
-  def unknownMacroOutput(im: Macro): Tag =
+  def unknownMacroOutput(im: Directive): Tag =
     val str = SastToScimConverter.macroToScim(im)
     scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)

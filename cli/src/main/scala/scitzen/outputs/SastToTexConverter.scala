@@ -5,7 +5,7 @@ import cats.data.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
-import scitzen.sast.MacroCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.sast.DCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.sast.Attribute.{Plain, Positional}
@@ -105,7 +105,7 @@ class SastToTexConverter(
               "\\begin{description}" +: content :+ "\\end{description}"
             }
 
-      case mcro: Macro =>
+      case mcro: Directive =>
         mcro.command match
           case Include =>
             project.resolve(cwd, mcro.attributes.target).flatMap(includeResolver.byPath.get) match
@@ -166,7 +166,7 @@ class SastToTexConverter(
         case Fenced(text) =>
           if tlblock.attributes.named.contains(ImageTarget.Tex.name) then
             val target = tlblock.attributes.named(ImageTarget.Tex.name)
-            inlineToTex(Macro(
+            inlineToTex(Directive(
               Image,
               tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target))))(
               tlblock.prov
@@ -215,7 +215,7 @@ class SastToTexConverter(
   def inlineToTex(inln: Inline)(ctx: Cta): CtxCS =
     inln match
       case InlineText(str) => ctx.retc(latexencode(str))
-      case mcro: Macro =>
+      case mcro: Directive =>
         val attributes = mcro.attributes
         mcro.command match
           case Code           => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
@@ -224,10 +224,10 @@ class SastToTexConverter(
           case Emph           => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\emph{$str}")
           case Math           => ctx.retc(s"$$${attributes.target}$$")
           case Other("break") => ctx.retc(s"\\clearpage{}")
-          case Other("rule") => inlineToTex(Macro(
+          case Other("rule") => inlineToTex(Directive(
               Ref,
               attributes.copy(raw = Seq(
-                Positional(Text(Seq(Macro(Other("smallcaps"), attributes)(mcro.prov))), None),
+                Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(mcro.prov))), None),
                 Plain("style", "plain"),
                 Positional(s"rule-${attributes.target}")
                 )))(
@@ -317,7 +317,7 @@ class SastToTexConverter(
           case Include =>
             val str: String = warn(s"tex backend does not allow inline includes", mcro)
             ctx.retc(str)
-  def warn(msg: String, im: Macro): String =
+  def warn(msg: String, im: Directive): String =
     val macroStr = SastToScimConverter.macroToScim(im)
     scribe.warn(s"$msg: ⸢$macroStr⸥${reporter(im)}")
     macroStr

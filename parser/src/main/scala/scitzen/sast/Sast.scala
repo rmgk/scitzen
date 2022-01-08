@@ -1,7 +1,7 @@
 package scitzen.sast
 
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
-import scitzen.sast.MacroCommand.{Emph, Strong}
+import scitzen.sast.DCommand.{Emph, Strong}
 
 sealed trait Sast
 
@@ -9,22 +9,23 @@ case class Slist(children: Seq[ListItem]) extends Sast
 case class ListItem(marker: String, text: Text, content: Option[Sast])
 
 sealed trait Inline
-case class InlineText(str: String)                                          extends Inline
-case class Macro(command: MacroCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast {
-  def toTuple: (MacroCommand, Attributes, Prov) = (command, attributes, prov)
+case class InlineText(str: String) extends Inline
+case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast {
+  def toTuple: (DCommand, Attributes, Prov) = (command, attributes, prov)
 }
 
 case class Text(inl: Seq[Inline]) {
 
   lazy val str = {
     inl.map {
-      case Macro(Strong | Emph, attributes) => attributes.target
-      case m: Macro                            => ""
-      case InlineText(string)                  => string
+      case Directive(Strong | Emph, attributes) => attributes.target
+      case m: Directive                         => ""
+      case InlineText(string)                   => string
     }.mkString("")
   }
 }
-case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast with Ordered[Section] {
+case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast
+    with Ordered[Section] {
   def ref: String = attributes.named.getOrElse("label", title.str)
   def id: String  = attributes.named.getOrElse("label", title.str)
   override def compare(that: Section): Int = {
@@ -57,15 +58,15 @@ case class Attributes(raw: Seq[Attribute]) {
   }.toMap
 
   lazy val legacyPositional: Seq[String] = positional.map(_.str)
-  lazy val arguments       : Seq[String] = legacyPositional.dropRight(1)
-  lazy val target          : String      = legacyPositional.last
+  lazy val arguments: Seq[String]        = legacyPositional.dropRight(1)
+  lazy val target: String                = legacyPositional.last
 
   def append(other: Seq[Attribute]): Attributes  = Attributes(raw ++ other)
   def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw)
-  def remove(key: String): Attributes            = Attributes(raw.filterNot{
-    case Plain(`key`, _ ) => true
-    case Nested(`key`, _ ) => true
-    case other => false
+  def remove(key: String): Attributes = Attributes(raw.filterNot {
+    case Plain(`key`, _)  => true
+    case Nested(`key`, _) => true
+    case other            => false
   })
   def updated(key: String, value: String) = {
     remove(key).append(List(Attribute.apply(key, value)))

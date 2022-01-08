@@ -1,8 +1,8 @@
 package scitzen.outputs
 
 import scitzen.generic.{Article, HtmlPathManager}
-import scitzen.sast.MacroCommand.Other
-import scitzen.sast.{Attribute, Attributes, Block, InlineText, Macro, Parsed, Prov, Sast, Section, Text}
+import scitzen.sast.DCommand.Other
+import scitzen.sast.{Attribute, Attributes, Block, InlineText, Directive, Parsed, Prov, Sast, Section, Text}
 
 object GenIndexPage:
 
@@ -48,7 +48,7 @@ object GenIndexPage:
       idocs.sortBy(_.date)(ordering).flatMap { doc =>
         val categories =
           List("categories", "people").flatMap(doc.named.get).flatMap(_.split(","))
-        List(Macro(
+        List(Directive(
           Other("article"),
           Attributes(
             List(

@@ -7,15 +7,15 @@ import cats.parse.Numbers.digits
 import cats.parse.Rfc5234.sp
 import cats.parse.Parser.*
 import scitzen.parser3.CommonParsers.{commentStart, eol, stringParser, syntaxStart, withProv}
-import scitzen.sast.MacroCommand.Comment
-import scitzen.sast.{Attribute, Inline, InlineText, Macro}
+import scitzen.sast.DCommand.Comment
+import scitzen.sast.{Attribute, Inline, InlineText, Directive}
 
 object InlineParsers:
 
   transparent inline def full(ending: P0[Unit], allowEmpty: Boolean): P0[(List[Inline], String)] =
-    val comment: P[Macro] =
+    val comment: P[Directive] =
       (withProv(commentStart *> (until0(eol) ~ (peek(ending) | eol)).string))
-        .map { (text, prov) => Macro(Comment, Attribute("", text).toAttributes)( prov) }
+        .map { (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
     val notSyntax: P[String] =
       until(syntaxStart | ending).withContext("not syntax")

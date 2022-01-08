@@ -41,7 +41,7 @@ object BlockParsers {
   def extendedWhitespace[_p: P]: P[Block] =
     P(withProv(
       (significantSpaceLine.rep(1) |
-        MacroParsers.comment.rep(1)).rep(1).!
+       DirectiveParsers.comment.rep(1)).rep(1).!
     )).map {
       case (str, prov) =>
         Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
@@ -52,7 +52,7 @@ object BlockParsers {
       ListParsers.list |
       DelimitedBlockParsers.anyDelimited |
       sectionTitle |
-      NoCut(MacroParsers.full) ~ spaceLine |
+      NoCut(DirectiveParsers.full) ~ spaceLine |
       paragraph)
 
 }

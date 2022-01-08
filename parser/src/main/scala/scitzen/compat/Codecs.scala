@@ -2,19 +2,19 @@ package scitzen.compat
 
 import com.github.plokhotnyuk.jsoniter_scala.core.{JsonReader, JsonValueCodec, JsonWriter}
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
-import scitzen.sast.{Attributes, Macro, MacroCommand, Prov, Sast, Section, Text}
+import scitzen.sast.{Attributes, Directive, DCommand, Prov, Sast, Section, Text}
 
 object Codecs {
 
-  val macroTupleCodec: JsonValueCodec[(MacroCommand, Attributes, Prov)] = JsonCodecMaker.make[(MacroCommand, Attributes, Prov)](CodecMakerConfig.withAllowRecursiveTypes(true))
+  val macroTupleCodec: JsonValueCodec[(DCommand, Attributes, Prov)] = JsonCodecMaker.make[(DCommand, Attributes, Prov)](CodecMakerConfig.withAllowRecursiveTypes(true))
 
-  implicit val MacroEncoder: JsonValueCodec[Macro] = new JsonValueCodec[Macro] {
-    override def decodeValue(in: JsonReader, default: Macro): Macro = {
+  implicit val MacroEncoder: JsonValueCodec[Directive] = new JsonValueCodec[Directive] {
+    override def decodeValue(in: JsonReader, default: Directive): Directive = {
       val res = macroTupleCodec.decodeValue(in, default.toTuple)
-      Macro(res._1, res._2)(res._3)
+      Directive(res._1, res._2)(res._3)
     }
-    override def encodeValue(x: Macro, out: JsonWriter): Unit = macroTupleCodec.encodeValue((x.toTuple), out)
-    override def nullValue: Macro = null
+    override def encodeValue(x: Directive, out: JsonWriter): Unit = macroTupleCodec.encodeValue((x.toTuple), out)
+    override def nullValue: Directive = null
   }
 
 

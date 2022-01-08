@@ -4,7 +4,7 @@ import better.files.File
 import cats.implicits.*
 import scitzen.parser.Parse
 import scitzen.parser3.Prettyprint
-import scitzen.sast.{Macro, Prov, Sast}
+import scitzen.sast.{Directive, Prov, Sast}
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
@@ -33,7 +33,7 @@ object Document:
         throw e
 
 trait Reporter:
-  def apply(im: Macro): String = apply(im.prov)
+  def apply(im: Directive): String = apply(im.prov)
   def apply(prov: Prov): String
 
 final class FileReporter(file: File, content: String) extends Reporter:

@@ -3,7 +3,7 @@ package scitzen.cli
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.sast.MacroCommand
+import scitzen.sast.DCommand
 import scitzen.compat.Codecs.Reference
 import scitzen.compat.Codecs.rferenceRW
 
@@ -23,7 +23,7 @@ object ImageReferences:
       //    documentDirectory
       //  )
 
-      val images = convertedCtx.imageMacros.filter(_.command == MacroCommand.Image).flatMap { mcro =>
+      val images = convertedCtx.imageMacros.filter(_.command == DCommand.Image).flatMap { mcro =>
         val path = mcro.attributes.target
         project.resolve(cwd, path) match
           case Some(target) =>

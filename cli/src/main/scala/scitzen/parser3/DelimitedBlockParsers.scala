@@ -7,7 +7,7 @@ import cats.parse.Numbers.digits
 import cats.parse.Rfc5234.sp
 import cats.parse.Parser.*
 import CommonParsers._
-import scitzen.parser.{AttributesParser, MacroParsers}
+import scitzen.parser.{AttributesParser, DirectiveParsers}
 import scitzen.sast.{Attribute, Attributes, Block, Fenced, Prov, Sast}
 
 object DelimitedBlockParsers {

@@ -10,7 +10,7 @@ object DelimitedBlockParsers {
   def anyStart[_p: P]: P[String] = P(CharIn(":`").rep(2).!)
 
   def makeDelimited[_p: P](start: => P[String]): P[Block] =
-    (start ~ MacroParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass).flatMap {
+    (start ~ DirectiveParsers.macroCommand.? ~ AttributesParser.braces.? ~ spaceLine ~/ Pass).flatMap {
       case (delimiter, command, attr) =>
         (withProv(untilI(eol ~ delimiter ~ spaceLine)))
           .map {

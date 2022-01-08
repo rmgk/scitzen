@@ -2,9 +2,9 @@ package scitzen.outputs
 
 import better.files.File
 import scitzen.generic.{DocumentDirectory, Project}
-import scitzen.sast.MacroCommand.{Include, Lookup}
+import scitzen.sast.DCommand.{Include, Lookup}
 import scitzen.sast.{
-  Block, Fenced, Inline, InlineText, ListItem, Macro, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
+  Block, Fenced, Inline, InlineText, ListItem, Directive, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
 }
 
 case class Includes(project: Project, cwf: File, includeResolver: DocumentDirectory)
@@ -46,7 +46,7 @@ case class SastToTextConverter(
             case Fenced(text)            => List(text)
             case SpaceComment(_)         => Nil
 
-      case mcro: Macro =>
+      case mcro: Directive =>
         val attributes = mcro.attributes
         mcro.command match
 
@@ -75,8 +75,8 @@ case class SastToTextConverter(
 
   def convertInline(inners: Seq[Inline]): String =
     inners.map {
-      case InlineText(str) => str
-      case Macro(Lookup, attr) =>
+      case InlineText(str)         => str
+      case Directive(Lookup, attr) =>
         definitions.get(attr.target).orElse(attr.named.get("default")).getOrElse("")
-      case _: Macro => ""
+      case _: Directive            => ""
     }.mkString("")
