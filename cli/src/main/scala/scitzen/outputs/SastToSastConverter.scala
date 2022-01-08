@@ -24,7 +24,7 @@ class SastToSastConverter(document: Document, project: Project):
 
   def findArticle(ctx: Cta, self: Section): Option[Article] =
     (self +: ctx.sections).find(!Article.notArticleHeader(_)).collect {
-      case sect @ Section(_, "=", _, _) => Article(sect, Nil, Document(cwf, "", Nil))
+      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil))
     }
 
   def ensureUniqueRef[A <: Sast](
@@ -48,17 +48,17 @@ class SastToSastConverter(document: Document, project: Project):
     sast match
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
-      case sec @ Section(title, level, _, _) =>
+      case sec @ Section(title, level, _) =>
         val ctxWithRef =
           val resctx          = ensureUniqueRef(ctx, sec.ref, sec.attributes)
           val (aliases, attr) = resctx.data
-          val ublock          = sec.copy(attributes = attr)
+          val ublock          = sec.copy(attributes = attr)(sec.prov)
           val target          = SastRef(cwf, ublock, findArticle(ctx, sec))
           refAliases(resctx, aliases, target).ret(ublock)
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
-          Section(Text(title.toList), level, newSection.attributes, newSection.prov)
+          Section(Text(title.toList), level, newSection.attributes)(newSection.prov)
         }
 
       case Slist(children) =>
@@ -146,10 +146,10 @@ class SastToSastConverter(document: Document, project: Project):
   def convertMacro(initial: Macro)(ctx: Cta): Ctx[Macro] =
     val mcro =
       initial.command match
-        case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a))
+        case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a)(initial.prov))
         case _               => initial
     mcro.command match
       case Image =>
-        val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))
+        val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))(mcro.prov)
         ctx.addImage(enhanced).ret(enhanced)
       case _ => ctx.ret(mcro)

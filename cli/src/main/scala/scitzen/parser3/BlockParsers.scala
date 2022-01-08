@@ -34,7 +34,7 @@ object BlockParsers {
       .map { (data: (((String, ((Seq[scitzen.sast.Inline], String), scitzen.sast.Prov)), Option[List[scitzen.sast.Attribute]]))) =>
         val (((prefix: String, ((inlines: List[Inline], _), prov: Prov)), attrl: Option[List[Attribute]])) = data
           //val inlines = Parse.inlineUnwrap(inl, prov)
-          Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)), prov)
+          Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)))(prov)
       }.withContext("section")
 
   val extendedWhitespace: P[Block] =

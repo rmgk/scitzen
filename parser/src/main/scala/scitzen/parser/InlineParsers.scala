@@ -13,7 +13,7 @@ case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit], allowEmpt
 
   def comment[_p: P]: P[Macro] =
     P(withProv(commentStart ~ (untilE(eol, min = 0) ~ (&(ending) | eol)).!))
-      .map { case (text, prov) => Macro(Comment, Attribute("", text).toAttributes, prov) }
+      .map { case (text, prov) => Macro(Comment, Attribute("", text).toAttributes)(prov) }
 
   private def notSyntax[_p: P]: P[String] =
     P((

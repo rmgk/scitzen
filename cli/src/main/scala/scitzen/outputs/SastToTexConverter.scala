@@ -66,7 +66,7 @@ class SastToTexConverter(
     sast match
       case tlBlock: Block => blockToTex(tlBlock)(ctx)
 
-      case section @ Section(title, prefix, attr, _) =>
+      case section @ Section(title, prefix, attr) =>
         val ilc = inlineValuesToTex(title.inl)(ctx)
 
         val pushed   = ilc.push(section)
@@ -75,7 +75,7 @@ class SastToTexConverter(
           case "==" =>
             s"\\chapter$numbered[${ilc.data}]{${ilc.data}}"
           case _ =>
-            val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _, _) => () }.size
+            val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
             val sec   = sectioning(prefix.length - shift)
             s"\\$sec$numbered{${ilc.data}}"
 
@@ -168,7 +168,7 @@ class SastToTexConverter(
             val target = tlblock.attributes.named(ImageTarget.Tex.name)
             inlineToTex(Macro(
               Image,
-              tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target))),
+              tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target))))(
               tlblock.prov
             ))(ctx)
           else
@@ -227,10 +227,10 @@ class SastToTexConverter(
           case Other("rule") => inlineToTex(Macro(
               Ref,
               attributes.copy(raw = Seq(
-                Positional(Text(Seq(Macro(Other("smallcaps"), attributes, mcro.prov))), None),
+                Positional(Text(Seq(Macro(Other("smallcaps"), attributes)(mcro.prov))), None),
                 Plain("style", "plain"),
                 Positional(s"rule-${attributes.target}")
-                )),
+                )))(
               mcro.prov
             ))(ctx)
           case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")

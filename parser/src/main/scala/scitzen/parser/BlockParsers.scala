@@ -35,7 +35,7 @@ object BlockParsers {
       .map {
         case (prefix, ((inlines, _), prov), attrl) =>
           //val inlines = Parse.inlineUnwrap(inl, prov)
-          Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)), prov)
+          Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)))(prov)
       }
 
   def extendedWhitespace[_p: P]: P[Block] =

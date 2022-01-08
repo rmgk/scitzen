@@ -16,7 +16,7 @@ case class SastToTextConverter(
 
   def convert(b: Seq[Sast]): Seq[String] =
     b.flatMap {
-      case Section(title, _, _, _) =>
+      case Section(title, _, _) =>
         List(convertInline(title.inl))
 
       case Slist(children) => children.flatMap {
@@ -76,7 +76,7 @@ case class SastToTextConverter(
   def convertInline(inners: Seq[Inline]): String =
     inners.map {
       case InlineText(str) => str
-      case Macro(Lookup, attr, _) =>
+      case Macro(Lookup, attr) =>
         definitions.get(attr.target).orElse(attr.named.get("default")).getOrElse("")
       case _: Macro => ""
     }.mkString("")

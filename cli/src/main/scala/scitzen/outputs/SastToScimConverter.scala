@@ -27,7 +27,7 @@ object SastToScimConverter:
 
   def toScim(sast: Sast): Chain[String] =
     sast match
-      case Section(title, prefix, attributes, prov) =>
+      case Section(title, prefix, attributes) =>
         (prefix + " " + inlineToScim(title.inl)) +:
           attributesToScim(attributes, spacy = true, force = false, light = true)
 
@@ -102,7 +102,7 @@ object SastToScimConverter:
 
   def macroToScim(mcro: Macro, spacy: Boolean = false): String =
     mcro match
-      case Macro(Comment, attributes, _) => s":%${attributes.target}"
+      case Macro(Comment, attributes) => s":%${attributes.target}"
       case _ =>
         s":${MacroCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
 
@@ -121,10 +121,10 @@ object AttributesToScim:
       val parsedAttr = fastparse.parse(quoted, AttributesParser.attribute(_))
 
       parsedAttr.get.value match {
-        case Positional(t, _) =>
-          // format again to remove unimportant differences (mostly providence)
-          val transformedValue = SastToScimConverter.inlineToScim(t.inl)
-          value == transformedValue
+        case Positional(`text`, _) => true
+          //// format again to remove unimportant differences (mostly providence)
+          //val transformedValue = SastToScimConverter.inlineToScim(t.inl)
+          //value == transformedValue
         case other => false
       }
 

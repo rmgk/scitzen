@@ -68,7 +68,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def convertSeq(b: Seq[Sast])(ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSingle(sast)(ctx))
   def convertSingle(singleSast: Sast)(ctx: Cta): CtxCF =
     singleSast match
-      case sec @ Section(title, level, _, _) =>
+      case sec @ Section(title, level, _) =>
         inlineValuesToHTML(title.inl)(ctx).map { innerFrags =>
           val addDepth: Int =
             if level.contains("=") then 0
@@ -190,7 +190,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val target = sBlock.attributes.named(ImageTarget.Html.name)
             convertSingle(Macro(
               Image,
-              sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))),
+              sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))))(
               sBlock.prov
             ))(ctx)
           else
@@ -298,7 +298,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   case _ => ""
 
               targetDocument.sast match
-                case sec @ Section(title, _, _, _) => inlineValuesToHTML(title.inl)(ctx).map { inner =>
+                case sec @ Section(title, _, _) => inlineValuesToHTML(title.inl)(ctx).map { inner =>
                     Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
                   }
                 case Block(attr, _, _) =>

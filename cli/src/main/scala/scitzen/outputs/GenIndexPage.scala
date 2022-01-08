@@ -33,7 +33,7 @@ object GenIndexPage:
         case (key, docs) =>
           val inner = cont(docs)
           List[Sast](
-            Section(Text(List(InlineText(key))), prefix = "#", Attributes(Seq(Attribute("label", key))), Prov()),
+            Section(Text(List(InlineText(key))), prefix = "#", Attributes(Seq(Attribute("label", key))))(Prov()),
             Block(Attributes(Nil), Parsed("", inner), Prov())
           )
       }
@@ -59,7 +59,7 @@ object GenIndexPage:
               )),
               doc.date.map(date => Attribute("datetime", date.dayTime))
             ).flatten ++ categories.map(Attribute("category", _))
-          ),
+          ))(
           Prov()
         ))
       }

@@ -15,7 +15,7 @@ object InlineParsers:
   transparent inline def full(ending: P0[Unit], allowEmpty: Boolean): P0[(List[Inline], String)] =
     val comment: P[Macro] =
       (withProv(commentStart *> (until0(eol) ~ (peek(ending) | eol)).string))
-        .map { (text, prov) => Macro(Comment, Attribute("", text).toAttributes, prov) }
+        .map { (text, prov) => Macro(Comment, Attribute("", text).toAttributes)( prov) }
 
     val notSyntax: P[String] =
       until(syntaxStart | ending).withContext("not syntax")
