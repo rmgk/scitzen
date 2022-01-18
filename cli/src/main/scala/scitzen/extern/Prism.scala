@@ -34,7 +34,8 @@ object Prism:
       loadedLanguages = loadedLanguages + lang
       println(s"loading prism $lang took ${(System.nanoTime() - start) / 1000000}ms")
 
-  def highlight(code: String, lang: String): String =
+  def highlight(code: String, lanG: String): String =
+    val lang = lanG.toLowerCase
     val actualLang = aliases.getOrElse(lang, lang)
     ensureLoaded(actualLang)
 
