@@ -142,7 +142,7 @@ object ConvertHtml:
         val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
 
         HtmlPages(cssrelpath).wrapContentHtml(
-          style(raw(Resource.getAsString("META-INF/resources/webjars/prism/themes/prism.css"))) +: contentFrag,
+          contentFrag,
           "fullpost",
           toc.map(c => frag(a(href := s"#${article.header.id}", article.title): Frag, c: Frag)),
           article.title,

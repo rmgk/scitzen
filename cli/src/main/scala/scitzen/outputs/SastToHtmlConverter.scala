@@ -218,7 +218,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                     val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
                     code(txt, attr("data-line-numbers") := lines)
 
-                val respre = sBlock.attributes.named.get("lang").fold(pre(initTag))(l => pre(initTag()))
+                val respre = sBlock.attributes.named.get("lang").fold(pre(initTag))(l => pre(initTag(cls := s"language-${l}")))
                 val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
                 ctx.useFeature("prism").retc(res)
 

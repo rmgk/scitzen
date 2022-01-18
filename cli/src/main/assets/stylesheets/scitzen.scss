@@ -19,6 +19,7 @@ $small-screen-width: 575px;
   --light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);
   --color-subdued: GrayText;
 
+  // same as above, but SASS variables seem to not work here
   --main-content-width: 17cm;
   --sidebar-max-width: 20em;
 
@@ -28,6 +29,7 @@ $small-screen-width: 575px;
   //--color-marker-blue: #a4c2f4;
   //--color-marker-purple: #b4a7d6;
 
+  --theme-border-radius: 5px;
 
   color-scheme: light dark;
 }
@@ -110,10 +112,8 @@ main, main section {
     // oversized figures and images
     grid-column: image-start / image-end;
 
-    // add borders around figures and pure images
-    box-shadow: 0 0 2px rgba(0, 0, 0, .12), 0 0 4px rgba(0, 0, 0, .24);
     //background: rgba(255, 255, 255, 0.8);
-    border-radius: 5px;
+    border-radius: var(--theme-border-radius);
 
     // justify instead of margins to center elements in grid
     // unsafe causes the image to stay centered even if things get small,
@@ -242,10 +242,14 @@ main > *:first-child {
 
 pre {
   white-space: pre-line;
+  tab-size: 4;
 }
 
 pre > code {
   white-space: pre-wrap;
+}
+code {
+  hyphens: none;
 }
 
 .rule {
@@ -288,8 +292,10 @@ img, video {
 
 
 figure, blockquote {
-  border: 1px solid var(--color-subdued);
-  padding: calc(1em - 1px);
+  // make backgrounds very slightly theme colored
+  background-color: #{'hsla(0, 0%, 60%, 10%)'};
+  border-radius: var(--theme-border-radius);
+  padding: 1em;
 }
 
 figure, blockquote, dd {
@@ -493,7 +499,7 @@ body {
 // external and technical stuff
 /////////////////////////////////////////////////////////////////////////////
 
-// not sure what kind of crap katex is adding here, but we just hide it …
+// only display katex mathml (does not work in chrome)
 .katex-html {
   display: none;
 }
@@ -515,4 +521,154 @@ body {
 }
 *:target {
   animation: 1s ease 0s 1 fade-target;
+}
+
+
+/* PrismJS syntax styles adapted from the following:
+ * PrismJS 1.26.0 https://prismjs.com/
+ * Based on dabblet (http://dabblet.com)
+ * @author Lea Verou
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+@media (prefers-color-scheme: light) {
+
+
+  .token.comment,
+  .token.prolog,
+  .token.doctype,
+  .token.cdata {
+    color: slategray;
+  }
+
+  .token.punctuation {
+    color: #999;
+  }
+
+  .token.namespace {
+    opacity: .7;
+  }
+
+  .token.property,
+  .token.tag,
+  .token.boolean,
+  .token.number,
+  .token.constant,
+  .token.symbol,
+  .token.deleted {
+    color: #905;
+  }
+
+  .token.selector,
+  .token.attr-name,
+  .token.string,
+  .token.char,
+  .token.builtin,
+  .token.inserted {
+    color: #690;
+  }
+
+  .token.operator,
+  .token.entity,
+  .token.url,
+  .language-css .token.string,
+  .style .token.string {
+    color: #9a6e3a;
+  }
+
+  .token.atrule,
+  .token.attr-value,
+  .token.keyword {
+    color: #07a;
+  }
+
+  .token.function,
+  .token.class-name {
+    color: #DD4A68;
+  }
+
+  .token.regex,
+  .token.important,
+  .token.variable {
+    color: #e90;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+
+  .token.comment,
+  .token.prolog,
+  .token.doctype,
+  .token.cdata {
+    color: #8292a2;
+  }
+
+  .token.punctuation {
+    color: #f8f8f2;
+  }
+
+  .token.namespace {
+    opacity: .7;
+  }
+
+  .token.property,
+  .token.tag,
+  .token.constant,
+  .token.symbol,
+  .token.deleted {
+    color: #f92672;
+  }
+
+  .token.boolean,
+  .token.number {
+    color: #ae81ff;
+  }
+
+  .token.selector,
+  .token.attr-name,
+  .token.string,
+  .token.char,
+  .token.builtin,
+  .token.inserted {
+    color: #a6e22e;
+  }
+
+  .token.operator,
+  .token.entity,
+  .token.url,
+  .language-css .token.string,
+  .style .token.string,
+  .token.variable {
+    color: #f8f8f2;
+  }
+
+  .token.atrule,
+  .token.attr-value,
+  .token.function,
+  .token.class-name {
+    color: #e6db74;
+  }
+
+  .token.keyword {
+    color: #66d9ef;
+  }
+
+  .token.regex,
+  .token.important {
+    color: #fd971f;
+  }
 }
