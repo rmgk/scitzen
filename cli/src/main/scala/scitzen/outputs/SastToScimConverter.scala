@@ -140,8 +140,12 @@ object AttributesToScim:
 
   def encodeString(value: String): String =
     def parses(quoted: String): Boolean =
-      val parsedAttr = fastparse.parse(quoted, AttributesParser.stringValue(_))
-      parsedAttr.get.value == value
+      fastparse.parse(quoted, AttributesParser.namedAttributeValue(_)) match {
+        // was parsed as a normal string with the same value
+        case fastparse.Parsed.Success(Right(`value`), _) => true
+        // was either parsed as an attribute list or something else strange
+        case other => false
+      }
 
     def pickFirst(candidate: (() => String)*): Option[String] =
       candidate.view.map(_.apply()).find(parses)
