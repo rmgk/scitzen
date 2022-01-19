@@ -31,6 +31,8 @@ $small-screen-width: 575px;
 
   --theme-border-radius: 5px;
 
+  --theme-plate-color: hsla(0, 0%, 50%, 0.1);
+
   color-scheme: light dark;
 }
 
@@ -78,42 +80,32 @@ html {
 
 main {
   // outer edge to keep everything from hugging the screen
-  padding: 0 1em;
+  padding: 1em;
   // allow overscrolling past the end of the content
-  margin-bottom: calc(100vh - 3.5em);
-}
-
-// in general, we try to ignore section tags in main
-main section {
-  display: contents;
+  margin-bottom: calc(100vh - 4em);
 }
 
 // usually margins should collapse, but because of grid they dont.
 // thus we replace margins by grid gaps
-@media screen {
-  main > *, main section > * {
-    margin: 0;
-    grid-column: content-start / content-end;
-  }
-  .fullpost main {
-    grid-row-gap: 0.75em;
-  }
+main > * {
+  margin: 0;
+  grid-column: content-start / content-end;
 }
-
-main * {
-  // keep all content inside the page
-  // this causes per element scrollbars, instead of breaking the full layout
-  max-width: 100%;
+// quite specific selector to really force margin top off for first child
+main > *:first-child {
+  margin-top: 0;
+}
+// index page does not gain margins
+.fullpost main {
+  grid-row-gap: 0.75em;
 }
 
 
-main, main section {
-  & > img, & > figure, & > video {
+// oversized elements
+main {
+  & > img, & > figure, & > video, & > pre {
     // oversized figures and images
     grid-column: image-start / image-end;
-
-    //background: rgba(255, 255, 255, 0.8);
-    border-radius: var(--theme-border-radius);
 
     // justify instead of margins to center elements in grid
     // unsafe causes the image to stay centered even if things get small,
@@ -135,79 +127,15 @@ main, main section {
 // general styling of elements follow, these should not affect overall layout
 /////////////////////////////////////////////////////////////////////////////
 
-a {
-  text-decoration: none;
-  color: var(--theme-color);
-
-  &:hover {
-    filter: brightness(75%);
-  }
-}
-
-//math {
-//  font-family: "Libertinus Math", sans-serif;
-//}
-
-.metadata {
-  display: flex;
-  // safe causes the metadata to always be visible,
-  // even if things become so small that they need to be scrolled
-  justify-content: safe center;
-
-  > * {
-    margin-right: 0.5em;
-  }
-}
-
-time, .category {
-  @media screen {
-    color: var(--color-subdued);
-  }
-}
-
-time {
-  white-space: pre;
-  // double monospace to override firefox default font size to use same as other fonts
-  font-family: monospace, monospace;
-  //letter-spacing: -0.0625em;
-}
-
-
-
-main {
-  p, pre, ol, ul {
-    text-align: justify;
-    // restrict max width also when nested inside something else
-    max-width: var(--main-content-width);
-    font-family: inherit;
-  }
-}
-
-main .marginnote {
-  grid-column: content-end;
-  margin-left: 2em;
-  overflow: hidden;
-}
-
-main figure > pre {
-  // undo max width of code pres when top level in figure
-  // to profit from oversize figures
-  max-width: 100%;
-}
+// headers
 
 h1, h2, h3, h4, h5, h6 {
-    line-height: 1.1;
-    // we usually disable margins because they do not fold in grids, but add them just for the top of headers
-    margin-top: revert;
-    padding-bottom: 0.5rem;
-}
+  line-height: 1.1;
+  // we usually disable margins because they do not fold in grids,
+  // but add them just for the top of headers
+  margin-top: revert;
+  padding-bottom: 0.5rem;
 
-
-h4 { font-style: italic; }
-
-
-
-h1, h2, h3, h4, h5, h6 {
   text-align: center;
   grid-column: header-start / header-end;
 }
@@ -234,42 +162,83 @@ h2 {
   &:after {margin-left: 1rem;}
 }
 
+h4 { font-style: italic; }
 
-main > *:first-child {
-  margin-top: 0;
-  padding-top: 0.5em;
+
+//math {
+//  font-family: "Libertinus Math", sans-serif;
+//}
+
+.metadata {
+  display: flex;
+  // safe causes the metadata to always be visible,
+  // even if things become so small that they need to be scrolled
+  justify-content: safe center;
+
+  > * {
+    margin-right: 0.5em;
+  }
+}
+
+time, .category {
+  @media screen {
+    color: var(--color-subdued);
+  }
+}
+
+time {
+  white-space: pre;
+  // double monospace to override firefox default font size to use same as other fonts
+  font-family: monospace, monospace;
+}
+
+a {
+  text-decoration: none;
+  color: var(--theme-color);
+
+  &:hover {
+    filter: brightness(75%);
+  }
+}
+
+// normal text styling
+main {
+  p, ol, ul {
+    text-align: justify;
+    // text based things always are limited to content width,
+    // even when nested inside something else
+    max-width: var(--main-content-width);
+  }
+}
+
+main .marginnote {
+  grid-column: content-end;
+  margin-left: 2em;
+  overflow: hidden;
 }
 
 pre {
   white-space: pre-line;
   tab-size: 4;
+  // font is monospace by default AND overriden by normalize.css
+  // but we only want code in code font
+  font-family: inherit;
 }
 
-pre > code {
-  white-space: pre-wrap;
-}
 code {
   hyphens: none;
+}
+:not(pre) > code {
+  background-color: var(--theme-plate-color);
+  padding: .1em;
+  border-radius: var(--theme-border-radius);
+}
+pre > code {
+  white-space: pre-wrap;
 }
 
 .rule {
   font-variant: small-caps;
-}
-
-// quote links and code in paragraphs to clarify their borders
-.fullpost main {
-  p, li {
-    & > a, & > code {
-      &:before {
-        // ⸢ ⸣ ⸤ ⸥
-        content: "⸢";
-      }
-
-      &:after {
-        content: "⸥";
-      }
-    }
-  }
 }
 
 li > p:only-child {
@@ -283,30 +252,22 @@ img, video {
   // seems to be the most sane default for transparent images
   background-color: white;
 
+  border-radius: var(--theme-border-radius);
+
   display: block;
   height: auto;
   max-height: 90vh;
-  margin: auto;
   max-width: 100%;
 }
 
-
-figure, blockquote {
-  // make backgrounds very slightly theme colored
-  background-color: #{'hsla(0, 0%, 60%, 10%)'};
+figure, blockquote, pre, dd {
+  background-color: var(--theme-plate-color);
   border-radius: var(--theme-border-radius);
   padding: 1em;
-}
 
-figure, blockquote, dd {
+  // remove top&bottom margins of nested elements
   & > :first-child {
     margin-top: 0;
-  }
-
-  // center elements inside figure
-  & > * {
-    margin-left: auto;
-    margin-right: auto;
   }
 
   & > :last-child {
@@ -314,8 +275,19 @@ figure, blockquote, dd {
   }
 }
 
+// center contents of a figure, in particular the caption
+figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 cite::before {
   content: "– ";
+}
+
+dt {
+  font-weight: bold;
 }
 
 ins {

@@ -150,9 +150,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case tLBlock: Block =>
         val positiontype = tLBlock.attributes.legacyPositional.headOption
-        positiontype match
-          case Some("quote") =>
-            convertBlock(tLBlock)(ctx).map { innerHtml =>
+        (positiontype, tLBlock.content) match
+          case (Some("quote"), Parsed(_, content)) =>
+            convertSeq(content)(ctx).map { innerHtml =>
               // for blockquote layout, see example 12 (the twitter quote)
               // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
               val bq = blockquote(innerHtml.toList)
@@ -197,7 +197,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             sBlock.command match
               // Preformatted plaintext, preserve linebreaks,
               // but also wrap for linebreaks
-              case "text" => ctx.retc(pre(text))
+              case "text" => ctx.retc(pre(p(text)))
               // Code listing
               // Use this for monospace, space preserving, line preserving text
               // It may wrap to fit the screen content
@@ -258,15 +258,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val citations = attrs.target.split(",").toList.map { bibid =>
               bibid -> pathManager.project.bibliography.get(bibid.trim)
             }
-            val anchors = citations.sortBy(_._2.map(_.citekey)).map {
-              case (bibid, Some(bib)) => a(href := s"#$bibid", bib.citekey)
+            val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
+              case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag("\u2009"))
               case (bibid, None) =>
                 scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
-                code(bibid.trim)
-            }
+                List(code(bibid.trim), stringFrag(" "))
+            }.dropRight(1)
             val cctx = ctx.cite(citations.flatMap(_._2))
             if attrs.arguments.nonEmpty then
-              cctx.retc(frag(s"${attrs.arguments.head}\u00A0", anchors))
+              cctx.retc(frag(s"${attrs.arguments.head}\u2009", span(cls:= "citations", "(", anchors, ")")))
             else cctx.retc(anchors)
 
           case Link =>

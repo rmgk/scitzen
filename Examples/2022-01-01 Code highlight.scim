@@ -3,30 +3,28 @@ date = 2022-01-01 17:20:29
 
 So maybe Scitzen got the ability to highlight code now?
 
-::figure
-  ``code{lang=scala}
-    object Prism:
-      // this MUST be inlined by native image to work
-      private val prismSource: Source =
-        val prismStr = Resource.getAsString("prism.js")
-        Source.newBuilder("js", prismStr, "prism.js").buildLiteral()
+``code{lang=scala}
+  object Prism:
+    // this MUST be inlined by native image to work
+    private val prismSource: Source =
+      val prismStr = Resource.getAsString("prism.js")
+      Source.newBuilder("js", prismStr, "prism.js").buildLiteral()
 
-      val engine: Engine = Engine.newBuilder().build()
+    val engine: Engine = Engine.newBuilder().build()
 
-      lazy val prismcontext =
-        val ctx = Context.newBuilder("js").engine(engine).build()
-        ctx.eval(prismSource)
-        ctx
+    lazy val prismcontext =
+      val ctx = Context.newBuilder("js").engine(engine).build()
+      ctx.eval(prismSource)
+      ctx
 
-      lazy val highlightVal = prismcontext.eval("js", "Prism.highlight")
+    lazy val highlightVal = prismcontext.eval("js", "Prism.highlight")
 
-      def highlight(code: String, lang: String): String =
-        highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$lang"), lang).asString()
+    def highlight(code: String, lang: String): String =
+      highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$lang"), lang).asString()
 
-  ``
-::
+``
 
-And another example
+And another example wrapped in a figure
 
 ::figure
   ``code{lang=javascript}

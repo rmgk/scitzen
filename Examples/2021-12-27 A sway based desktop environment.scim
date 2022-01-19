@@ -28,34 +28,32 @@ For this article, we keep everything except Gnome itself.
 
 The sway package on Ubuntu installs a session file for your login manager (GDM) at :code{/usr/local/share/wayland-sessions/sway.desktop}. This is usually configured to directly launch the sway executable, but it is usually a good idea to instead launch a custom script that sets certain environment variables for better system integration. Here is my sway launch script and I am going to explain each part in order.
 
-::figure
-  ``{label=sway-extend.fish}
-    #!/usr/bin/fish
+``{label=sway-extend.fish}
+  #!/usr/bin/fish
 
-    # fuck GDM and explicitly import the language settings
-    export (systemctl --user show-environment | rg '^(LC_|LANG)')
+  # fuck GDM and explicitly import the language settings
+  export (systemctl --user show-environment | rg '^(LC_|LANG)')
 
-    # we already have another hack setting the window manager in the sway config, but that seems to still have some grab keyboard issues, so lets try this as well
-    export _JAVA_AWT_WM_NONREPARENTING=1
+  # we already have another hack setting the window manager in the sway config, but that seems to still have some grab keyboard issues, so lets try this as well
+  export _JAVA_AWT_WM_NONREPARENTING=1
 
-    # used at least for desktop portals, is set here and then exported to dbus and systemd in the sway config along with other sway variables
-    # https://github.com/emersion/xdg-desktop-portal-wlr/wiki/%22It-doesn't-work%22-Troubleshooting-Checklist
-    export XDG_CURRENT_DESKTOP=sway
+  # used at least for desktop portals, is set here and then exported to dbus and systemd in the sway config along with other sway variables
+  # https://github.com/emersion/xdg-desktop-portal-wlr/wiki/%22It-doesn't-work%22-Troubleshooting-Checklist
+  export XDG_CURRENT_DESKTOP=sway
 
-    # library path is for manually installed sways
-    export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
+  # library path is for manually installed sways
+  export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
 
-    # keyring control is set like this by gnome-keyring-daemon, but not returned in the call below, so just do it manually
-    export GNOME_KEYRING_CONTROL=$XDG_RUNTIME_DIR/keyring
+  # keyring control is set like this by gnome-keyring-daemon, but not returned in the call below, so just do it manually
+  export GNOME_KEYRING_CONTROL=$XDG_RUNTIME_DIR/keyring
 
-    # start the secrets service and the ssh agent, returns the SSH_SOCK (and maybe other environment?)
-    # note that keypass can do the secrets integration, but is not quite an ssh agent so … meh
-    export (gnome-keyring-daemon --start --components=ssh,secrets)
+  # start the secrets service and the ssh agent, returns the SSH_SOCK (and maybe other environment?)
+  # note that keypass can do the secrets integration, but is not quite an ssh agent so … meh
+  export (gnome-keyring-daemon --start --components=ssh,secrets)
 
-    # start sway!
-    exec sway
-  ``
-::
+  # start sway!
+  exec sway
+``
 
 
 # Setting environment variables (and locales)
