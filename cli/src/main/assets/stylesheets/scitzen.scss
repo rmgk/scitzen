@@ -80,7 +80,7 @@ html {
 
 main {
   // outer edge to keep everything from hugging the screen
-  padding: 1em;
+  padding: 0 1em;
   // allow overscrolling past the end of the content
   margin-bottom: calc(100vh - 4em);
 }
@@ -131,9 +131,10 @@ main {
 
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.1;
-  // we usually disable margins because they do not fold in grids,
-  // but add them just for the top of headers
-  margin-top: revert;
+
+  // we disabled all margins because they do not fold in grids
+  // for headers, we add padding instead, which works nicer with jumping to IDs
+  padding-top: 1rem;
   padding-bottom: 0.5rem;
 
   text-align: center;
