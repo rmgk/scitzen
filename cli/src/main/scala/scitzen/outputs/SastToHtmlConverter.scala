@@ -180,18 +180,17 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               Chain(sBlock.attributes.named.get("label").fold(fig: Tag)(l => fig(id := l)))
           }
 
-        case Fenced(text) =>
-          if sBlock.attributes.named.contains(ImageTarget.Html.name) then
-            val target = sBlock.attributes.named(ImageTarget.Html.name)
+        case Fenced(text) => sBlock.attributes.named.get(ImageTarget.Html.name) match
+          case Some(target) =>
             convertSingle(Directive(
               Image,
               sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))))(
               sBlock.prov
             ))(ctx)
-          else
+          case None =>
             sBlock.command match
               // Preformatted plaintext, preserve linebreaks,
-              // but also wrap for linebreaks
+              // but also wrap for linebreaks and use paragraph width
               case "text" => ctx.retc(pre(p(text)))
               // Code listing
               // Use this for monospace, space preserving, line preserving text
