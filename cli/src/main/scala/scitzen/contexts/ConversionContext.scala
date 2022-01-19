@@ -9,7 +9,7 @@ import scitzen.sast.Section
 import java.nio.file.Path
 
 /** The conversion context, used to keep state of in the conversion. */
-case class ConversionContext[T](
+case class ConversionContext[+T](
     data: T,
     katexConverter: KatexConverter = KatexConverter(Map.empty, new KatexLibrary(None)),
     resourceMap: Map[File, Path] = Map.empty,

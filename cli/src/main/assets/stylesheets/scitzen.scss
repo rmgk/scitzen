@@ -30,6 +30,7 @@ $small-screen-width: 575px;
   //--color-marker-purple: #b4a7d6;
 
   --theme-border-radius: 5px;
+  --theme-border: 1px solid var(--theme-color);
 
   --theme-plate-color: hsla(0, 0%, 50%, 0.1);
 
@@ -43,12 +44,6 @@ body {
   line-height: calc(30/18);
 }
 
-// causes words to be broken in the middle, if required for no overflow to occur
-// break-word causes still correct min-width computations, meaning that the sidebar will not shrink if not explicitly necessary
-// anywhere means that things even inside other things will shrink aggressively
-aside * { overflow-wrap: break-word; }
-main * { overflow-wrap: anywhere; }
-
 // enable hyphenation everywhere
 // this is required for the main text as that has justified content,
 // but the navigation also profits from better use of space
@@ -61,10 +56,11 @@ html {
 // main grid layout
 /////////////////////////////////////////////////////////////////////////////
 
-
 @media screen {
-  // grid related things in main
   main {
+    // allow overscrolling past the end of the content
+    margin-bottom: calc(100vh - 4em);
+
     // use grid to have text centered, but allow oversized image content
     display: grid;
     // the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
@@ -74,54 +70,50 @@ html {
     // the content has a fixed minimum width to force a scrollbar on the content at some point
     // note that everything breaks if --main-content-width is smaller than the minimum here,
     // which is why the minimum is not min-content
-    grid-template-columns: [image-start] minmax(0, 1fr) [header-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(0, 1fr) [image-end];
+    grid-template-columns: [image-start] minmax(1em, 1fr) [header-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(1em, 1fr) [image-end];
   }
-}
 
-main {
-  // outer edge to keep everything from hugging the screen
-  padding: 0 1em;
-  // allow overscrolling past the end of the content
-  margin-bottom: calc(100vh - 4em);
-}
-
-// usually margins should collapse, but because of grid they dont.
-// thus we replace margins by grid gaps
-main > * {
-  margin: 0;
-  grid-column: content-start / content-end;
-}
-// quite specific selector to really force margin top off for first child
-main > *:first-child {
-  margin-top: 0;
-}
-// index page does not gain margins
-.fullpost main {
-  grid-row-gap: 0.75em;
-}
+  // usually margins should collapse, but because of grid they dont.
+  // thus we replace margins by grid gaps
+  main > * {
+    margin: 0;
+    grid-column: content-start / content-end;
+  }
+  // index page does not gain margins
+  .fullpost main {
+    grid-row-gap: 0.75em;
+  }
 
 
-// oversized elements
-main {
-  & > img, & > figure, & > video, & > pre {
-    // oversized figures and images
-    grid-column: image-start / image-end;
+  // oversized elements
+  main {
+    & > img, & > figure, & > video, & > pre {
+      // oversized figures and images
+      grid-column: image-start / image-end;
 
-    // justify instead of margins to center elements in grid
-    // unsafe causes the image to stay centered even if things get small,
-    // causing the box and shadow of the image to hit the border of the window
-    justify-self: unsafe center;
-    margin-left: 0;
-    margin-right: 0;
-
-    @media print {
-      margin-left: auto;
-      margin-right: auto;
+      // justify instead of margins to center elements in grid
+      // unsafe keeps centered even if that causes overflow into left and right elements
+      // safe aligns left in case of overflow (moving overflow to the right)
+      justify-self: safe center;
+      margin-left: 0;
+      margin-right: 0;
     }
   }
 }
 
+// use a simplified print sheet where all content is just centered
+@media print {
+  main > * {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: var(--main-content-width);
+    display:block;
+  }
 
+  .marginnote {
+    display: none;
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // general styling of elements follow, these should not affect overall layout
@@ -142,7 +134,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-  border-bottom: 1px solid var(--theme-color);
+  border-bottom: var(--theme-border);
 }
 
 h2 {
@@ -154,7 +146,7 @@ h2 {
 
   &:before, &:after {
     content: '';
-    border-top: 1px solid var(--theme-color);
+    border-bottom: var(--theme-border);
     flex-grow: 1;
     flex-shrink: 0.1;
     flex-basis: 10%;
@@ -193,6 +185,17 @@ time {
   font-family: monospace, monospace;
 }
 
+// basic text styling
+
+main {
+  p, ol, ul, dl {
+    text-align: justify;
+    // text based things always are limited to content width,
+    // even when nested inside something else
+    max-width: var(--main-content-width);
+  }
+}
+
 a {
   text-decoration: none;
   color: var(--theme-color);
@@ -202,64 +205,7 @@ a {
   }
 }
 
-// normal text styling
-main {
-  p, ol, ul {
-    text-align: justify;
-    // text based things always are limited to content width,
-    // even when nested inside something else
-    max-width: var(--main-content-width);
-  }
-}
-
-main .marginnote {
-  grid-column: content-end;
-  margin-left: 2em;
-  overflow: hidden;
-}
-
-pre {
-  white-space: pre-line;
-  tab-size: 4;
-  // font is monospace by default AND overriden by normalize.css
-  // but we only want code in code font
-  font-family: inherit;
-}
-
-code {
-  hyphens: none;
-}
-:not(pre) > code {
-  background-color: var(--theme-plate-color);
-  padding: .1em;
-  border-radius: var(--theme-border-radius);
-}
-pre > code {
-  white-space: pre-wrap;
-}
-
-.rule {
-  font-variant: small-caps;
-}
-
-li > p:only-child {
-  margin: 0;
-}
-
-img, video {
-  // why is this not the default?
-  image-orientation: from-image;
-
-  // seems to be the most sane default for transparent images
-  background-color: white;
-
-  border-radius: var(--theme-border-radius);
-
-  display: block;
-  height: auto;
-  max-height: 90vh;
-  max-width: 100%;
-}
+// containers of other elements
 
 figure, blockquote, pre, dd {
   background-color: var(--theme-plate-color);
@@ -276,6 +222,56 @@ figure, blockquote, pre, dd {
   }
 }
 
+// code blocks
+
+pre {
+  white-space: pre-wrap;
+  tab-size: 4;
+  // font is monospace by default AND overriden by normalize.css
+  // but we only want code in code font
+  font-family: inherit;
+}
+code {
+  hyphens: none;
+}
+:not(pre) > code {
+  background-color: var(--theme-plate-color);
+  padding: .1em;
+  border-radius: var(--theme-border-radius);
+}
+pre > code {
+  // this causes the content of the pre (usually the code) to be wrapped to fit small screen widths
+  overflow-wrap: break-word;
+}
+
+
+// individual element styles
+
+hr {
+  grid-column: header-start / header-end;
+  border: none;
+  border-bottom: var(--theme-border);
+}
+
+.marginnote {
+  grid-column: content-end;
+  margin-left: 2em;
+  overflow: hidden;
+}
+
+img, video {
+  // why is this not the default?
+  image-orientation: from-image;
+
+  border-radius: var(--theme-border-radius);
+
+  // display: block;
+  height: auto;
+  max-height: 90vh;
+  max-width: 100%;
+}
+
+
 // center contents of a figure, in particular the caption
 figure {
   display: flex;
@@ -283,8 +279,12 @@ figure {
   align-items: center;
 }
 
-cite::before {
-  content: "– ";
+.rule {
+  font-variant: small-caps;
+}
+
+li > p:only-child {
+  margin: 0;
 }
 
 dt {
@@ -299,7 +299,6 @@ ins {
 del {
   color: var(--color-marker-red);
 }
-
 
 .bibliography {
 
@@ -423,7 +422,7 @@ body {
       // make things also not hug the srceen on the left
       padding-left: 0.5em;
 
-      border-right: 1px solid var(--theme-color);
+      border-right: var(--theme-border);
 
       // makes the individual text of the links more compact which seems to require the inline block and then requires to fix vertical-align
       a {

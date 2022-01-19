@@ -152,13 +152,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         val positiontype = tLBlock.attributes.legacyPositional.headOption
         (positiontype, tLBlock.content) match
           case (Some("quote"), Parsed(_, content)) =>
-            convertSeq(content)(ctx).map { innerHtml =>
-              // for blockquote layout, see example 12 (the twitter quote)
-              // http://w3c.github.io/html/textlevel-semantics.html#the-cite-element
-              val bq = blockquote(innerHtml.toList)
-              // first argument is "quote" we concat the rest and treat them as a single entity
-              val title = tLBlock.attributes.legacyPositional.drop(1)
-              Chain(if title.nonEmpty then bq(cite(title)) else bq)
+            convertSeq(content)(ctx).mapc { innerHtml =>
+              blockquote(innerHtml.toList)
             }
           case _ =>
             val prov = tLBlock.prov
@@ -265,9 +260,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 List(code(bibid.trim), stringFrag(" "))
             }.dropRight(1)
             val cctx = ctx.cite(citations.flatMap(_._2))
+            val styledAnchors = span(cls:= "citations", "(", anchors, ")")
             if attrs.arguments.nonEmpty then
-              cctx.retc(frag(s"${attrs.arguments.head}\u2009", span(cls:= "citations", "(", anchors, ")")))
-            else cctx.retc(anchors)
+              cctx.ret(Chain(s"${attrs.arguments.head}\u2009", styledAnchors))
+            else cctx.retc(styledAnchors)
 
           case Link =>
             val target = attrs.target
@@ -341,22 +337,25 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
               case _ => ctx.retc(unknownMacroOutput(mcro))
 
-          case Image =>
-            val target = attrs.named.getOrElse(ImageTarget.Html.name, attrs.target)
-            pathManager.project.resolve(pathManager.cwd, target) match
-              case Some(target) =>
-                val path = pathManager.relativizeImage(target)
-                val mw   = java.lang.Double.parseDouble(attrs.named.getOrElse("maxwidth", "1")) * 100
-                ctx.requireInOutput(target, path).retc {
-                  val filename = path.getFileName.toString
-                  if videoEndings.exists(filename.endsWith) then
-                    video(src  := path.toString, attr("loop").empty, attr("autoplay").empty)
-                  else img(src := path.toString, style := s"max-width: $mw%")
-                }
-              case None =>
-                scribe.warn(s"could not find path ${target}" + reporter(mcro))
-                ctx.empty
+          case Image => convertImage(ctx, mcro)
   end inlineToHTML
+
+  private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
+    val attrs = mcro.attributes
+    val target = attrs.named.getOrElse(ImageTarget.Html.name, attrs.target)
+    pathManager.project.resolve(pathManager.cwd, target) match
+      case Some(target) =>
+        val path = pathManager.relativizeImage(target)
+        ctx.requireInOutput(target, path).retc {
+          val filename = path.getFileName.toString
+          if videoEndings.exists(filename.endsWith) then
+            video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
+          else img(src := path.toString)
+        }
+      case None         =>
+        scribe.warn(s"could not find path ${target}" + reporter(mcro))
+        ctx.empty
+  }
 
   def reportPos(m: Directive): String = reporter(m)
 
