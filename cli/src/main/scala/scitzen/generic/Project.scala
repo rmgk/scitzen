@@ -54,9 +54,10 @@ object Project:
 
   def fromConfig(file: File): Option[Project] =
     val configContent = (file / scitzenconfig).contentAsString
-    val value       = ProjectConfig.parse(configContent)
-    val definitions = value.definitions.view.map{(k, v) =>
-      k -> Text(Parse.inlineUnwrap(v, Prov()))}.toMap
+    val value         = ProjectConfig.parse(configContent)
+    val definitions = value.definitions.view.map { (k, v) =>
+      k -> Text(Parse.inlineUnwrap(v, Prov()))
+    }.toMap
     Some(Project(file, value, definitions))
 
   def isScim(c: File): Boolean =

@@ -42,12 +42,14 @@ object Katex:
 
       val jsonBindings = writeToString(bindings)(scitzen.compat.Codecs.mapCodec)
 
-
       polyglot.getBindings("js").putMember("macro_bindings", jsonBindings)
-      val katexRes = polyglot.eval("js", """
+      val katexRes = polyglot.eval(
+        "js",
+        """
       {const katex_settings = {throwOnError: false, macros: JSON.parse(macro_bindings)};
       s => katex.renderToString(s, katex_settings) }
-      """)
+      """
+      )
       polyglot.getBindings("js").removeMember("macro_bindings")
       katexRes
 

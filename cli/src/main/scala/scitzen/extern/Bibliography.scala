@@ -37,12 +37,14 @@ object Bibliography:
       if res.nonEmpty then Some(res) else None
     def format: Frag =
       def line(name: String, elems: Option[Frag]*): Option[Frag] =
-        val terminator = stringFrag(". ")
-        val inside: Seq[Frag] = elems.flatten.flatMap{v => List(v, terminator)}
-        if inside.isEmpty then None else Some(p(cls:=name, inside))
-      frag(line("authors", formatAuthors.map(stringFrag), year.map(_.toString)),
-           line("title", title.map(t => url.fold(stringFrag(t))(u => a(href := u, t)))),
-           line("container", container.map(stringFrag), issue.map(stringFrag)))
+        val terminator        = stringFrag(". ")
+        val inside: Seq[Frag] = elems.flatten.flatMap { v => List(v, terminator) }
+        if inside.isEmpty then None else Some(p(cls := name, inside))
+      frag(
+        line("authors", formatAuthors.map(stringFrag), year.map(_.toString)),
+        line("title", title.map(t => url.fold(stringFrag(t))(u => a(href := u, t)))),
+        line("container", container.map(stringFrag), issue.map(stringFrag))
+      )
     def authorYear: Option[String] =
       authors.headOption.flatMap(_.familyName).combine(year.map(_.toString))
 
@@ -62,7 +64,7 @@ object Bibliography:
 
   def parse(cacheDir: File)(source: File): List[BibEntry] = {
     val converter = BibTeXConverter()
-    val db = source.fileInputStream(converter.loadDatabase)
+    val db        = source.fileInputStream(converter.loadDatabase)
     val items     = converter.toItemData(db).asScala
     items.valuesIterator.map { citeprocToBib }.toList
   }

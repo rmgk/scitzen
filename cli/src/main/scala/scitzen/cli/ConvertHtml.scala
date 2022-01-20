@@ -61,7 +61,10 @@ object ConvertHtml:
             sync,
             nlp,
             preprocessed,
-            KatexConverter(katexmap, KatexLibrary(article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))),
+            KatexConverter(
+              katexmap,
+              KatexLibrary(article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
+            ),
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
 
@@ -87,7 +90,13 @@ object ConvertHtml:
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
-      .wrapContentHtml(convertedCtx.data.toList, "index", HtmlToc.tableOfContents(convertedCtx.sections.reverse), "Index", None)
+      .wrapContentHtml(
+        convertedCtx.data.toList,
+        "index",
+        HtmlToc.tableOfContents(convertedCtx.sections.reverse),
+        "Index",
+        None
+      )
     project.outputdir./("index.html").write(res)
 
   private def loadKatex(katexmapfile: File): Map[String, String] =

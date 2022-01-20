@@ -168,7 +168,8 @@ class SastToTexConverter(
             val target = tlblock.attributes.named(ImageTarget.Tex.name)
             inlineToTex(Directive(
               Image,
-              tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target))))(
+              tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target)))
+            )(
               tlblock.prov
             ))(ctx)
           else
@@ -226,11 +227,14 @@ class SastToTexConverter(
           case Other("break") => ctx.retc(s"\\clearpage{}")
           case Other("rule") => inlineToTex(Directive(
               Ref,
-              attributes.copy(raw = Seq(
-                Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(mcro.prov))), None),
-                Plain("style", "plain"),
-                Positional(s"rule-${attributes.target}")
-                )))(
+              attributes.copy(raw =
+                Seq(
+                  Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(mcro.prov))), None),
+                  Plain("style", "plain"),
+                  Positional(s"rule-${attributes.target}")
+                )
+              )
+            )(
               mcro.prov
             ))(ctx)
           case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
@@ -257,7 +261,7 @@ class SastToTexConverter(
               scribe.error(
                 s"multiple resolutions for ${attributes.target}" +
                   reporter(mcro) +
-                s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                  s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption match
@@ -265,7 +269,7 @@ class SastToTexConverter(
                 scribe.error(s"no resolution found for ${attributes.target}" + reporter(mcro))
                 ctx.empty
               case Some(candidate) =>
-                //TODO: existence of line is unchecked
+                // TODO: existence of line is unchecked
                 val label = References.getLabel(candidate).get + attributes.named.getOrElse("line", "")
                 attributes.named.get("style") match
                   case Some("plain") =>

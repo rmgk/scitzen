@@ -100,11 +100,11 @@ class SastToSastConverter(document: Document, project: Project):
         )
 
       case Fenced(text) =>
-
-        val runctx = if ublock.command == "execute" && ublock.attributes.named.get("lang").contains("js") then
-          val res = scitzen.extern.JsRunner().run(text, ublock.attributes)
-          refctx.ret(ublock.copy(content = Fenced(res.toString)))
-        else refctx
+        val runctx =
+          if ublock.command == "execute" && ublock.attributes.named.get("lang").contains("js") then
+            val res = scitzen.extern.JsRunner().run(text, ublock.attributes)
+            refctx.ret(ublock.copy(content = Fenced(res.toString)))
+          else refctx
 
         val runblock = runctx.data
 
@@ -128,7 +128,7 @@ class SastToSastConverter(document: Document, project: Project):
         if select == "" then
           Attributes(attributes.raw.map {
             case Positional(text, Some(value)) if value == attributes.target => Attribute("", rel.toString)
-            case other                                             => other
+            case other                                                       => other
           })
         else attributes.updated(select, rel.toString)
       }
@@ -146,8 +146,9 @@ class SastToSastConverter(document: Document, project: Project):
   def convertMacro(initial: Directive)(ctx: Cta): Ctx[Directive] =
     val mcro =
       initial.command match
-        case Image | Include => makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a)(initial.prov))
-        case _               => initial
+        case Image | Include =>
+          makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a)(initial.prov))
+        case _ => initial
     mcro.command match
       case Image =>
         val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))(mcro.prov)

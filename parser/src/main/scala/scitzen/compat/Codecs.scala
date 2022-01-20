@@ -6,7 +6,8 @@ import scitzen.sast.{Attributes, Directive, DCommand, Prov, Sast, Section, Text}
 
 object Codecs {
 
-  val macroTupleCodec: JsonValueCodec[(DCommand, Attributes, Prov)] = JsonCodecMaker.make[(DCommand, Attributes, Prov)](CodecMakerConfig.withAllowRecursiveTypes(true))
+  val macroTupleCodec: JsonValueCodec[(DCommand, Attributes, Prov)] =
+    JsonCodecMaker.make[(DCommand, Attributes, Prov)](CodecMakerConfig.withAllowRecursiveTypes(true))
 
   implicit val MacroEncoder: JsonValueCodec[Directive] = new JsonValueCodec[Directive] {
     override def decodeValue(in: JsonReader, default: Directive): Directive = {
@@ -14,20 +15,19 @@ object Codecs {
       Directive(res._1, res._2)(res._3)
     }
     override def encodeValue(x: Directive, out: JsonWriter): Unit = macroTupleCodec.encodeValue((x.toTuple), out)
-    override def nullValue: Directive = null
+    override def nullValue: Directive                             = null
   }
 
-
-  val sectionTupleCodec: JsonValueCodec[(Text, String, Attributes, Prov)] = JsonCodecMaker.make[(Text, String, Attributes, Prov)](CodecMakerConfig.withAllowRecursiveTypes(true))
+  val sectionTupleCodec: JsonValueCodec[(Text, String, Attributes, Prov)] =
+    JsonCodecMaker.make[(Text, String, Attributes, Prov)](CodecMakerConfig.withAllowRecursiveTypes(true))
   implicit val SectionEncoder: JsonValueCodec[Section] = new JsonValueCodec[Section] {
     override def decodeValue(in: JsonReader, default: Section): Section = {
       val res = sectionTupleCodec.decodeValue(in, default.toTuple)
-      Section(res._1, res._2,res._3)(res._4)
+      Section(res._1, res._2, res._3)(res._4)
     }
     override def encodeValue(x: Section, out: JsonWriter): Unit = sectionTupleCodec.encodeValue(x.toTuple, out)
-    override def nullValue: Section = null
+    override def nullValue: Section                             = null
   }
-
 
   implicit val SastEncoder: JsonValueCodec[List[Sast]] =
     JsonCodecMaker.make(CodecMakerConfig.withAllowRecursiveTypes(true))

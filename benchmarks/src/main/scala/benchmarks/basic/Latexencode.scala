@@ -48,16 +48,14 @@ proident, sunt in culpa qui officia deserunt mollit anim id est laborum. \\"""
     scitzen.outputs.SastToTexConverter.latexencode(testString)
   }
 
-    @Benchmark
+  @Benchmark
   def replace(): Unit = {
     scitzen.outputs.SastToTexConverter.latexencode(testStringReplaceOne)
   }
 
-        @Benchmark
+  @Benchmark
   def replaceAll(): Unit = {
     scitzen.outputs.SastToTexConverter.latexencode(testStringReplaceAll)
   }
-  
-  
 
 }

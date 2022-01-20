@@ -6,14 +6,14 @@ import scitzen.sast.{Block, Directive, Section}
 
 /** The conversion context, used to keep state of the conversion. */
 case class SastContext[T](
-                           data: T,
-                           labelledThings: Map[String, List[SastRef]] = Map.empty,
-                           uniquectr: Int = 0,
-                           imageMacros: List[Directive] = Nil,
-                           convertBlocks: List[Block] = Nil,
-                           sections: List[Section] = Nil,
+    data: T,
+    labelledThings: Map[String, List[SastRef]] = Map.empty,
+    uniquectr: Int = 0,
+    imageMacros: List[Directive] = Nil,
+    convertBlocks: List[Block] = Nil,
+    sections: List[Section] = Nil,
 ):
-  def addImage(mcro: Directive): SastContext[T]            = copy(imageMacros = mcro :: imageMacros)
+  def addImage(mcro: Directive): SastContext[T]        = copy(imageMacros = mcro :: imageMacros)
   def addConversionBlock(block: Block): SastContext[T] = copy(convertBlocks = block :: convertBlocks)
   def addSection(section: Section): SastContext[T]     = copy(sections = section :: sections)
 

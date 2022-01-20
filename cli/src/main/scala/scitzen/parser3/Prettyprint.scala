@@ -31,7 +31,7 @@ class Prettyprint(filename: String, input: String) {
   }
 
   def prettyprint(x: Expectation): String = {
-    val (row, col) = locmap.toLineCol(x.offset).orElse(locmap.toLineCol(input.length-1)).getOrElse(0,0)
+    val (row, col) = locmap.toLineCol(x.offset).orElse(locmap.toLineCol(input.length - 1)).getOrElse(0, 0)
     val (r, c)     = (row + 1, col + 1)
     val line       = locmap.getLine(row).get
     val offending =
@@ -41,12 +41,12 @@ class Prettyprint(filename: String, input: String) {
       |$r | ${line.replace('\t', '␉')}
       |$offending""".stripMargin
     main
-    //x match {
+    // x match {
     //  case Expectation.WithContext(contextStr, expect) =>
     //    val sub = prettyprint(expect).indent(2)
     //    s"$main$sub"
     //  case _ => main
-    //}
+    // }
   }
 
   def prettyprint(x: Error): String =

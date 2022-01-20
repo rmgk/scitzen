@@ -13,7 +13,6 @@ import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters._
 import scitzen.extern.ImageTarget._
 
-
 enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]):
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
   case Undetermined extends ImageTarget("undetermined target", "", Nil)

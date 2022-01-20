@@ -44,11 +44,11 @@ lazy val scitzen = project.in(file("cli"))
         .exclude("org.graalvm.js", "js")
         .exclude("org.graalvm.sdk", "graal-sdk")
     ),
-    SassKeys.cssStyle  := Maxified,
+    SassKeys.cssStyle := Maxified,
     javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
-    nativeImageVersion := "21.3.0",
-    nativeImageJvm     := "graalvm-java17",
+    nativeImageVersion   := "21.3.0",
+    nativeImageJvm       := "graalvm-java17",
     nativeImageOptions ++= Seq(
       "--no-fallback",
       // "--initialize-at-build-time",

@@ -35,17 +35,17 @@ object DCommand {
       case o          => printMap(o)
     }
 
-  object Code extends DCommand
-  object Emph extends DCommand
-  object Strong extends DCommand
-  object Math extends DCommand
-  object Cite extends DCommand
-  object Comment extends DCommand
-  object Def extends DCommand
-  object Image extends DCommand
-  object Include extends DCommand
-  object Link extends DCommand
-  object Ref extends DCommand
-  object Lookup extends DCommand
+  object Code                   extends DCommand
+  object Emph                   extends DCommand
+  object Strong                 extends DCommand
+  object Math                   extends DCommand
+  object Cite                   extends DCommand
+  object Comment                extends DCommand
+  object Def                    extends DCommand
+  object Image                  extends DCommand
+  object Include                extends DCommand
+  object Link                   extends DCommand
+  object Ref                    extends DCommand
+  object Lookup                 extends DCommand
   case class Other(str: String) extends DCommand
 }

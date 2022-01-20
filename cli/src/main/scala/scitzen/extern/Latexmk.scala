@@ -8,24 +8,26 @@ object Latexmk:
     val start = System.nanoTime()
     scribe.info(s"compiling $sourceFile")
     outputdir.createDirectories()
-    val errorFile  = (outputdir / "latexmk.err")
+    val errorFile = (outputdir / "latexmk.err")
     val returnCode =
       new ProcessBuilder(
-        "tectonic", "--keep-intermediates",
-        "--outdir", outputdir.toString(),
+        "tectonic",
+        "--keep-intermediates",
+        "--outdir",
+        outputdir.toString(),
         sourceFile.pathAsString
       )
-      //new ProcessBuilder(
-      //  "latexmk",
-      //  "-cd",
-      //  "-halt-on-error",
-      //  "-xelatex",
-      //  "-interaction=nonstopmode",
-      //  //"-synctex=1",
-      //  "--output-directory=" + outputdir,
-      //  "--jobname=" + jobname,
-      //  sourceFile.pathAsString
-      //)
+        // new ProcessBuilder(
+        //  "latexmk",
+        //  "-cd",
+        //  "-halt-on-error",
+        //  "-xelatex",
+        //  "-interaction=nonstopmode",
+        //  //"-synctex=1",
+        //  "--output-directory=" + outputdir,
+        //  "--jobname=" + jobname,
+        //  sourceFile.pathAsString
+        // )
         .directory(outputdir.toJava)
         .redirectOutput((outputdir / "latexmk.out").toJava)
         .redirectError(errorFile.toJava)

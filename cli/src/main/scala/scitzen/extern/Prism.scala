@@ -20,7 +20,6 @@ object Prism:
     prismcontext.eval("js", "Prism.highlight")
   }
 
-
   val resolvePath: String = "META-INF/resources/webjars/prism/components"
 
   var loadedLanguages = Set.empty[String]
@@ -35,12 +34,12 @@ object Prism:
       println(s"loading prism $lang took ${(System.nanoTime() - start) / 1000000}ms")
 
   def highlight(code: String, lanG: String): String =
-    val lang = lanG.toLowerCase
+    val lang       = lanG.toLowerCase
     val actualLang = aliases.getOrElse(lang, lang)
     ensureLoaded(actualLang)
 
     val start = System.nanoTime()
-    val res   = highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$actualLang"), actualLang).asString()
+    val res = highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$actualLang"), actualLang).asString()
     println(s"highlighting took ${(System.nanoTime() - start) / 1000000}ms")
     res
 

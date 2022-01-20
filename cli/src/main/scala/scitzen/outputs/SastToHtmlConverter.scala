@@ -115,7 +115,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 attributes.target
               ),
               " ",
-              categoriesSpan(attributes.raw.collect{case Plain("category", value) => value})
+              categoriesSpan(attributes.raw.collect { case Plain("category", value) => value })
             )))
 
           case Include =>
@@ -181,40 +181,44 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           }
 
         case Fenced(text) => sBlock.attributes.named.get(ImageTarget.Html.name) match
-          case Some(target) =>
-            convertSingle(Directive(
-              Image,
-              sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target))))(
-              sBlock.prov
-            ))(ctx)
-          case None =>
-            sBlock.command match
-              // Preformatted plaintext, preserve linebreaks,
-              // but also wrap for linebreaks and use paragraph width
-              case "text" => ctx.retc(pre(p(text)))
-              // Code listing
-              // Use this for monospace, space preserving, line preserving text
-              // It may wrap to fit the screen content
-              case _ =>
-                val labeltext =
-                  if !sBlock.attributes.named.contains("label") then text
-                  else
-                    text.replaceAll(""":§([^§]*?)§""", "")
-                val initTag: Tag =
-                  if !sBlock.attributes.legacyPositional.contains("highlight") then
-                    sBlock.attributes.named.get("lang") match
-                      case None       => code(labeltext)
-                      case Some(lang) => code(raw(Prism.highlight(labeltext, lang)))
-                  else
-                    val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) => s.contains(":hl§") }.map {
-                      _._2 + 1
-                    }.mkString(",")
-                    val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
-                    code(txt, attr("data-line-numbers") := lines)
+            case Some(target) =>
+              convertSingle(Directive(
+                Image,
+                sBlock.attributes.remove(ImageTarget.Html.name).append(List(Attribute("", target)))
+              )(
+                sBlock.prov
+              ))(ctx)
+            case None =>
+              sBlock.command match
+                // Preformatted plaintext, preserve linebreaks,
+                // but also wrap for linebreaks and use paragraph width
+                case "text" => ctx.retc(pre(p(text)))
+                // Code listing
+                // Use this for monospace, space preserving, line preserving text
+                // It may wrap to fit the screen content
+                case _ =>
+                  val labeltext =
+                    if !sBlock.attributes.named.contains("label") then text
+                    else
+                      text.replaceAll(""":§([^§]*?)§""", "")
+                  val initTag: Tag =
+                    if !sBlock.attributes.legacyPositional.contains("highlight") then
+                      sBlock.attributes.named.get("lang") match
+                        case None       => code(labeltext)
+                        case Some(lang) => code(raw(Prism.highlight(labeltext, lang)))
+                    else
+                      val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) =>
+                        s.contains(":hl§")
+                      }.map {
+                        _._2 + 1
+                      }.mkString(",")
+                      val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
+                      code(txt, attr("data-line-numbers") := lines)
 
-                val respre = sBlock.attributes.named.get("lang").fold(pre(initTag))(l => pre(initTag(cls := s"language-${l}")))
-                val res    = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
-                ctx.useFeature("prism").retc(res)
+                  val respre =
+                    sBlock.attributes.named.get("lang").fold(pre(initTag))(l => pre(initTag(cls := s"language-${l}")))
+                  val res = sBlock.attributes.named.get("label").fold(respre: Tag)(l => respre(id := l))
+                  ctx.useFeature("prism").retc(res)
 
         case SpaceComment(_) => ctx.empty
 
@@ -258,8 +262,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
                 List(code(bibid.trim), stringFrag(" "))
             }.dropRight(1)
-            val cctx = ctx.cite(citations.flatMap(_._2))
-            val styledAnchors = span(cls:= "citations", "(", anchors, ")")
+            val cctx          = ctx.cite(citations.flatMap(_._2))
+            val styledAnchors = span(cls := "citations", "(", anchors, ")")
             if attrs.arguments.nonEmpty then
               cctx.ret(Chain(s"${attrs.arguments.head}\u2009", styledAnchors))
             else cctx.retc(styledAnchors)
@@ -267,7 +271,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Link =>
             val target = attrs.target
             val content = attrs.positional.headOption
-                               .fold(ctx.retc(stringFrag(target))) { txt =>
+              .fold(ctx.retc(stringFrag(target))) { txt =>
                 inlineValuesToHTML(txt.inl)(ctx)
               }
             content.retc(a(href := target)(content.data.toList))
@@ -280,7 +284,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               scribe.error(
                 s"multiple resolutions for ${attrs.target}" +
                   reporter(mcro.prov) +
-                s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                  s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
@@ -340,7 +344,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   end inlineToHTML
 
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
-    val attrs = mcro.attributes
+    val attrs  = mcro.attributes
     val target = attrs.named.getOrElse(ImageTarget.Html.name, attrs.target)
     pathManager.project.resolve(pathManager.cwd, target) match
       case Some(target) =>
@@ -348,10 +352,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         ctx.requireInOutput(target, path).retc {
           val filename = path.getFileName.toString
           if videoEndings.exists(filename.endsWith) then
-            video(src := path.toString, attr("loop").empty, attr("autoplay").empty)
+            video(src  := path.toString, attr("loop").empty, attr("autoplay").empty)
           else img(src := path.toString)
         }
-      case None         =>
+      case None =>
         scribe.warn(s"could not find path ${target}" + reporter(mcro))
         ctx.empty
   }

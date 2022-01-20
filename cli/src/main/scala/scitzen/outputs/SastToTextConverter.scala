@@ -75,8 +75,8 @@ case class SastToTextConverter(
 
   def convertInline(inners: Seq[Inline]): String =
     inners.map {
-      case InlineText(str)         => str
+      case InlineText(str) => str
       case Directive(Lookup, attr) =>
         definitions.get(attr.target).orElse(attr.named.get("default")).getOrElse("")
-      case _: Directive            => ""
+      case _: Directive => ""
     }.mkString("")

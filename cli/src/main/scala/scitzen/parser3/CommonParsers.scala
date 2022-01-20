@@ -21,15 +21,15 @@ object CommonParsers {
   val verticalSpaces: P0[Unit]           = verticalSpace.rep0.void
   val significantVerticalSpaces: P[Unit] = verticalSpace.rep.void
   val spaceLine: P0[Unit]                = (verticalSpaces.soft ~ eol).void
-  val significantSpaceLine: P[Unit]      = (newline orElse (significantVerticalSpaces.soft ~ eol)).void.withContext("significant space line")
-  val anySpaces: P0[Unit]                = anySpace.rep0.void
-  val significantAnySpaces: P[Unit]      = anySpace.rep.void
-  val digits: P[Unit]                    = charWhere(_.isDigit).rep.void
+  val significantSpaceLine: P[Unit] =
+    (newline orElse (significantVerticalSpaces.soft ~ eol)).void.withContext("significant space line")
+  val anySpaces: P0[Unit]           = anySpace.rep0.void
+  val significantAnySpaces: P[Unit] = anySpace.rep.void
+  val digits: P[Unit]               = charWhere(_.isDigit).rep.void
 
   val commentStart: P[Unit] = ":%"
   val attrOpen              = "{"
   val attrClose             = "}"
-
 
   def untilI(closing: P[Unit]): P[String] =
     until0(closing).with1 <* closing
@@ -45,7 +45,7 @@ object CommonParsers {
 
   val identifier: P[Unit] = (Identifier.identifier.backtrack | failWith("not an identifier")).withContext("identifier")
 
-  val macroStart : P[Unit] = (":" ~ identifier.? ~ attrOpen).void
+  val macroStart: P[Unit]  = (":" ~ identifier.? ~ attrOpen).void
   val syntaxStart: P[Unit] = commentStart | macroStart
 
   def withProv[T](parser: P[T]): P[(T, Prov)] =

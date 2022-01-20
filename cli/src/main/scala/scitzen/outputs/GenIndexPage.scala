@@ -59,7 +59,8 @@ object GenIndexPage:
               )),
               doc.date.map(date => Attribute("datetime", date.dayTime))
             ).flatten ++ categories.map(Attribute("category", _))
-          ))(
+          )
+        )(
           Prov()
         ))
       }

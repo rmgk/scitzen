@@ -32,17 +32,21 @@ object AttributesParser {
 
   val namedAttribute: P[Attribute] =
     (((verticalSpaces.with1 *> identifier.string <* verticalSpaces).backtrack.soft <* "=") ~ text)
-      .map { (id: String, v: Text) => scitzen.sast.Attribute.Plain(id, v.str /*TODO: this should not be str, but the actual string */) }.withContext("named")
+      .map { (id: String, v: Text) =>
+        scitzen.sast.Attribute.Plain(id, v.str /*TODO: this should not be str, but the actual string */ )
+      }.withContext("named")
 
   val positionalAttribute: P0[Attribute] =
-    text.map(v => scitzen.sast.Attribute("", v.str /*TODO: this should not be str, but the actual string */)).withContext("positional")
+    text.map(v =>
+      scitzen.sast.Attribute("", v.str /*TODO: this should not be str, but the actual string */ )
+    ).withContext("positional")
 
   val attribute: P0[Attribute] = (namedAttribute | positionalAttribute).withContext("attribute")
 
   def listOf(elem: P0[Attribute], min: Int): P0[List[Attribute]] =
     val sep = charIn(";\n")
     ((elem.with1 <* sep).backtrack.rep0(min = min) ~ elem.?)
-    .map(_ ++ _).withContext("listof")
+      .map(_ ++ _).withContext("listof")
 
   val braces: P[List[Attribute]] =
     (attrOpen *> anySpaces *> listOf(attribute, min = 0) <* anySpaces <* attrClose).withContext("braces")

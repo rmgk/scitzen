@@ -14,12 +14,12 @@ class JsRunner:
   val engine = Engine.newBuilder().build()
 
   def run(javascript: String, attributes: Attributes) =
-    val os = ByteArrayOutputStream()
-    val ctx = Context.newBuilder("js").engine(engine).out(os).build()
+    val os       = ByteArrayOutputStream()
+    val ctx      = Context.newBuilder("js").engine(engine).out(os).build()
     val bindings = ctx.getBindings("js")
     attributes.named.foreach((k, v) => bindings.putMember(k, v))
     val argv: Array[String] = attributes.legacyPositional.tail.toArray
-    bindings.putMember("argv",  ProxyArray.fromArray(argv :_*))
+    bindings.putMember("argv", ProxyArray.fromArray(argv: _*))
     val ex = Try(ctx.eval("js", javascript))
 
     s"${os.toString(StandardCharsets.UTF_8)}${ex.fold(t => s"\n$t", _ => "")}"

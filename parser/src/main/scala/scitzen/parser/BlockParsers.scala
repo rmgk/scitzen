@@ -23,7 +23,7 @@ object BlockParsers {
         withProv(paragraphInlines.full)
     ).map {
       case (attrOpt, ((inlines, _), prov)) =>
-        //val endline = if (end.contains('\n')) inlines :+ InlineText("\n") else inlines
+        // val endline = if (end.contains('\n')) inlines :+ InlineText("\n") else inlines
         Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
     })
 
@@ -34,14 +34,14 @@ object BlockParsers {
       ~/ (AttributesParser.braces ~ spaceLine | AttributesParser.noBraces).?)
       .map {
         case (prefix, ((inlines, _), prov), attrl) =>
-          //val inlines = Parse.inlineUnwrap(inl, prov)
+          // val inlines = Parse.inlineUnwrap(inl, prov)
           Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)))(prov)
       }
 
   def extendedWhitespace[_p: P]: P[Block] =
     P(withProv(
       (significantSpaceLine.rep(1) |
-       DirectiveParsers.comment.rep(1)).rep(1).!
+        DirectiveParsers.comment.rep(1)).rep(1).!
     )).map {
       case (str, prov) =>
         Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)

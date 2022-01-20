@@ -4,7 +4,6 @@ import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
 import scitzen.sast._
 
-
 object MirrorToSast {
 
   import scitzen.compat.{CodeMirror => C}
@@ -16,10 +15,10 @@ object MirrorToSast {
 
   def convertBlock(block: C.Block): Sast = block match {
     case CodeMirror.heading(attrs, content) =>
-      Section(Text(content.map(convertInline)), "#" * (attrs.level - 1) , Attributes(Nil))(Prov())
+      Section(Text(content.map(convertInline)), "#" * (attrs.level - 1), Attributes(Nil))(Prov())
     case CodeMirror.paragraph(content) =>
       println(s"converting $content")
-      val res =  Paragraph(Text(content.map(convertInline)))
+      val res = Paragraph(Text(content.map(convertInline)))
       println(s"to $res")
       Block(Attributes(Nil), res, Prov())
   }

@@ -103,7 +103,7 @@ object SastToScimConverter:
   def macroToScim(mcro: Directive, spacy: Boolean = false): String =
     mcro match
       case Directive(Comment, attributes) => s":%${attributes.target}"
-      case _                              =>
+      case _ =>
         s":${DCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
 
   def inlineToScim(inners: Seq[Inline]): String =
@@ -122,9 +122,9 @@ object AttributesToScim:
 
       parsedAttr.get.value match {
         case Positional(`text`, _) => true
-          //// format again to remove unimportant differences (mostly providence)
-          //val transformedValue = SastToScimConverter.inlineToScim(t.inl)
-          //value == transformedValue
+        //// format again to remove unimportant differences (mostly providence)
+        // val transformedValue = SastToScimConverter.inlineToScim(t.inl)
+        // value == transformedValue
         case other => false
       }
 
@@ -181,5 +181,3 @@ object AttributesToScim:
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
     else if light && attributes.legacyPositional.isEmpty then pairs.mkString("", "\n", "\n")
     else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
-
-

@@ -23,7 +23,7 @@ object AttributesParser {
       case ("", None) => unquotedText
       case (quotes, bracket) =>
         val closing = bracket.fold(quotes)(_ => s"]$quotes")
-        InlineParsers(closing.substring(0,1), _ => closing ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
+        InlineParsers(closing.substring(0, 1), _ => closing ~ verticalSpaces ~ terminationCheck, allowEmpty = true).full
     }).map(r => scitzen.sast.Text(r._1))
   }
 
@@ -36,19 +36,20 @@ object AttributesParser {
     })
   }
 
-  def namedAttributeValue[p: P]: P[Either[Seq[Attribute], String]] = P((anySpaces ~ braces.map(Left.apply)) | stringValue.map(Right.apply))
+  def namedAttributeValue[p: P]: P[Either[Seq[Attribute], String]] =
+    P((anySpaces ~ braces.map(Left.apply)) | stringValue.map(Right.apply))
 
   def namedAttribute[_p: P]: P[Attribute] =
     P(verticalSpaces ~ identifier.! ~ verticalSpaces ~ "=" ~/ namedAttributeValue)
       .map {
-        case (id, Left(attr)) => scitzen.sast.Attribute.Nested(id, Attributes(attr))
+        case (id, Left(attr))   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
         case (id, Right(value)) => scitzen.sast.Attribute.Plain(id, value)
       }
 
   def positionalAttribute[_p: P]: P[Attribute] = {
     // unclear to me if there is any way to acquire a parsed value AND the parsed string from fastparse
     var hack: Text = null
-    P(text).map{v => hack = v}.!.map{value =>
+    P(text).map { v => hack = v }.!.map { value =>
       scitzen.sast.Attribute.Positional(hack, Some(value))
     }
   }
