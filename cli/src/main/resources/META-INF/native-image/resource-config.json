@@ -20,9 +20,6 @@
       "pattern":"\\QMETA-INF/resources/webjars/prism/components/prism-scala.min.js\\E"
     }, 
     {
-      "pattern":"\\QMETA-INF/resources/webjars/prism/themes/prism.css\\E"
-    }, 
-    {
       "pattern":"\\QMETA-INF/services/com.oracle.truffle.api.TruffleLanguage$Provider\\E"
     }, 
     {
@@ -33,6 +30,9 @@
     }, 
     {
       "pattern":"\\QMETA-INF/services/java.nio.file.spi.FileSystemProvider\\E"
+    }, 
+    {
+      "pattern":"\\Qcom/oracle/truffle/llvm/nfi/SulongNFI.class\\E"
     }, 
     {
       "pattern":"\\Qcom/oracle/truffle/nfi/backend/libffi/LibFFILanguage.class\\E"

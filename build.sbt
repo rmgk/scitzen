@@ -47,7 +47,7 @@ lazy val scitzen = project.in(file("cli"))
     SassKeys.cssStyle := Maxified,
     javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
-    nativeImageVersion   := "21.3.0",
+    nativeImageVersion   := "22.0.0",
     nativeImageJvm       := "graalvm-java17",
     nativeImageOptions ++= Seq(
       "--no-fallback",
