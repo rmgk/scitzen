@@ -386,8 +386,9 @@ body {
       position: fixed;
       bottom: 0;
       cursor: pointer;
-      width: 1.5em;
-      height: 1.5em;
+      // fixed pixel size to correspond to designed image size of the svg icons
+      width: 24px;
+      height: 24px;
       padding: 0.5em;
       z-index: 1;
 
@@ -457,12 +458,29 @@ body {
   #sidebar-switch:checked ~ nav {
     display: none;
   }
+  #sidebar-switch ~ label {
+    .close { display: block; }
+    .menu { display: none; }
+  }
+  #sidebar-switch:checked ~ label {
+    .close { display: none; }
+    .menu { display: block; }
+  }
+  // inverted logic for small screens
   @media (max-width: $small-screen-width) {
     #sidebar-switch ~ nav {
       display: none;
     }
     #sidebar-switch:checked ~ nav {
       display: block;
+    }
+    #sidebar-switch ~ label {
+      .close { display: none; }
+      .menu { display: block; }
+    }
+    #sidebar-switch:checked ~ label {
+      .close { display: block; }
+      .menu { display: none; }
     }
   }
 }

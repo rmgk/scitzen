@@ -1,9 +1,9 @@
 package scitzen.outputs
 
-import scalatags.Text.Frag
+import scalatags.Text.{Frag, Tag, RawFrag}
 import scalatags.Text.all.SeqFrag
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel}
-import scalatags.Text.implicits.{Tag, raw, stringAttr, stringFrag}
+import scalatags.Text.implicits.{raw, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{aside, main, nav, title}
 
@@ -23,21 +23,16 @@ class HtmlPages(cssPath: String):
   def htmlDocument(tag: Tag): String =
     "<!DOCTYPE html>\n" + tag.render
 
+  def featherIcon(cls: String, path: String): RawFrag =
+    raw(s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls"><path d="$path" /></svg>""")
   val sidebarContainer: Tag =
     aside(
       input(`type` := "checkbox", id := "sidebar-switch", hidden),
       label(
         `for` := "sidebar-switch",
         hidden,
-        raw("""
-              |<svg viewBox="0 0 48 48" width="48px" height="48px">
-              |  <g stroke="currentColor" stroke-width="4" stroke-linecap="round">
-              |  <path d="M 6 12 H 42" />
-              |  <path d="M 6 24 H 42" />
-              |  <path d="M 6 36 H 42" />
-              |  </g>
-              |</svg>
-              |""".stripMargin)
+        featherIcon("menu", "M3 12 H21 M3 6 H21 M3 18 H21"),
+        featherIcon("close", "M18 6 L6 18 M6 6 L18 18")
       )
     )
 
