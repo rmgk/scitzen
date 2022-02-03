@@ -13,15 +13,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-latest, ubuntu-latest, windows-latest]
+        # if these are updated, also update the references below
+        os: [macOS-11, ubuntu-20.04, windows-2019]
         include:
-          - os: macOS-latest
+          - os: macOS-11
             uploaded_filename: scitzen-x86_64-apple-darwin
             local_path: cli/target/native-image/scitzen
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             uploaded_filename: scitzen-x86_64-pc-linux
             local_path: cli/target/native-image/scitzen
-          - os: windows-latest
+          - os: windows-2019
             uploaded_filename: scitzen-x86_64-pc-win32.exe
             local_path: cli\target\native-image\scitzen.exe
     steps:
@@ -30,7 +31,7 @@ jobs:
         continue-on-error: true
       - uses: DeLaGuardo/setup-graalvm@5.0
         with:
-          graalvm: '21.3.0'
+          graalvm: '22.0.0'
           java: 'java17'
       - uses: coursier/setup-action@v1
         with:
@@ -39,12 +40,12 @@ jobs:
       - name: generate native image (linux)
         run: sbt nativeImage
         shell: bash
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ matrix.os != 'windows-2019' }}
         env:
           JAVA_OPTS: -Xmx1g
       - name: generate native image (windows)
         shell: cmd
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-2019' }}
         run: >-
           "C:\Program Files (x86)\Microsoft Visual
           Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && sbt
