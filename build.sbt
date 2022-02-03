@@ -35,7 +35,6 @@ lazy val scitzen = project.in(file("cli"))
     libraryDependencies ++= Seq(
       decline.value,
       scalatags.value.cross(CrossVersion.for3Use2_13),
-      normalizecss.value,
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.25.0",
       "org.webjars.npm"                 % "katex"         % "0.15.1",
       "org.typelevel"                 %%% "cats-parse"    % "0.3.6",

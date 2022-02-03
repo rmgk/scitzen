@@ -1,5 +1,3 @@
-@import 'lib/normalize.css/normalize';
-
 /*! scitzen.scss */
 
 // define here for media queries, same as css variable below …
@@ -38,6 +36,8 @@ $small-screen-width: 575px;
 }
 
 body {
+  // margins are handled for main and sidebar individually
+  margin: 0;
   // that should be 18px for the default of 16px font, but scale with font size …
   font-size: 1.125rem;
   // set line-height to 30 scaled pixels
@@ -55,6 +55,11 @@ html {
 /////////////////////////////////////////////////////////////////////////////
 // main grid layout
 /////////////////////////////////////////////////////////////////////////////
+
+main {
+  // this may be necessary for compatibility in some browsers
+  display:block;
+}
 
 @media screen {
   main {
@@ -95,8 +100,6 @@ html {
       // unsafe keeps centered even if that causes overflow into left and right elements
       // safe aligns left in case of overflow (moving overflow to the right)
       justify-self: safe center;
-      margin-left: 0;
-      margin-right: 0;
     }
   }
 }
@@ -227,9 +230,11 @@ figure, blockquote, pre, dd {
 pre {
   white-space: pre-wrap;
   tab-size: 4;
-  // font is monospace by default AND overriden by normalize.css
-  // but we only want code in code font
+  // we only want code in code font (default is monospace)
   font-family: inherit;
+  // restrict pre-size to the outer container to make code blocks inside break aggressively
+  max-width: 100%;
+  box-sizing: border-box;
 }
 code {
   hyphens: none;
