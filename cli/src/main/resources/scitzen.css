@@ -19,6 +19,9 @@
 	--main-content-width: 17cm;
 	--sidebar-max-width: 20em;
 
+	--small-gap: 0.5em;
+	--normal-gap: 1em;
+
 	--color-marker-red: #ea9999;
 	/*--color-marker-yellow: #ffe599; */
 	--color-marker-green: #b6d7a8;
@@ -67,7 +70,9 @@ main {
 			 the content has a fixed minimum width to force a scrollbar on the content at some point
 			 note that everything breaks if --main-content-width is smaller than the minimum here,
 			 which is why the minimum is not min-content */
-		grid-template-columns: [image-start] minmax(1em, 1fr) [header-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(1em, 1fr) [image-end];
+		grid-template-columns: [image-start] minmax(var(--normal-gap), 2fr) [header-start] minmax(0, 1fr) [content-start] minmax(0, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(var(--normal-gap), 2fr) [image-end];
+
+		grid-row-gap: var(--small-gap);
 	}
 
 	/* usually margins should collapse, but because of grid they dont. */
@@ -76,10 +81,6 @@ main {
 		margin: 0;
 		grid-column: content-start / content-end;
 	}
-	main {
-		grid-row-gap: 0.5em;
-	}
-
 
 	/* oversized elements */
 	main > img, main > figure, main > video, main > pre {
@@ -111,40 +112,36 @@ main {
 /* general styling of elements follow, these should not affect overall layout */
 /******************************************************************************/
 
-/* headers */
-
 h1, h2, h3, h4, h5, h6 {
 	/* we disabled all margins because they do not fold in grids */
 	/* for headers, we add padding instead, which works nicer with jumping to IDs */
 	padding-top: 1rem;
-	padding-bottom: 0.5rem;
+	margin-bottom: 0.5rem;
 
 	text-align: center;
 	grid-column: header-start / header-end;
 }
 
-h1 {
+h1, h2 {
 	border-bottom: var(--theme-border);
 }
-
-h2 {
-	display: flex;
-	/* align the text and the left/right lines vertically */
-	align-items: center;
-	/* put the text box centered horizontally */
-	justify-content: center;
-}
-h2:before, h2:after {
-	content: '';
-	border-bottom: var(--theme-border);
-	flex-grow: 1;
-	flex-shrink: 0.1;
-	flex-basis: 10%;
-}
-h2:before {margin-right: 1rem;}
-h2:after {margin-left: 1rem;}
 
 h4 { font-style: italic; }
+
+/* headers counting */
+.fullpost main {
+	counter-reset: section;
+	counter-reset: subsection;
+}
+.fullpost  h2 {
+	counter-increment: section;
+	counter-reset: subsection;
+}
+.fullpost  h2:before {	content: counter(section) ". "; }
+
+.fullpost  h3 { counter-increment: subsection; }
+.fullpost  h3:before { content: counter(section) "." counter(subsection) ". "; }
+
 
 
 /*math { */
@@ -158,7 +155,7 @@ h4 { font-style: italic; }
 	justify-content: safe center;
 }
 .metadata > * {
-	margin-right: 0.5em;
+	margin-right: var(--small-gap);
 }
 
 @media screen {
@@ -197,7 +194,7 @@ a:hover {
 figure, blockquote, pre, dd {
 	background-color: var(--theme-plate-color);
 	border-radius: var(--theme-border-radius);
-	padding: 1em;
+	padding: var(--normal-gap);
 }
 /* remove top&bottom margins of nested elements */
 figure > :first-child, blockquote > :first-child, pre > :first-child, dd > :first-child {
@@ -223,7 +220,7 @@ code {
 }
 :not(pre) > code {
 	background-color: var(--theme-plate-color);
-	padding: .1em;
+	padding: 0.var(--normal-gap);
 	border-radius: var(--theme-border-radius);
 }
 pre > code {
@@ -288,12 +285,12 @@ del {
 }
 
 .bibliography li {
-	margin-top: 1em;
+	margin-top: var(--normal-gap);
 }
 .bibliography p {
 	line-height: initial;
 	margin: 0;
-	margin-top: 0.5em;
+	margin-top: var(--small-gap);
 }
 .bibliography .container {
 	font-style: italic;
@@ -308,12 +305,12 @@ del {
 article {
 	display: flex;
 }
-@media screen and (max-width: 17cm) {
+@media screen and (max-width: 600px) {
 	article {
 		flex-direction: column;
 	}
 }
-@media screen and (min-width: 17cm) {
+@media screen and (min-width: 600px) {
 	article > .category {
 		text-align: right;
 	}
@@ -321,7 +318,7 @@ article {
 /* space between the items of the article */
 /* while this is part of the html, its eaten by the flex */
 article > * {
-	margin-right: 0.5em;
+	margin-right: var(--small-gap);
 }
 /* make the title get most of the space, */
 /* to cause the tags to be right aligned */
@@ -357,7 +354,7 @@ body > aside > label {
 	/* fixed pixel size to correspond to designed image size of the svg icons */
 	width: 24px;
 	height: 24px;
-	padding: 0.5em;
+	padding: var(--small-gap);
 	z-index: 1;
 }
 /* the label is marked as hidden in the HTML, */
@@ -387,25 +384,35 @@ body > aside > nav {
 	scrollbar-color: var(--light-theme-color) hsla(0, 0%, 0%, 0);
 
 	/* make things also not hug the screen */
-	padding-left: 0.5em;
-	padding-top: 0.5em;
+	padding-left: var(--small-gap);
+	padding-top: var(--small-gap);
 	/* for the srcoll bar; firefox desktop does assign space for the scrollbar by itself, but mobile browsers often do not */
-	padding-right: 0.5em;
+	padding-right: var(--small-gap);
 	/* space for the bottom label */
-	padding-bottom: calc(1em + 24px);
+	padding-bottom: calc(var(--normal-gap) + 24px);
 
 	border-right: var(--theme-border);
 }
 
-body > aside  > nav > ol {
-		list-style: disc;
-		margin: 0;
-		margin-left: 1em;
-		padding: 0;
-	}
+body > aside > nav ol {
+	list-style: disc;
+	margin: 0;
+	margin-left: var(--normal-gap);
+	padding: 0;
+}
 
-body > aside  > nav li {
-	margin-top: 0.5em;
+body > aside > nav li {
+	margin-top: var(--small-gap);
+}
+
+/* sidebar counters */
+body.fullpost > aside > nav ol {
+	counter-reset: item;
+	list-style: none;
+}
+body.fullpost > aside > nav li:before {
+	content: counters(item, ".") " ";
+	counter-increment: item;
 }
 
 
@@ -416,8 +423,8 @@ body > aside  > nav li {
 #sidebar-switch:checked ~ label .close { display: none; }
 #sidebar-switch:checked ~ label .menu { display: block; }
 
-/* inverted logic for small screens (width stolen from bootstrap) */
-@media (max-width: 575) {
+/* inverted logic for small screens */
+@media (max-width: 600px) {
 	#sidebar-switch ~ nav { display: none; }
 	#sidebar-switch:checked ~ nav { display: block; }
 	#sidebar-switch ~ label .close { display: none; }
