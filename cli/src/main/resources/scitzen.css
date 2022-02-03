@@ -1,46 +1,46 @@
 /*! scitzen.scss */
 
 :root {
-  --theme-hue: 100;
-  --theme-saturation: 50%;
-  --theme-lightness: 40%;
+	--theme-hue: 100;
+	--theme-saturation: 50%;
+	--theme-lightness: 40%;
 
-  --theme-color: hsl(var(--theme-hue), var(--theme-saturation), var(--theme-lightness));
-  --light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);
-  --color-subdued: GrayText;
+	--theme-color: hsl(var(--theme-hue), var(--theme-saturation), var(--theme-lightness));
+	--light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);
+	--color-subdued: GrayText;
 
-  --theme-border-radius: 5px;
-  --theme-border: 1px solid var(--theme-color);
+	--theme-border-radius: 5px;
+	--theme-border: 1px solid var(--theme-color);
 
-  --theme-plate-color: hsla(0, 0%, 50%, 0.1);
+	--theme-plate-color: hsla(0, 0%, 50%, 0.1);
 
-  /* a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm */
-  /* but use flexible width for font differences */
-  --main-content-width: 17cm;
-  --sidebar-max-width: 20em;
+	/* a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm */
+	/* but use flexible width for font differences */
+	--main-content-width: 17cm;
+	--sidebar-max-width: 20em;
 
-  --color-marker-red: #ea9999;
-  /*--color-marker-yellow: #ffe599; */
-  --color-marker-green: #b6d7a8;
-  /*--color-marker-blue: #a4c2f4; */
-  /*--color-marker-purple: #b4a7d6; */
+	--color-marker-red: #ea9999;
+	/*--color-marker-yellow: #ffe599; */
+	--color-marker-green: #b6d7a8;
+	/*--color-marker-blue: #a4c2f4; */
+	/*--color-marker-purple: #b4a7d6; */
 
-  /* allow browser to select a color scheme based on user preferences */
-  color-scheme: light dark;
+	/* allow browser to select a color scheme based on user preferences */
+	color-scheme: light dark;
 }
 
 body {
-  /* margins are handled for main and sidebar individually */
-  margin: 0;
-  /* that should be 18px for the default of 16px font, but scale with font size … */
-  font-size: 1.125rem;
+	/* margins are handled for main and sidebar individually */
+	margin: 0;
+	/* that should be 18px for the default of 16px font, but scale with font size … */
+	font-size: 1.125rem;
 }
 
 /* enable hyphenation everywhere */
 /* this is required for the main text as that has justified content, */
 /* but the navigation also profits from better use of space */
 html {
-  hyphens: auto;
+	hyphens: auto;
 }
 
 
@@ -49,62 +49,62 @@ html {
 /**************************************************************/
 
 main {
-  /* this may be necessary for compatibility in some browsers */
-  display:block;
+	/* this may be necessary for compatibility in some browsers */
+	display:block;
 }
 
 @media screen {
-  main {
-    /* allow overscrolling past the end of the content */
-    margin-bottom: calc(100vh - 4em);
+	main {
+		/* allow overscrolling past the end of the content */
+		margin-bottom: calc(100vh - 4em);
 
-    /* use grid to have text centered, but allow oversized image content */
-    display: grid;
-    /* the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
-       but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
-       causing the thing to widen in case the content is large,
-       as could happen with some images.
-       the content has a fixed minimum width to force a scrollbar on the content at some point
-       note that everything breaks if --main-content-width is smaller than the minimum here,
-       which is why the minimum is not min-content */
-    grid-template-columns: [image-start] minmax(1em, 1fr) [header-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(1em, 1fr) [image-end];
-  }
+		/* use grid to have text centered, but allow oversized image content */
+		display: grid;
+		/* the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
+			 but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
+			 causing the thing to widen in case the content is large,
+			 as could happen with some images.
+			 the content has a fixed minimum width to force a scrollbar on the content at some point
+			 note that everything breaks if --main-content-width is smaller than the minimum here,
+			 which is why the minimum is not min-content */
+		grid-template-columns: [image-start] minmax(1em, 1fr) [header-start] minmax(0, 1fr) [content-start] minmax(10em, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(1em, 1fr) [image-end];
+	}
 
-  /* usually margins should collapse, but because of grid they dont. */
-  /* thus we replace margins by grid gaps */
-  main > * {
-    margin: 0;
-    grid-column: content-start / content-end;
-  }
-  main {
-    grid-row-gap: 0.5em;
-  }
+	/* usually margins should collapse, but because of grid they dont. */
+	/* thus we replace margins by grid gaps */
+	main > * {
+		margin: 0;
+		grid-column: content-start / content-end;
+	}
+	main {
+		grid-row-gap: 0.5em;
+	}
 
 
-  /* oversized elements */
-  main > img, main > figure, main > video, main > pre {
-    /* oversized figures and images */
-    grid-column: image-start / image-end;
+	/* oversized elements */
+	main > img, main > figure, main > video, main > pre {
+		/* oversized figures and images */
+		grid-column: image-start / image-end;
 
-    /* justify instead of margins to center elements in grid */
-    /* unsafe keeps centered even if that causes overflow into left and right elements */
-    /* safe aligns left in case of overflow (moving overflow to the right) */
-    justify-self: safe center;
-  }
+		/* justify instead of margins to center elements in grid */
+		/* unsafe keeps centered even if that causes overflow into left and right elements */
+		/* safe aligns left in case of overflow (moving overflow to the right) */
+		justify-self: safe center;
+	}
 }
 
 /* use a simplified print sheet where all content is just centered */
 @media print {
-  main > * {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: var(--main-content-width);
-    display:block;
-  }
+	main > * {
+		margin-left: auto;
+		margin-right: auto;
+		max-width: var(--main-content-width);
+		display:block;
+	}
 
-  .marginnote {
-    display: none;
-  }
+	.marginnote {
+		display: none;
+	}
 }
 
 /******************************************************************************/
@@ -114,32 +114,32 @@ main {
 /* headers */
 
 h1, h2, h3, h4, h5, h6 {
-  /* we disabled all margins because they do not fold in grids */
-  /* for headers, we add padding instead, which works nicer with jumping to IDs */
-  padding-top: 1rem;
-  padding-bottom: 0.5rem;
+	/* we disabled all margins because they do not fold in grids */
+	/* for headers, we add padding instead, which works nicer with jumping to IDs */
+	padding-top: 1rem;
+	padding-bottom: 0.5rem;
 
-  text-align: center;
-  grid-column: header-start / header-end;
+	text-align: center;
+	grid-column: header-start / header-end;
 }
 
 h1 {
-  border-bottom: var(--theme-border);
+	border-bottom: var(--theme-border);
 }
 
 h2 {
-  display: flex;
-  /* align the text and the left/right lines vertically */
-  align-items: center;
-  /* put the text box centered horizontally */
-  justify-content: center;
+	display: flex;
+	/* align the text and the left/right lines vertically */
+	align-items: center;
+	/* put the text box centered horizontally */
+	justify-content: center;
 }
 h2:before, h2:after {
-  content: '';
-  border-bottom: var(--theme-border);
-  flex-grow: 1;
-  flex-shrink: 0.1;
-  flex-basis: 10%;
+	content: '';
+	border-bottom: var(--theme-border);
+	flex-grow: 1;
+	flex-shrink: 0.1;
+	flex-basis: 10%;
 }
 h2:before {margin-right: 1rem;}
 h2:after {margin-left: 1rem;}
@@ -152,151 +152,151 @@ h4 { font-style: italic; }
 /*} */
 
 .metadata {
-  display: flex;
-  /* safe causes the metadata to always be visible, */
-  /* even if things become so small that they need to be scrolled */
-  justify-content: safe center;
+	display: flex;
+	/* safe causes the metadata to always be visible, */
+	/* even if things become so small that they need to be scrolled */
+	justify-content: safe center;
 }
 .metadata > * {
-  margin-right: 0.5em;
+	margin-right: 0.5em;
 }
 
 @media screen {
-  time, .category {
-    color: var(--color-subdued);
-  }
+	time, .category {
+		color: var(--color-subdued);
+	}
 }
 
 time {
-  white-space: pre;
-  /* double monospace to override firefox default font size to use same as other fonts */
-  font-family: monospace, monospace;
+	white-space: pre;
+	/* double monospace to override firefox default font size to use same as other fonts */
+	font-family: monospace, monospace;
 }
 
 /* basic text styling */
 
 main p, main ol, main ul, main dl {
-  text-align: justify;
-  /* set line-height to 30 scaled pixels */
-  line-height: calc(30/18);
-  /* text based things always are limited to content width, */
-  /* even when nested inside something else */
-  max-width: var(--main-content-width);
+	text-align: justify;
+	/* set line-height to 30 scaled pixels */
+	line-height: calc(30/18);
+	/* text based things always are limited to content width, */
+	/* even when nested inside something else */
+	max-width: var(--main-content-width);
 }
 
 a {
-  text-decoration: none;
-  color: var(--theme-color);
+	text-decoration: none;
+	color: var(--theme-color);
 }
 a:hover {
-  filter: brightness(75%);
+	filter: brightness(75%);
 }
 
 /* containers of other elements */
 
 figure, blockquote, pre, dd {
-  background-color: var(--theme-plate-color);
-  border-radius: var(--theme-border-radius);
-  padding: 1em;
+	background-color: var(--theme-plate-color);
+	border-radius: var(--theme-border-radius);
+	padding: 1em;
 }
 /* remove top&bottom margins of nested elements */
 figure > :first-child, blockquote > :first-child, pre > :first-child, dd > :first-child {
-  margin-top: 0;
+	margin-top: 0;
 }
 figure > :last-child, blockquote > :last-child, pre > :last-child, dd > :last-child {
-  margin-bottom: 0;
+	margin-bottom: 0;
 }
 
 /* code blocks */
 
 pre {
-  white-space: pre-wrap;
-  tab-size: 4;
-  /* we only want code in code font (default is monospace) */
-  font-family: inherit;
-  /* restrict pre-size to the outer container to make code blocks inside break aggressively */
-  max-width: 100%;
-  box-sizing: border-box;
+	white-space: pre-wrap;
+	tab-size: 4;
+	/* we only want code in code font (default is monospace) */
+	font-family: inherit;
+	/* restrict pre-size to the outer container to make code blocks inside break aggressively */
+	max-width: 100%;
+	box-sizing: border-box;
 }
 code {
-  hyphens: none;
+	hyphens: none;
 }
 :not(pre) > code {
-  background-color: var(--theme-plate-color);
-  padding: .1em;
-  border-radius: var(--theme-border-radius);
+	background-color: var(--theme-plate-color);
+	padding: .1em;
+	border-radius: var(--theme-border-radius);
 }
 pre > code {
-  /* this causes the content of the pre (usually the code) to be wrapped to fit small screen widths */
-  overflow-wrap: break-word;
+	/* this causes the content of the pre (usually the code) to be wrapped to fit small screen widths */
+	overflow-wrap: break-word;
 }
 
 
 /* individual element styles */
 
 hr {
-  grid-column: header-start / header-end;
-  border: none;
-  border-bottom: var(--theme-border);
+	grid-column: header-start / header-end;
+	border: none;
+	border-bottom: var(--theme-border);
 }
 
 .marginnote {
-  grid-column: content-end;
-  margin-left: 2em;
-  overflow: hidden;
+	grid-column: content-end;
+	margin-left: 2em;
+	overflow: hidden;
 }
 
 img, video {
-  /* why is this not the default? */
-  image-orientation: from-image;
+	/* why is this not the default? */
+	image-orientation: from-image;
 
-  border-radius: var(--theme-border-radius);
+	border-radius: var(--theme-border-radius);
 
-  /* display: block; */
-  height: auto;
-  max-height: 90vh;
-  max-width: 100%;
+	/* display: block; */
+	height: auto;
+	max-height: 90vh;
+	max-width: 100%;
 }
 
 
 /* center contents of a figure, in particular the caption */
 figure {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 .rule {
-  font-variant: small-caps;
+	font-variant: small-caps;
 }
 
 li > p:only-child {
-  margin: 0;
+	margin: 0;
 }
 
 dt {
-  font-weight: bold;
+	font-weight: bold;
 }
 
 ins {
-  text-decoration: none;
-  color: var(--color-marker-green);
+	text-decoration: none;
+	color: var(--color-marker-green);
 }
 
 del {
-  color: var(--color-marker-red);
+	color: var(--color-marker-red);
 }
 
 .bibliography li {
-  margin-top: 1em;
+	margin-top: 1em;
 }
 .bibliography p {
-  line-height: initial;
-  margin: 0;
-  margin-top: 0.5em;
+	line-height: initial;
+	margin: 0;
+	margin-top: 0.5em;
 }
 .bibliography .container {
-  font-style: italic;
+	font-style: italic;
 }
 
 
@@ -306,27 +306,27 @@ del {
 /**************************************************************/
 
 article {
-  display: flex;
+	display: flex;
 }
 @media screen and (max-width: 17cm) {
-  article {
-    flex-direction: column;
-  }
+	article {
+		flex-direction: column;
+	}
 }
 @media screen and (min-width: 17cm) {
-  article > .category {
-    text-align: right;
-  }
+	article > .category {
+		text-align: right;
+	}
 }
 /* space between the items of the article */
 /* while this is part of the html, its eaten by the flex */
 article > * {
-  margin-right: 0.5em;
+	margin-right: 0.5em;
 }
 /* make the title get most of the space, */
 /* to cause the tags to be right aligned */
 article > .title {
-  flex: 1;
+	flex: 1;
 }
 
 
@@ -341,71 +341,71 @@ article > .title {
 /* unless a button is pressed to hide it */
 
 body > main {
-  flex: 1 1 var(--main-content-width);
+	flex: 1 1 var(--main-content-width);
 }
 
 body > aside {
-  /* no growth beyond content size, shrink aggressively, try to target max-content if there is enough space */
-  flex: 0 100 max-content;
-  /* max width, because sidebar with very long header names does not look great */
-  max-width: var(--sidebar-max-width);
+	/* no growth beyond content size, shrink aggressively, try to target max-content if there is enough space */
+	flex: 0 100 max-content;
+	/* max width, because sidebar with very long header names does not look great */
+	max-width: var(--sidebar-max-width);
 }
 body > aside > label {
-  position: fixed;
-  bottom: 0;
-  cursor: pointer;
-  /* fixed pixel size to correspond to designed image size of the svg icons */
-  width: 24px;
-  height: 24px;
-  padding: 0.5em;
-  z-index: 1;
+	position: fixed;
+	bottom: 0;
+	cursor: pointer;
+	/* fixed pixel size to correspond to designed image size of the svg icons */
+	width: 24px;
+	height: 24px;
+	padding: 0.5em;
+	z-index: 1;
 }
 /* the label is marked as hidden in the HTML, */
 /* because it makes no sense to show it if the stylesheet is not present */
 /* we use this high specificity selector to override the hidden attribute */
 body > aside > label[hidden] { display: initial; }
 body > aside > label > svg {
-    width: 100%;
-    height: 100%;
+		width: 100%;
+		height: 100%;
 }
 
 body > aside > nav {
-  /* sticky at top 0 (original position of the element) essentially causes the */
-  /* element to be fixed in place BUT it keeps occupying space in the layout */
-  position: sticky;
-  top: 0;
+	/* sticky at top 0 (original position of the element) essentially causes the */
+	/* element to be fixed in place BUT it keeps occupying space in the layout */
+	position: sticky;
+	top: 0;
 
-  /* box sizing together with height makes it occupy the full height pixel perfect */
-  /* except for some broken mobile environments like the android web view */
-  box-sizing: border-box;
-  height: 100vh;
+	/* box sizing together with height makes it occupy the full height pixel perfect */
+	/* except for some broken mobile environments like the android web view */
+	box-sizing: border-box;
+	height: 100vh;
 
 
-  /* always show scrollbar to reserve space */
-  overflow-y: scroll;
-  scrollbar-width: thin;
-  scrollbar-color: var(--light-theme-color) hsla(0, 0%, 0%, 0);
+	/* always show scrollbar to reserve space */
+	overflow-y: scroll;
+	scrollbar-width: thin;
+	scrollbar-color: var(--light-theme-color) hsla(0, 0%, 0%, 0);
 
-  /* make things also not hug the screen */
-  padding-left: 0.5em;
-  padding-top: 0.5em;
-  /* for the srcoll bar; firefox desktop does assign space for the scrollbar by itself, but mobile browsers often do not */
-  padding-right: 0.5em;
-  /* space for the bottom label */
-  padding-bottom: calc(1em + 24px);
+	/* make things also not hug the screen */
+	padding-left: 0.5em;
+	padding-top: 0.5em;
+	/* for the srcoll bar; firefox desktop does assign space for the scrollbar by itself, but mobile browsers often do not */
+	padding-right: 0.5em;
+	/* space for the bottom label */
+	padding-bottom: calc(1em + 24px);
 
-  border-right: var(--theme-border);
+	border-right: var(--theme-border);
 }
 
 body > aside  > nav > ol {
-    list-style: disc;
-    margin: 0;
-    margin-left: 1em;
-    padding: 0;
-  }
+		list-style: disc;
+		margin: 0;
+		margin-left: 1em;
+		padding: 0;
+	}
 
 body > aside  > nav li {
-  margin-top: 0.5em;
+	margin-top: 0.5em;
 }
 
 
@@ -418,12 +418,12 @@ body > aside  > nav li {
 
 /* inverted logic for small screens (width stolen from bootstrap) */
 @media (max-width: 575) {
-  #sidebar-switch ~ nav { display: none; }
-  #sidebar-switch:checked ~ nav { display: block; }
-  #sidebar-switch ~ label .close { display: none; }
-  #sidebar-switch ~ label .menu { display: block; }
-  #sidebar-switch:checked ~ label .close { display: block; }
-  #sidebar-switch:checked ~ label .menu { display: none; }
+	#sidebar-switch ~ nav { display: none; }
+	#sidebar-switch:checked ~ nav { display: block; }
+	#sidebar-switch ~ label .close { display: none; }
+	#sidebar-switch ~ label .menu { display: block; }
+	#sidebar-switch:checked ~ label .close { display: block; }
+	#sidebar-switch:checked ~ label .menu { display: none; }
 }
 
 /**************************************************************/
@@ -432,26 +432,26 @@ body > aside  > nav li {
 
 /* only display katex mathml (does not work in chrome) */
 .katex-html {
-  display: none;
+	display: none;
 }
 
 /* highlight targets are for forward sync when writing text */
 #highlight:target + * {
-  background: yellow;
+	background: yellow;
 }
 
 #highlight {
-  border-top: 30vh transparent solid;
-  margin-top: -30vh;
+	border-top: 30vh transparent solid;
+	margin-top: -30vh;
 }
 
 
 
 @keyframes fade-target {
-  0%, 30% { background: var(--light-theme-color) }
+	0%, 30% { background: var(--light-theme-color) }
 }
 *:target {
-  animation: 1s ease 0s 1 fade-target;
+	animation: 1s ease 0s 1 fade-target;
 }
 
 
@@ -466,140 +466,140 @@ body > aside  > nav li {
 
 .token.important,
 .token.bold {
-  font-weight: bold;
+	font-weight: bold;
 }
 .token.italic {
-  font-style: italic;
+	font-style: italic;
 }
 
 .token.entity {
-  cursor: help;
+	cursor: help;
 }
 
 @media (prefers-color-scheme: light) {
 
 
-  .token.comment,
-  .token.prolog,
-  .token.doctype,
-  .token.cdata {
-    color: slategray;
-  }
+	.token.comment,
+	.token.prolog,
+	.token.doctype,
+	.token.cdata {
+		color: slategray;
+	}
 
-  .token.punctuation {
-    color: #999;
-  }
+	.token.punctuation {
+		color: #999;
+	}
 
-  .token.namespace {
-    opacity: .7;
-  }
+	.token.namespace {
+		opacity: .7;
+	}
 
-  .token.property,
-  .token.tag,
-  .token.boolean,
-  .token.number,
-  .token.constant,
-  .token.symbol,
-  .token.deleted {
-    color: #905;
-  }
+	.token.property,
+	.token.tag,
+	.token.boolean,
+	.token.number,
+	.token.constant,
+	.token.symbol,
+	.token.deleted {
+		color: #905;
+	}
 
-  .token.selector,
-  .token.attr-name,
-  .token.string,
-  .token.char,
-  .token.builtin,
-  .token.inserted {
-    color: #690;
-  }
+	.token.selector,
+	.token.attr-name,
+	.token.string,
+	.token.char,
+	.token.builtin,
+	.token.inserted {
+		color: #690;
+	}
 
-  .token.operator,
-  .token.entity,
-  .token.url,
-  .language-css .token.string,
-  .style .token.string {
-    color: #9a6e3a;
-  }
+	.token.operator,
+	.token.entity,
+	.token.url,
+	.language-css .token.string,
+	.style .token.string {
+		color: #9a6e3a;
+	}
 
-  .token.atrule,
-  .token.attr-value,
-  .token.keyword {
-    color: #07a;
-  }
+	.token.atrule,
+	.token.attr-value,
+	.token.keyword {
+		color: #07a;
+	}
 
-  .token.function,
-  .token.class-name {
-    color: #DD4A68;
-  }
+	.token.function,
+	.token.class-name {
+		color: #DD4A68;
+	}
 
-  .token.regex,
-  .token.important,
-  .token.variable {
-    color: #e90;
-  }
+	.token.regex,
+	.token.important,
+	.token.variable {
+		color: #e90;
+	}
 }
 
 @media (prefers-color-scheme: dark) {
 
-  .token.comment,
-  .token.prolog,
-  .token.doctype,
-  .token.cdata {
-    color: #8292a2;
-  }
+	.token.comment,
+	.token.prolog,
+	.token.doctype,
+	.token.cdata {
+		color: #8292a2;
+	}
 
-  .token.punctuation {
-    color: #f8f8f2;
-  }
+	.token.punctuation {
+		color: #f8f8f2;
+	}
 
-  .token.namespace {
-    opacity: .7;
-  }
+	.token.namespace {
+		opacity: .7;
+	}
 
-  .token.property,
-  .token.tag,
-  .token.constant,
-  .token.symbol,
-  .token.deleted {
-    color: #f92672;
-  }
+	.token.property,
+	.token.tag,
+	.token.constant,
+	.token.symbol,
+	.token.deleted {
+		color: #f92672;
+	}
 
-  .token.boolean,
-  .token.number {
-    color: #ae81ff;
-  }
+	.token.boolean,
+	.token.number {
+		color: #ae81ff;
+	}
 
-  .token.selector,
-  .token.attr-name,
-  .token.string,
-  .token.char,
-  .token.builtin,
-  .token.inserted {
-    color: #a6e22e;
-  }
+	.token.selector,
+	.token.attr-name,
+	.token.string,
+	.token.char,
+	.token.builtin,
+	.token.inserted {
+		color: #a6e22e;
+	}
 
-  .token.operator,
-  .token.entity,
-  .token.url,
-  .language-css .token.string,
-  .style .token.string,
-  .token.variable {
-    color: #f8f8f2;
-  }
+	.token.operator,
+	.token.entity,
+	.token.url,
+	.language-css .token.string,
+	.style .token.string,
+	.token.variable {
+		color: #f8f8f2;
+	}
 
-  .token.atrule,
-  .token.attr-value,
-  .token.function,
-  .token.class-name {
-    color: #e6db74;
-  }
+	.token.atrule,
+	.token.attr-value,
+	.token.function,
+	.token.class-name {
+		color: #e6db74;
+	}
 
-  .token.keyword {
-    color: #66d9ef;
-  }
+	.token.keyword {
+		color: #66d9ef;
+	}
 
-  .token.regex,
-  .token.important {
-    color: #fd971f;
-  }
+	.token.regex,
+	.token.important {
+		color: #fd971f;
+	}
 }
