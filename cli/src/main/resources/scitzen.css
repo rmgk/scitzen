@@ -9,7 +9,11 @@
   --light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);
   --color-subdued: GrayText;
 
-  /* also update media queries below if these are updated! */
+  --theme-border-radius: 5px;
+  --theme-border: 1px solid var(--theme-color);
+
+  --theme-plate-color: hsla(0, 0%, 50%, 0.1);
+
   /* a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm */
   /* but use flexible width for font differences */
   --main-content-width: 17cm;
@@ -21,11 +25,7 @@
   /*--color-marker-blue: #a4c2f4; */
   /*--color-marker-purple: #b4a7d6; */
 
-  --theme-border-radius: 5px;
-  --theme-border: 1px solid var(--theme-color);
-
-  --theme-plate-color: hsla(0, 0%, 50%, 0.1);
-
+  /* allow browser to select a color scheme based on user preferences */
   color-scheme: light dark;
 }
 
@@ -76,9 +76,8 @@ main {
     margin: 0;
     grid-column: content-start / content-end;
   }
-  /* index page does not gain margins */
-  .fullpost main {
-    grid-row-gap: 0.75em;
+  main {
+    grid-row-gap: 0.5em;
   }
 
 
@@ -322,7 +321,7 @@ article {
 /* space between the items of the article */
 /* while this is part of the html, its eaten by the flex */
 article > * {
-  margin-right: 0.2em;
+  margin-right: 0.5em;
 }
 /* make the title get most of the space, */
 /* to cause the tags to be right aligned */
@@ -406,7 +405,7 @@ body > aside  > nav > ol {
   }
 
 body > aside  > nav li {
-  margin-top: 0.3em;
+  margin-top: 0.5em;
 }
 
 
