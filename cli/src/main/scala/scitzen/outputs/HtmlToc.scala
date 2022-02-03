@@ -1,11 +1,12 @@
 package scitzen.outputs
 
-import scalatags.Text.all._
-import scitzen.sast.Section
+import scalatags.Text.all.*
+import scitzen.sast.{Attributes, Section, Text, Prov}
 
 object HtmlToc:
 
   val maxdepth = 2
+  val startsection = List("==", "#")
 
   def tableOfContents(docsections: List[Section]): Option[Frag] =
 
@@ -19,4 +20,4 @@ object HtmlToc:
           val nexttag      = recurse(other, depth)
           Some(SeqFrag(thistag :: nexttag.toList))
 
-    recurse(docsections, 1).map(ol(_))
+    recurse(docsections.dropWhile(s => !startsection.contains(s.prefix)), 1).map(ol(_))
