@@ -352,13 +352,6 @@ body > aside {
   max-width: var(--sidebar-max-width);
 }
 body > aside > label {
-  /* the label is marked as hidden in the HTML, */
-  /* because it makes no sense to show it if the stylesheet is not present */
-  /* we use this high specificity selector to override the hidden attribute */
-  &[hidden] {
-    display: initial;
-  }
-
   position: fixed;
   bottom: 0;
   cursor: pointer;
@@ -367,11 +360,14 @@ body > aside > label {
   height: 24px;
   padding: 0.5em;
   z-index: 1;
-
-  svg {
+}
+/* the label is marked as hidden in the HTML, */
+/* because it makes no sense to show it if the stylesheet is not present */
+/* we use this high specificity selector to override the hidden attribute */
+body > aside > label[hidden] { display: initial; }
+body > aside > label > svg {
     width: 100%;
     height: 100%;
-  }
 }
 
 body > aside > nav {
