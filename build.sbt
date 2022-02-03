@@ -24,13 +24,11 @@ lazy val parser = project.in(file("parser"))
 
 lazy val scitzen = project.in(file("cli"))
   .enablePlugins(NativeImagePlugin)
-  .enablePlugins(SbtSassify)
   .dependsOn(parser)
   .settings(
     name         := "scitzen",
     organization := "de.rmgk",
     scalaVersion_3,
-    Compile / resources ++= (Assets / SassKeys.sassify).value,
     strictCompile,
     libraryDependencies ++= Seq(
       decline.value,
@@ -43,7 +41,6 @@ lazy val scitzen = project.in(file("cli"))
         .exclude("org.graalvm.js", "js")
         .exclude("org.graalvm.sdk", "graal-sdk")
     ),
-    SassKeys.cssStyle := Maxified,
     javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
     nativeImageVersion   := "22.0.0",
