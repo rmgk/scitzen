@@ -1,13 +1,5 @@
 /*! scitzen.scss */
 
-// define here for media queries, same as css variable below …
-// a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm
-// but use flexible width for font differences
-$main-content-width: 17cm;
-
-// stolen from bootstrap
-$small-screen-width: 575px;
-
 :root {
   --theme-hue: 100;
   --theme-saturation: 50%;
@@ -17,7 +9,9 @@ $small-screen-width: 575px;
   --light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);
   --color-subdued: GrayText;
 
-  // same as above, but SASS variables seem to not work here
+  // also update media queries below if these are updated!
+  // a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm
+  // but use flexible width for font differences
   --main-content-width: 17cm;
   --sidebar-max-width: 20em;
 
@@ -40,8 +34,6 @@ body {
   margin: 0;
   // that should be 18px for the default of 16px font, but scale with font size …
   font-size: 1.125rem;
-  // set line-height to 30 scaled pixels
-  line-height: calc(30/18);
 }
 
 // enable hyphenation everywhere
@@ -91,16 +83,14 @@ main {
 
 
   // oversized elements
-  main {
-    & > img, & > figure, & > video, & > pre {
-      // oversized figures and images
-      grid-column: image-start / image-end;
+  main > img, main > figure, main > video, main > pre {
+    // oversized figures and images
+    grid-column: image-start / image-end;
 
-      // justify instead of margins to center elements in grid
-      // unsafe keeps centered even if that causes overflow into left and right elements
-      // safe aligns left in case of overflow (moving overflow to the right)
-      justify-self: safe center;
-    }
+    // justify instead of margins to center elements in grid
+    // unsafe keeps centered even if that causes overflow into left and right elements
+    // safe aligns left in case of overflow (moving overflow to the right)
+    justify-self: safe center;
   }
 }
 
@@ -125,8 +115,6 @@ main {
 // headers
 
 h1, h2, h3, h4, h5, h6 {
-  line-height: 1.1;
-
   // we disabled all margins because they do not fold in grids
   // for headers, we add padding instead, which works nicer with jumping to IDs
   padding-top: 1rem;
@@ -146,17 +134,16 @@ h2 {
   align-items: center;
   // put the text box centered horizontally
   justify-content: center;
-
-  &:before, &:after {
-    content: '';
-    border-bottom: var(--theme-border);
-    flex-grow: 1;
-    flex-shrink: 0.1;
-    flex-basis: 10%;
-  }
-  &:before {margin-right: 1rem;}
-  &:after {margin-left: 1rem;}
 }
+h2:before, h2:after {
+  content: '';
+  border-bottom: var(--theme-border);
+  flex-grow: 1;
+  flex-shrink: 0.1;
+  flex-basis: 10%;
+}
+h2:before {margin-right: 1rem;}
+h2:after {margin-left: 1rem;}
 
 h4 { font-style: italic; }
 
@@ -170,14 +157,13 @@ h4 { font-style: italic; }
   // safe causes the metadata to always be visible,
   // even if things become so small that they need to be scrolled
   justify-content: safe center;
-
-  > * {
-    margin-right: 0.5em;
-  }
+}
+.metadata > * {
+  margin-right: 0.5em;
 }
 
-time, .category {
-  @media screen {
+@media screen {
+  time, .category {
     color: var(--color-subdued);
   }
 }
@@ -190,22 +176,21 @@ time {
 
 // basic text styling
 
-main {
-  p, ol, ul, dl {
-    text-align: justify;
-    // text based things always are limited to content width,
-    // even when nested inside something else
-    max-width: var(--main-content-width);
-  }
+main p, main ol, main ul, main dl {
+  text-align: justify;
+  // set line-height to 30 scaled pixels
+  line-height: calc(30/18);
+  // text based things always are limited to content width,
+  // even when nested inside something else
+  max-width: var(--main-content-width);
 }
 
 a {
   text-decoration: none;
   color: var(--theme-color);
-
-  &:hover {
-    filter: brightness(75%);
-  }
+}
+a:hover {
+  filter: brightness(75%);
 }
 
 // containers of other elements
@@ -214,15 +199,13 @@ figure, blockquote, pre, dd {
   background-color: var(--theme-plate-color);
   border-radius: var(--theme-border-radius);
   padding: 1em;
-
-  // remove top&bottom margins of nested elements
-  & > :first-child {
-    margin-top: 0;
-  }
-
-  & > :last-child {
-    margin-bottom: 0;
-  }
+}
+// remove top&bottom margins of nested elements
+figure > :first-child, blockquote > :first-child, pre > :first-child, dd > :first-child {
+  margin-top: 0;
+}
+figure > :last-child, blockquote > :last-child, pre > :last-child, dd > :last-child {
+  margin-bottom: 0;
 }
 
 // code blocks
@@ -305,20 +288,16 @@ del {
   color: var(--color-marker-red);
 }
 
-.bibliography {
-
-  li {
-    margin-top: 1em;
-  }
-
-  p {
-    line-height: initial;
-    margin: 0;
-    margin-top: 0.5em;
-  }
-  .container {
-    font-style: italic;
-  }
+.bibliography li {
+  margin-top: 1em;
+}
+.bibliography p {
+  line-height: initial;
+  margin: 0;
+  margin-top: 0.5em;
+}
+.bibliography .container {
+  font-style: italic;
 }
 
 
@@ -329,165 +308,127 @@ del {
 
 article {
   display: flex;
-
-  @media screen and (max-width: $main-content-width) {
+}
+@media screen and (max-width: 17cm) {
+  article {
     flex-direction: column;
   }
-
-  @media screen and (min-width: $main-content-width) {
-    & > .category {
-      text-align: right;
-    }
+}
+@media screen and (min-width: 17cm) {
+  article > .category {
+    text-align: right;
   }
-
-  // space between the items of the article
-  // while this is part of the html, its eaten by the flex
-  & > * {
-    margin-right: 0.2em;
-  }
-
-  // make the title get most of the space,
-  // to cause the tags to be right aligned
-  & > .title {
-    flex: 1;
-  }
+}
+// space between the items of the article
+// while this is part of the html, its eaten by the flex
+article > * {
+  margin-right: 0.2em;
+}
+// make the title get most of the space,
+// to cause the tags to be right aligned
+article > .title {
+  flex: 1;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 // Sidebar design
 /////////////////////////////////////////////////////////////////////////////
+@media screen { body { display: flex; } }
+@media print { body > aside { display: none; } }
 
 // body has an optional aside and a main
 // if the aside exists, it is pinned on the full height,
 // unless a button is pressed to hide it
-body {
-  @media screen {
-    display: flex;
-    align-items: stretch;
+
+body > main {
+  flex: 1 1 var(--main-content-width);
+}
+
+body > aside {
+  // no growth beyond content size, shrink aggressively, try to target max-content if there is enough space
+  flex: 0 100 max-content;
+  // max width, because sidebar with very long header names does not look great
+  max-width: var(--sidebar-max-width);
+}
+body > aside > label {
+  // the label is marked as hidden in the HTML,
+  // because it makes no sense to show it if the stylesheet is not present
+  // we use this high specificity selector to override the hidden attribute
+  &[hidden] {
+    display: initial;
   }
 
-  & > main {
-    flex: 1 1 var(--main-content-width);
+  position: fixed;
+  bottom: 0;
+  cursor: pointer;
+  // fixed pixel size to correspond to designed image size of the svg icons
+  width: 24px;
+  height: 24px;
+  padding: 0.5em;
+  z-index: 1;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+body > aside > nav {
+  // sticky at top 0 (original position of the element) essentially causes the
+  // element to be fixed in place BUT it keeps occupying space in the layout
+  position: sticky;
+  top: 0;
+
+  // box sizing together with height makes it occupy the full height pixel perfect
+  // except for some broken mobile environments like the android web view
+  box-sizing: border-box;
+  height: 100vh;
+
+
+  // always show scrollbar to reserve space
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: var(--light-theme-color) hsla(0, 0%, 0%, 0);
+
+  // make things also not hug the screen
+  padding-left: 0.5em;
+  padding-top: 0.5em;
+  // for the srcoll bar; firefox desktop does assign space for the scrollbar by itself, but mobile browsers often do not
+  padding-right: 0.5em;
+  // space for the bottom label
+  padding-bottom: calc(1em + 24px);
+
+  border-right: var(--theme-border);
+}
+
+body > aside  > nav > ol {
+    list-style: disc;
+    margin: 0;
+    margin-left: 1em;
+    padding: 0;
   }
 
-  & > aside {
-    // the sidebar never shrinks below its minimum content,
-    // and tries to grow as soon as possible
-    flex: 0 100 max-content;
-    // max width, because sidebar with very long header names does not look great
-    max-width: var(--sidebar-max-width);
-    // seems unnecessary now?
-    // min-width: min-content;
+body > aside  > nav li {
+  margin-top: 0.3em;
+}
 
-    & > label {
-      // the label is marked as hidden in the HTML,
-      // because it makes no sense to show it if the stylesheet is not present
-      // we use this high specificity selector to override the hidden attribute
-      &[hidden] {
-        display: initial;
-      }
 
-      position: fixed;
-      bottom: 0;
-      cursor: pointer;
-      // fixed pixel size to correspond to designed image size of the svg icons
-      width: 24px;
-      height: 24px;
-      padding: 0.5em;
-      z-index: 1;
+// remove sidebar nav content depending on screen size and clicked status …
+#sidebar-switch:checked ~ nav { display: none; }
+#sidebar-switch ~ label .close { display: block; }
+#sidebar-switch ~ label .menu { display: none; }
+#sidebar-switch:checked ~ label .close { display: none; }
+#sidebar-switch:checked ~ label .menu { display: block; }
 
-      svg {
-        width: 100%;
-        height: 100%;
-      }
-    }
-
-    nav {
-      // sticky at top 0 (original position of the element) essentially causes the
-      // element to be fixed in place BUT it keeps occupying space in the layout
-      position: sticky;
-      top: 0;
-
-      // show scrollbar
-      overflow-y: scroll;
-      scrollbar-width: thin;
-      scrollbar-color: var(--light-theme-color) hsla(0, 0%, 0%, 0);
-
-      min-width: min-content;
-
-      // box sizing together with height makes it occupy the full height pixel perfect
-      // except for some broken mobile environments like the android web view
-      box-sizing: border-box;
-      height: 100vh;
-
-      padding: 0;
-      padding-top: 0.5em;
-      // for the srcoll bar; firefox desktop does assign space for the scrollbar by itself, but mobile browsers often do not
-      padding-right: 0.5em;
-      // make things also not hug the srceen on the left
-      padding-left: 0.5em;
-
-      border-right: var(--theme-border);
-
-      // makes the individual text of the links more compact which seems to require the inline block and then requires to fix vertical-align
-      a {
-        line-height: 1.1;
-        display: inline-block;
-        vertical-align: text-top;
-      }
-
-      ol {
-        list-style: disc;
-        margin: 0;
-        margin-left: 1em;
-        padding: 0;
-      }
-
-      & > *:last-child {
-        // bottom margin to not collide with the label as much
-        margin-bottom: 2.5em;
-      }
-
-    }
-
-  }
-
-  @media print {
-    > aside {
-      display: none;
-    }
-  }
-
-  // remove sidebar nav content depending on screen size and clicked status …
-  #sidebar-switch:checked ~ nav {
-    display: none;
-  }
-  #sidebar-switch ~ label {
-    .close { display: block; }
-    .menu { display: none; }
-  }
-  #sidebar-switch:checked ~ label {
-    .close { display: none; }
-    .menu { display: block; }
-  }
-  // inverted logic for small screens
-  @media (max-width: $small-screen-width) {
-    #sidebar-switch ~ nav {
-      display: none;
-    }
-    #sidebar-switch:checked ~ nav {
-      display: block;
-    }
-    #sidebar-switch ~ label {
-      .close { display: none; }
-      .menu { display: block; }
-    }
-    #sidebar-switch:checked ~ label {
-      .close { display: block; }
-      .menu { display: none; }
-    }
-  }
+// inverted logic for small screens (width stolen from bootstrap)
+@media (max-width: 575) {
+  #sidebar-switch ~ nav { display: none; }
+  #sidebar-switch:checked ~ nav { display: block; }
+  #sidebar-switch ~ label .close { display: none; }
+  #sidebar-switch ~ label .menu { display: block; }
+  #sidebar-switch:checked ~ label .close { display: block; }
+  #sidebar-switch:checked ~ label .menu { display: none; }
 }
 
 /////////////////////////////////////////////////////////////////////////////
