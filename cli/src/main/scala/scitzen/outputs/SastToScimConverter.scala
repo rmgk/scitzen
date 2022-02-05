@@ -80,7 +80,7 @@ object SastToScimConverter:
             Chain(
               "::" + command +
                 AttributesToScim.convert(remattr, force = false, spacy = false),
-              content.map(addIndent(_, "  ")).iterator.mkString("\n").stripTrailing(),
+              content.map(addIndent(_, "\t")).iterator.mkString("\n").stripTrailing(),
               "::"
             )
           // space indented blocks are currently only used for description lists
@@ -96,7 +96,7 @@ object SastToScimConverter:
         val delimiter = "``"
         Chain(
           delimiter + command + AttributesToScim.convert(remattr, spacy = false, force = false),
-          addIndent(text, " ".repeat(delimiter.length)),
+          addIndent(text, "\t"),
           delimiter
         )
 

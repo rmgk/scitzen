@@ -40,6 +40,7 @@ object DelimitedBlockParsers {
     val prefix = " ".repeat(i)
     true -> str.linesWithSeparators.map { l =>
       if (l.startsWith(prefix)) l.substring(i)
+      else if (l.startsWith("\t")) l.substring(1)
       else if (spaceNewline.matches(l)) l
       else return (false, str)
     }.mkString
