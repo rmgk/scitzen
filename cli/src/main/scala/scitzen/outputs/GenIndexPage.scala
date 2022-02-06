@@ -46,8 +46,7 @@ object GenIndexPage:
 
     sectionBy(articles)(secmon) { idocs =>
       idocs.sortBy(_.date)(ordering).flatMap { doc =>
-        val categories =
-          List("categories", "people").flatMap(doc.named.get).flatMap(_.split(","))
+        def categories = doc.named.get("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
         List(Directive(
           Other("article"),
           Attributes(
