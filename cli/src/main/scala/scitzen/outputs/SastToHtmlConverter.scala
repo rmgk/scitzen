@@ -6,7 +6,7 @@ import cats.implicits.*
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
-import scitzen.extern.Bibliography.BibEntry
+import scitzen.bibliography.BibEntry
 import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.*

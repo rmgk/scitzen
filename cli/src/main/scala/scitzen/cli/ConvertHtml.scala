@@ -3,7 +3,6 @@ package scitzen.cli
 import better.files.*
 import cats.implicits.*
 import scitzen.contexts.ConversionContext
-import scitzen.extern.Bibliography
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
@@ -11,6 +10,7 @@ import scitzen.compat.Codecs.mapCodec
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import scalatags.Text.all.raw
 import scalatags.Text.tags2.style
+import scitzen.bibliography.Bibtex
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path

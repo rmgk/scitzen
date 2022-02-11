@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import better.files.File
-import scitzen.extern.Bibliography
+import scitzen.bibliography.{BibEntry, Bibtex}
 import scitzen.parser.Parse
 import scitzen.sast.{Prov, Text}
 
@@ -13,8 +13,8 @@ case class Project(root: File, config: ProjectConfig, definitions: Map[String, T
   val outputdir: File = root / config.output
   val nlpdir: File    = root / config.stopwords
 
-  lazy val bibfile: Option[File]                            = config.bibliography.flatMap(s => resolve(root, s))
-  lazy val bibliography: Map[String, Bibliography.BibEntry] = Bibliography.makeBib(this)
+  lazy val bibfile: Option[File]               = config.bibliography.flatMap(s => resolve(root, s))
+  lazy val bibliography: Map[String, BibEntry] = Bibtex.makeBib(this)
 
   def relativizeToProject(target: File): Path =
     Paths.get("/").resolve(root.relativize(target))
