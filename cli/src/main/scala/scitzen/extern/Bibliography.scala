@@ -11,7 +11,7 @@ import scitzen.compat.Codecs.*
 import scitzen.generic.Project
 import cats.syntax.monoid.*
 
-import java.io.FileInputStream
+import java.io.{FileInputStream, InputStream}
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.*
 
@@ -35,7 +35,7 @@ object Bibliography:
     def formatAuthors: Option[String] =
       val res = authors.map(_.full).mkString(", ")
       if res.nonEmpty then Some(res) else None
-    def format: Frag =
+    def formatHtmlCitation: Frag =
       def line(name: String, elems: Option[Frag]*): Option[Frag] =
         val terminator        = stringFrag(". ")
         val inside: Seq[Frag] = elems.flatten.flatMap { v => List(v, terminator) }
@@ -47,6 +47,10 @@ object Bibliography:
       )
     def authorYear: Option[String] =
       authors.headOption.flatMap(_.familyName).combine(year.map(_.toString))
+
+    def headerstring: String =
+      val authors = formatAuthors.fold("")(a => s"$a ")
+      s"$authors${title.fold("")(t => s"»$t«")}"
 
   def citeprocToBib(entry: CSLItemData) =
     BibEntry(
@@ -62,16 +66,17 @@ object Bibliography:
       issue = Option(entry.getIssue),
     )
 
-  def parse(cacheDir: File)(source: File): List[BibEntry] = {
+  def parse(source: InputStream): List[BibEntry] = {
     val converter = BibTeXConverter()
-    val db        = source.fileInputStream(converter.loadDatabase)
+    val db        = converter.loadDatabase(source)
+    source.close()
     val items     = converter.toItemData(db).asScala
     items.valuesIterator.map { citeprocToBib }.toList
   }
 
   def makeBib(project: Project): Map[String, Bibliography.BibEntry] =
     project.bibfile.map { path =>
-      Bibliography.parse(project.cacheDir)(path)
+      path.fileInputStream(Bibliography.parse)
     }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
       case (be, i) => be.id -> be.copy(citekey = Some(be.authorYear.getOrElse((i + 1).toString)))
     }.toMap

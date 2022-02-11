@@ -22,6 +22,8 @@ lazy val parser = project.in(file("parser"))
     libraryDependencies ++= jsoniterScalaAll.value,
   )
 
+val graalVersion = "22.0.0.2"
+
 lazy val scitzen = project.in(file("cli"))
   .enablePlugins(NativeImagePlugin)
   .dependsOn(parser)
@@ -37,13 +39,13 @@ lazy val scitzen = project.in(file("cli"))
       "org.webjars.npm"                 % "katex"         % "0.15.1",
       "org.typelevel"                 %%% "cats-parse"    % "0.3.6",
       "org.jbibtex"                     % "jbibtex"       % "1.0.19",
-      ("de.undercouch"                  % "citeproc-java" % "2.0.0")
-        .exclude("org.graalvm.js", "js")
-        .exclude("org.graalvm.sdk", "graal-sdk")
+      "de.undercouch"                   % "citeproc-java" % "2.0.0",
+      // explicitly depend on graal.js to allow running on non-graal JVMs
+      "org.graalvm.js" % "js" % graalVersion,
     ),
     javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
-    nativeImageVersion   := "22.0.0",
+    nativeImageVersion   := graalVersion,
     nativeImageJvm       := "graalvm-java17",
     nativeImageOptions ++= Seq(
       "--no-fallback",

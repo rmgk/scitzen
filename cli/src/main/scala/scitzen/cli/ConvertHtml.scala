@@ -140,7 +140,7 @@ object ConvertHtml:
       if bibEntries.isEmpty then Nil
       else
         import scalatags.Text.all.{SeqFrag, h2, id, li, stringAttr, stringFrag, ul, cls}
-        List(h2("Bibliography"), ul(cls := "bibliography", bibEntries.map { be => li(id := be.id, be.format) }))
+        List(h2("Bibliography"), ul(cls := "bibliography", bibEntries.map { be => li(id := be.id, be.formatHtmlCitation) }))
 
     val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 

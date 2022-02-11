@@ -16,8 +16,10 @@ object DBLP:
     val request =
       HttpRequest.newBuilder.uri(URI.create(s"https://dblp.org/rec/$key.bib")).timeout(Duration.ofSeconds(10)).build
 
-    val response = client.send(request, BodyHandlers.ofString)
-    System.out.println(response.statusCode)
-    System.out.println(response.body)
+    client.sendAsync(request, BodyHandlers.ofInputStream()).asScala.map { res =>
+      val items = Bibliography.parse(res.body())
 
-    client.sendAsync(request, BodyHandlers.ofString).asScala.foreach { r => println(r.body()) }
+      items.map { bi =>
+        List(Some(s"== ${bi.headerstring}"), Some(s"dblp = $key"), bi.url.map(u => s"url = $u")).flatten.mkString("\n")
+      }
+    }
