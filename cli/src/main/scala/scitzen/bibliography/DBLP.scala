@@ -30,14 +30,14 @@ object DBLPApi:
 
 object DBLP:
 
-  val client = HttpClient.newBuilder.connectTimeout(Duration.ofSeconds(20)).followRedirects(
+  val client = HttpClient.newBuilder.connectTimeout(Duration.ofSeconds(30)).followRedirects(
     Redirect.ALWAYS
   ).cookieHandler(new CookieManager()).build
   def query(url: String, params: Map[String, String] = Map.empty): HttpRequest =
     val query = params.map((k, v) => s"$k=${URLEncoder.encode(v, StandardCharsets.UTF_8)}").mkString("?", "&", "")
     val uri   = URI.create(s"$url$query")
     println(s"uri: $uri")
-    HttpRequest.newBuilder.uri(uri).timeout(Duration.ofSeconds(10)).build
+    HttpRequest.newBuilder.uri(uri).timeout(Duration.ofSeconds(30)).build
 
   def lookup(key: String) =
     val res   = client.send(query(s"https://dblp.org/rec/$key.bib"), BodyHandlers.ofInputStream())
