@@ -34,8 +34,8 @@ object DBLP:
     Redirect.ALWAYS
   ).cookieHandler(new CookieManager()).build
   def query(url: String, params: Map[String, String] = Map.empty): HttpRequest =
-    val query = params.map((k, v) => s"$k=${URLEncoder.encode(v, StandardCharsets.UTF_8)}").mkString("?", "&", "")
-    val uri   = URI.create(s"$url$query")
+    val query = params.map((k, v) => s"$k=${URLEncoder.encode(v, StandardCharsets.UTF_8)}").mkString("&")
+    val uri   = URI.create(s"$url${if query.nonEmpty then "?" else ""}$query")
     println(s"uri: $uri")
     HttpRequest.newBuilder.uri(uri).timeout(Duration.ofSeconds(30)).build
 
@@ -46,6 +46,9 @@ object DBLP:
     items.map { bi =>
       List(Some(s"== ${bi.headerstring}"), Some(s"dblp = $key"), bi.url.map(u => s"url = $u")).flatten.mkString("\n")
     }
+
+  val AcmRx = """//dl\.acm\.org/""".r.unanchored
+  val ArxiveRx = """//arxiv\.org/""".r.unanchored
 
   def search(q: String) =
     val res = client.send(
@@ -58,13 +61,15 @@ object DBLP:
       val info   = h.info
       val format = lookup(info.key)
       println(s"info url: ${info.ee}")
-      val acmres = client.send(query(info.ee), BodyHandlers.ofInputStream())
-      println(s"acmuri: ${acmres.uri()}")
-      val soup   = Jsoup.parse(acmres.body(), StandardCharsets.UTF_8.toString, acmres.uri().toString)
-      val pdfurl = soup.select("a.btn.red").attr("abs:href")
+      val pdfpage = client.send(query(info.ee), BodyHandlers.ofInputStream())
+      println(s"final uri: ${pdfpage.uri()}")
+      val soup   = Jsoup.parse(pdfpage.body(), StandardCharsets.UTF_8.toString, pdfpage.uri().toString)
+      val pdfurl = pdfpage.uri().toString match
+        case AcmRx() => soup.select("a.btn.red").attr("abs:href")
+        case ArxiveRx() => soup.select("a.download-pdf").attr("abs:href")
       println(s"pdfurl: $pdfurl")
       val pdfres   = client.send(query(pdfurl), BodyHandlers.ofInputStream())
-      val filename = Format.sluggify(info.title)
+      val filename = Format.sluggify(if info.title.endsWith(".") then info.title.dropRight(1) else info.title)
       val pdfbody  = pdfres.body()
       val pdffile  = File(s"$filename.pdf")
       pdffile.outputStream.foreach(os => pdfbody.pipeTo(os, 256))
