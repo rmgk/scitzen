@@ -4,23 +4,23 @@ date = 2022-01-01 17:20:29
 So maybe Scitzen got the ability to highlight code now?
 
 ``code{lang=scala}
-  object Prism:
-    // this MUST be inlined by native image to work
-    private val prismSource: Source =
-      val prismStr = Resource.getAsString("prism.js")
-      Source.newBuilder("js", prismStr, "prism.js").buildLiteral()
+	object Prism:
+	  // this MUST be inlined by native image to work
+	  private val prismSource: Source =
+	    val prismStr = Resource.getAsString("prism.js")
+	    Source.newBuilder("js", prismStr, "prism.js").buildLiteral()
 
-    val engine: Engine = Engine.newBuilder().build()
+	  val engine: Engine = Engine.newBuilder().build()
 
-    lazy val prismcontext =
-      val ctx = Context.newBuilder("js").engine(engine).build()
-      ctx.eval(prismSource)
-      ctx
+	  lazy val prismcontext =
+	    val ctx = Context.newBuilder("js").engine(engine).build()
+	    ctx.eval(prismSource)
+	    ctx
 
-    lazy val highlightVal = prismcontext.eval("js", "Prism.highlight")
+	  lazy val highlightVal = prismcontext.eval("js", "Prism.highlight")
 
-    def highlight(code: String, lang: String): String =
-      highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$lang"), lang).asString()
+	  def highlight(code: String, lang: String): String =
+	    highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$lang"), lang).asString()
 
 ``
 
@@ -30,15 +30,15 @@ So maybe Scitzen got the ability to highlight code now?
 And another example wrapped in a figure
 
 ::figure
-  ``code{lang=javascript}
-    const Prism = require('prismjs');
-    const loadLanguages = require('prismjs/components/');
-    loadLanguages(['haml']);
+	``code{lang=javascript}
+		const Prism = require('prismjs');
+		const loadLanguages = require('prismjs/components/');
+		loadLanguages(['haml']);
 
-    // The code snippet you want to highlight, as a string
-    const code = `= ['hi', 'there', 'reader!'].join " "`;
+		// The code snippet you want to highlight, as a string
+		const code = `= ['hi', 'there', 'reader!'].join " "`;
 
-    // Returns a highlighted HTML string
-    const html = Prism.highlight(code, Prism.languages.haml, 'haml');
-  ``
+		// Returns a highlighted HTML string
+		const html = Prism.highlight(code, Prism.languages.haml, 'haml');
+	``
 ::
