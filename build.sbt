@@ -17,7 +17,7 @@ lazy val parser = project.in(file("parser"))
     strictCompile,
     libraryDependencies ++= Seq(
       betterFiles.value,
-      fastparse.value,
+      fastparse.value.exclude("com.lihaoyi", "geny_2.13"),
     ),
     libraryDependencies ++= jsoniterScalaAll.value,
   )
@@ -34,7 +34,9 @@ lazy val scitzen = project.in(file("cli"))
     strictCompile,
     libraryDependencies ++= Seq(
       decline.value,
-      scalatags.value.cross(CrossVersion.for3Use2_13),
+	  jsoup.value,
+	  upickle.value.exclude("com.lihaoyi", "sourcecode_3"),
+      scalatags.value.exclude("com.lihaoyi", "sourcecode_3"),
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.25.0",
       "org.webjars.npm"                 % "katex"         % "0.15.1",
       "org.typelevel"                 %%% "cats-parse"    % "0.3.6",
