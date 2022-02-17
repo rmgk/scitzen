@@ -24,7 +24,7 @@ case class ITargetPrediction(project: Project, cwd: File):
   def predictMacro(attributes: Attributes): Attributes =
     List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
       if target.requiresConversion(attr.target) then
-        val abs        = project.resolve(cwd, attr.target).get
+        val abs        = project.resolve(cwd, attr.target).getOrElse(throw IllegalStateException(s"could not resolve ${attr.target}"))
         val filename   = s"${abs.nameWithoutExtension(false)}.${target.preferredFormat}"
         val rel        = project.root.relativize(abs)
         val prediction = project.cacheDir / "convertedImages" / rel.toString / filename
