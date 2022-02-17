@@ -49,6 +49,8 @@ object DBLP:
 
   val AcmRx = """//dl\.acm\.org/""".r.unanchored
   val ArxiveRx = """//arxiv\.org/""".r.unanchored
+  val CambridgeCoreRx = """//www\.cambridge\.org/""".r.unanchored
+  val DagstuhlRx = """//drops\.dagstuhl\.de/""".r.unanchored
 
   def search(q: String) =
     val res = client.send(
@@ -67,6 +69,8 @@ object DBLP:
       val pdfurl = pdfpage.uri().toString match
         case AcmRx() => soup.select("a.btn.red").attr("abs:href")
         case ArxiveRx() => soup.select("a.download-pdf").attr("abs:href")
+        case CambridgeCoreRx() => soup.select("meta[name=citation_pdf_url]").attr("content")
+        case DagstuhlRx() => soup.select("table:contains(pdf-format) a[itemprop=url]").attr("href")
       println(s"pdfurl: $pdfurl")
       val pdfres   = client.send(query(pdfurl), BodyHandlers.ofInputStream())
       val filename = Format.sluggify(if info.title.endsWith(".") then info.title.dropRight(1) else info.title)
