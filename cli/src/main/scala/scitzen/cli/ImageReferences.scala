@@ -1,11 +1,12 @@
 package scitzen.cli
 
-import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.core.*
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
 import scitzen.sast.DCommand
 import scitzen.compat.Codecs.Reference
 import scitzen.compat.Codecs.rferenceRW
+import scitzen.extern.ImageTarget
 
 object ImageReferences:
 
@@ -16,15 +17,8 @@ object ImageReferences:
 
       val convertedCtx = new SastToSastConverter(doc, project).run()
 
-      // val converter = new ImageConverter(
-      //    project,
-      //    preferredFormat = "png",
-      //    unsupportedFormat = List("pdf", "svg"),
-      //    documentDirectory
-      //  )
-
       val images = convertedCtx.imageMacros.filter(_.command == DCommand.Image).flatMap { mcro =>
-        val path = mcro.attributes.target
+        val path = mcro.attributes.named.getOrElse(ImageTarget.Raster.name, mcro.attributes.target)
         project.resolve(cwd, path) match
           case Some(target) =>
             // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)

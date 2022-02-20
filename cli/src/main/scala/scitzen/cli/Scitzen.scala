@@ -6,6 +6,7 @@ import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
+import scala.Option.when
 
 import java.nio.file.{Path, Paths}
 
@@ -13,8 +14,7 @@ object Scitzen
     extends CommandApp(
       name = "scitzen",
       header = "Static page generator",
-      main =
-        ConvertProject.command.options
+      main = ConvertProject.command.options
     )
 
 object ConvertProject:
@@ -79,7 +79,19 @@ object ConvertProject:
 
     project.outputdir.createDirectories()
 
-    ImageConverter.preprocessImages(project, documentDirectory, List(ImageTarget.Html, ImageTarget.Tex), preprocessed)
+    val toHtml = project.config.outputType.contains("html")
+    val toPdf  = project.config.outputType.contains("pdf")
+
+    ImageConverter.preprocessImages(
+      project,
+      documentDirectory,
+      List(
+        when(toHtml)(ImageTarget.Html),
+        when(toPdf)(ImageTarget.Tex),
+        when(imageFileMap)(ImageTarget.Raster)
+      ).flatten,
+      preprocessed
+    )
 
     if project.config.format.contains("content") then
       Format.formatContents(documentDirectory)
@@ -87,11 +99,11 @@ object ConvertProject:
     if project.config.format.contains("filename") then
       Format.formatRename(documentDirectory)
       scribe.info(s"formatted filenames ${timediff()}")
-    if project.config.outputType.contains("html") then
+    if toHtml then
       val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
       ConvertHtml.convertToHtml(project, sync, preprocessed)
       scribe.info(s"generated html ${timediff()}")
-    if project.config.outputType.contains("pdf") then
+    if toPdf then
       ConvertPdf.convertToPdf(project, preprocessed)
       scribe.info(s"generated pdfs ${timediff()}")
     if imageFileMap then
