@@ -1,9 +1,9 @@
 jdk:
   - openjdk17
 
-before_install:
-  - sdk install java 22.0.0.2-grl
-  - sdk use java 22.0.0.2-grl
+# before_install:
+#   - sdk install java 22.0.0.2-grl
+#   - sdk use java 22.0.0.2-grl
 
 install:
   - sbt -Dsbt.log.noformat=true clean compile
