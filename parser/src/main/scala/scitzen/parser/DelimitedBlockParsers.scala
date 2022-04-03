@@ -15,8 +15,9 @@ object DelimitedBlockParsers {
         (withProv(untilI(eol ~ delimiter ~ spaceLine)))
           .map {
             case (text, prov) =>
-              val (isStripped, strippedText) = stripIfPossible(text, delimiter.length)
-              val rawAttr                    = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
+              val stripRes     = stripIfPossible(text, delimiter.length)
+              val strippedText = stripRes.getOrElse(text)
+              val rawAttr      = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
               val blockContent =
                 delimiter(0) match {
                   case '`' => Fenced(strippedText)
@@ -27,23 +28,29 @@ object DelimitedBlockParsers {
               scitzen.sast.Block(
                 Attributes(rawAttr),
                 blockContent,
-                if (!isStripped) prov else prov.copy(indent = delimiter.length)
+                if (stripRes.isEmpty) prov else prov.copy(indent = delimiter.length)
               )
           }
     }
 
   def anyDelimited[_p: P]: P[Block] = P(makeDelimited(anyStart))
 
-  val spaceNewline = " *\\n?$".r
+  val spaceNewline = "^ *\\n?$".r
 
-  def stripIfPossible(str: String, i: Int): (Boolean, String) = {
+  def stripIfPossible(str: String, i: Int): Option[String] = {
     val prefix = " ".repeat(i)
-    true -> str.linesWithSeparators.map { l =>
-      if (l.startsWith(prefix)) l.substring(i)
-      else if (l.startsWith("\t")) l.substring(1)
-      else if (spaceNewline.matches(l)) l
-      else return (false, str)
-    }.mkString
+    val lines  = str.linesWithSeparators
+    val res    = new StringBuilder()
+    while (lines.hasNext) {
+      val l = lines.next()
+      res.append {
+        if (l.startsWith(prefix)) l.substring(i)
+        else if (l.startsWith("\t")) l.substring(1)
+        else if (spaceNewline.matches(l)) l
+        else return None
+      }
+    }
+    Some(res.result())
   }
 
   def whitespaceLiteral[_p: P]: P[Block] =
