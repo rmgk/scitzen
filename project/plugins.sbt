@@ -7,11 +7,11 @@ addSbtPlugin("org.scala-js"  % "sbt-scalajs"         % "1.9.0")
 libraryDependencies += "org.scala-js" %% "scalajs-env-jsdom-nodejs" % "1.1.0"
 
 // scalanative
-addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.3")
+addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.4")
 
 // crossbuilding
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject"      % "1.1.0")
-addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.1.0")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject"      % "1.2.0")
+addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.2.0")
 
 // operations
 addSbtPlugin("com.dwijnand"     % "sbt-dynver"          % "4.1.1") // https://github.com/dwijnand/sbt-dynver
