@@ -131,15 +131,13 @@ h4 { font-style: italic; }
 /* headers counting */
 .fullpost main {
 	counter-reset: section;
-	counter-reset: subsection;
 }
 .fullpost  h2 {
 	counter-increment: section;
 	counter-reset: subsection;
 }
-.fullpost  h2:before {	content: counter(section) ". "; }
-
 .fullpost  h3 { counter-increment: subsection; }
+.fullpost  h2:before { content: counter(section) ". "; }
 .fullpost  h3:before { content: counter(section) "." counter(subsection) ". "; }
 
 
