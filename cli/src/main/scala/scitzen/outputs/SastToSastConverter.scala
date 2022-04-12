@@ -23,7 +23,7 @@ class SastToSastConverter(document: Document, project: Project):
   def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
 
   def findArticle(ctx: Cta, self: Section): Option[Article] =
-    (self +: ctx.sections).find(!Article.notArticleHeader(_)).collect {
+    (self +: ctx.sections).find(!Article.notHeader(_)).collect {
       case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil))
     }
 
@@ -39,7 +39,7 @@ class SastToSastConverter(document: Document, project: Project):
         ctx.ret("")
     val newLabel = s"$ref1 ($uid${counter.data})"
     val aliases  = ref1 :: newLabel :: attr.named.get("aliases").toList.flatMap(_.split(',').toList)
-    counter.ret((aliases, attr.updated("label", newLabel)))
+    counter.ret((aliases, attr.updated("unique ref", newLabel)))
 
   def convertSeq(b: Seq[Sast])(ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
@@ -50,7 +50,7 @@ class SastToSastConverter(document: Document, project: Project):
 
       case sec @ Section(title, level, _) =>
         val ctxWithRef =
-          val resctx          = ensureUniqueRef(ctx, sec.ref, sec.attributes)
+          val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
           val (aliases, attr) = resctx.data
           val ublock          = sec.copy(attributes = attr)(sec.prov)
           val target          = SastRef(cwf, ublock, findArticle(ctx, sec))

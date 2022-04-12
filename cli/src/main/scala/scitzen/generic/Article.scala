@@ -14,8 +14,10 @@ case class Article(header: Section, content: List[Sast], sourceDoc: Document):
 
   lazy val named: Map[String, String] = header.attributes.named
 
+  def sast: List[Sast] = header :: content
+
 object Article:
-  def notArticleHeader(sast: Sast): Boolean =
+  def notHeader(sast: Sast): Boolean =
     sast match
       case Section(_, "=", _) => false
       case _                  => true
@@ -25,8 +27,26 @@ object Article:
     def rec(rem: List[Sast], acc: List[Article]): List[Article] =
       rem match
         case (sec @ Section(_, "=", _)) :: rest =>
-          val (cont, other) = rest.span(notArticleHeader)
+          val (cont, other) = rest.span(notHeader)
           rec(other, Article(sec, cont, document) :: acc)
         case _ => acc
 
-    rec(document.sast.dropWhile(notArticleHeader), Nil)
+    rec(document.sast.dropWhile(notHeader), Nil)
+
+object ArticleItem:
+  def notHeader(sast: Sast): Boolean =
+    sast match
+      case Section(_, "==", _) => false
+      case _                   => true
+
+  def items(document: Document): List[Article] =
+    @scala.annotation.tailrec
+    def rec(rem: List[Sast], acc: List[Article]): List[Article] =
+      rem match
+        case (sec @ Section(_, "==", _)) :: rest =>
+          val (cont, other) = rest.span(a => notHeader(a) && Article.notHeader(a))
+          rec(other.dropWhile(notHeader), Article(sec, cont, document) :: acc)
+        case Nil => acc
+        case other :: rest => throw IllegalStateException(s"unexpected sast when looking for item: $other")
+
+    rec(document.sast.dropWhile(notHeader), Nil)

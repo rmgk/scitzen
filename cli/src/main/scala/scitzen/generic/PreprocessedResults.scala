@@ -26,4 +26,7 @@ class PreprocessedResults(project: Project, val documents: List[Document]):
       key -> all.flatMap(_.getOrElse(key, Nil))
     }.toMap
 
-  val articles: List[Article] = preprocessedDocuments.flatMap { Article.articles }
+  val articles: List[Article]     = preprocessedDocuments.flatMap(Article.articles)
+  val articleItems: List[Article] = preprocessedDocuments.flatMap(ArticleItem.items)
+
+  lazy val itemsAndArticlesByLabel: Map[String, Article] = (articles ++ articleItems).map(a => (a.header.autolabel, a)).toMap

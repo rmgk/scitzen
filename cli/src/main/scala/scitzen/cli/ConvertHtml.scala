@@ -153,7 +153,7 @@ object ConvertHtml:
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           "fullpost",
-          toc.map(c => frag(a(href := s"#${article.header.id}", article.title): Frag, c: Frag)),
+          toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.language
             .orElse(nlp.flatMap(_.language(article.content)))

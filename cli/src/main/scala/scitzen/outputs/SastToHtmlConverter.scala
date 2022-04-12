@@ -127,19 +127,37 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                     convertSingle(Block(attributes, Fenced(file.contentAsString), mcro.prov))(ctx)
 
               case None =>
-                pathManager.resolve(attributes.target) match
-                  case Some(file) =>
-                    val doc = includeResolver.byPath(file)
-                    new SastToHtmlConverter(
-                      bundle,
-                      pathManager.changeWorkingFile(file),
-                      sync,
-                      doc.reporter,
-                      preprocessed,
-                    ).convertSeq(doc.sast)(ctx)
-                  case None =>
-                    scribe.error(s"unknown include ${attributes.target}" + reporter(mcro.prov))
-                    ctx.empty
+                if attributes.target.endsWith(".scim") then
+                  pathManager.resolve(attributes.target) match
+                    case Some(file) =>
+                      val doc = includeResolver.byPath(file)
+                      new SastToHtmlConverter(
+                        bundle,
+                        pathManager.changeWorkingFile(file),
+                        sync,
+                        doc.reporter,
+                        preprocessed,
+                      ).convertSeq(doc.sast)(ctx)
+                    case None =>
+                      scribe.error(s"unknown include document ${attributes.target}" + reporter(mcro.prov))
+                      ctx.empty
+                else
+                  preprocessed.itemsAndArticlesByLabel.get(attributes.target) match
+                    case None =>
+                      scribe.error(s"unknown include article ${attributes.target}" + reporter(mcro.prov))
+                      println(preprocessed.itemsAndArticlesByLabel.iterator.map(_._1).foreach(println))
+                      ctx.empty
+                    case Some(article) =>
+                      val doc = article.sourceDoc
+                      new SastToHtmlConverter(
+                        bundle,
+                        pathManager.changeWorkingFile(doc.file),
+                        sync,
+                        doc.reporter,
+                        preprocessed,
+                        ).convertSeq(article.sast)(ctx)
+
+
 
               case Some(other) =>
                 scribe.error(s"unknown include type $other" + reporter(mcro.prov))
