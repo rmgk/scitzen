@@ -1,6 +1,5 @@
 import Dependencies.*
 import Settings.*
-import org.irundaia.sass.Maxified
 
 lazy val root = project.in(file(".")).aggregate(parser, scitzen)
   .settings(
@@ -34,8 +33,8 @@ lazy val scitzen = project.in(file("cli"))
     strictCompile,
     libraryDependencies ++= Seq(
       decline.value,
-     jsoup.value,
-     upickle.value.exclude("com.lihaoyi", "sourcecode_3"),
+      jsoup.value,
+      upickle.value.exclude("com.lihaoyi", "sourcecode_3"),
       scalatags.value.exclude("com.lihaoyi", "sourcecode_3"),
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.27.0",
       "org.webjars.npm"                 % "katex"         % "0.15.1",
