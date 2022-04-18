@@ -7,7 +7,7 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.bibliography.BibEntry
-import scitzen.extern.{ImageTarget, Prism}
+import scitzen.extern.{ImageConverter, ImageTarget, Prism, ScalaCLI}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
@@ -211,6 +211,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 // Preformatted plaintext, preserve linebreaks,
                 // but also wrap for linebreaks and use paragraph width
                 case "text" => ctx.retc(pre(p(text)))
+
+                // convert scala to js and embed the result
+                case "embed" if sBlock.attributes.named.get("lang").contains("scala") =>
+                  val source = if sBlock.attributes.named.contains("template") then
+                    ImageConverter.applyTemplate(sBlock.attributes, text, pathManager.cwd, pathManager.project, preprocessed.directory)
+                  else text
+                  val js = ScalaCLI.compile(pathManager.project.cacheDir, source)
+                  ctx.retc(script(`type` := "text/javascript", js.map(raw(_))))
+
                 // Code listing
                 // Use this for monospace, space preserving, line preserving text
                 // It may wrap to fit the screen content

@@ -12,7 +12,7 @@ import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters._
 
-object ImageConverter:
+object ImageConverter {
 
   def preprocessImages(
       project: Project,
@@ -42,6 +42,22 @@ object ImageConverter:
           converters(t).applyConversion(file.get, mcro.attributes).map(f => (t -> f))
       }
     }
+  end preprocessImages
+
+  def applyTemplate(attributes: Attributes, content: String, cwd: File, project: Project, documentDirectory: DocumentDirectory): String =
+    val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match
+      case None => content
+      case Some(templateFile) =>
+        val tc   = templateFile.contentAsString
+        val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
+        SastToTextConverter(
+          project.config.definitions ++ attributes.named + (
+            "template content" -> content
+            ),
+          Some(Includes(project, templateFile, documentDirectory))
+          ).convert(sast).mkString("\n")
+    templatedContent
+}
 
 class ImageConverter(
     project: Project,
@@ -61,7 +77,7 @@ class ImageConverter(
       case "pdf" | "png" if (file.extension.contains(".svg")) => Some(svgToCairo(file))
       case _ if (file.extension.contains(".tex")) =>
         val dir       = (project.cacheDir / "convertedImages").path.resolve(project.root.relativize(file))
-        val templated = applyTemplate(attributes, file.contentAsString, file.parent)
+        val templated = ImageConverter.applyTemplate(attributes, file.contentAsString, file.parent, project, documentDirectory)
         convertTemplated("tex", templated, dir, file.nameWithoutExtension(includeAll = false))
 
   def pdfToCairo(file: File): File =
@@ -114,7 +130,7 @@ class ImageConverter(
   def convertBlock(cwd: File, tlb: Block): Option[File] =
     val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
-    val templated = applyTemplate(tlb.attributes, content, cwd)
+    val templated = ImageConverter.applyTemplate(tlb.attributes, content, cwd, project, documentDirectory)
     val hash      = tlb.attributes.named("content hash")
     convertTemplated(converter, templated, project.cacheDir / hash, hash)
 
@@ -136,20 +152,6 @@ class ImageConverter(
       case other =>
         scribe.warn(s"unknown converter $other")
         None
-
-  def applyTemplate(attributes: Attributes, content: String, cwd: File): String =
-    val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match
-      case None => content
-      case Some(templateFile) =>
-        val tc   = templateFile.contentAsString
-        val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
-        SastToTextConverter(
-          project.config.definitions ++ attributes.named + (
-            "template content" -> content
-          ),
-          Some(Includes(project, templateFile, documentDirectory))
-        ).convert(sast).mkString("\n")
-    templatedContent
 
   def graphviz(content: String, dir: File, name: String, format: String): File =
     val bytes  = content.getBytes(StandardCharsets.UTF_8)

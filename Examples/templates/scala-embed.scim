@@ -1,0 +1,26 @@
+//> using scala "2.13.8"
+//> using platform "js"
+//> using lib "org.scala-js::scalajs-dom::2.1.0"
+//> using lib "com.lihaoyi::scalatags::0.11.1"
+//> using lib "de.tu-darmstadt.stg::rescala::0.31.0"
+
+import org.scalajs.dom
+import org.scalajs.dom.UIEvent
+import scalatags.JsDom.all._
+
+import scala.scalajs.js
+import rescala.default._
+import rescala.extra.Tags._
+
+object Main {
+	def main(args: Array[String]): Unit = {
+
+		val content = {
+:{template content}
+		}
+
+		val pos = js.Dynamic.global.document.currentScript.asInstanceOf[dom.Element]
+		pos.parentNode.replaceChild(content, pos)
+	}
+}
+
