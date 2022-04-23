@@ -6,7 +6,6 @@ import com.monovore.decline.Visibility.Partial
 import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
-import scala.Option.when
 
 import java.nio.file.{Path, Paths}
 
@@ -86,9 +85,9 @@ object ConvertProject:
       project,
       documentDirectory,
       List(
-        when(toHtml)(ImageTarget.Html),
-        when(toPdf)(ImageTarget.Tex),
-        when(imageFileMap)(ImageTarget.Raster)
+        Option.when(toHtml)(ImageTarget.Html),
+        Option.when(toPdf)(ImageTarget.Tex),
+        Option.when(imageFileMap)(ImageTarget.Raster)
       ).flatten,
       preprocessed
     )

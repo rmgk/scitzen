@@ -6,11 +6,12 @@ import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse
 import scitzen.sast.{Attributes, Block, Fenced, Prov}
 
+import java.io.IOError
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object ImageConverter {
 
@@ -140,17 +141,22 @@ class ImageConverter(
       dir: File,
       name: String,
   ): Option[File] =
-    converter match
-      case "tex" =>
-        val pdffile = texconvert(templatedContent, dir, name)
-        if preferredFormat == "svg" || preferredFormat == "png" then Some(pdfToCairo(pdffile))
-        else Some(pdffile)
-      case gr @ "graphviz" =>
-        Some(graphviz(templatedContent, dir, name, preferredFormat))
-      case "mermaid" =>
-        Some(mermaid(templatedContent, dir, name, preferredFormat))
-      case other =>
-        scribe.warn(s"unknown converter $other")
+    try
+      converter match
+        case "tex" =>
+          val pdffile = texconvert(templatedContent, dir, name)
+          if preferredFormat == "svg" || preferredFormat == "png" then Some(pdfToCairo(pdffile))
+          else Some(pdffile)
+        case gr @ "graphviz" =>
+          Some(graphviz(templatedContent, dir, name, preferredFormat))
+        case "mermaid" =>
+          Some(mermaid(templatedContent, dir, name, preferredFormat))
+        case other =>
+          scribe.warn(s"unknown converter $other")
+          None
+    catch
+      case e: java.io.IOException =>
+        scribe.warn(s"converter $converter failed with: »${e.getMessage}«")
         None
 
   def graphviz(content: String, dir: File, name: String, format: String): File =
