@@ -41,10 +41,11 @@ lazy val scitzen = project.in(file("cli"))
       "org.typelevel"                 %%% "cats-parse"    % "0.3.7",
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
-      // explicitly depend on graal.js to allow running on non-graal JVMs
-      "org.graalvm.js" % "js" % graalVersion,
+      "dev.zio"                        %% "zio-prelude"   % "1.0.0-RC13",
+      "dev.zio"                        %% "zio"           % "2.0.0-RC5",
+      "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs
     ),
-    javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
+    //javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
     nativeImageVersion   := graalVersion,
     nativeImageJvm       := "graalvm-java17",
