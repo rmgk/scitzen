@@ -7,6 +7,7 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.bibliography.BibEntry
+import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.extern.{ImageConverter, ImageTarget, Prism, ScalaCLI}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.*
@@ -16,7 +17,7 @@ import scitzen.sast.DCommand.*
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
     pathManager: HtmlPathManager,
-    sync: Option[(File, Int)],
+    sync: Option[ClSync],
     reporter: Reporter,
     preprocessed: PreprocessedResults,
 ):
@@ -32,7 +33,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def articles: List[Article]            = preprocessed.articles
 
   val syncPos: Int =
-    if sync.exists(_._1 == pathManager.cwf) then sync.get._2
+    if sync.exists(_.path == pathManager.cwf) then sync.get._2
     else Int.MaxValue
 
   def listItemToHtml(child: ListItem)(ctx: Cta): CtxCF =
@@ -155,9 +156,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                         sync,
                         doc.reporter,
                         preprocessed,
-                        ).convertSeq(article.sast)(ctx)
-
-
+                      ).convertSeq(article.sast)(ctx)
 
               case Some(other) =>
                 scribe.error(s"unknown include type $other" + reporter(mcro.prov))
@@ -215,7 +214,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 // convert scala to js and embed the result
                 case "embed" if sBlock.attributes.named.get("lang").contains("scala") =>
                   val source = if sBlock.attributes.named.contains("template") then
-                    ImageConverter.applyTemplate(sBlock.attributes, text, pathManager.cwd, pathManager.project, preprocessed.directory)
+                    ImageConverter.applyTemplate(
+                      sBlock.attributes,
+                      text,
+                      pathManager.cwd,
+                      pathManager.project,
+                      preprocessed.directory
+                    )
                   else text
                   val js = ScalaCLI.compile(pathManager.project.cacheDir, source)
                   ctx.retc(script(`type` := "text/javascript", js.map(raw(_))))

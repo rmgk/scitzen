@@ -11,6 +11,7 @@ import com.github.plokhotnyuk.jsoniter_scala.core.*
 import scalatags.Text.all.raw
 import scalatags.Text.tags2.style
 import scitzen.bibliography.Bibtex
+import scitzen.cli.ScitzenCommandline.ClSync
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
@@ -26,9 +27,9 @@ object ConvertHtml:
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
 
   def convertToHtml(
-      project: Project,
-      sync: Option[(File, Int)],
-      preprocessed: PreprocessedResults,
+                     project: Project,
+                     sync: Option[ClSync],
+                     preprocessed: PreprocessedResults,
   ): Unit =
 
     val katexmapfile = project.cacheDir / "katexmap.json"
@@ -116,7 +117,7 @@ object ConvertHtml:
       article: Article,
       pathManager: HtmlPathManager,
       cssfile: File,
-      sync: Option[(File, Int)],
+      sync: Option[ClSync],
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
@@ -140,7 +141,10 @@ object ConvertHtml:
       if bibEntries.isEmpty then Nil
       else
         import scalatags.Text.all.{SeqFrag, h2, id, li, stringAttr, stringFrag, ul, cls}
-        List(h2("Bibliography"), ul(cls := "bibliography", bibEntries.map { be => li(id := be.id, be.formatHtmlCitation) }))
+        List(
+          h2("Bibliography"),
+          ul(cls := "bibliography", bibEntries.map { be => li(id := be.id, be.formatHtmlCitation) })
+        )
 
     val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
 

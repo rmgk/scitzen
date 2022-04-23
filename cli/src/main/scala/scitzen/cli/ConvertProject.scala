@@ -1,50 +1,10 @@
 package scitzen.cli
 
-import better.files.*
-import cats.implicits.*
-import com.monovore.decline.Visibility.Partial
-import com.monovore.decline.{Command, CommandApp, Opts}
+import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.extern.{ImageConverter, ImageTarget}
-import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
-
-import java.nio.file.{Path, Paths}
-
-object Scitzen
-    extends CommandApp(
-      name = "scitzen",
-      header = "Static page generator",
-      main = ConvertProject.command.options
-    )
+import scitzen.generic.{PreprocessedResults, Project}
 
 object ConvertProject:
-
-  val args = (
-    Opts.argument[Path](metavar = "path").withDefault(Paths.get("")),
-    Opts.option[Path]("sync-file", metavar = "file", visibility = Partial, help = "file to show in output").orNone,
-    Opts.option[Int](
-      "sync-position",
-      metavar = "integer",
-      visibility = Partial,
-      help = "character offset to show in output"
-    ).orNone,
-    Opts.flag("image-file-map", visibility = Partial, help = "character offset to show in output").orFalse,
-    Opts.option[Path](long = "json", metavar = "path", help = "print single file structure as json").orNone,
-    Opts.flag("use-cats-parse", visibility = Partial, help = "use cats parse instead of fastparse").orFalse,
-  )
-
-  val command: Command[Unit] = Command(name = "gen", header = "Convert Scim to Sast.") {
-    args.mapN {
-      (sourcedirRel, syncFileRelOption, syncPos, imageFileMap, printJson, useCatsParse) =>
-        printJson match
-          case Some(path) =>
-            println(JsonSast.jsonFor(File(path), Project(File(path).parent, ProjectConfig.parse("b=c"), Map.empty)))
-          case None =>
-            Project.fromSource(File(sourcedirRel)) match
-              case None => scribe.error(s"could not find project for $sourcedirRel")
-              case Some(project) =>
-                executeConversions(syncFileRelOption, syncPos, imageFileMap, project, useCatsParse)
-    }
-  }
 
   def makeTimediff(): () => String =
     val starttime = System.nanoTime()
@@ -57,9 +17,8 @@ object ConvertProject:
       res
     () => timediff
 
-  private def executeConversions(
-      syncFileRelOption: Option[Path],
-      syncPos: Option[Int],
+  def executeConversions(
+      sync: Option[ClSync],
       imageFileMap: Boolean,
       project: Project,
       useCatsParse: Boolean,
@@ -99,7 +58,6 @@ object ConvertProject:
       Format.formatRename(documentDirectory)
       scribe.info(s"formatted filenames ${timediff()}")
     if toHtml then
-      val sync = syncFileRelOption.map2(syncPos)((f, p) => File(f) -> p)
       ConvertHtml.convertToHtml(project, sync, preprocessed)
       scribe.info(s"generated html ${timediff()}")
     if toPdf then

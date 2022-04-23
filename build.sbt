@@ -31,9 +31,11 @@ lazy val scitzen = project.in(file("cli"))
     organization := "de.rmgk",
     scalaVersion_3,
     strictCompile,
+    Compile / doc / scalacOptions ++= Seq("-snippet-compiler:compile"),
     libraryDependencies ++= Seq(
       decline.value,
       jsoup.value,
+      directories.value,
       upickle.value.exclude("com.lihaoyi", "sourcecode_3"),
       scalatags.value.exclude("com.lihaoyi", "sourcecode_3"),
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.27.0",

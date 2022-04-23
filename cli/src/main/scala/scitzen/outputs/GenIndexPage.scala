@@ -6,6 +6,11 @@ import scitzen.sast.{Attribute, Attributes, Block, InlineText, Directive, Parsed
 
 object GenIndexPage:
 
+  /**
+    * ```scala
+    * assert(months(1) == "January")
+    * ```
+    */
   val months = Array(
     "January",
     "February",
