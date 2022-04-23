@@ -64,6 +64,6 @@ object AttributesParser {
 
   def noBraces[_p: P]: P[Seq[Attribute]] = P(listOf(namedAttribute, min = 1) ~ spaceLine ~ spaceLine)
 
-  def configFile[_p: P]: P[Seq[Attribute]] = P(noBraces ~ anySpaces)
+  def configFile[_p: P]: P[Seq[Attribute]] = P(noBraces.?.map(_.getOrElse(Nil)) ~ anySpaces)
 
 }
