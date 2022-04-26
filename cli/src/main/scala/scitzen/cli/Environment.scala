@@ -6,7 +6,7 @@ import dev.dirs.UserDirectories
 import better.files.File
 import scitzen.generic.ProjectConfig
 
-class Environment(globalConfigDir: File, globalCacheDir: File, globalConfig: ProjectConfig) {}
+class Environment(globalConfigDir: File, globalCacheDir: File, globalConfig: Option[ProjectConfig]) {}
 
 object Environment {
   def apply(): Environment =
