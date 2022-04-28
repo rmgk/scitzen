@@ -11,7 +11,7 @@ import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
 
 import java.nio.file.{Path, Paths}
 
-object ScitzenCommandline extends CommandApp(
+object ScitzenApp extends CommandApp(
       name = "scitzen",
       header = "Static page generator",
       main = ScitzenCommandline.fullOpts.map {
@@ -26,7 +26,9 @@ object ScitzenCommandline extends CommandApp(
             case Some(project) =>
               executeConversions(options.sync, options.`image-file-map`, project, options.`use-cats-parse`)
       }
-    ) {
+    )
+
+object ScitzenCommandline {
 
   case class ClSync(path: File, position: Int)
   case class ClOptions(path: File, `image-file-map`: Boolean, `use-cats-parse`: Boolean, sync: Option[ClSync])
@@ -41,6 +43,7 @@ object ScitzenCommandline extends CommandApp(
     ).orNone
   ).tupled.mapValidated {
     case (Some(f), Some(p)) => Validated.valid(Some(ClSync(File(f), p)))
+    case (None, None)       => Validated.valid(None)
     case _                  => Validated.invalidNel("sync requires both file and position")
   }
 
