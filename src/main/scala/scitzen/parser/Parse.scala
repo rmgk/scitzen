@@ -14,7 +14,7 @@ object Parse {
   def parseResult[T](content: String, parser: P[_] => P[T], prov: Prov): Result[T] = {
     val parsed = fastparse.parse(
       content,
-      { p: P[_] =>
+      { (p: P[_]) =>
         p.misc("provenanceOffset") = prov
         parser(p)
       }
@@ -30,7 +30,7 @@ object Parse {
     }
   }
 
-  def parserDocument[_p: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep ~ End)
+  def parserDocument[_p: P]: P[Seq[Sast]] = P(BlockParsers.alternatives.rep() ~ End)
 
   def documentUnwrap(blockContent: String, prov: Prov): Seq[Sast] = {
     parseResult(blockContent, parserDocument(_), prov) match {

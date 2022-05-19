@@ -82,7 +82,6 @@ object Attributes {
 
 sealed trait Attribute {
   def toAttributes: Attributes = Attributes(List(this))
-
 }
 
 object Attribute {

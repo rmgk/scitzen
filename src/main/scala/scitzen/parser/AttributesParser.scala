@@ -19,7 +19,7 @@ object AttributesParser {
     * but the closing quote must match the opening quote
     */
   def text[_p: P]: P[Text] = {
-    P(anySpaces ~ ("\"".rep.! ~ "[".!.?).flatMap {
+    P(anySpaces ~ ("\"".rep().! ~ "[".!.?).flatMap {
       case ("", None) => unquotedText
       case (quotes, bracket) =>
         val closing = bracket.fold(quotes)(_ => s"]$quotes")
@@ -28,7 +28,7 @@ object AttributesParser {
   }
 
   def stringValue[_p: P]: P[String] = {
-    P(anySpaces ~ ("\"".rep.! ~ "[".!.?).flatMap {
+    P(anySpaces ~ ("\"".rep().! ~ "[".!.?).flatMap {
       case ("", None) => CharsWhile(c => c != ';' && c != '}' && c != '\n').?.!
       case (quotes, bracket) =>
         val b = bracket.fold("")(_ => "]")

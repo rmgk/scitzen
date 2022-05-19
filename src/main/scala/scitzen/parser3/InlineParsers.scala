@@ -21,7 +21,7 @@ object InlineParsers:
       until(syntaxStart | ending).withContext("not syntax")
 
     val simpleText: P[InlineText] = {
-      notSyntax.string.map(InlineText).withContext("simple text")
+      notSyntax.string.map(InlineText.apply).withContext("simple text")
     }
 
     val base = (comment | MacroParsers.full | simpleText).withContext("base")

@@ -1,52 +1,31 @@
 import Dependencies.*
 import Settings.*
 
-lazy val root = project.in(file(".")).aggregate(parser, scitzen)
-  .settings(
-    publishArtifact := false,
-    name            := "scitzen-root",
-    organization    := "de.rmgk"
-  )
+val graalVersion = "22.1.0"
 
-lazy val parser = project.in(file("parser"))
-  .settings(
-    name         := "scitzen-parser",
-    organization := "de.rmgk",
-    scalaVersion_213,
-    strictCompile,
-    libraryDependencies ++= Seq(
-      betterFiles.value,
-      fastparse.value.exclude("com.lihaoyi", "geny_2.13"),
-    ),
-    libraryDependencies ++= jsoniterScalaAll.value,
-  )
-
-val graalVersion = "22.0.0.2"
-
-lazy val scitzen = project.in(file("cli"))
+lazy val scitzen = project.in(file("."))
   .enablePlugins(NativeImagePlugin)
-  .dependsOn(parser)
   .settings(
     name         := "scitzen",
     organization := "de.rmgk",
     scalaVersion_3,
     strictCompile,
-    Compile / doc / scalacOptions ++= Seq("-snippet-compiler:compile"),
     libraryDependencies ++= Seq(
       decline.value,
       jsoup.value,
       directories.value,
-      upickle.value.exclude("com.lihaoyi", "sourcecode_3"),
-      scalatags.value.exclude("com.lihaoyi", "sourcecode_3"),
+      upickle.value,
+      scalatags.value,
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.27.0",
       "org.webjars.npm"                 % "katex"         % "0.15.1",
       "org.typelevel"                 %%% "cats-parse"    % "0.3.7",
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
-      "dev.zio"                        %% "zio-prelude"   % "1.0.0-RC13",
-      "dev.zio"                        %% "zio"           % "2.0.0-RC5",
+      betterFiles.value.cross(CrossVersion.for3Use2_13),
+      fastparse.value,
       "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs
     ),
+    libraryDependencies ++= jsoniterScalaAll.value,
     //javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
     nativeImageVersion   := graalVersion,
@@ -63,16 +42,6 @@ lazy val scitzen = project.in(file("cli"))
       "-H:IncludeResources=META-INF/resources/webjars/katex/.*/dist/katex.min.js$",
       "-H:IncludeResources=scitzen.css",
     ),
-  )
-
-lazy val benchmarks = project.in(file("benchmarks"))
-  .enablePlugins(JmhPlugin)
-  .dependsOn(scitzen)
-  .settings(
-    name         := "scitzen-benchmarks",
-    organization := "de.rmgk",
-    scalaVersion_3,
-    strictCompile,
   )
 
 // fix some linting nonsense

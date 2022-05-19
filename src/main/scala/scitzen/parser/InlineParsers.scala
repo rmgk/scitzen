@@ -23,7 +23,7 @@ case class InlineParsers(endChars: String, endingFun: P[_] => P[Unit], allowEmpt
     ).rep(1).!)
 
   def simpleText[_p: P]: P[InlineText] = {
-    P(notSyntax.!).map(InlineText)
+    P(notSyntax.!).map(InlineText.apply)
   }
 
   def inlineSequence[_p: P]: P[Seq[Inline]] =

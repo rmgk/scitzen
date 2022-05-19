@@ -40,8 +40,8 @@ object BlockParsers {
 
   def extendedWhitespace[_p: P]: P[Block] =
     P(withProv(
-      (significantSpaceLine.rep(1) |
-        DirectiveParsers.comment.rep(1)).rep(1).!
+      ByNameOps((ByNameOps(significantSpaceLine).rep(1) |
+        ByNameOps(DirectiveParsers.comment).rep(1)(using repeater = Implicits.Repeater.GenericRepeaterImplicit))).rep(1).!
     )).map {
       case (str, prov) =>
         Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)

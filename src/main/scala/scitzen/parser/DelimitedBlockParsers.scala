@@ -54,9 +54,9 @@ object DelimitedBlockParsers {
   }
 
   def whitespaceLiteral[_p: P]: P[Block] =
-    P(withProv((Index ~ significantSpaceLine.rep ~ significantVerticalSpaces.! ~ !eol ~ untilI(eol).!).flatMap {
+    P(withProv((Index ~ significantSpaceLine.rep() ~ significantVerticalSpaces.! ~ !eol ~ untilI(eol).!).flatMap {
       case (index, indentation, start) =>
-        ((indentation ~ untilI(eol).!) | (significantSpaceLine.rep.! ~ &(indentation))).rep(0)
+        ((indentation ~ untilI(eol).!) | (significantSpaceLine.rep().! ~ &(indentation))).rep(0)
           .map { lines =>
             val sast: Seq[Sast] =
               Parse.documentUnwrap((start +: lines).mkString, Prov(index, indent = indentation.length))
