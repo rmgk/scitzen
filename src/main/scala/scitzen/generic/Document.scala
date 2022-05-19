@@ -3,7 +3,6 @@ package scitzen.generic
 import better.files.File
 import cats.implicits.*
 import scitzen.parser.Parse
-import scitzen.parser3.Prettyprint
 import scitzen.sast.{Directive, Prov, Sast}
 
 import scala.collection.immutable.ArraySeq
@@ -14,20 +13,12 @@ case class Document(file: File, content: String, sast: List[Sast]):
   lazy val reporter: FileReporter = new FileReporter(file, content)
 
 object Document:
-  def apply(file: File, useCatsParse: Boolean): Document =
+  def apply(file: File): Document =
     val content = file.contentAsString
     try
-      val sast =
-        if useCatsParse then
-          scitzen.parser3.Parse.documentUnwrap(content, Prov(0, content.length))
-        else
-          Parse.documentUnwrap(content, Prov(0, content.length))
+      val sast = Parse.documentUnwrap(content, Prov(0, content.length))
       Document(file, content, sast.toList)
     catch
-      case e @ scitzen.parser3.ParsingAnnotation(content, failure) =>
-        val pp = new Prettyprint(file.name, content)
-        println(pp.prettyprint(failure))
-        throw e
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")
         throw e

@@ -24,14 +24,14 @@ object ScitzenApp extends CommandApp(
           Project.fromSource(options.path) match
             case None => scribe.error(s"could not find project for $options.path")
             case Some(project) =>
-              executeConversions(options.sync, options.`image-file-map`, project, options.`use-cats-parse`)
+              executeConversions(options.sync, options.`image-file-map`, project)
       }
     )
 
 object ScitzenCommandline {
 
   case class ClSync(path: File, position: Int)
-  case class ClOptions(path: File, `image-file-map`: Boolean, `use-cats-parse`: Boolean, sync: Option[ClSync])
+  case class ClOptions(path: File, `image-file-map`: Boolean, sync: Option[ClSync])
 
   val syncOpts: Opts[Option[ClSync]] = (
     Opts.option[Path]("sync-file", metavar = "file", visibility = Partial, help = "file to show in output").orNone,
@@ -54,7 +54,6 @@ object ScitzenCommandline {
         if f.exists then Validated.valid(f) else Validated.invalidNel("path must exists")
       },
     Opts.flag("image-file-map", visibility = Partial, help = "character offset to show in output").orFalse,
-    Opts.flag("use-cats-parse", visibility = Partial, help = "use cats parse instead of fastparse").orFalse,
     syncOpts
   ).mapN(ClOptions.apply)
 

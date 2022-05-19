@@ -75,9 +75,9 @@ object Project:
           !f.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
         }.toList
 
-  def directory(root: File, useCatsParse: Boolean): DocumentDirectory =
+  def directory(root: File): DocumentDirectory =
     scribe.debug(s"discovering sources in ${root}")
     val sources: List[File] = Project.discoverSources(root)
     scribe.debug(s"parsing ${sources.length} documents")
-    val documents = sources.map(Document.apply(_, useCatsParse))
+    val documents = sources.map(Document.apply)
     DocumentDirectory(documents)

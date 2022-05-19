@@ -21,12 +21,11 @@ object ConvertProject:
       sync: Option[ClSync],
       imageFileMap: Boolean,
       project: Project,
-      useCatsParse: Boolean,
   ): Unit =
     val timediff = makeTimediff()
 
     scribe.info(s"found project in ${project.root} ${timediff()}")
-    val documentDirectory = Project.directory(project.root, useCatsParse)
+    val documentDirectory = Project.directory(project.root)
 
     scribe.info(s"parsed ${documentDirectory.documents.size} documents ${timediff()}")
 
