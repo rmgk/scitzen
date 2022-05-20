@@ -1,7 +1,7 @@
 package scitzen.contexts
 
 import better.files.File
-import cats.data.Chain
+import scitzen.compat.Chain
 import scitzen.bibliography.BibEntry
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.sast.Section

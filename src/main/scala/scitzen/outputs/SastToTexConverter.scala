@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import better.files.File
-import cats.data.Chain
+import scitzen.compat.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}

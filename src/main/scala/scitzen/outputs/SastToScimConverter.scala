@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import cats.data.Chain
+import scitzen.compat.Chain
 import fastparse.P
 import scitzen.parser.AttributesParser
 import scitzen.sast.*
@@ -28,7 +28,7 @@ object SastToScimConverter:
     sast match
       case Section(title, prefix, attributes) =>
         (prefix + " " + inlineToScim(title.inl)) +:
-          attributesToScim(attributes, spacy = true, force = false, light = true)
+        attributesToScim(attributes, spacy = true, force = false, light = true)
 
       case Slist(children) => Chain.fromSeq(children).flatMap {
           case ListItem(marker, inner, None) =>
@@ -47,13 +47,12 @@ object SastToScimConverter:
 
   def stripLastEnd(strings: Chain[String]): Chain[String] =
     Chain.fromSeq(
-      (strings.toList.reverse match
+      (strings.iterator.toList.reverse match
         case Nil => Nil
         case head :: tail =>
           val stripped = head.stripTrailing()
           if stripped.isEmpty then tail else stripped :: tail
-      )
-        .reverse
+      ).reverse
     )
 
   def addIndent(lines: String, delimiter: String): String =
@@ -78,7 +77,7 @@ object SastToScimConverter:
           case ':' =>
             Chain(
               "::" + command +
-                AttributesToScim.convert(remattr, force = false, spacy = false),
+              AttributesToScim.convert(remattr, force = false, spacy = false),
               content.map(addIndent(_, "\t")).iterator.mkString("\n").stripTrailing(),
               "::"
             )

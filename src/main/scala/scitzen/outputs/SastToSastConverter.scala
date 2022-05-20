@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import better.files.File
-import cats.data.Chain
+import scitzen.compat.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, Project, SastRef}

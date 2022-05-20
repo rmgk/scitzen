@@ -1,6 +1,6 @@
 package scitzen.contexts
 
-import cats.data.Chain
+import scitzen.compat.Chain
 import scitzen.generic.SastRef
 import scitzen.sast.{Block, Directive, Section}
 
