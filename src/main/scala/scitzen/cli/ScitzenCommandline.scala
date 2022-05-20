@@ -1,8 +1,6 @@
 package scitzen.cli
 
 import better.files.*
-import com.monovore.decline.Visibility.Partial
-import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.cli.ConvertProject.executeConversions
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}

@@ -11,7 +11,6 @@ lazy val scitzen = project.in(file("."))
     scalaVersion_3,
     strictCompile,
     libraryDependencies ++= Seq(
-      decline.value,
       jsoup.value,
       directories.value,
       upickle.value,
