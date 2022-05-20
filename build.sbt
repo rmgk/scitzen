@@ -1,7 +1,7 @@
 import Dependencies.*
 import Settings.*
 
-val graalVersion = "22.0.0.2"
+val graalVersion = "22.1.0.1"
 
 lazy val scitzen = project.in(file("."))
   .enablePlugins(NativeImagePlugin)
@@ -18,7 +18,6 @@ lazy val scitzen = project.in(file("."))
       scalatags.value,
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.27.0",
       "org.webjars.npm"                 % "katex"         % "0.15.1",
-      "org.typelevel"                 %%% "cats-parse"    % "0.3.7",
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
       "com.github.scopt"              %%% "scopt"         % "4.0.1",
