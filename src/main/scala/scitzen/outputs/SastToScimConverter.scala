@@ -1,7 +1,6 @@
 package scitzen.outputs
 
 import cats.data.Chain
-import cats.implicits.*
 import fastparse.P
 import scitzen.parser.AttributesParser
 import scitzen.sast.*

@@ -1,7 +1,6 @@
 package scitzen.generic
 
 import better.files.File
-import cats.implicits.*
 import scitzen.parser.Parse
 import scitzen.sast.{Directive, Prov, Sast}
 

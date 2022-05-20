@@ -1,7 +1,6 @@
 package scitzen.cli
 
 import better.files.*
-import cats.implicits.*
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.generic.*
@@ -12,6 +11,7 @@ import scalatags.Text.all.raw
 import scalatags.Text.tags2.style
 import scitzen.bibliography.Bibtex
 import scitzen.cli.ScitzenCommandline.ClSync
+import math.Ordering.Implicits.seqOrdering
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path

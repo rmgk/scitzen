@@ -1,7 +1,6 @@
 package scitzen.bibliography
 
 import scalatags.Text.all.{Frag, a, cls, frag, href, p, s, stringFrag, given}
-import cats.syntax.monoid.given
 
 case class Author(givenName: Option[String], familyName: Option[String]) {
   def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")
@@ -16,7 +15,7 @@ case class BibEntry(
     `type`: String,
     url: Option[String],
     issue: Option[String],
-    citekey: Option[String] = None
+    citekey: Option[String] = None,
 ):
   def formatAuthors: Option[String] =
     val res = authors.map(_.full).mkString(", ")
@@ -32,7 +31,11 @@ case class BibEntry(
       line("container", container.map(stringFrag), issue.map(stringFrag))
     )
   def authorYear: Option[String] =
-    authors.headOption.flatMap(_.familyName).combine(year.map(_.toString))
+    for
+      author <- authors.headOption
+      name   <- author.familyName
+      year   <- year
+    yield s"$name$year"
 
   def headerstring: String =
     val authors = formatAuthors.fold("")(a => s"$a ")

@@ -2,16 +2,17 @@ package scitzen.outputs
 
 import scitzen.generic.{Article, HtmlPathManager}
 import scitzen.sast.DCommand.Other
-import scitzen.sast.{Attribute, Attributes, Block, InlineText, Directive, Parsed, Prov, Sast, Section, Text}
+import scitzen.sast.{Attribute, Attributes, Block, Directive, InlineText, Parsed, Prov, Sast, Section, Text}
+
+import scala.collection.immutable.ArraySeq
 
 object GenIndexPage:
 
-  /**
-    * ```scala
+  /** ```scala
     * assert(months(1) == "January")
     * ```
     */
-  val months = Array(
+  val months = ArraySeq(
     "January",
     "February",
     "March",

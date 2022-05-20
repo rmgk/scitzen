@@ -1,7 +1,6 @@
 package scitzen.bibliography
 
 import better.files.given
-import cats.implicits.given
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.CSLItemData
 import de.undercouch.citeproc.helper.json.{StringJsonBuilder, StringJsonBuilderFactory}
@@ -12,6 +11,7 @@ import scitzen.generic.Project
 import java.io.{FileInputStream, InputStream}
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.*
+import scala.math.Ordering.Implicits.seqOrdering
 
 object Bibtex:
 

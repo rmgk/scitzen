@@ -13,7 +13,7 @@ object Dependencies {
     val circeCore          = "0.14.1"
     val decline            = "2.2.0"
     val directories        = "26"
-    val fastparse          = "2.3.3"
+    val fastparse          = "2.3.3-16-3da4b3"
     val jetty              = "9.4.46.v20220331"
     val jol                = "0.16"
     val jsoniterScalaCore  = "2.13.24"
