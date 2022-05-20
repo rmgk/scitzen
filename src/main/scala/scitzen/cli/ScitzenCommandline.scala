@@ -8,57 +8,51 @@ import com.monovore.decline.{Command, CommandApp, Opts}
 import scitzen.cli.ConvertProject.executeConversions
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
+import scopt.OParser
 
 import java.nio.file.{Path, Paths}
 
-object ScitzenApp extends CommandApp(
-      name = "scitzen",
-      header = "Static page generator",
-      main = ScitzenCommandline.fullOpts.map {
-        case Right(jsonpath) =>
+object ScitzenCommandline {
+
+  def main(args: Array[String]): Unit = {
+    OParser.parse(argsParser, args, ClOptions()) match {
+      case None =>
+      case Some(options) =>
+        if options.json then
+          val jsonpath = options.path
           println(JsonSast.jsonFor(
-            File(jsonpath),
-            Project(File(jsonpath).parent, ProjectConfig.parse("b=c"), Map.empty)
+            jsonpath,
+            Project(jsonpath.parent, ProjectConfig.parse("b=c"), Map.empty)
           ))
-        case Left(options) =>
+        else
           Project.fromSource(options.path) match
             case None => scribe.error(s"could not find project for $options.path")
             case Some(project) =>
               executeConversions(options.sync, options.`image-file-map`, project)
-      }
-    )
-
-object ScitzenCommandline {
-
-  case class ClSync(path: File, position: Int)
-  case class ClOptions(path: File, `image-file-map`: Boolean, sync: Option[ClSync])
-
-  val syncOpts: Opts[Option[ClSync]] = (
-    Opts.option[Path]("sync-file", metavar = "file", visibility = Partial, help = "file to show in output").orNone,
-    Opts.option[Int](
-      "sync-position",
-      metavar = "integer",
-      help = "character offset to show in output",
-      visibility = Partial,
-    ).orNone
-  ).tupled.mapValidated {
-    case (Some(f), Some(p)) => Validated.valid(Some(ClSync(File(f), p)))
-    case (None, None)       => Validated.valid(None)
-    case _                  => Validated.invalidNel("sync requires both file and position")
+    }
   }
 
-  val mainOpts: Opts[ClOptions] = (
-    Opts.argument[Path](metavar = "path").withDefault(Paths.get(""))
-      .mapValidated { p =>
-        val f = File(p)
-        if f.exists then Validated.valid(f) else Validated.invalidNel("path must exists")
-      },
-    Opts.flag("image-file-map", visibility = Partial, help = "character offset to show in output").orFalse,
-    syncOpts
-  ).mapN(ClOptions.apply)
+  case class ClSync(path: File = null, position: Int = -1)
+  case class ClOptions(
+      path: File = File(""),
+      `image-file-map`: Boolean = false,
+      sync: Option[ClSync] = None,
+      json: Boolean = false
+  )
 
-  val jsonOpts: Opts[Path] =
-    Opts.option[Path](long = "json", metavar = "path", help = "print single file structure as json")
-
-  val fullOpts: Opts[Either[ClOptions, Path]] = mainOpts.map(Either.left).orElse(jsonOpts.map(Either.right))
+  val argsParser = {
+    val builder = scopt.OParser.builder[ClOptions]
+    import builder.*
+    scopt.OParser.sequence(
+      programName("scitzen"),
+      help('h', "help").hidden(),
+      arg[java.io.File]("path").required().action((p, c) => c.copy(path = p.toScala)),
+      opt[Unit]("image-file-map").optional().text("produce json description of generated images")
+        .action((_, c) => c.copy(`image-file-map` = true)),
+      opt[(Int, java.io.File)]("sync").optional().text("sync position").hidden()
+        .action((s, c) => c.copy(sync = Some(ClSync(s._2.toScala, s._1)))),
+      opt[Unit]("json").optional().text("create json from a single file")
+        .action((_, c) => c.copy(json = true))
+    )
+  }
 }
