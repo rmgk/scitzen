@@ -2,9 +2,7 @@ package scitzen.compat
 
 import scitzen.compat.Chain.*
 
-import scala.annotation.tailrec
 import scala.collection.immutable.Iterable
-import scala.collection.{IterableFactory, IterableFactoryDefaults, IterableOps, mutable}
 
 enum Chain[+A] {
 
@@ -14,9 +12,9 @@ enum Chain[+A] {
   case Append[A](left: Chain[A], right: Chain[A]) extends Chain[A]
 
   def iterator: Iterator[A] = this match
-    case `nil`     => Iterator.empty
-    case one(a)    => Iterator.single(a)
-    case Wrap(seq) => seq.iterator
+    case `nil`               => Iterator.empty
+    case one(a)              => Iterator.single(a)
+    case Wrap(seq)           => seq.iterator
     case Append(left, right) => left.iterator ++ right.iterator
 
   def flatMap[B](f: A => Chain[B]): Chain[B] = iterator.foldLeft(Chain.empty[B])((c, a) => Append[B](c, f(a)))
