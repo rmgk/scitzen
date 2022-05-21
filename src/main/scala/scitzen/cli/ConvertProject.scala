@@ -3,6 +3,7 @@ package scitzen.cli
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project}
+import scitzen.compat.Logging.scribe
 
 object ConvertProject:
 

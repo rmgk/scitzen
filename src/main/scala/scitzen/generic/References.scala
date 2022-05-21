@@ -2,6 +2,7 @@ package scitzen.generic
 
 import better.files.File
 import scitzen.sast.{Block, Sast, Section}
+import scitzen.compat.Logging.scribe
 
 import scala.jdk.CollectionConverters._
 

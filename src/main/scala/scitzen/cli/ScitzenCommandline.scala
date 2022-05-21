@@ -5,6 +5,7 @@ import scitzen.cli.ConvertProject.executeConversions
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
 import scopt.OParser
+import scitzen.compat.Logging.scribe
 
 import java.nio.file.{Path, Paths}
 

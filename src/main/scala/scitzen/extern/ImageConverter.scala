@@ -1,6 +1,7 @@
 package scitzen.extern
 
 import better.files.{File, *}
+import scitzen.compat.Logging.scribe
 import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.parser.Parse

@@ -6,6 +6,7 @@ import scitzen.sast.DCommand.{Include, Lookup}
 import scitzen.sast.{
   Block, Fenced, Inline, InlineText, ListItem, Directive, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
 }
+import scitzen.compat.Logging.scribe
 
 case class Includes(project: Project, cwf: File, includeResolver: DocumentDirectory)
 

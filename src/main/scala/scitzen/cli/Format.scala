@@ -6,6 +6,7 @@ import better.files.File
 import scitzen.generic.{Article, DocumentDirectory}
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.Sast
+import scitzen.compat.Logging.scribe
 
 object Format:
 

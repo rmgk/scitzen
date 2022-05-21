@@ -9,6 +9,7 @@ import scitzen.sast.DCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Li
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.sast.Attribute.{Plain, Positional}
+import scitzen.compat.Logging.scribe
 
 object SastToTexConverter {
   def latexencode(input: String): String =

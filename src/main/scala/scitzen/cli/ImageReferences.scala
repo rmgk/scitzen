@@ -7,6 +7,7 @@ import scitzen.sast.DCommand
 import scitzen.compat.Codecs.Reference
 import scitzen.compat.Codecs.rferenceRW
 import scitzen.extern.ImageTarget
+import scitzen.compat.Logging.scribe
 
 object ImageReferences:
 

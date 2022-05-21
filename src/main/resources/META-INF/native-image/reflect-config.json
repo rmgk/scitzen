@@ -15,7 +15,7 @@
   "name":"[Ljava.nio.file.attribute.FileAttribute;"
 },
 {
-  "name":"cats.Later",
+  "name":"de.rmgk.logging$Logger$",
   "fields":[{"name":"0bitmap$1"}]
 },
 {
@@ -131,6 +131,10 @@
 },
 {
   "name":"scitzen.sast.Text",
+  "fields":[{"name":"0bitmap$1"}]
+},
+{
+  "name":"scopt.OParser$",
   "fields":[{"name":"0bitmap$1"}]
 },
 {

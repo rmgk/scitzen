@@ -4,6 +4,7 @@ import better.files.File
 import scitzen.bibliography.{BibEntry, Bibtex}
 import scitzen.parser.Parse
 import scitzen.sast.{Prov, Text}
+import scitzen.compat.Logging.scribe
 
 import java.nio.file.{Path, Paths}
 

@@ -1,6 +1,7 @@
 package scitzen.extern
 
 import better.files.File
+import scitzen.compat.Logging.scribe
 
 object Latexmk:
 

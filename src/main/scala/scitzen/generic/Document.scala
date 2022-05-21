@@ -3,6 +3,7 @@ package scitzen.generic
 import better.files.File
 import scitzen.parser.Parse
 import scitzen.sast.{Directive, Prov, Sast}
+import scitzen.compat.Logging.scribe
 
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal

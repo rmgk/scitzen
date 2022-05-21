@@ -1,6 +1,7 @@
 package scitzen.generic
 
 import java.nio.file.Path
+import scitzen.compat.Logging.scribe
 
 import better.files._
 import scitzen.cli.Format

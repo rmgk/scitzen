@@ -12,6 +12,7 @@ import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, Preprocesse
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
+import scitzen.compat.Logging.scribe
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],

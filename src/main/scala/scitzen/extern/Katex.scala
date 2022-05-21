@@ -4,6 +4,7 @@ import java.lang.ProcessBuilder.Redirect
 import org.graalvm.polyglot.*
 import better.files.*
 import org.graalvm.polyglot.proxy.ProxyObject
+import scitzen.compat.Logging.scribe
 
 import scala.jdk.CollectionConverters.*
 import com.github.plokhotnyuk.jsoniter_scala.core.writeToString
