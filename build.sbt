@@ -21,7 +21,7 @@ lazy val scitzen = project.in(file("."))
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
       "com.github.scopt"              %%% "scopt"         % "4.0.1",
-      "com.github.rmgk.logging"       %%% "logging"       % "0.3.0",
+      "de.rmgk.logging"       %%% "logging"       % "0.3.0",
       betterFiles.value.cross(CrossVersion.for3Use2_13),
       fastparse.value,
       "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs
