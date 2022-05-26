@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scitzen.compat.Chain
+import de.rmgk.Chain
 import fastparse.P
 import scitzen.parser.AttributesParser
 import scitzen.sast.*
@@ -22,7 +22,7 @@ object SastToScimConverter:
     else Chain(AttributesToScim.convert(attributes, spacy, force, light))
 
   def toScimS(b: Seq[Sast]): Chain[String] =
-    Chain.fromSeq(b).flatMap(toScim)
+    Chain.from(b).flatMap(toScim)
 
   def toScim(sast: Sast): Chain[String] =
     sast match
@@ -30,7 +30,7 @@ object SastToScimConverter:
         (prefix + " " + inlineToScim(title.inl)) +:
         attributesToScim(attributes, spacy = true, force = false, light = true)
 
-      case Slist(children) => Chain.fromSeq(children).flatMap {
+      case Slist(children) => Chain.from(children).flatMap {
           case ListItem(marker, inner, None) =>
             Chain(marker + inlineToScim(inner.inl))
 
@@ -46,7 +46,7 @@ object SastToScimConverter:
       case tlb: Block => convertBlock(tlb)
 
   def stripLastEnd(strings: Chain[String]): Chain[String] =
-    Chain.fromSeq(
+    Chain.from(
       (strings.iterator.toList.reverse match
         case Nil => Nil
         case head :: tail =>
@@ -87,7 +87,7 @@ object SastToScimConverter:
             stripLastEnd(content.map(addIndent(_, delimiter)))
 
       case SpaceComment(text) =>
-        Chain.fromSeq(ArraySeq.unsafeWrapArray(
+        Chain.from(ArraySeq.unsafeWrapArray(
           text.stripLineEnd.split("\\n", -1).map(_.trim)
         ))
       case Fenced(text) =>

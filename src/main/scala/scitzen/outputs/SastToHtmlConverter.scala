@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import better.files.*
-import scitzen.compat.Chain
+import de.rmgk.Chain
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext

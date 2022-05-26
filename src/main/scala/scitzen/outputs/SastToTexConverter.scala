@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import better.files.File
-import scitzen.compat.Chain
+import de.rmgk.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
@@ -82,7 +82,7 @@ class SastToTexConverter(
 
         val label = attr.named.get("label").map(l => s"\\label{$l}").toList
 
-        pushed.retc(header) :++ Chain.fromSeq(label)
+        pushed.retc(header) :++ Chain.from(label)
 
       case Slist(children) =>
         children match

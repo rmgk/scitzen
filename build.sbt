@@ -9,8 +9,7 @@ lazy val scitzen = project.in(file("."))
     name         := "scitzen",
     organization := "de.rmgk",
     scalaVersion_3,
-    strictCompile,
-    resolvers += "jitpack" at "https://jitpack.io",
+    jitpackResolver,
     libraryDependencies ++= Seq(
       jsoup.value,
       directories.value,
@@ -21,7 +20,8 @@ lazy val scitzen = project.in(file("."))
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
       "com.github.scopt"              %%% "scopt"         % "4.0.1",
-      "de.rmgk.logging"       %%% "logging"       % "0.3.0",
+      "de.rmgk.slips"                 %%% "logging"       % "0.4.0",
+      "de.rmgk.slips"                 %%% "chain"         % "0.4.0",
       betterFiles.value.cross(CrossVersion.for3Use2_13),
       fastparse.value,
       "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs
