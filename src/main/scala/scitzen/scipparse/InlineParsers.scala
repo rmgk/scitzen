@@ -12,7 +12,7 @@ case class InlineParsers(endChars: String, endingFun: Scip[Unit], allowEmpty: Bo
   def ending: Scip[Unit] = endingFun
 
   def comment: Scip[Directive] =
-    withProv(Scip { commentStart.run; (untilE(eol, min = 0) ~ choice(ending.lookahead, eol)).str.run })
+    withProv(commentStart ~> (untilE(eol, min = 0) ~ choice(ending.lookahead, eol)).str)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }.trace("comment")
 
   private def notSyntax: Scip[String] =
@@ -32,6 +32,6 @@ case class InlineParsers(endChars: String, endingFun: Scip[Unit], allowEmpty: Bo
     }
 
   def full: Scip[(Seq[Inline], String)] =
-    Scip((inlineSequence.run, ending.str.run)).trace("full")
+    Scip((inlineSequence.run, ending.str.run)).trace("inlines full")
 
 }

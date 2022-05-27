@@ -41,12 +41,12 @@ object BlockParsers {
 
   def alternatives: Scip[Sast] =
     choice(
-      extendedWhitespace,
-      ListParsers.list,
-      DelimitedBlockParsers.anyDelimited,
-      sectionTitle,
-      DirectiveParsers.full <~ spaceLine,
-      paragraph
-    )
+      extendedWhitespace.trace("block ws"),
+      ListParsers.list.trace("block list"),
+      DelimitedBlockParsers.anyDelimited.trace("block delim"),
+      sectionTitle.trace("block title"),
+      (DirectiveParsers.full <~ spaceLine).trace("block directive"),
+      paragraph.trace("block para")
+    ).trace("block")
 
 }
