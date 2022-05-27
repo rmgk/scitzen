@@ -8,6 +8,11 @@ import java.nio.charset.StandardCharsets
 
 object CompatParsers {
 
+  extension (inline scip: Scip[Unit]) inline def unary_! : Scip[Unit] = Scip {
+    scip.attempt.map(!_).lookahead.falseFail("")
+  }
+
+
   def charGroup(s: String): Int => Boolean = c => s.contains(Character.toChars(c))
 
   def CharIn(s: String): Scip[Unit] =
@@ -21,7 +26,7 @@ object CompatParsers {
   val AnyChar: Scip[Boolean] = Scip { scx.next }
 
   inline def CharPred(inline p: Int => Boolean): Scip[Unit] =
-    pred(p).falseFail(s"pred did not match")
+    cpred(p).falseFail(s"pred did not match")
 
   extension (inline scip: Scip[Boolean]) {
     inline def falseFail(msg: => String): Scip[Unit] = Scip {
@@ -32,8 +37,7 @@ object CompatParsers {
   }
 
   inline def CharsWhile(inline p: Int => Boolean, min: Int) =
-    val wp = whilePred(p)
-    if min == 0 then wp.?.map(_ => ()) else wp
+    cpred(p).rep.require(_ >= min).drop
 
 }
 
@@ -46,39 +50,20 @@ object CommonParsers {
   val spaceLine: Scip[Unit]                 = verticalSpaces ~ eol
   val significantSpaceLine: Scip[Unit]      = choice(significantVerticalSpaces ~ eol, newline)
   val anySpaces: Scip[Unit]                 = CharsWhileIn(" \t\n", 0)
-  val digits: Scip[Unit]                    = whilePred(Character.isDigit)
+  val digits: Scip[Unit]                    = cpred(Character.isDigit).rep.require(_ > 0).drop
 
   def untilE(closing: Scip[Unit], min: Int = 1): Scip[String] = Scip {
-    var count = 0
-    while !closing.?.lookahead.run && scx.next do count += 1
-    if count < min then scx.fail(s"only matched $count times, not $min")
-  }.!
+    val start = scx.index
+    until(closing.attempt).run
+    val count = scx.index - start
+    if (count) < min then scx.fail(s"only matched $count times, not $min")
+  }.str
 
   def untilI(closing: Scip[Unit]): Scip[String] = Scip {
     val res = untilE(closing, 0).run
     closing.run
     res
   }
-
-  extension (inline scip: Scip[Unit])
-    inline def rep(inline min: Int): Scip[Unit] = Scip {
-      var matches = 0
-      while scip.?.run do matches += 1
-      if matches < min then scx.fail(s"must match $min, but $matches")
-    }
-
-  extension [A](inline scip: Scip[A])
-    inline def named(inline name: String): Scip[A] = Scip {
-      println(" " * scx.depth + s"+ $name")
-      scx.depth += 1
-      try scip.run
-      catch case e: ScipEx =>
-        println(" " * (scx.depth - 1) + s"! $name (${e.getMessage})")
-        throw e
-      finally
-        scx.depth -= 1
-        println(" " * scx.depth + s"- $name")
-    }
 
   object Identifier {
     val startIdentifier: Scip[Unit] = CharPred(Character.isLetter)
@@ -88,7 +73,7 @@ object CommonParsers {
 
   val identifier: Scip[Unit] = Identifier.identifier
 
-  def withProv[T](parser: => Scip[T]): Scip[(T, Prov)] = Scip {
+  def withProv[T](parser: Scip[T]): Scip[(T, Prov)] = Scip {
     val s = scx.index
     val r = parser.run
     val e = scx.index

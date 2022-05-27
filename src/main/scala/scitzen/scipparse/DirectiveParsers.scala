@@ -6,8 +6,8 @@ import scitzen.sast.{Attribute, Attributes, Directive, DCommand}
 import de.rmgk.scip.*
 
 object DirectiveParsers {
-  val detectStart: Scip[Unit]    = (":".scip ~ identifier.? ~ AttributesParser.start)
-  val macroCommand: Scip[String] = (identifier.!)
+  val detectStart: Scip[Unit]    = (":".scip ~ identifier.opt ~ AttributesParser.start)
+  val macroCommand: Scip[String] = identifier.str
 
   val full: Scip[Directive] = withProv(Scip {
     ":".scip.run
@@ -22,7 +22,7 @@ object DirectiveParsers {
   val syntaxStart: Scip[Unit] = choice(commentStart, DirectiveParsers.detectStart)
 
   val comment: Scip[Directive] =
-    (withProv(Scip { commentStart.run; untilI(eol).map(_ => ()).!.run }))
+    (withProv(Scip { commentStart.run; untilI(eol).map(_ => ()).str.run }))
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
 }

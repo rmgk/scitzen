@@ -6,20 +6,20 @@ import scitzen.sast.{ScitzenDate, ScitzenDateTime, ScitzenTime}
 object TimeParsers {
   val digits: Scip[Unit] = whileRange('0', '9')
   val date: Scip[ScitzenDate] = Scip {
-    val y = digits.!.run
+    val y = digits.str.run
     "-".scip.run
-    val m = digits.!.run
+    val m = digits.str.run
     "-".scip.run
-    val d = digits.!.run
+    val d = digits.str.run
     ScitzenDate(y, m, d)
   }
   val time = Scip {
     val res = ScitzenTime(
-      digits.!.run,
-      { ":".scip.run; digits.!.run },
-      { ":".scip.run; digits.!.run }
+      digits.str.run,
+      { ":".scip.run; digits.str.run },
+      { ":".scip.run; digits.str.run }
     )
-    (".".scip ~ digits).?.run
+    (".".scip ~ digits).attempt.run
     res
   }
   val timezone = "+".scip ~ digits ~ ":".scip ~ digits
@@ -27,10 +27,10 @@ object TimeParsers {
     val sdate = date.run
     val stime = Scip {
       println(scx.index)
-      println(s"choice: »${choice("T".scip, whitespace).!.run}«")
+      println(s"choice: »${choice("T".scip, whitespace).str.run}«")
       println(scx.index)
       val t = time.run
-      timezone.?.run
+      timezone.attempt.run
       t
     }.opt.run
 
