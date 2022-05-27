@@ -20,7 +20,7 @@ object BlockParsers {
     Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
   }
 
-  def sectionStart: Scip[String] = CharsWhileIn("=#", 1).str <~ " ".scip
+  def sectionStart: Scip[String] = "=#".any.rep.require(_ >= 1).drop.str <~ " ".scip
   def sectionTitle: Scip[Section] = Scip {
     val prefix               = sectionStart.run
     val ((inlines, _), prov) = withProv(sectionInlines.full).run

@@ -13,15 +13,11 @@ object CompatParsers {
   }
 
 
-  def charGroup(s: String): Int => Boolean = c => s.contains(Character.toChars(c))
 
-  def CharIn(s: String): Scip[Unit] =
-    CharPred(charGroup(s))
   val End: Scip[Unit] = Scip {
     scx.index == scx.input.length || scx.fail("not end of line")
   }
-  def CharsWhileIn(s: String, min: Int): Scip[Unit] =
-    CharsWhile(charGroup(s), min)
+
 
   val AnyChar: Scip[Boolean] = Scip { scx.next }
 
@@ -42,14 +38,14 @@ object CompatParsers {
 }
 
 object CommonParsers {
-  val verticalSpace: Scip[Unit]             = CharIn(" \t")
+  val verticalSpace: Scip[Unit]             = " \t".any.falseFail("space")
   val newline: Scip[Unit]                   = "\n".scip
   val eol: Scip[Unit]                       = choice(newline, End)
-  val verticalSpaces: Scip[Unit]            = CharsWhileIn(" \t", 0)
-  val significantVerticalSpaces: Scip[Unit] = CharsWhileIn(" \t", 1)
+  val verticalSpaces: Scip[Unit]            = " \t".any.rep.drop
+  val significantVerticalSpaces: Scip[Unit] = " \t".any.rep.require(_ >= 1).drop
   val spaceLine: Scip[Unit]                 = verticalSpaces ~ eol
   val significantSpaceLine: Scip[Unit]      = choice(significantVerticalSpaces ~ eol, newline)
-  val anySpaces: Scip[Unit]                 = CharsWhileIn(" \t\n", 0)
+  val anySpaces: Scip[Unit]                 = " \t\n".any.rep.drop
   val digits: Scip[Unit]                    = cpred(Character.isDigit).rep.require(_ > 0).drop
 
   def untilE(closing: Scip[Unit], min: Int = 1): Scip[String] = Scip {

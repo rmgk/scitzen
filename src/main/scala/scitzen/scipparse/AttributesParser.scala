@@ -51,12 +51,12 @@ object AttributesParser {
     choice(Scip { anySpaces.run; braces.map(Left.apply).run }, stringValue.map(Right.apply))
 
   val namedAttribute: Scip[Attribute] = Scip {
-    verticalSpaces.run
-    val id = identifier.str.run
+    verticalSpaces.trace("vertical spaces?").run
+    val id = identifier.str.trace("attr ident").run
     verticalSpaces.run
     "=".scip.run
     // there was a cut here once … ?
-    namedAttributeValue.run match {
+    namedAttributeValue.trace("attr value").run match {
       case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
       case Right(value) => scitzen.sast.Attribute.Plain(id, value)
     }
@@ -70,7 +70,7 @@ object AttributesParser {
     }.run
   }.trace("pos attr")
 
-  val attribute: Scip[Attribute] = choice(namedAttribute, positionalAttribute)
+  val attribute: Scip[Attribute] = choice(namedAttribute, positionalAttribute).trace("attribute")
 
   def listOf(elem: Scip[Attribute], min: Int): Scip[Seq[Attribute]] =
     (elem.list(choice(";".scip, newline)) <~ ";".scip.attempt.drop).trace("list of")

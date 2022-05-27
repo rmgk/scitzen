@@ -25,6 +25,7 @@ lazy val scitzen = project.in(file("."))
       "com.github.scopt"              %%% "scopt"         % "4.0.1",
       betterFiles.value.cross(CrossVersion.for3Use2_13),
       fastparse.value,
+      munit.value,
       "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs
     ),
     libraryDependencies ++= jsoniterScalaAll.value,

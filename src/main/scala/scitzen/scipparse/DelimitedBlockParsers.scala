@@ -7,7 +7,7 @@ import CompatParsers.*
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
-  def anyStart: Scip[String] = (CharIn(":`").attempt.rep.require(_ >= 2).drop.str)
+  def anyStart: Scip[String] = (":`".any.rep.require(_ >= 2).drop.str)
 
   def makeDelimited(start: Scip[String]): Scip[Block] = Scip {
     val delimiter    = start.run
