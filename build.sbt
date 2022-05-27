@@ -1,5 +1,5 @@
-import Dependencies.*
-import Settings.*
+import Dependencies._
+import Settings._
 
 val graalVersion = "22.1.0"
 
@@ -15,13 +15,14 @@ lazy val scitzen = project.in(file("."))
       directories.value,
       upickle.value,
       scalatags.value,
+      slips.chain.value,
+      slips.logging.value,
+      slips.scip.value,
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.27.0",
       "org.webjars.npm"                 % "katex"         % "0.15.1",
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
       "com.github.scopt"              %%% "scopt"         % "4.0.1",
-      "de.rmgk.slips"                 %%% "logging"       % "0.4.0",
-      "de.rmgk.slips"                 %%% "chain"         % "0.4.0",
       betterFiles.value.cross(CrossVersion.for3Use2_13),
       fastparse.value,
       "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs

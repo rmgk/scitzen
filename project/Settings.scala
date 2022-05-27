@@ -16,7 +16,6 @@ object Settings {
   val optionsOverride = tpolecatScalacOptions ~= {opts =>
     // unused patvars are sometimes nice for documentation purposes
     opts -- Set(ScalacOptions.warnUnusedPatVars)
-    opts ++ Set(ScalacOptions.warnValueDiscard)
   }
 
   val scalaVersion_211 = Def.settings(
@@ -50,14 +49,11 @@ object Settings {
 
   def settingsFor(version: String) =
     version match {
-      case a if a.startsWith("2.13") => List("-print-tasty")
+      case a if a.startsWith("2.13") => List("-Ytasty-reader")
       case other => Nil
     }
 
 
-  val strictCompile = Compile / compile / scalacOptions += "-Xfatal-warnings"
-  val strict =
-    List(Compile / compile / scalacOptions += "-Xfatal-warnings", Test / compile / scalacOptions += "-Xfatal-warnings")
   val safeInit = scalacOptions += "-Ysafe-init"
   val dottyMigration = List(
     Compile / compile / scalacOptions ++= List("-rewrite", "-source", "3.0-migration"),
