@@ -32,7 +32,7 @@ object Parse {
   def parserDocument: Scip[Seq[Sast]] = BlockParsers.alternatives.list(Scip {}) <~ CompatParsers.End
 
   def documentUnwrap(blockContent: String, prov: Prov): Seq[Sast] = {
-    parserDocument.run0(Scx(blockContent))
+    parserDocument.run0(Scx(blockContent).copy(tracing = false))
   }
 
   val allInlines = InlineParsers("", CompatParsers.End)

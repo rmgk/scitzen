@@ -14,9 +14,9 @@ object AttributesParser {
 
   val start: Scip[Unit] = open.scip
 
-  def terminationCheck                          = choice(";".scip, close.scip, eol).lookahead
-  val unquotedInlines                           = InlineParsers(s";\n$close", terminationCheck, allowEmpty = true)
-  val unquotedText: Scip[(Seq[Inline], String)] = unquotedInlines.full.trace("unquoted")
+  val terminationCheck: Scip[Unit] = choice(";".scip, close.scip, eol).lookahead
+  val unquotedInlines: InlineParsers               = InlineParsers(s";\n$close", terminationCheck, allowEmpty = true)
+  val unquotedText   : Scip[(Seq[Inline], String)] = unquotedInlines.full.trace("unquoted")
 
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
@@ -38,17 +38,17 @@ object AttributesParser {
 
   val stringValue: Scip[String] = Scip {
     anySpaces.run
-    val quotes  = "\"".scip.attempt.rep.require(_ >= 1).drop.str.run
-    val bracket = "[".scip.str.opt.run
-    if (quotes.isEmpty && bracket.isEmpty)
-    then CharsWhile(c => c != ';' && c != '}' && c != '\n', 1).opt.map(_ => ()).str.run
+    val quotes  = "\"".scip.attempt.rep.drop.str.trace(s"kv q").run
+    val bracket = "[".scip.str.opt.trace("kv b").run
+    if quotes.isEmpty && bracket.isEmpty
+    then until(";}\n".any).str.trace(s"unquoted").run
     else
       val b = bracket.fold("")(_ => "]")
       (untilE(exact(s"$b$quotes") <~ verticalSpaces <~ terminationCheck) <~ exact(s"$b$quotes")).run
-  }
+  }.trace("string value")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
-    choice(Scip { anySpaces.run; braces.map(Left.apply).run }, stringValue.map(Right.apply))
+    choice(anySpaces ~> braces.map(Left.apply), stringValue.map(Right.apply))
 
   val namedAttribute: Scip[Attribute] = Scip {
     verticalSpaces.trace("vertical spaces?").run

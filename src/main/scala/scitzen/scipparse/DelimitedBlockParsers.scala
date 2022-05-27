@@ -21,7 +21,7 @@ object DelimitedBlockParsers {
       delimiter(0) match {
         case '`' => Fenced(strippedText)
         case ':' =>
-          val sast: Seq[Sast] = Parse.parserDocument.run(using Scx(strippedText))
+          val sast: Seq[Sast] = Parse.parserDocument.run(using Scx(strippedText).copy(tracing = scx.tracing))
           scitzen.sast.Parsed(delimiter, sast)
       }
     scitzen.sast.Block(
@@ -64,7 +64,7 @@ object DelimitedBlockParsers {
       ).list(Scip {}).run
 
       val sast: Seq[Sast] =
-        Parse.parserDocument.run(using Scx((start +: lines).mkString)) // Prov(index, indent = indentation.length))
+        Parse.parserDocument.run(using Scx((start +: lines).mkString).copy(tracing = scx.tracing)) // Prov(index, indent = indentation.length))
       scitzen.sast.Parsed(indentation, sast)
     }).run
     scitzen.sast.Block(Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))

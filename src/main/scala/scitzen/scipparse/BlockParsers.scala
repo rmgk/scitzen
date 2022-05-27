@@ -25,7 +25,6 @@ object BlockParsers {
     val prefix               = sectionStart.run
     val ((inlines, _), prov) = withProv(sectionInlines.full).run
     val attrl                = choice(AttributesParser.braces <~ spaceLine, AttributesParser.noBraces).opt.run
-    // val inlines = Parse.inlineUnwrap(inl, prov)
     Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)))(prov)
   }
 

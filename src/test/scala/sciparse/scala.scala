@@ -8,7 +8,7 @@ class SciparseTest extends munit.FunSuite {
 
   test("basic") {
     try
-      val res = DirectiveParsers.full.run0(Scx(""":emph{some plaintext; key= value ; key= [value] }"""))
+      val res = DirectiveParsers.full.run0(Scx(""":emph{key= value}"""))
       println(res)
       val result    = SastToScimConverter.toScimS(List(res))
       val resultStr = result.iterator.mkString("", "\n", "\n")
