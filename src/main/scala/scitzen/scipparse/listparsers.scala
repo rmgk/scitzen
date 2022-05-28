@@ -8,17 +8,17 @@ object ListParsers {
 
   def simpleMarker: Scip[String] =
     (verticalSpaces
-      ~ choice("-".scip, "•".scip, "*".scip, (digits.attempt ~ ".".scip))
-      ~ verticalSpace).str
+      <~ choice("-".scip, "•".scip, "*".scip, (digits.attempt and ".".scip))
+      <~ verticalSpace).str
 
   def simpleListItem: Scip[ParsedListItem] = Scip {
     val marker          = simpleMarker.run
-    val (content, prov) = (withProv(untilE(eol ~ choice(spaceLine, simpleMarker))) <~ eol).run
+    val (content, prov) = (withProv(untilE(eol <~ choice(spaceLine, simpleMarker))) <~ eol).run
     ParsedListItem(marker, content, prov, None)
   }
 
   def descriptionListContent: Scip[(String, Prov)] =
-    (withProv(untilE(choice(":".scip ~ verticalSpaces ~ eol, eol)) <~ ":".scip <~ verticalSpaces <~ eol))
+    (withProv(untilE(((":".scip and verticalSpacesB and eolB) or eolB).orFail) <~ ":".scip <~ verticalSpaces <~ eol))
   def descriptionListItem: Scip[ParsedListItem] = Scip {
     val marker      = simpleMarker.run
     val (str, prov) = descriptionListContent.run
@@ -27,7 +27,7 @@ object ListParsers {
   }
 
   def list: Scip[Slist] =
-    choice(descriptionListItem, simpleListItem).list(Scip {}).require(_.nonEmpty).map(ListConverter.listtoSast)
+    choice(descriptionListItem, simpleListItem).list(Scip {true}).require(_.nonEmpty).map(ListConverter.listtoSast)
 
   case class ParsedListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
 

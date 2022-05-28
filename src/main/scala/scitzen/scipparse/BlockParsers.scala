@@ -9,7 +9,7 @@ object BlockParsers {
 
   val paragraphInlines = InlineParsers(
     "\n".any,
-    eol ~ spaceLine
+    eol ~> spaceLine
   )
 
   val sectionInlines = InlineParsers("\n".any, eol)
@@ -20,7 +20,7 @@ object BlockParsers {
     Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
   }
 
-  def sectionStart: Scip[String] = "=#".any.rep.require(_ >= 1).drop.str <~ " ".scip
+  def sectionStart: Scip[String] = "=#".any.rep.min(1).orFail.str <~ " ".scip
   def sectionTitle: Scip[Section] = Scip {
     val prefix               = sectionStart.run
     val ((inlines, _), prov) = withProv(sectionInlines.full).run
@@ -31,9 +31,9 @@ object BlockParsers {
   val extendedWhitespace: Scip[Block] = Scip {
     val (str, prov) = withProv(
       choice(
-        significantSpaceLine.attempt.rep.require(_ >= 1),
-        DirectiveParsers.comment.attempt.rep.require(_ >= 1)
-      ).attempt.rep.require(_ >= 1).drop.str
+        significantSpaceLine.attempt.trace("spaceline").rep.min(1).orFail,
+        DirectiveParsers.comment.attempt.trace("comment").rep.min(1).orFail
+      ).trace("space or comment").attempt.rep.min(1).orFail.str
     ).run
     Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
   }

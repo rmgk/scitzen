@@ -8,46 +8,30 @@ import java.nio.charset.StandardCharsets
 
 object CompatParsers {
 
-  extension (inline scip: Scip[Unit]) inline def unary_! : Scip[Unit] = Scip {
-    scip.attempt.map(!_).lookahead.falseFail("")
-  }
-
-
-
-  inline def End: Scip[Unit] = Scip {
-    scx.index == scx.input.length || scx.fail("not end of line")
-  }
-
-
-  inline def CharPred(inline p: Int => Boolean): Scip[Unit] =
-    cpred(p).falseFail(s"pred did not match")
-
-  extension (inline scip: Scip[Boolean]) {
-    inline def falseFail(msg: => String): Scip[Unit] = Scip {
-      scip.run match
-        case true  => ()
-        case false => scx.fail(msg)
+  extension (inline scip: Scip[Unit])
+    inline def unary_! : Scip[Unit] = Scip {
+      scip.attempt.map(!_).lookahead.orFail
     }
-
-    inline def or(inline other: Scip[Boolean]): Scip[Boolean] = Scip { scip.run || other.run }
-    inline def and(inline other: Scip[Boolean]): Scip[Boolean] = Scip { scip.run && other.run }
-  }
-
-  inline def CharsWhile(inline p: Int => Boolean, min: Int) =
-    cpred(p).rep.require(_ >= min).drop
+  inline def End: Scip[Unit] = scipend.orFailWith("not end of line")
 
 }
 
 object CommonParsers {
-  val verticalSpace: Scip[Unit]             = " \t".any.falseFail("space")
-  val newline: Scip[Unit]                   = "\n".scip
-  val eol: Scip[Unit]                       = choice(newline, End)
-  val verticalSpaces: Scip[Unit]            = " \t".any.rep.drop
-  val significantVerticalSpaces: Scip[Unit] = " \t".any.rep.require(_ >= 1).drop
-  val spaceLine: Scip[Unit]                 = verticalSpaces ~ eol
-  val significantSpaceLine: Scip[Unit]      = choice(significantVerticalSpaces ~ eol, newline)
-  val anySpaces: Scip[Unit]                 = " \t\n".any.rep.drop
-  val digits: Scip[Unit]                    = cpred(Character.isDigit).rep.require(_ > 0).drop
+  val verticalSpace: Scip[Unit]                 = " \t".any.orFailWith("space")
+  val newlineB: Scip[Boolean]                   = "\n".scip
+  val newline: Scip[Unit]                       = "\n".scip.orFail
+  val eolB: Scip[Boolean]                       = "\n".any.or(scipend)
+  val eol: Scip[Unit]                           = eolB.orFail
+  val verticalSpacesB: Scip[Boolean]            = " \t".any.rep.min(0)
+  val verticalSpaces: Scip[Unit]                = verticalSpacesB.orFail
+  val significantVerticalSpacesB: Scip[Boolean] = " \t".any.rep.min(1)
+  val significantVerticalSpaces: Scip[Unit]     = significantVerticalSpacesB.orFail
+  val spaceLineB: Scip[Boolean]                     = (verticalSpacesB and eolB)
+  val spaceLine: Scip[Unit]                     = spaceLineB.orFail
+  val significantSpaceLineB: Scip[Boolean]      = (significantVerticalSpacesB and eolB) or newlineB
+  val significantSpaceLine: Scip[Unit]          = significantSpaceLineB.orFail
+  val anySpaces: Scip[Unit]                     = " \t\n".any.rep.min(0).orFail
+  val digits: Scip[Unit]                        = cpred(Character.isDigit).rep.min(1).orFail
 
   def untilE(closing: Scip[Unit], min: Int = 1): Scip[String] = Scip {
     val start = scx.index
@@ -63,12 +47,12 @@ object CommonParsers {
   }
 
   object Identifier {
-    val startIdentifier: Scip[Unit] = CharPred(Character.isLetter)
-    val inIdentifier: Scip[Unit]    = CharsWhile(Character.isJavaIdentifierPart, 0)
-    val identifier: Scip[Unit]      = startIdentifier ~ inIdentifier
+    inline def startIdentifier: Scip[Boolean] = cpred(Character.isLetter)
+    inline def inIdentifier: Scip[Boolean]    = cpred(Character.isJavaIdentifierPart).rep.map(_ > 0)
+    inline def identifier: Scip[Boolean]      = startIdentifier.and(inIdentifier)
   }
 
-  val identifier: Scip[Unit] = Identifier.identifier
+  val identifier: Scip[Unit] = Identifier.identifier.orFail
 
   def withProv[T](parser: Scip[T]): Scip[(T, Prov)] = Scip {
     val s = scx.index

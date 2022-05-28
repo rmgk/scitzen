@@ -17,10 +17,8 @@ object Document:
   def apply(file: File): Document =
     val content = file.byteArray
     try
-      //Range(1, 10).map{ i =>
-        val sast = scitzen.scipparse.Parse.documentUnwrap(content, Prov(0, content.length))
-        Document(file, new String(content, StandardCharsets.UTF_8), sast.toList)
-      //}.last
+      val sast = scitzen.scipparse.Parse.documentUnwrap(content, Prov(0, content.length))
+      Document(file, new String(content, StandardCharsets.UTF_8), sast.toList)
     catch
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")

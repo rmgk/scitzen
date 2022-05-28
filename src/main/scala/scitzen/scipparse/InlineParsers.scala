@@ -10,7 +10,7 @@ import CompatParsers.*
 case class InlineParsers(endChars: Scip[Boolean], endingFun: Scip[Unit], allowEmpty: Boolean = false) {
 
   val comment: Scip[Directive] =
-    withProv(commentStart ~> (untilE(eol, min = 0) ~ choice(endingFun.lookahead, eol)).str)
+    withProv(commentStart.orFail ~> (untilE(eol, min = 0) <~ choice(endingFun.lookahead, eol)).str)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }.trace("comment")
 
   private val notSyntax: Scip[String] = Scip {
@@ -18,9 +18,9 @@ case class InlineParsers(endChars: Scip[Boolean], endingFun: Scip[Unit], allowEm
     while
       val start = scx.index
       until(":".any.or(endChars)).run
-      DirectiveParsers.syntaxStart.attempt.lookahead.or(":".scip.attempt).or(
-        endingFun.attempt.lookahead.or(endChars)
-      ).falseFail("").run
+      DirectiveParsers.syntaxStart.lookahead.trace(s"syntax start").or(":".scip.trace(s"colon")).or(
+        endingFun.attempt.trace(s"attempted endingfun").lookahead.or(endChars.trace(s"end chars"))
+      ).orFail.run
       scx.index > start
     do ()
     if start == scx.index then scx.fail("")
@@ -31,7 +31,7 @@ case class InlineParsers(endChars: Scip[Boolean], endingFun: Scip[Unit], allowEm
   }
 
   val inlineSequence: Scip[Seq[Inline]] =
-    choice(comment, DirectiveParsers.full.trace("directive"), simpleText).list(Scip {}).require {
+    choice(comment, DirectiveParsers.full.trace("directive"), simpleText).list(Scip {true}).require {
       _.nonEmpty || allowEmpty
     }
 

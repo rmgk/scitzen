@@ -29,7 +29,7 @@ object Parse {
   //  }
   // }
 
-  def parserDocument: Scip[Seq[Sast]] = BlockParsers.alternatives.list(Scip {}) <~ CompatParsers.End
+  def parserDocument: Scip[Seq[Sast]] = BlockParsers.alternatives.list(Scip {true}) <~ CompatParsers.End
 
   def documentUnwrap(blockContent: Array[Byte], prov: Prov): Seq[Sast] = {
     parserDocument.run0(Scx(blockContent, 0, 0, -1, "", false))
