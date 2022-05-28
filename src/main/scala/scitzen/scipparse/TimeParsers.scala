@@ -26,9 +26,6 @@ object TimeParsers {
   val dateTime = Scip {
     val sdate = date.run
     val stime = Scip {
-      println(scx.index)
-      println(s"choice: »${choice("T".scip, whitespace).str.run}«")
-      println(scx.index)
       val t = time.run
       timezone.attempt.run
       t

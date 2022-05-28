@@ -8,11 +8,11 @@ import scitzen.scipparse.CompatParsers.*
 object BlockParsers {
 
   val paragraphInlines = InlineParsers(
-    "\n",
+    "\n".any,
     eol ~ spaceLine
   )
 
-  val sectionInlines = InlineParsers("\n", eol)
+  val sectionInlines = InlineParsers("\n".any, eol)
 
   def paragraph: Scip[Block] = Scip {
     val attrOpt              = (AttributesParser.braces <~ spaceLine).opt.run

@@ -7,22 +7,26 @@ import DirectiveParsers.commentStart
 import scitzen.sast.DCommand.Comment
 import CompatParsers.*
 
-case class InlineParsers(endChars: String, endingFun: Scip[Unit], allowEmpty: Boolean = false) {
+case class InlineParsers(endChars: Scip[Boolean], endingFun: Scip[Unit], allowEmpty: Boolean = false) {
 
-  def ending: Scip[Unit] = endingFun
-
-  def comment: Scip[Directive] =
-    withProv(commentStart ~> (untilE(eol, min = 0) ~ choice(ending.lookahead, eol)).str)
+  val comment: Scip[Directive] =
+    withProv(commentStart ~> (untilE(eol, min = 0) ~ choice(endingFun.lookahead, eol)).str)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }.trace("comment")
 
-  private def notSyntax: Scip[String] =
-    choice(
-      CharsWhile(c => c != ':' && !endChars.contains(c), 1).trace("chars"),
-      (DirectiveParsers.syntaxStart.attempt.map(!_).falseFail("") ~ ":".scip).trace("dirs"),
-      (ending.attempt.map(!_).falseFail("") ~ CharPred(endChars.contains(_))).trace("ends")
-    ).trace("not syntax choice").attempt.rep.require(_ >= 1).drop.str.trace("outer rep")
+  private val notSyntax: Scip[String] = Scip {
+    val start = scx.index
+    while
+      val start = scx.index
+      until(":".any.or(endChars)).run
+      DirectiveParsers.syntaxStart.attempt.lookahead.or(":".scip.attempt).or(
+        endingFun.attempt.lookahead.or(endChars)
+      ).falseFail("").run
+      scx.index > start
+    do ()
+    if start == scx.index then scx.fail("")
+  }.str.trace("plaintext")
 
-  def simpleText: Scip[InlineText] = {
+  val simpleText: Scip[InlineText] = {
     notSyntax.map(InlineText.apply)
   }
 
@@ -31,7 +35,7 @@ case class InlineParsers(endChars: String, endingFun: Scip[Unit], allowEmpty: Bo
       _.nonEmpty || allowEmpty
     }
 
-  def full: Scip[(Seq[Inline], String)] =
-    Scip((inlineSequence.run, ending.str.run)).trace("inlines full")
+  val full: Scip[(Seq[Inline], String)] =
+    Scip((inlineSequence.trace("inlines full").run, endingFun.str.trace("requester end").run))
 
 }

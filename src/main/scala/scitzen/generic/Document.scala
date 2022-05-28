@@ -5,6 +5,7 @@ import scitzen.parser.Parse
 import scitzen.sast.{Directive, Prov, Sast}
 import scitzen.compat.Logging.scribe
 
+import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
@@ -14,10 +15,12 @@ case class Document(file: File, content: String, sast: List[Sast]):
 
 object Document:
   def apply(file: File): Document =
-    val content = file.contentAsString
+    val content = file.byteArray
     try
-      val sast = scitzen.scipparse.Parse.documentUnwrap(content, Prov(0, content.length))
-      Document(file, content, sast.toList)
+      //Range(1, 10).map{ i =>
+        val sast = scitzen.scipparse.Parse.documentUnwrap(content, Prov(0, content.length))
+        Document(file, new String(content, StandardCharsets.UTF_8), sast.toList)
+      //}.last
     catch
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")

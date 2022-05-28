@@ -14,12 +14,10 @@ object CompatParsers {
 
 
 
-  val End: Scip[Unit] = Scip {
+  inline def End: Scip[Unit] = Scip {
     scx.index == scx.input.length || scx.fail("not end of line")
   }
 
-
-  val AnyChar: Scip[Boolean] = Scip { scx.next }
 
   inline def CharPred(inline p: Int => Boolean): Scip[Unit] =
     cpred(p).falseFail(s"pred did not match")
@@ -30,6 +28,9 @@ object CompatParsers {
         case true  => ()
         case false => scx.fail(msg)
     }
+
+    inline def or(inline other: Scip[Boolean]): Scip[Boolean] = Scip { scip.run || other.run }
+    inline def and(inline other: Scip[Boolean]): Scip[Boolean] = Scip { scip.run && other.run }
   }
 
   inline def CharsWhile(inline p: Int => Boolean, min: Int) =
@@ -52,7 +53,7 @@ object CommonParsers {
     val start = scx.index
     until(closing.attempt).run
     val count = scx.index - start
-    if (count) < min then scx.fail(s"only matched $count times, not $min")
+    if count < min then scx.fail(s"only matched $count times, not $min")
   }.str
 
   def untilI(closing: Scip[Unit]): Scip[String] = Scip {

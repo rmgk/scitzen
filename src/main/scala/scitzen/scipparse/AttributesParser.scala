@@ -15,7 +15,7 @@ object AttributesParser {
   val start: Scip[Unit] = open.scip
 
   val terminationCheck: Scip[Unit] = choice(";".scip, close.scip, eol).lookahead
-  val unquotedInlines: InlineParsers               = InlineParsers(s";\n$close", terminationCheck, allowEmpty = true)
+  val unquotedInlines: InlineParsers               = InlineParsers((";\n"+close).any, terminationCheck, allowEmpty = true)
   val unquotedText   : Scip[(Seq[Inline], String)] = unquotedInlines.full.trace("unquoted")
 
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
@@ -27,8 +27,9 @@ object AttributesParser {
       case ("", None) => unquotedText
       case (quotes, bracket) =>
         val closing = bracket.fold(quotes)(_ => s"]$quotes")
+        val myend = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
         InlineParsers(
-          closing.substring(0, 1),
+          Scip{ scx.containsNext(_ == myend) },
           exact(closing) ~> verticalSpaces ~> terminationCheck,
           allowEmpty = true
         ).full.trace("inline full")
@@ -41,7 +42,7 @@ object AttributesParser {
     val quotes  = "\"".scip.attempt.rep.drop.str.trace(s"kv q").run
     val bracket = "[".scip.str.opt.trace("kv b").run
     if quotes.isEmpty && bracket.isEmpty
-    then until(";}\n".any).str.trace(s"unquoted").run
+    then until(";}\n".any).drop.str.trace(s"unquoted").run
     else
       val b = bracket.fold("")(_ => "]")
       (untilE(exact(s"$b$quotes") <~ verticalSpaces <~ terminationCheck) <~ exact(s"$b$quotes")).run
@@ -73,22 +74,22 @@ object AttributesParser {
   val attribute: Scip[Attribute] = choice(namedAttribute, positionalAttribute).trace("attribute")
 
   def listOf(elem: Scip[Attribute], min: Int): Scip[Seq[Attribute]] =
-    (elem.list(choice(";".scip, newline)) <~ ";".scip.attempt.drop).trace("list of")
+    (elem.list(choice(";".scip, newline)).require(_.sizeIs >= min) <~ ";".scip.attempt.drop.trace("list end attempt")).trace("list of")
 
-  def braces: Scip[Seq[Attribute]] = Scip {
+  val braces: Scip[Seq[Attribute]] = Scip {
     open.scip.run
     anySpaces.run
     val res = listOf(attribute, min = 0).run
     anySpaces.run
     close.scip.run
     res
-  }.trace("braced")
+  }.trace("braces")
 
   val noBraces: Scip[Seq[Attribute]] = Scip {
     val res = listOf(namedAttribute, min = 1).run
     (spaceLine ~ spaceLine).run
     res
-  }
+  }.trace("no braces")
 
   val configFile: Scip[Seq[Attribute]] = Scip {
     val res = noBraces.opt.map(_.getOrElse(Nil)).run

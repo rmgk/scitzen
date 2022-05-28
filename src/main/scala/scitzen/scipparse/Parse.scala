@@ -31,13 +31,13 @@ object Parse {
 
   def parserDocument: Scip[Seq[Sast]] = BlockParsers.alternatives.list(Scip {}) <~ CompatParsers.End
 
-  def documentUnwrap(blockContent: String, prov: Prov): Seq[Sast] = {
-    parserDocument.run0(Scx(blockContent).copy(tracing = false))
+  def documentUnwrap(blockContent: Array[Byte], prov: Prov): Seq[Sast] = {
+    parserDocument.run0(Scx(blockContent, 0, 0, -1, "", false))
   }
 
-  val allInlines = InlineParsers("", CompatParsers.End)
+  val allInlines = InlineParsers(Scip {false}, CompatParsers.End)
 
   def inlineUnwrap(paragraphString: String, prov: Prov): Seq[Inline] = {
-    allInlines.full.run0(Scx(paragraphString))._1
+    allInlines.full.run0(Scx(paragraphString).copy(tracing = false))._1
   }
 }

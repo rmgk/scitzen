@@ -19,6 +19,10 @@
   "fields":[{"name":"0bitmap$1"}]
 },
 {
+  "name":"de.rmgk.scip$Scx",
+  "fields":[{"name":"0bitmap$1"}]
+},
+{
   "name":"fastparse.Implicits$Optioner$",
   "fields":[{"name":"0bitmap$3"}]
 },
