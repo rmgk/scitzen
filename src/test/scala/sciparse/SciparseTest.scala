@@ -1,8 +1,10 @@
 package sciparse
 
-import scitzen.scipparse.{AttributesParser, DirectiveParsers, BlockParsers, Parse}
+import scitzen.scipparse.{AttributesParser, BlockParsers, CommonParsers, DirectiveParsers, Parse}
 import de.rmgk.scip.*
 import scitzen.outputs.SastToScimConverter
+
+import java.nio.charset.StandardCharsets
 
 class SciparseTest extends munit.FunSuite {
 
@@ -106,5 +108,41 @@ hah
   }
 
 
+  test("block content") {
+    try
+      val input = s"""
+``
+	a
+	}
+	b
+``
+"""
+      val res =
+        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+      println(res)
+      val result    = SastToScimConverter.toScimS(res)
+      val resultStr = result.iterator.mkString("", "\n", "\n")
+      assertEquals(resultStr, input)
+    catch case e: ScipEx => throw new AssertionError(e.getMessage)
+  }
+
+
+  test("super basic") {
+    import CommonParsers.*
+    try
+      val str = """	}
+  b
+``
+"""
+      inline def matcher = ((exact("``")))
+      val scx = Scx(str).copy(tracing = true)
+      val bytes = "``".getBytes(StandardCharsets.UTF_8)
+      println(bytes.toList)
+      println(scx.available)
+      println(printCode(matcher))
+      println(matcher.run0(scx))
+
+    catch case e: ScipEx => throw new AssertionError(e.getMessage)
+  }
 
 }
