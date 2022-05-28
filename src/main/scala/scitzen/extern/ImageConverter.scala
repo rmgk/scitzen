@@ -4,8 +4,8 @@ import better.files.{File, *}
 import scitzen.compat.Logging.scribe
 import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
-import scitzen.parser.Parse
 import scitzen.sast.{Attributes, Block, Fenced, Prov}
+import scitzen.scipparse.Parse
 
 import java.io.IOError
 import java.lang.ProcessBuilder.Redirect
@@ -50,7 +50,7 @@ object ImageConverter {
     val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match
       case None => content
       case Some(templateFile) =>
-        val tc   = templateFile.contentAsString
+        val tc   = templateFile.byteArray
         val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
         SastToTextConverter(
           project.config.definitions ++ attributes.named + (

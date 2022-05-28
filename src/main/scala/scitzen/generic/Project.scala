@@ -2,10 +2,10 @@ package scitzen.generic
 
 import better.files.File
 import scitzen.bibliography.{BibEntry, Bibtex}
-import scitzen.parser.Parse
 import scitzen.sast.{Prov, Text}
 import scitzen.compat.Logging.scribe
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Path, Paths}
 
 case class Project(root: File, config: ProjectConfig, definitions: Map[String, Text]):
@@ -45,19 +45,19 @@ object Project:
   def fromSource(file: File): Option[Project] =
     if isScim(file) then
       findRoot(file) match
-        case None       => Some(Project(file.parent, ProjectConfig.parse("a=b"), Map.empty))
+        case None       => Some(Project(file.parent, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8)), Map.empty))
         case Some(file) => fromConfig(file)
     else if file.isDirectory then
       if (file / scitzenconfig).isRegularFile then
         fromConfig(file)
-      else Some(Project(file, ProjectConfig.parse("c=d"), Map.empty))
+      else Some(Project(file, ProjectConfig.parse("c=d".getBytes(StandardCharsets.UTF_8)), Map.empty))
     else None
 
   def fromConfig(file: File): Option[Project] =
-    val configContent = (file / scitzenconfig).contentAsString
+    val configContent = (file / scitzenconfig).byteArray
     val value         = ProjectConfig.parse(configContent)
     val definitions = value.definitions.view.map { (k, v) =>
-      k -> Text(Parse.inlineUnwrap(v, Prov()))
+      k -> Text(scitzen.scipparse.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8), Prov()))
     }.toMap
     Some(Project(file, value, definitions))
 

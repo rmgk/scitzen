@@ -1,13 +1,14 @@
 package scitzen.outputs
 
 import de.rmgk.Chain
-import fastparse.P
-import scitzen.parser.AttributesParser
+import scitzen.scipparse.{AttributesParser, Parse}
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
 import scitzen.sast.DCommand.Comment
 
+import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ArraySeq
+import scala.util.Try
 import scala.util.matching.Regex
 
 object SastToScimConverter:
@@ -116,9 +117,9 @@ object AttributesToScim:
   def encodeText(text: Text): String =
     val value = SastToScimConverter.inlineToScim(text.inl)
     def parses(quoted: String): Boolean =
-      val parsedAttr = fastparse.parse(quoted, AttributesParser.attribute(_))
+      val parsedAttr = Parse.parseResult(quoted.getBytes(StandardCharsets.UTF_8), AttributesParser.attribute, Prov())
 
-      parsedAttr.get.value match {
+      parsedAttr match {
         case Positional(`text`, _) => true
         //// format again to remove unimportant differences (mostly providence)
         // val transformedValue = SastToScimConverter.inlineToScim(t.inl)
@@ -138,12 +139,7 @@ object AttributesToScim:
 
   def encodeString(value: String): String =
     def parses(quoted: String): Boolean =
-      fastparse.parse(quoted, AttributesParser.namedAttributeValue(_)) match {
-        // was parsed as a normal string with the same value
-        case fastparse.Parsed.Success(Right(`value`), _) => true
-        // was either parsed as an attribute list or something else strange
-        case other => false
-      }
+      Try{Parse.parseResult(quoted.getBytes(StandardCharsets.UTF_8), AttributesParser.namedAttributeValue)}.isSuccess
 
     def pickFirst(candidate: (() => String)*): Option[String] =
       candidate.view.map(_.apply()).find(parses)

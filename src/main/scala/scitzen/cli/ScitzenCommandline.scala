@@ -7,6 +7,7 @@ import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
 import scopt.OParser
 import scitzen.compat.Logging.scribe
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Path, Paths}
 
 object ScitzenCommandline {
@@ -19,7 +20,7 @@ object ScitzenCommandline {
           val jsonpath = options.path
           println(JsonSast.jsonFor(
             jsonpath,
-            Project(jsonpath.parent, ProjectConfig.parse("b=c"), Map.empty)
+            Project(jsonpath.parent, ProjectConfig.parse("b=c".getBytes(StandardCharsets.UTF_8)), Map.empty)
           ))
         else
           Project.fromSource(options.path) match

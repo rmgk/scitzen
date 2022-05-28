@@ -13,6 +13,6 @@ object Environment {
     val pd = ProjectDirectories.fromPath("scitzen")
     val cd = File(pd.configDir)
     val conf = cd / "scitzen.scim-conf"
-    val config = Option.when(conf.exists){ ProjectConfig.parse(conf.contentAsString) }
+    val config = Option.when(conf.exists){ ProjectConfig.parse(conf.byteArray) }
     new Environment(cd, File(pd.cacheDir), config)
 }
