@@ -13,8 +13,8 @@ object AttributesParser {
 
   val terminationCheckB: Scip[Boolean] = (";".all or close.all or eolB).lookahead
   val terminationCheck: Scip[Unit] = terminationCheckB.orFail
-  val unquotedInlines: InlineParsers               = InlineParsers((";\n"+close).any, terminationCheckB, allowEmpty = true)
-  val unquotedText   : Scip[(Seq[Inline], String)] = unquotedInlines.full.trace("unquoted")
+  val unquotedInlines               = InlineParsers.full((";\n"+close).any, terminationCheckB, allowEmpty = true)
+  val unquotedText   : Scip[Seq[Inline]] = unquotedInlines.trace("unquoted")
 
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
@@ -26,13 +26,13 @@ object AttributesParser {
       case (quotes, bracket) =>
         val closing = bracket.fold(quotes)(_ => s"]$quotes")
         val myend = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
-        InlineParsers(
+        InlineParsers.full(
           bpred(_ == myend),
           exact(closing) and verticalSpacesB and terminationCheckB,
           allowEmpty = true
-        ).full.trace("inline full")
+        ).trace("inline full")
     }
-    scitzen.sast.Text(r.run._1)
+    scitzen.sast.Text(r.run)
   }.trace("text")
 
   val stringValue: Scip[String] = Scip {
