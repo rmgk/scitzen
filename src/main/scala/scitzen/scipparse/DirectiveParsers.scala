@@ -17,7 +17,7 @@ object DirectiveParsers {
       Directive(DCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes))(prov)
   }
 
-  val commentStart: Scip[Boolean] = ":%".all
+  inline def commentStart: Scip[Boolean] = ":%".all
 
   val syntaxStart: Scip[Boolean] = commentStart or DirectiveParsers.detectStart
 
