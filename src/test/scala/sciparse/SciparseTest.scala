@@ -19,6 +19,17 @@ class SciparseTest extends munit.FunSuite {
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
   }
 
+  test("nested") {
+    try
+      val res =
+        DirectiveParsers.full.run0(Scx(""":emph{ :{ note } }""").copy(tracing = true))
+      println(res)
+      val result    = SastToScimConverter.toScimS(List(res))
+      val resultStr = result.iterator.mkString("", "\n", "\n")
+      assertEquals(resultStr, ":emph{:{note } }\n")
+    catch case e: ScipEx => throw new AssertionError(e.getMessage)
+  }
+
   test("basic header") {
     try
 
@@ -144,5 +155,39 @@ hah
 
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
   }
+
+
+  test("alias") {
+    try
+      val input = s"""
+% fonts
+:{alias}
+% Memoir style
+
+"""
+      val res =
+        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+      println(res)
+      val result    = SastToScimConverter.toScimS(res)
+      val resultStr = result.iterator.mkString("", "\n", "\n")
+      assertEquals(resultStr, input)
+    catch case e: ScipEx => throw new AssertionError(e.getMessage)
+  }
+
+  test("extended alias") {
+    try
+      val input = s"""
+Use like this :{someAlias} and and maybe even this :emph{:{note}}.
+
+"""
+      val res =
+        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+      println(res)
+      val result    = SastToScimConverter.toScimS(res)
+      val resultStr = result.iterator.mkString("", "\n", "\n")
+      assertEquals(resultStr, input)
+    catch case e: ScipEx => throw new AssertionError(e.getMessage)
+  }
+
 
 }

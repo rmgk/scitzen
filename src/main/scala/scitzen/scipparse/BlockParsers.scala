@@ -31,7 +31,7 @@ object BlockParsers {
   val extendedWhitespace: Scip[Block] = Scip {
     val (str, prov) = withProv(
       choice(
-        significantSpaceLine.attempt.trace("spaceline").rep.min(1).orFail,
+        significantSpaceLineB.trace("spaceline").rep.min(1).orFail,
         DirectiveParsers.comment.attempt.trace("comment").rep.min(1).orFail
       ).trace("space or comment").attempt.rep.min(1).orFail.str
     ).run
