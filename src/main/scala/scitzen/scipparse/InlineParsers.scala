@@ -18,12 +18,12 @@ case class InlineParsers(endChars: Scip[Boolean], endingFun: Scip[Unit], allowEm
     while
       val start = scx.index
       until(":".any.or(endChars)).run
-      DirectiveParsers.syntaxStart.lookahead.trace(s"syntax start").or(":".scip.trace(s"colon")).or(
+      DirectiveParsers.syntaxStart.lookahead.trace(s"syntax start").or(":".all.trace(s"colon")).or(
         endingFun.attempt.trace(s"attempted endingfun").lookahead.or(endChars.trace(s"end chars"))
       ).orFail.run
       scx.index > start
     do ()
-    if start == scx.index then scx.fail("")
+    if start == scx.index then scx.fail
   }.str.trace("plaintext")
 
   val simpleText: Scip[InlineText] = {

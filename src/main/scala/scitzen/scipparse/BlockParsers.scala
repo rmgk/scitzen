@@ -20,7 +20,7 @@ object BlockParsers {
     Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
   }
 
-  def sectionStart: Scip[String] = "=#".any.rep.min(1).orFail.str <~ " ".scip
+  def sectionStart: Scip[String] = "=#".any.rep.min(1).orFail.str <~ " ".all
   def sectionTitle: Scip[Section] = Scip {
     val prefix               = sectionStart.run
     val ((inlines, _), prov) = withProv(sectionInlines.full).run
@@ -30,10 +30,9 @@ object BlockParsers {
 
   val extendedWhitespace: Scip[Block] = Scip {
     val (str, prov) = withProv(
-      choice(
-        significantSpaceLineB.trace("spaceline").rep.min(1).orFail,
-        DirectiveParsers.comment.attempt.trace("comment").rep.min(1).orFail
-      ).trace("space or comment").attempt.rep.min(1).orFail.str
+      (significantSpaceLineB.trace("spaceline").or(
+      DirectiveParsers.comment.attempt.trace("comment")))
+        .trace("space or comment").rep.min(1).orFail.str
     ).run
     Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
   }

@@ -12,7 +12,7 @@ object AttributesParser {
   inline val open  = "{"
   inline val close = "}"
 
-  val terminationCheckB: Scip[Boolean] = (";".scip or close.scip or eolB).lookahead
+  val terminationCheckB: Scip[Boolean] = (";".all or close.all or eolB).lookahead
   val terminationCheck: Scip[Unit] = terminationCheckB.orFail
   val unquotedInlines: InlineParsers               = InlineParsers((";\n"+close).any, terminationCheck, allowEmpty = true)
   val unquotedText   : Scip[(Seq[Inline], String)] = unquotedInlines.full.trace("unquoted")
@@ -22,7 +22,7 @@ object AttributesParser {
     */
   val text: Scip[Text] = Scip {
     anySpaces.run
-    val r = ("\"".scip.rep.str.run, "[".scip.orFail.str.opt.run) match {
+    val r = ("\"".all.rep.str.run, "[".all.orFail.str.opt.run) match {
       case ("", None) => unquotedText
       case (quotes, bracket) =>
         val closing = bracket.fold(quotes)(_ => s"]$quotes")
@@ -38,8 +38,8 @@ object AttributesParser {
 
   val stringValue: Scip[String] = Scip {
     anySpaces.run
-    val quotes  = "\"".scip.rep.str.trace(s"kv q").run
-    val bracket = "[".scip.orFail.str.opt.trace("kv b").run
+    val quotes  = "\"".all.rep.str.trace(s"kv q").run
+    val bracket = "[".all.orFail.str.opt.trace("kv b").run
     if quotes.isEmpty && bracket.isEmpty
     then until(";}\n".any).str.trace(s"unquoted").run
     else
@@ -54,7 +54,7 @@ object AttributesParser {
     verticalSpaces.trace("vertical spaces?").run
     val id = identifier.str.trace("attr ident").run
     verticalSpaces.run
-    "=".scip.orFail.run
+    "=".all.orFail.run
     // there was a cut here once … ?
     namedAttributeValue.trace("attr value").run match {
       case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
@@ -73,14 +73,14 @@ object AttributesParser {
   val attribute: Scip[Attribute] = choice(namedAttribute, positionalAttribute).trace("attribute")
 
   def listOf(elem: Scip[Attribute], min: Int): Scip[Seq[Attribute]] =
-    (elem.list(";\n".any).require(_.sizeIs >= min) <~ ";".scip.trace("list end attempt")).trace("list of")
+    (elem.list(";\n".any).require(_.sizeIs >= min) <~ ";".all.trace("list end attempt")).trace("list of")
 
   val braces: Scip[Seq[Attribute]] = Scip {
-    open.scip.orFail.run
+    open.all.orFail.run
     anySpaces.run
     val res = listOf(attribute, min = 0).trace("bracelist").run
     anySpaces.run
-    close.scip.orFail.run
+    close.all.orFail.run
     res
   }.trace("braces")
 

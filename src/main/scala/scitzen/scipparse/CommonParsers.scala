@@ -12,14 +12,12 @@ object CompatParsers {
     inline def unary_! : Scip[Unit] = Scip {
       scip.attempt.map(!_).lookahead.orFail
     }
-  inline def End: Scip[Unit] = scipend.orFailWith("not end of line")
-
 }
 
 object CommonParsers {
-  val verticalSpace: Scip[Unit]                 = " \t".any.orFailWith("space")
-  val newlineB: Scip[Boolean]                   = "\n".scip
-  val newline: Scip[Unit]                       = "\n".scip.orFail
+  val verticalSpace: Scip[Unit]                 = " \t".any.orFail
+  val newlineB: Scip[Boolean]                   = "\n".all
+  val newline: Scip[Unit]                       = "\n".all.orFail
   val eolB: Scip[Boolean]                       = "\n".any.or(scipend)
   val eol: Scip[Unit]                           = eolB.orFail
   val verticalSpacesB: Scip[Boolean]            = " \t".any.rep.min(0)
@@ -37,7 +35,7 @@ object CommonParsers {
     val start = scx.index
     until(closing.attempt).run
     val count = scx.index - start
-    if count < min then scx.fail(s"only matched $count times, not $min")
+    if count < min then scx.fail
   }.str
 
   def untilI(closing: Scip[Unit]): Scip[String] = Scip {

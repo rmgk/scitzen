@@ -10,7 +10,7 @@ object ListParsers {
 
   def simpleMarker: Scip[String] =
     (verticalSpaces
-      <~ choice("-".scip, "•".scip, "*".scip, (digits.attempt and ".".scip))
+      <~ choice("-".all, "•".all, "*".all, (digits.attempt and ".".all))
       <~ verticalSpace).str
 
   def simpleListItem: Scip[ParsedListItem] = Scip {
@@ -20,7 +20,7 @@ object ListParsers {
   }
 
   def descriptionListContent: Scip[(String, Prov)] =
-    (withProv(untilE(((":".scip and verticalSpacesB and eolB) or eolB).orFail) <~ ":".scip <~ verticalSpaces <~ eol))
+    (withProv(untilE(((":".all and verticalSpacesB and eolB) or eolB).orFail) <~ ":".all <~ verticalSpaces <~ eol))
   def descriptionListItem: Scip[ParsedListItem] = Scip {
     val marker      = simpleMarker.run
     val (str, prov) = descriptionListContent.run

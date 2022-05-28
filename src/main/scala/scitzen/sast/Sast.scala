@@ -35,7 +35,7 @@ case class Section(title: Text, prefix: String, attributes: Attributes)(val prov
   def toTuple: (Text, String, Attributes, Prov) = (title, prefix, attributes, prov)
 }
 case class Block(attributes: Attributes, content: BlockType, prov: Prov) extends Sast {
-  override def toString: String = s"Block(${content.getClass.getSimpleName}, $attributes)"
+  override def toString: String = s"Block(${content.getClass.getSimpleName}, $content, $attributes)"
   def command: String           = attributes.legacyPositional.headOption.getOrElse("")
 }
 
