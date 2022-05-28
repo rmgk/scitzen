@@ -26,7 +26,7 @@ object Parse {
     parseResult(blockContent, parserDocument)
   }
 
-  val allInlines = InlineParsers(Scip { false }, scipend.orFail)
+  val allInlines = InlineParsers(Scip { false }, scipend)
 
   def inlineUnwrap(paragraphString: Array[Byte], prov: Prov): Seq[Inline] = {
     parseResult(paragraphString, allInlines.full)._1

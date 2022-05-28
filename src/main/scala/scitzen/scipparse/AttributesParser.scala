@@ -14,7 +14,7 @@ object AttributesParser {
 
   val terminationCheckB: Scip[Boolean] = (";".all or close.all or eolB).lookahead
   val terminationCheck: Scip[Unit] = terminationCheckB.orFail
-  val unquotedInlines: InlineParsers               = InlineParsers((";\n"+close).any, terminationCheck, allowEmpty = true)
+  val unquotedInlines: InlineParsers               = InlineParsers((";\n"+close).any, terminationCheckB, allowEmpty = true)
   val unquotedText   : Scip[(Seq[Inline], String)] = unquotedInlines.full.trace("unquoted")
 
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
@@ -22,14 +22,14 @@ object AttributesParser {
     */
   val text: Scip[Text] = Scip {
     anySpaces.run
-    val r = ("\"".all.rep.str.run, "[".all.orFail.str.opt.run) match {
+    val r = ("\"".all.rep.dropstr.run, "[".all.str.opt.run) match {
       case ("", None) => unquotedText
       case (quotes, bracket) =>
         val closing = bracket.fold(quotes)(_ => s"]$quotes")
         val myend = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
         InlineParsers(
           bpred(_ == myend),
-          exact(closing).orFail ~> verticalSpaces ~> terminationCheck,
+          exact(closing) and verticalSpacesB and terminationCheckB,
           allowEmpty = true
         ).full.trace("inline full")
     }
@@ -38,13 +38,13 @@ object AttributesParser {
 
   val stringValue: Scip[String] = Scip {
     anySpaces.run
-    val quotes  = "\"".all.rep.str.trace(s"kv q").run
-    val bracket = "[".all.orFail.str.opt.trace("kv b").run
+    val quotes  = "\"".all.rep.min(0).str.trace(s"kv q").run
+    val bracket = "[".all.str.opt.trace("kv b").run
     if quotes.isEmpty && bracket.isEmpty
-    then until(";}\n".any).str.trace(s"unquoted").run
+    then until(";}\n".any).min(0).str.trace(s"unquoted").run
     else
       val b = bracket.fold("")(_ => "]")
-      (until(exact(s"$b$quotes") and verticalSpacesB and terminationCheckB).min(1).orFail.str <~ exact(s"$b$quotes")).run
+      (until(exact(s"$b$quotes") and verticalSpacesB and terminationCheckB).min(1).str <~ exact(s"$b$quotes")).run
   }.trace("string value")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
@@ -52,7 +52,7 @@ object AttributesParser {
 
   val namedAttribute: Scip[Attribute] = Scip {
     verticalSpaces.trace("vertical spaces?").run
-    val id = identifier.str.trace("attr ident").run
+    val id = identifierB.str.trace("attr ident").run
     verticalSpaces.run
     "=".all.orFail.run
     // there was a cut here once … ?
@@ -63,11 +63,10 @@ object AttributesParser {
   }.trace("named attr")
 
   val positionalAttribute: Scip[Attribute] = Scip {
-    // unclear to me if there is any way to acquire a parsed value AND the parsed string from fastparse
-    var hack: Text = null
-    text.map { v => hack = v }.str.map { value =>
-      scitzen.sast.Attribute.Positional(hack, Some(value))
-    }.run
+    val begin = scx.index
+    val mtxt = text.run
+    val contents = scx.str(begin, scx.index)
+    scitzen.sast.Attribute.Positional(mtxt, Some(contents))
   }.trace("pos attr")
 
   val attribute: Scip[Attribute] = choice(namedAttribute, positionalAttribute).trace("attribute")

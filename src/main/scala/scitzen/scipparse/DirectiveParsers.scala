@@ -7,7 +7,7 @@ import de.rmgk.scip.*
 
 object DirectiveParsers {
   val detectStart: Scip[Boolean] = (":".all and (Identifier.identifier or Scip(true)) and AttributesParser.open.all)
-  val macroCommand: Scip[String] = identifier.str
+  val macroCommand: Scip[String] = identifierB.str
 
   val full: Scip[Directive] = withProv(Scip {
     ":".all.orFail.run
@@ -22,7 +22,7 @@ object DirectiveParsers {
   val syntaxStart: Scip[Boolean] = commentStart or DirectiveParsers.detectStart
 
   val comment: Scip[Directive] =
-    (withProv(Scip { commentStart.orFail.run; untilI(eol).map(_ => ()).str.run }))
+    (withProv(Scip { commentStart.orFail.run; untilI(eolB).dropstr.run }))
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
 }

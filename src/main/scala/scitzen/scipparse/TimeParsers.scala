@@ -6,7 +6,7 @@ import scitzen.sast.{ScitzenDate, ScitzenDateTime, ScitzenTime}
 import java.nio.charset.StandardCharsets
 
 object TimeParsers {
-  val digits: Scip[Unit] = bpred(b => '0' <= b && b <= '9').rep.min(1).orFail
+  val digits: Scip[Boolean] = bpred(b => '0' <= b && b <= '9').rep.min(1)
   val date: Scip[ScitzenDate] = Scip {
     val y = digits.str.run
     "-".all.run
@@ -28,7 +28,7 @@ object TimeParsers {
   val dateTime = Scip {
     val sdate = date.run
     val stime = Scip {
-      choice("T".all.orFail, cpred(Character.isWhitespace).orFail).str.run
+      ("T".all or cpred(Character.isWhitespace)).str.run
       val t = time.run
       timezone.attempt.run
       t

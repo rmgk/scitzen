@@ -8,21 +8,19 @@ import java.nio.charset.StandardCharsets
 
 object ListParsers {
 
-  def simpleMarker: Scip[String] =
-    (verticalSpaces
-      <~ choice("-".all, "•".all, "*".all, (digits.attempt and ".".all))
-      <~ verticalSpace).str
+  def simpleMarker: Scip[Boolean] =
+    (verticalSpacesB and ("-•*".any or (digitsB and ".".all)) and verticalSpaceB)
 
   def simpleListItem: Scip[ParsedListItem] = Scip {
-    val marker          = simpleMarker.run
-    val (content, prov) = (withProv(untilE(eol <~ choice(spaceLine, simpleMarker))) <~ eol).run
+    val marker          = simpleMarker.str.run
+    val (content, prov) = withProv(until(eolB and (spaceLineB or simpleMarker)).min(0).str <~ eolB.orFail).run
     ParsedListItem(marker, content, prov, None)
   }
 
   def descriptionListContent: Scip[(String, Prov)] =
     (withProv(untilE(((":".all and verticalSpacesB and eolB) or eolB).orFail) <~ ":".all <~ verticalSpaces <~ eol))
   def descriptionListItem: Scip[ParsedListItem] = Scip {
-    val marker      = simpleMarker.run
+    val marker      = simpleMarker.str.run
     val (str, prov) = descriptionListContent.run
     val innerBlock  = DelimitedBlockParsers.whitespaceLiteral.opt.run
     ParsedListItem(marker, str, prov, innerBlock)
