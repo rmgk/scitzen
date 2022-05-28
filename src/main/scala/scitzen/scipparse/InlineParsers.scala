@@ -1,11 +1,10 @@
 package scitzen.scipparse
 
-import scitzen.sast.{Attribute, Inline, InlineText, Directive}
 import de.rmgk.scip.*
-import CommonParsers.*
-import DirectiveParsers.commentStart
 import scitzen.sast.DCommand.Comment
-import CompatParsers.*
+import scitzen.sast.{Attribute, Directive, Inline, InlineText}
+import scitzen.scipparse.CommonParsers.*
+import scitzen.scipparse.DirectiveParsers.commentStart
 
 case class InlineParsers(endChars: Scip[Boolean], endingFun: Scip[Boolean], allowEmpty: Boolean = false) {
 

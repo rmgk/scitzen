@@ -1,9 +1,8 @@
 package scitzen.scipparse
 
-import scitzen.sast.{Attribute, Attributes, Block, Fenced, Parsed, Prov, Sast}
 import de.rmgk.scip.*
-import CommonParsers.*
-import CompatParsers.*
+import scitzen.sast.{Attribute, Attributes, Block, Fenced, Parsed, Prov, Sast}
+import scitzen.scipparse.CommonParsers.*
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
@@ -12,8 +11,8 @@ object DelimitedBlockParsers {
   def makeDelimited(start: Scip[String]): Scip[Block] = Scip {
     val delimiter    = start.run
     val command      = DirectiveParsers.macroCommand.opt.trace("delimited marco").run
-    val attr         = (AttributesParser.braces.opt <~ spaceLine).trace("delim braces").run
-    val (text, prov) = withProv(untilI(eolB and exact(delimiter) and spaceLineB)).trace("delim block").run
+    val attr         = (AttributesParser.braces.opt <~ spaceLineF).trace("delim braces").run
+    val (text, prov) = withProv(untilIS(eolB and exact(delimiter) and spaceLineB)).trace("delim block").run
     val stripRes     = stripIfPossible(text, delimiter.length)
     val strippedText = stripRes.getOrElse(text)
     val rawAttr      = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)

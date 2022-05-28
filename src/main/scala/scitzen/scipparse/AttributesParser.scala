@@ -1,9 +1,8 @@
 package scitzen.scipparse
 
-import scitzen.sast.{Attribute, Attributes, Inline, Text}
 import de.rmgk.scip.*
-import CommonParsers.*
-import CompatParsers.*
+import scitzen.sast.{Attribute, Attributes, Inline, Text}
+import scitzen.scipparse.CommonParsers.*
 
 import java.nio.charset.StandardCharsets
 
@@ -48,14 +47,13 @@ object AttributesParser {
   }.trace("string value")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
-    choice(anySpaces ~> braces.map(Left.apply), stringValue.map(Right.apply))
+    choice(anySpacesB ifso braces.map(Left.apply), stringValue.map(Right.apply))
 
   val namedAttribute: Scip[Attribute] = Scip {
-    verticalSpaces.trace("vertical spaces?").run
-    val id = identifierB.str.trace("attr ident").run
-    verticalSpaces.run
+    verticalSpacesB.orFail.run
+    val id = identifierB.str.run
+    verticalSpacesB.orFail.run
     "=".all.orFail.run
-    // there was a cut here once … ?
     namedAttributeValue.trace("attr value").run match {
       case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
       case Right(value) => scitzen.sast.Attribute.Plain(id, value)
@@ -85,8 +83,8 @@ object AttributesParser {
 
   val noBraces: Scip[Seq[Attribute]] = Scip {
     val res = listOf(namedAttribute, min = 1).run
-    spaceLine.run
-    spaceLine.run
+    spaceLineF.run
+    spaceLineF.run
     res
   }.trace("no braces")
 

@@ -1,8 +1,7 @@
 package scitzen.scipparse
-import scitzen.sast.{Block, ListItem, Prov, Slist, Text}
 import de.rmgk.scip.*
-import CommonParsers.*
-import CompatParsers.*
+import scitzen.sast.{Block, ListItem, Prov, Slist, Text}
+import scitzen.scipparse.CommonParsers.*
 
 import java.nio.charset.StandardCharsets
 
@@ -18,7 +17,8 @@ object ListParsers {
   }
 
   def descriptionListContent: Scip[(String, Prov)] =
-    (withProv(untilE(((":".all and verticalSpacesB and eolB) or eolB).orFail) <~ ":".all <~ verticalSpaces <~ eol))
+    withProv(until(((":".all and verticalSpacesB and eolB) or eolB)).min(1).str <~
+      (":".all and verticalSpacesB and eolB).orFail)
   def descriptionListItem: Scip[ParsedListItem] = Scip {
     val marker      = simpleMarker.str.run
     val (str, prov) = descriptionListContent.run
@@ -27,7 +27,7 @@ object ListParsers {
   }
 
   def list: Scip[Slist] =
-    choice(descriptionListItem, simpleListItem).list(Scip {true}).require(_.nonEmpty).map(ListConverter.listtoSast)
+    choice(descriptionListItem, simpleListItem).list(Scip { true }).require(_.nonEmpty).map(ListConverter.listtoSast)
 
   case class ParsedListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
 
