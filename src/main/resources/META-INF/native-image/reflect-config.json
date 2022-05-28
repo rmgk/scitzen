@@ -23,22 +23,6 @@
   "fields":[{"name":"0bitmap$1"}]
 },
 {
-  "name":"fastparse.Implicits$Optioner$",
-  "fields":[{"name":"0bitmap$3"}]
-},
-{
-  "name":"fastparse.Implicits$Repeater$",
-  "fields":[{"name":"0bitmap$2"}]
-},
-{
-  "name":"fastparse.Implicits$Sequencer$",
-  "fields":[{"name":"0bitmap$1"}]
-},
-{
-  "name":"fastparse.IndexedParserInput",
-  "fields":[{"name":"0bitmap$2"}]
-},
-{
   "name":"java.lang.ClassValue"
 },
 {
