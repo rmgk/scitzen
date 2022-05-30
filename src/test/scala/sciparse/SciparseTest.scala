@@ -85,7 +85,7 @@ Immer
       println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
-      assertEquals(resultStr, input)
+      assertEquals(resultStr.trim, input.trim)
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
   }
 
@@ -145,7 +145,7 @@ hah
   b
 ``
 """
-      inline def matcher = ((exact("``")))
+      inline def matcher = ((seq("``")))
       val scx            = Scx(str).copy(tracing = true)
       val bytes          = "``".getBytes(StandardCharsets.UTF_8)
       println(bytes.toList)

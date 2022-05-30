@@ -10,16 +10,16 @@ object BlockParsers {
   val paragraphInlines = InlineParsers.full("\n".any, eolB and spaceLineB)
 
   def paragraph: Scip[Block] = Scip {
-    val attrOpt              = (AttributesParser.braces <~ spaceLineF).opt.run
+    val attrOpt         = (AttributesParser.braces <~ spaceLineF).opt.run
     val (inlines, prov) = withProv(paragraphInlines).run
     Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
   }
 
   def sectionStart: Scip[String] = "=#".any.rep.min(1).str <~ " ".all
   def sectionTitle: Scip[Section] = Scip {
-    val prefix               = sectionStart.run
+    val prefix          = sectionStart.run
     val (inlines, prov) = withProv(sectionInlines).run
-    val attrl                = choice(AttributesParser.braces <~ spaceLineF, AttributesParser.noBraces).opt.run
+    val attrl           = ((AttributesParser.braces <~ spaceLineF) | AttributesParser.noBraces).opt.run
     Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)))(prov)
   }
 
@@ -34,13 +34,11 @@ object BlockParsers {
   }
 
   def alternatives: Scip[Sast] =
-    choice(
-      extendedWhitespace.trace("block ws"),
-      ListParsers.list.trace("block list"),
-      DelimitedBlockParsers.anyDelimited.trace("block delim"),
-      sectionTitle.trace("block title"),
-      (DirectiveParsers.full <~ spaceLineF).trace("block directive"),
-      paragraph.trace("block para")
-    ).trace("block")
+    (extendedWhitespace.trace("block ws") |
+      ListParsers.list.trace("block list") |
+      DelimitedBlockParsers.anyDelimited.trace("block delim") |
+      sectionTitle.trace("block title") |
+      (DirectiveParsers.full <~ spaceLineF).trace("block directive") |
+      paragraph.trace("block para")).trace("block")
 
 }

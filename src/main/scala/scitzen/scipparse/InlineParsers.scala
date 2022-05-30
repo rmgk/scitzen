@@ -16,27 +16,27 @@ object InlineParsers {
 
     val comment: Scip[Directive] =
       withProv(commentStart ifso (until(eolB).min(0) and (endingFun.lookahead or eolB)).str)
-        .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }.trace("comment")
+        .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
-    val notSyntax: Scip[String] = Scip {
+    val notSyntax: Scip[InlineText] = Scip {
       val start = scx.index
       while
         val start = scx.index
-        (until(":".any.or(endChars)).min(0) and (
+        (until(":".any or endChars).min(0).trace("until end") and (
           (DirectiveParsers.syntaxStart.lookahead or ":".all)
-          or (endingFun.lookahead or endChars)
+          or (endingFun.lookahead.trace("ending fun") or endChars)
         )).orFail.run
         scx.index > start
       do ()
       if start == scx.index then scx.fail
-    }.dropstr.trace("plaintext")
-
-    val simpleText: Scip[InlineText] = {
-      notSyntax.map(InlineText.apply)
-    }
+    }.dropstr.map(InlineText.apply)
 
     val inlineSequence: Scip[List[Inline]] =
-      choice(comment, DirectiveParsers.full.trace("directive"), simpleText).list(Scip { true }).require {
+      (comment.trace("comment")
+        | DirectiveParsers.full.trace("directive")
+        | notSyntax.trace("not syntax")).list(Scip {
+        true
+      }).require {
         _.nonEmpty || allowEmpty
       }.trace("inlines full")
 

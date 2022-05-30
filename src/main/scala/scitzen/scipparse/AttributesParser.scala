@@ -25,10 +25,10 @@ object AttributesParser {
       case ("", None) => unquotedText
       case (quotes, bracket) =>
         val closing = bracket.fold(quotes)(_ => s"]$quotes")
-        val myend = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
+        val closingByte = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
         InlineParsers.full(
-          bpred(_ == myend),
-          exact(closing) and verticalSpacesB and terminationCheckB,
+          bpred(_ == closingByte),
+          (seq(closing).trace("closing") and verticalSpacesB.trace("spaces") and terminationCheckB.trace("terminate")).trace("endingfun"),
           allowEmpty = true
         ).trace("inline full")
     }
@@ -43,11 +43,11 @@ object AttributesParser {
     then until(";}\n".any).min(0).str.trace(s"unquoted").run
     else
       val b = bracket.fold("")(_ => "]")
-      (until(exact(s"$b$quotes") and verticalSpacesB and terminationCheckB).min(1).str <~ exact(s"$b$quotes")).run
+      (until(seq(s"$b$quotes") and verticalSpacesB and terminationCheckB).min(1).str <~ seq(s"$b$quotes").orFail).trace(s"quoted ${s"$b$quotes"}").run
   }.trace("string value")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
-    choice(anySpacesB ifso braces.map(Left.apply), stringValue.map(Right.apply))
+    (anySpacesB ifso braces.map(Left.apply)) | stringValue.map(Right.apply)
 
   val namedAttribute: Scip[Attribute] = Scip {
     verticalSpacesB.orFail.run
@@ -67,7 +67,7 @@ object AttributesParser {
     scitzen.sast.Attribute.Positional(mtxt, Some(contents))
   }.trace("pos attr")
 
-  val attribute: Scip[Attribute] = choice(namedAttribute, positionalAttribute).trace("attribute")
+  val attribute: Scip[Attribute] = (namedAttribute | positionalAttribute).trace("attribute")
 
   def listOf(elem: Scip[Attribute], min: Int): Scip[Seq[Attribute]] =
     (elem.list(";\n".any).require(_.sizeIs >= min) <~ ";".all.trace("list end attempt")).trace("list of")

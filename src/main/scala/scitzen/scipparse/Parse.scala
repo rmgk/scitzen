@@ -14,7 +14,6 @@ object Parse {
         maxpos = content.length,
         depth = 0,
         lastFail = -1,
-        reason = "",
         tracing = false
       ))
     catch case f: ScipEx => throw IllegalStateException(f.getMessage)

@@ -12,7 +12,7 @@ object DelimitedBlockParsers {
     val delimiter    = start.run
     val command      = DirectiveParsers.macroCommand.opt.trace("delimited marco").run
     val attr         = (AttributesParser.braces.opt <~ spaceLineF).trace("delim braces").run
-    val (text, prov) = withProv(untilIS(eolB and exact(delimiter) and spaceLineB)).trace("delim block").run
+    val (text, prov) = withProv(untilIS(eolB and seq(delimiter) and spaceLineB)).trace("delim block").run
     val stripRes     = stripIfPossible(text, delimiter.length)
     val strippedText = stripRes.getOrElse(text)
     val rawAttr      = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
@@ -56,9 +56,9 @@ object DelimitedBlockParsers {
       significantSpaceLineB.rep.run
       val indentation = (significantVerticalSpacesB.str <~ eolB.lookahead.map(!_).orFail).run
       val start       = (untilI(eolB)).dropstr.run
-      val indentP     = exact(indentation).orFail
-      val lines = choice(
-        indentP ~> untilI(eolB).dropstr,
+      val indentP     = seq(indentation).orFail
+      val lines = (
+        (indentP ~> untilI(eolB).dropstr) |
         (significantSpaceLineB.rep.min(0).str <~ indentP.lookahead)
       ).list(Scip {true}).run
 

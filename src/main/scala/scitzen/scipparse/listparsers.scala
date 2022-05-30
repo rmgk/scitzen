@@ -27,7 +27,7 @@ object ListParsers {
   }
 
   def list: Scip[Slist] =
-    choice(descriptionListItem, simpleListItem).list(Scip { true }).require(_.nonEmpty).map(ListConverter.listtoSast)
+    (descriptionListItem | simpleListItem).list(Scip { true }).require(_.nonEmpty).map(ListConverter.listtoSast)
 
   case class ParsedListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
 
