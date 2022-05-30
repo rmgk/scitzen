@@ -207,4 +207,14 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
     )
   }
 
+  test("lists") {
+    rewrap("""
+    |
+    |• a
+    |• b
+    |• c
+    |
+    |""".stripMargin)
+  }
+
 }

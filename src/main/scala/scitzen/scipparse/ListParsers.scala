@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets
 object ListParsers {
 
   def simpleMarker: Scip[Boolean] =
-    (verticalSpacesB and ("-•*".any or (digitsB and ".".all)) and verticalSpaceB)
+    (verticalSpacesB and ("-•*".any.trace("list symbol") or (digitsB and ".".all)) and verticalSpaceB).trace("list marker")
 
   def simpleListItem: Scip[ParsedListItem] = Scip {
     val marker          = simpleMarker.str.run
