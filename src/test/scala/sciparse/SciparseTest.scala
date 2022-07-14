@@ -12,7 +12,7 @@ class SciparseTest extends munit.FunSuite {
   test("basic directive") {
     try
       val res =
-        DirectiveParsers.full.run0(
+        DirectiveParsers.full.runInContext(
           Scx(""":emph{some plaintext; key= value ; key= [value];[[1, 10, 20, 30, 80]]  }""").copy(tracing = true)
         )
       println(res)
@@ -25,7 +25,7 @@ class SciparseTest extends munit.FunSuite {
   test("nested") {
     try
       val res =
-        DirectiveParsers.full.run0(Scx(""":emph{ :{ note } }""").copy(tracing = true))
+        DirectiveParsers.full.runInContext(Scx(""":emph{ :{ note } }""").copy(tracing = true))
       println(res)
       val result    = SastToScimConverter.toScimS(List(res))
       val resultStr = result.iterator.mkString("", "\n", "\n")
@@ -42,7 +42,7 @@ class SciparseTest extends munit.FunSuite {
           |
           |A Paragraph!""".stripMargin
 
-      val res       = Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+      val res       = Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "")
       assertEquals(resultStr, input + "\n")
@@ -63,7 +63,7 @@ class SciparseTest extends munit.FunSuite {
 Immer
 """
 
-      val res       = Parse.parserDocument.run0(Scx(input).copy(tracing = false))
+      val res       = Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr, input + "\n")
@@ -81,7 +81,7 @@ Immer
 ::
 """
       val res =
-        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+        Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
       println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
@@ -112,7 +112,7 @@ hah
 ::
 """
       val res =
-        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+        Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
       println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
@@ -130,7 +130,7 @@ hah
 ``
 """
       val res =
-        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+        Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
       println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
@@ -151,7 +151,7 @@ hah
       println(bytes.toList)
       println(scx.available)
       println(printCode(matcher))
-      println(matcher.run0(scx))
+      println(matcher.runInContext(scx))
 
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
   }
@@ -165,7 +165,7 @@ hah
 
 """
       val res =
-        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+        Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
       println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
@@ -180,7 +180,7 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
 
 """
       val res =
-        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+        Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
       println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
@@ -191,7 +191,7 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
   def rewrap(input: String)(using Location) =
     try
       val res =
-        Parse.parserDocument.run0(Scx(input).copy(tracing = true))
+        Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
       println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")

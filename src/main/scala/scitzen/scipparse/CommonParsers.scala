@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 object CommonParsers {
   inline def verticalSpaceB: Scip[Boolean]      = " \t".any
   inline def newlineB: Scip[Boolean]            = "\n".all
-  val eolB: Scip[Boolean]                       = "\n".any.or(scipend)
+  val eolB: Scip[Boolean]                       = "\n".any.or(end)
   val verticalSpacesB: Scip[Boolean]            = " \t".any.rep.min(0)
   val significantVerticalSpacesB: Scip[Boolean] = " \t".any.rep.min(1)
   val spaceLineB: Scip[Boolean]                 = (verticalSpacesB and eolB)
