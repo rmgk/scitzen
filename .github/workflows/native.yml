@@ -18,13 +18,13 @@ jobs:
         include:
           - os: macOS-11
             uploaded_filename: scitzen-x86_64-apple-darwin
-            local_path: cli/target/native-image/scitzen
+            local_path: scitzen/target/native-image/scitzen
           - os: ubuntu-20.04
             uploaded_filename: scitzen-x86_64-pc-linux
-            local_path: cli/target/native-image/scitzen
+            local_path: scitzen/target/native-image/scitzen
           - os: windows-2019
             uploaded_filename: scitzen-x86_64-pc-win32.exe
-            local_path: cli\target\native-image\scitzen.exe
+            local_path: scitzen\target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
       - uses: coursier/cache-action@v6
