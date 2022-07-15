@@ -14,44 +14,35 @@ jobs:
       fail-fast: false
       matrix:
         # if these are updated, also update the references below
-        os: [macOS-11, ubuntu-20.04, windows-2019]
+        os: [macOS-12, ubuntu-22.04, windows-2022]
         include:
-          - os: macOS-11
+          - os: macOS-12
             uploaded_filename: scitzen-x86_64-apple-darwin
-            local_path: scitzen/target/native-image/scitzen
-          - os: ubuntu-20.04
+            local_path: /Users/runner/work/scitzen/scitzen/target/native-image/scitzen
+          - os: ubuntu-22.04
             uploaded_filename: scitzen-x86_64-pc-linux
-            local_path: scitzen/target/native-image/scitzen
-          - os: windows-2019
+            local_path: /home/runner/work/scitzen/scitzen/target/native-image/scitzen
+          - os: windows-2022
             uploaded_filename: scitzen-x86_64-pc-win32.exe
-            local_path: scitzen\target\native-image\scitzen.exe
+            local_path: D:\a\scitzen\scitzen\target\native-image\scitzen.exe
     steps:
       - uses: actions/checkout@v2
       - uses: coursier/cache-action@v6
         continue-on-error: true
-      - uses: DeLaGuardo/setup-graalvm@5.0
+      - uses: graalvm/setup-graalvm@v1
         with:
-          graalvm: '22.0.0.2'
-          java: 'java17'
+          version: '22.1.0'
+          java-version: '17'
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: coursier/setup-action@v1
         with:
           apps: sbt
       - run: git fetch --tags || true
-      - name: generate native image (linux)
+      - name: generate native image
         run: sbt nativeImage
-        shell: bash
-        if: ${{ matrix.os != 'windows-2019' }}
         env:
-          JAVA_OPTS: -Xmx1g
-      - name: generate native image (windows)
-        shell: cmd
-        if: ${{ matrix.os == 'windows-2019' }}
-        run: >-
-          "C:\Program Files (x86)\Microsoft Visual
-          Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && sbt
-          nativeImage
-        env:
-          JAVA_OPTS: -Xmx1g
+          JAVA_OPTS: -Xmx6g
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
