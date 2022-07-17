@@ -27,15 +27,12 @@ object ConvertHtml:
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
 
   def convertToHtml(
-                     project: Project,
-                     sync: Option[ClSync],
-                     preprocessed: PreprocessedResults,
+      project: Project,
+      sync: Option[ClSync],
+      preprocessed: PreprocessedResults,
   ): Unit =
 
     val katexmapfile = project.cacheDir / "katexmap.json"
-    val cssfile      = project.outputdir / "scitzen.css"
-    val cssstring = new String(stylesheet, charset)
-    cssfile.writeByteArray(stylesheet)
 
     val nlp: Option[NLP] =
       Option.when(project.nlpdir.isDirectory) {
@@ -43,9 +40,13 @@ object ConvertHtml:
       }
 
     val pathManager =
-      val articleOutput = project.outputdir / "articles"
+      val articleOutput = project.outputdir / "web"
       articleOutput.createDirectories()
       HtmlPathManager(project.root, project, articleOutput)
+
+    val cssfile   = pathManager.articleOutputDir / "scitzen.css"
+    val cssstring = new String(stylesheet, charset)
+    cssfile.writeByteArray(stylesheet)
 
     @tailrec
     def procRec(
@@ -84,7 +85,7 @@ object ConvertHtml:
       cssstring: String,
       pathManager: HtmlPathManager
   ): Unit =
-    val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager)
+    val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager, pathManager.articleOutputDir)
     val convertedCtx = new SastToHtmlConverter(
       bundle = scalatags.Text,
       pathManager = pathManager,
@@ -93,7 +94,7 @@ object ConvertHtml:
       preprocessed = preprocessed,
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
-    val res = HtmlPages(project.outputdir.relativize(cssfile).toString, cssstring)
+    val res = HtmlPages(pathManager.articleOutputDir.relativize(cssfile).toString, cssstring)
       .wrapContentHtml(
         convertedCtx.data.toList,
         "index",
@@ -101,7 +102,7 @@ object ConvertHtml:
         "Index",
         None
       )
-    project.outputdir./("index.html").write(res)
+    pathManager.articleOutputDir./("index.html").write(res)
 
   private def loadKatex(katexmapfile: File): Map[String, String] =
     Try {

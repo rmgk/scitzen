@@ -19,7 +19,7 @@ case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File):
 
   def relativizeImage(targetFile: File): Path =
     def translateImage(image: File): File =
-      (project.outputdir / "images").path.resolve(project.root.relativize(image))
+      (articleOutputDir / "images").path.resolve(project.root.relativize(image))
     articleOutputDir.relativize(translateImage(targetFile))
 
   def relativeArticleTarget(targetPost: Article): Path =

@@ -5,14 +5,14 @@ import scalatags.Text.all.SeqFrag
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel}
 import scalatags.Text.implicits.{raw, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
-import scalatags.Text.tags2.{aside, main, nav, title,style}
+import scalatags.Text.tags2.{aside, main, nav, title}
 
 class HtmlPages(cssPath: String, fullCss: String):
 
   def tHead(titled: String): Tag =
     head(
       title(titled),
-      style(`type` := "text/css", raw(fullCss)),
+      link(href    := cssPath, rel        := "stylesheet", `type` := "text/css"),
       meta(name    := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
       meta(charset := "UTF-8")
     )
