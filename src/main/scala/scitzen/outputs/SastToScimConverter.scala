@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import de.rmgk.Chain
-import scitzen.scipparse.{AttributesParser, Parse}
+import scitzen.parser.{AttributesParser, Parse}
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
 import scitzen.sast.DCommand.Comment

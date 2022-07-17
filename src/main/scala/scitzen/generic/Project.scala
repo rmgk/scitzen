@@ -57,7 +57,7 @@ object Project:
     val configContent = (file / scitzenconfig).byteArray
     val value         = ProjectConfig.parse(configContent)
     val definitions = value.definitions.view.map { (k, v) =>
-      k -> Text(scitzen.scipparse.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8), Prov()))
+      k -> Text(scitzen.parser.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8), Prov()))
     }.toMap
     Some(Project(file, value, definitions))
 

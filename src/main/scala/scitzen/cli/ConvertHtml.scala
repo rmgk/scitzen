@@ -34,6 +34,7 @@ object ConvertHtml:
 
     val katexmapfile = project.cacheDir / "katexmap.json"
     val cssfile      = project.outputdir / "scitzen.css"
+    val cssstring = new String(stylesheet, charset)
     cssfile.writeByteArray(stylesheet)
 
     val nlp: Option[NLP] =
@@ -59,6 +60,7 @@ object ConvertHtml:
             article,
             pathManager.changeWorkingFile(article.sourceDoc.file),
             cssfile,
+            cssstring,
             sync,
             nlp,
             preprocessed,
@@ -73,12 +75,13 @@ object ConvertHtml:
     pathManager.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
 
-    makeindex(project, preprocessed, cssfile, pathManager)
+    makeindex(project, preprocessed, cssfile, cssstring, pathManager)
 
   private def makeindex(
       project: Project,
       preprocessed: PreprocessedResults,
       cssfile: File,
+      cssstring: String,
       pathManager: HtmlPathManager
   ): Unit =
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.articles, pathManager)
@@ -90,7 +93,7 @@ object ConvertHtml:
       preprocessed = preprocessed,
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
-    val res = HtmlPages(project.outputdir.relativize(cssfile).toString)
+    val res = HtmlPages(project.outputdir.relativize(cssfile).toString, cssstring)
       .wrapContentHtml(
         convertedCtx.data.toList,
         "index",
@@ -117,6 +120,7 @@ object ConvertHtml:
       article: Article,
       pathManager: HtmlPathManager,
       cssfile: File,
+      cssstring: String,
       sync: Option[ClSync],
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
@@ -154,7 +158,7 @@ object ConvertHtml:
       case None =>
         val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
 
-        HtmlPages(cssrelpath).wrapContentHtml(
+        HtmlPages(cssrelpath, cssstring).wrapContentHtml(
           contentFrag,
           "fullpost",
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),

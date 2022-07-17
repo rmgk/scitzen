@@ -16,7 +16,7 @@ object Document:
   def apply(file: File): Document =
     val content = file.byteArray
     try
-      val sast = scitzen.scipparse.Parse.documentUnwrap(content, Prov(0, content.length))
+      val sast = scitzen.parser.Parse.documentUnwrap(content, Prov(0, content.length))
       Document(file, new String(content, StandardCharsets.UTF_8), sast.toList)
     catch
       case NonFatal(e) =>

@@ -1,10 +1,10 @@
-package scitzen.scipparse
+package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.sast.DCommand.Comment
 import scitzen.sast.{Attribute, Directive, Inline, InlineText}
-import scitzen.scipparse.CommonParsers.*
-import scitzen.scipparse.DirectiveParsers.commentStart
+import scitzen.parser.CommonParsers.*
+import scitzen.parser.DirectiveParsers.commentStart
 
 object InlineParsers {
 

@@ -1,6 +1,6 @@
 package sciparse
 
-import scitzen.scipparse.{AttributesParser, BlockParsers, CommonParsers, DirectiveParsers, Parse}
+import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DirectiveParsers, Parse}
 import de.rmgk.scip.*
 import munit.Location
 import scitzen.outputs.SastToScimConverter

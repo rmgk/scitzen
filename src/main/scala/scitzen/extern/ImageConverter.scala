@@ -1,11 +1,11 @@
 package scitzen.extern
 
-import better.files.{File, *}
+import better.files.*
 import scitzen.compat.Logging.scribe
 import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.sast.{Attributes, Block, Fenced, Prov}
-import scitzen.scipparse.Parse
+import scitzen.parser.Parse
 
 import java.io.IOError
 import java.lang.ProcessBuilder.Redirect

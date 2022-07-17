@@ -1,8 +1,8 @@
-package scitzen.scipparse
+package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.sast.{Attribute, Attributes, Inline, Text}
-import scitzen.scipparse.CommonParsers.*
+import scitzen.parser.CommonParsers.*
 
 import java.nio.charset.StandardCharsets
 

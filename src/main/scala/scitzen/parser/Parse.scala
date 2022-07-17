@@ -1,4 +1,4 @@
-package scitzen.scipparse
+package scitzen.parser
 
 import scitzen.sast.{Inline, Prov, Sast}
 

@@ -4,8 +4,8 @@ import better.files.File
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import scitzen.generic.{Document, Project}
 import scitzen.outputs.SastToSastConverter
-import scitzen.scipparse._
-import scitzen.sast.{Prov}
+import scitzen.parser._
+import scitzen.sast.Prov
 
 import java.nio.charset.{Charset, StandardCharsets}
 

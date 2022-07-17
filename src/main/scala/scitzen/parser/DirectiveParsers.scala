@@ -1,6 +1,6 @@
-package scitzen.scipparse
+package scitzen.parser
 
-import scitzen.scipparse.CommonParsers._
+import scitzen.parser.CommonParsers._
 import scitzen.sast.DCommand.Comment
 import scitzen.sast.{Attribute, Attributes, Directive, DCommand}
 import de.rmgk.scip.*

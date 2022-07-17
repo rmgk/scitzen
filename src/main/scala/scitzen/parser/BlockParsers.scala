@@ -1,8 +1,8 @@
-package scitzen.scipparse
+package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.sast.{Attributes, Block, Paragraph, Sast, Section, SpaceComment, Text}
-import scitzen.scipparse.CommonParsers.*
+import scitzen.parser.CommonParsers.*
 
 object BlockParsers {
 

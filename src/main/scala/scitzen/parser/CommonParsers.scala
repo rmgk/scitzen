@@ -1,4 +1,4 @@
-package scitzen.scipparse
+package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.sast.Prov

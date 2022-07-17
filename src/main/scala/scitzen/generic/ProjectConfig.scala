@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import scitzen.outputs.SastToScimConverter
-import scitzen.scipparse.{AttributesParser, Parse}
+import scitzen.parser.{AttributesParser, Parse}
 import scitzen.sast.{Attributes, Directive, Prov, Text}
 import scala.util.chaining.scalaUtilChainingOps
 
