@@ -22,7 +22,7 @@ object Bibtex:
         Author(Option(a.getGiven), Option(a.getFamily))
       ).toList,
       title = Option(entry.getTitle),
-      year = Option(entry.getIssued).flatMap(_.getDateParts.flatten.headOption),
+      year = Option(entry.getIssued).flatMap(i => Option(i.getDateParts).flatMap(_.flatten.headOption)),
       container = Option(entry.getContainerTitle),
       `type` = Option(entry.getType).map(_.toString).getOrElse("unknown-csl-type"),
       url = Option(entry.getURL),
