@@ -12,9 +12,9 @@ object AttributesParser {
   inline val close = "}"
 
   val terminationCheckB: Scip[Boolean] = (";".all or close.all or eolB).lookahead
-  val terminationCheck: Scip[Unit] = terminationCheckB.orFail
-  val unquotedInlines               = InlineParsers.full((";\n"+close).any, terminationCheckB, allowEmpty = true)
-  val unquotedText   : Scip[Seq[Inline]] = unquotedInlines.trace("unquoted")
+  val terminationCheck: Scip[Unit]     = terminationCheckB.orFail
+  val unquotedInlines                  = InlineParsers.full((";\n" + close).any, terminationCheckB, allowEmpty = true)
+  val unquotedText: Scip[Seq[Inline]]  = unquotedInlines.trace("unquoted")
 
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
@@ -24,11 +24,13 @@ object AttributesParser {
     val r = ("\"".all.rep.dropstr.run, "[".all.str.opt.run) match {
       case ("", None) => unquotedText
       case (quotes, bracket) =>
-        val closing = bracket.fold(quotes)(_ => s"]$quotes")
+        val closing     = bracket.fold(quotes)(_ => s"]$quotes")
         val closingByte = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
         InlineParsers.full(
           bpred(_ == closingByte),
-          (seq(closing).trace("closing") and verticalSpacesB.trace("spaces") and terminationCheckB.trace("terminate")).trace("endingfun"),
+          (seq(closing).trace("closing") and verticalSpacesB.trace("spaces") and terminationCheckB.trace(
+            "terminate"
+          )).trace("endingfun"),
           allowEmpty = true
         ).trace("inline full")
     }
@@ -43,7 +45,9 @@ object AttributesParser {
     then until(";}\n".any).min(0).str.trace(s"unquoted").run
     else
       val b = bracket.fold("")(_ => "]")
-      (until(seq(s"$b$quotes") and verticalSpacesB and terminationCheckB).min(1).str <~ seq(s"$b$quotes").orFail).trace(s"quoted ${s"$b$quotes"}").run
+      (until(seq(s"$b$quotes") and verticalSpacesB and terminationCheckB).min(1).str <~ seq(s"$b$quotes").orFail).trace(
+        s"quoted ${s"$b$quotes"}"
+      ).run
   }.trace("string value")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
@@ -61,8 +65,8 @@ object AttributesParser {
   }.trace("named attr")
 
   val positionalAttribute: Scip[Attribute] = Scip {
-    val begin = scx.index
-    val mtxt = text.run
+    val begin    = scx.index
+    val mtxt     = text.run
     val contents = scx.str(begin, scx.index)
     scitzen.sast.Attribute.Positional(mtxt, Some(contents))
   }.trace("pos attr")

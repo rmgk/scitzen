@@ -6,7 +6,7 @@ import scitzen.parser.CommonParsers.*
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text
-  def anyStart: Scip[String] = (":`".any.rep.min(2).str)
+  def anyStart: Scip[String] = ":`".any.rep.min(2).str
 
   def makeDelimited(start: Scip[String]): Scip[Block] = Scip {
     val delimiter    = start.run
@@ -20,7 +20,8 @@ object DelimitedBlockParsers {
       delimiter(0) match {
         case '`' => Fenced(strippedText)
         case ':' =>
-          val sast: Seq[Sast] = Parse.parserDocument.trace("subparser delim").run(using Scx(strippedText).copy(tracing = scx.tracing, depth = scx.depth))
+          val sast: Seq[Sast] = Parse.parserDocument.trace("subparser delim").run(using
+          Scx(strippedText).copy(tracing = scx.tracing, depth = scx.depth))
           scitzen.sast.Parsed(delimiter, sast)
       }
     scitzen.sast.Block(
@@ -59,11 +60,13 @@ object DelimitedBlockParsers {
       val indentP     = seq(indentation).orFail
       val lines = (
         (indentP ~> untilI(eolB).dropstr) |
-        (significantSpaceLineB.rep.min(0).str <~ indentP.lookahead)
-      ).list(Scip {true}).run
+          (significantSpaceLineB.rep.min(0).str <~ indentP.lookahead)
+      ).list(Scip { true }).run
 
       val sast: Seq[Sast] =
-        Parse.parserDocument.trace("subparser").run(using Scx((start +: lines).mkString).copy(tracing = scx.tracing, depth = scx.depth)) // Prov(index, indent = indentation.length))
+        Parse.parserDocument.trace("subparser").run(using
+          Scx((start +: lines).mkString).copy(tracing = scx.tracing, depth = scx.depth)
+        ) // Prov(index, indent = indentation.length))
       scitzen.sast.Parsed(indentation, sast)
     }).run
     scitzen.sast.Block(Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))
