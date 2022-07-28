@@ -12,7 +12,7 @@ object DelimitedBlockParsers {
     val delimiter    = start.run
     val command      = DirectiveParsers.macroCommand.opt.trace("delimited marco").run
     val attr         = (AttributesParser.braces.opt <~ spaceLineF).trace("delim braces").run
-    val (text, prov) = withProv(untilIS(eolB and seq(delimiter) and spaceLineB)).trace("delim block").run
+    val (text, prov) = withProv(untilIS(eol and seq(delimiter) and spaceLineB)).trace("delim block").run
     val stripRes     = stripIfPossible(text, delimiter.length)
     val strippedText = stripRes.getOrElse(text)
     val rawAttr      = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
@@ -54,13 +54,13 @@ object DelimitedBlockParsers {
   def whitespaceLiteral: Scip[Block] = Scip {
     val (parsed, prov) = withProv(Scip {
       val index = scx.index
-      significantSpaceLineB.rep.run
-      val indentation = (significantVerticalSpacesB.str <~ eolB.lookahead.map(!_).orFail).run
-      val start       = (untilI(eolB)).dropstr.run
+      significantSpaceLine.rep.run
+      val indentation = (significantVerticalSpaces.str <~ eol.lookahead.map(!_).orFail).run
+      val start       = (untilI(eol)).dropstr.run
       val indentP     = seq(indentation).orFail
       val lines = (
-        (indentP ~> untilI(eolB).dropstr) |
-          (significantSpaceLineB.rep.min(0).str <~ indentP.lookahead)
+        (indentP ~> untilI(eol).dropstr) |
+        (significantSpaceLine.rep.min(0).str <~ indentP.lookahead)
       ).list(Scip { true }).run
 
       val sast: Seq[Sast] =

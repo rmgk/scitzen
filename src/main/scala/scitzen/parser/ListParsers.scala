@@ -8,19 +8,19 @@ import java.nio.charset.StandardCharsets
 object ListParsers {
 
   def simpleMarker: Scip[Boolean] =
-    (verticalSpacesB and ("-•*".any.trace("list symbol") or (digitsB and ".".all)) and verticalSpaceB).trace(
+    (verticalSpaces and ("-•*".any.trace("list symbol") or (digits and ".".all)) and verticalSpace).trace(
       "list marker"
     )
 
   def simpleListItem: Scip[ParsedListItem] = Scip {
     val marker          = simpleMarker.str.run
-    val (content, prov) = withProv(until(eolB and (spaceLineB or simpleMarker)).min(0).str <~ eolB.orFail).run
+    val (content, prov) = withProv(until(eol and (spaceLineB or simpleMarker)).min(0).str <~ eol.orFail).run
     ParsedListItem(marker, content, prov, None)
   }
 
   def descriptionListContent: Scip[(String, Prov)] =
-    withProv(until(((":".all and verticalSpacesB and eolB) or eolB)).min(1).str <~
-      (":".all and verticalSpacesB and eolB).orFail)
+    withProv(until(((":".all and verticalSpaces and eol) or eol)).min(1).str <~
+             (":".all and verticalSpaces and eol).orFail)
   def descriptionListItem: Scip[ParsedListItem] = Scip {
     val marker      = simpleMarker.str.run
     val (str, prov) = descriptionListContent.run

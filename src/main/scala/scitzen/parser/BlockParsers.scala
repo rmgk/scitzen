@@ -6,8 +6,8 @@ import scitzen.parser.CommonParsers.*
 
 object BlockParsers {
 
-  val sectionInlines   = InlineParsers.full(eolB)
-  val paragraphInlines = InlineParsers.full(eolB and spaceLineB)
+  val sectionInlines   = InlineParsers.full(eol)
+  val paragraphInlines = InlineParsers.full(eol and spaceLineB)
 
   def paragraph: Scip[Block] = Scip {
     val attrOpt         = (AttributesParser.braces <~ spaceLineF).opt.run
@@ -25,7 +25,7 @@ object BlockParsers {
 
   val extendedWhitespace: Scip[Block] = Scip {
     val (str, prov) = withProv(
-      (significantSpaceLineB.trace("spaceline").or(
+      (significantSpaceLine.trace("spaceline").or(
         DirectiveParsers.comment.attempt.trace("comment")
       ))
         .trace("space or comment").rep.min(1).str

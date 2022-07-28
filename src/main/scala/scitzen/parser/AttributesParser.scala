@@ -11,7 +11,7 @@ object AttributesParser {
   inline val open  = "{"
   inline val close = "}"
 
-  val terminationCheckB: Scip[Boolean] = (";".all or close.all or eolB).lookahead
+  val terminationCheckB: Scip[Boolean] = (";".all or close.all or eol).lookahead
   val unquotedInlines: Scip[List[Inline]] =
     InlineParsers.full( terminationCheckB, allowEmpty = true)
 
@@ -19,14 +19,14 @@ object AttributesParser {
     * but the closing quote must match the opening quote
     */
   val text: Scip[Text] = Scip {
-    anySpaces.run
+    anySpacesF.run
     val r = ("\"".all.rep.dropstr.run, "[".all.str.opt.run) match {
       case ("", None) => unquotedInlines
       case (quotes, bracket) =>
         val closing     = bracket.fold(quotes)(_ => s"]$quotes")
         val closingByte = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
         InlineParsers.full(
-          (seq(closing).trace("closing") and verticalSpacesB.trace("spaces") and terminationCheckB.trace(
+          (seq(closing).trace("closing") and verticalSpaces.trace("spaces") and terminationCheckB.trace(
             "terminate"
           )).trace("endingfun"),
           allowEmpty = true
@@ -36,14 +36,14 @@ object AttributesParser {
   }.trace("text")
 
   val stringValue: Scip[String] = Scip {
-    anySpaces.run
+    anySpacesF.run
     val quotes  = "\"".all.rep.min(0).str.trace(s"kv q").run
     val bracket = "[".all.str.opt.trace("kv b").run
     if quotes.isEmpty && bracket.isEmpty
     then until(";}\n".any).min(0).str.trace(s"unquoted").run
     else
       val b = bracket.fold("")(_ => "]")
-      (until(seq(s"$b$quotes") and verticalSpacesB and terminationCheckB).min(1).str <~ seq(s"$b$quotes").orFail).trace(
+      (until(seq(s"$b$quotes") and verticalSpaces and terminationCheckB).min(1).str <~ seq(s"$b$quotes").orFail).trace(
         s"quoted ${s"$b$quotes"}"
       ).run
   }.trace("string value")
@@ -52,9 +52,9 @@ object AttributesParser {
     (anySpacesB ifso braces.map(Left.apply)) | stringValue.map(Right.apply)
 
   val namedAttribute: Scip[Attribute] = Scip {
-    verticalSpacesB.orFail.run
+    verticalSpaces.orFail.run
     val id = identifierB.str.run
-    verticalSpacesB.orFail.run
+    verticalSpaces.orFail.run
     "=".all.orFail.run
     namedAttributeValue.trace("attr value").run match {
       case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
@@ -76,9 +76,9 @@ object AttributesParser {
 
   val braces: Scip[Seq[Attribute]] = Scip {
     open.all.orFail.run
-    anySpaces.run
+    anySpacesF.run
     val res = listOf(attribute, min = 0).trace("bracelist").run
-    anySpaces.run
+    anySpacesF.run
     close.all.orFail.run
     res
   }.trace("braces")
@@ -92,7 +92,7 @@ object AttributesParser {
 
   val configFile: Scip[Seq[Attribute]] = Scip {
     val res = noBraces.opt.map(_.getOrElse(Nil)).run
-    anySpaces.run
+    anySpacesF.run
     res
   }
 

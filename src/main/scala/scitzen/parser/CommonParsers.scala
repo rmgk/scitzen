@@ -7,17 +7,17 @@ import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 
 object CommonParsers {
-  inline def verticalSpaceB: Scip[Boolean]      = " \t".any
-  inline def newlineB: Scip[Boolean]            = "\n".all
-  val eolB: Scip[Boolean]                       = "\n".any.or(end)
-  val verticalSpacesB: Scip[Boolean]            = " \t".any.rep.min(0)
-  val significantVerticalSpacesB: Scip[Boolean] = " \t".any.rep.min(1)
-  val spaceLineB: Scip[Boolean]                 = (verticalSpacesB and eolB)
-  val spaceLineF: Scip[Unit]                    = spaceLineB.orFail
-  val significantSpaceLineB: Scip[Boolean]      = (significantVerticalSpacesB and eolB) or newlineB
-  val anySpacesB: Scip[Boolean]                 = " \t\n".any.rep.min(0)
-  val anySpaces: Scip[Unit]                     = anySpacesB.orFail
-  val digitsB: Scip[Boolean]                    = cpred(Character.isDigit).rep.min(1)
+  inline def verticalSpace: Scip[Boolean]      = " \t".any
+  inline def newline: Scip[Boolean]            = "\n".all
+  val eol: Scip[Boolean]                       = newline or end
+  val verticalSpaces: Scip[Boolean]            = verticalSpace.rep.min(0)
+  val significantVerticalSpaces: Scip[Boolean] = verticalSpace.rep.min(1)
+  val spaceLineB: Scip[Boolean]                = verticalSpaces and eol
+  val spaceLineF: Scip[Unit]                   = spaceLineB.orFail
+  val significantSpaceLine: Scip[Boolean]      = (significantVerticalSpaces and eol) or newline
+  val anySpacesB: Scip[Boolean]                = " \t\n".any.rep.min(0)
+  val anySpacesF: Scip[Unit]                   = anySpacesB.orFail
+  val digits: Scip[Boolean]                    = cpred(Character.isDigit).rep.min(1)
 
   inline def untilI(inline end: Scip[Boolean]): Scip[(Int, Int)] = Scip {
     val start        = scx.index
