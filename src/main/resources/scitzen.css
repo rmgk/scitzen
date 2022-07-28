@@ -81,7 +81,7 @@ main {
 	}
 
 	/* oversized elements */
-	main > img, main > figure, main > video, main > pre {
+	main > :is(img, figure, video, pre) {
 		/* oversized figures and images */
 		grid-column: image-start / image-end;
 
@@ -130,13 +130,13 @@ h4 { font-style: italic; }
 .fullpost main {
 	counter-reset: section;
 }
-.fullpost  h2 {
+.fullpost h2 {
 	counter-increment: section;
 	counter-reset: subsection;
 }
-.fullpost  h3 { counter-increment: subsection; }
-.fullpost  h2:before { content: counter(section) ". "; }
-.fullpost  h3:before { content: counter(section) "." counter(subsection) ". "; }
+.fullpost h3 { counter-increment: subsection; }
+.fullpost h2:before { content: counter(section) ". "; }
+.fullpost h3:before { content: counter(section) "." counter(subsection) ". "; }
 
 
 
@@ -168,13 +168,15 @@ time {
 
 /* basic text styling */
 
-main p, main ol, main ul, main dl {
+main :is(p, ol, ul, dl) {
 	text-align: justify;
 	/* set line-height to 30 scaled pixels */
 	line-height: calc(30/18);
 	/* text based things always are limited to content width, */
 	/* even when nested inside something else */
 	max-width: var(--main-content-width);
+	/* display linebreaks by default */
+	white-space: pre-line;
 }
 
 a {
@@ -193,10 +195,10 @@ figure, blockquote, pre, dd {
 	padding: var(--normal-gap);
 }
 /* remove top&bottom margins of nested elements */
-figure > :first-child, blockquote > :first-child, pre > :first-child, dd > :first-child {
+:is(figure, blockquote, pre, dd) > :first-child {
 	margin-top: 0;
 }
-figure > :last-child, blockquote > :last-child, pre > :last-child, dd > :last-child {
+:is(figure, blockquote, pre, dd) > :last-child {
 	margin-bottom: 0;
 }
 
