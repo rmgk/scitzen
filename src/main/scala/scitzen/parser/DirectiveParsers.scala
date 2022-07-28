@@ -6,7 +6,7 @@ import scitzen.sast.{Attribute, Attributes, Directive, DCommand}
 import de.rmgk.scip.*
 
 object DirectiveParsers {
-  val detectStart: Scip[Boolean] = (":".all and (Identifier.identifier or Scip(true)) and AttributesParser.open.all)
+  val detectStart: Scip[Boolean] = ":".all and Identifier.identifier.opt and AttributesParser.open.all
   val macroCommand: Scip[String] = identifierB.str
 
   val full: Scip[Directive] = withProv(Scip {

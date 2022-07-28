@@ -6,8 +6,8 @@ import scitzen.parser.CommonParsers.*
 
 object BlockParsers {
 
-  val sectionInlines   = InlineParsers.full("\n".any, eolB)
-  val paragraphInlines = InlineParsers.full("\n".any, eolB and spaceLineB)
+  val sectionInlines   = InlineParsers.full(eolB)
+  val paragraphInlines = InlineParsers.full(eolB and spaceLineB)
 
   def paragraph: Scip[Block] = Scip {
     val attrOpt         = (AttributesParser.braces <~ spaceLineF).opt.run
