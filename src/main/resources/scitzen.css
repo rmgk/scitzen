@@ -51,7 +51,7 @@ html {
 
 main {
 	/* this may be necessary for compatibility in some browsers */
-	display:block;
+	display: block;
 }
 
 @media screen {
@@ -94,11 +94,15 @@ main {
 
 /* use a simplified print sheet where all content is just centered */
 @media print {
+	body {
+		font-size: 11pt;
+	}
+
 	main > * {
 		margin-left: auto;
 		margin-right: auto;
-		max-width: var(--main-content-width);
-		display:block;
+		max-width: var(--main-content-width) !important;
+		display: block;
 	}
 
 	.marginnote {
@@ -124,25 +128,32 @@ h1, h2 {
 	border-bottom: var(--theme-border);
 }
 
-h4 { font-style: italic; }
+h4 {
+	font-style: italic;
+}
 
 /* headers counting */
 .fullpost main {
 	counter-reset: section;
 }
+
 .fullpost h2 {
 	counter-increment: section;
 	counter-reset: subsection;
 }
-.fullpost h3 { counter-increment: subsection; }
-.fullpost h2:before { content: counter(section) ". "; }
-.fullpost h3:before { content: counter(section) "." counter(subsection) ". "; }
 
+.fullpost h3 {
+	counter-increment: subsection;
+}
 
+.fullpost h2:before {
+	content: counter(section) ". ";
+}
 
-/*math { */
-/*  font-family: "Libertinus Math", sans-serif; */
-/*} */
+.fullpost h3:before {
+	content: counter(section) "." counter(subsection) ". ";
+}
+
 
 .metadata {
 	display: flex;
@@ -150,6 +161,7 @@ h4 { font-style: italic; }
 	/* even if things become so small that they need to be scrolled */
 	justify-content: safe center;
 }
+
 .metadata > * {
 	margin-right: var(--small-gap);
 }
@@ -170,8 +182,8 @@ time {
 
 main :is(p, ol, ul, dl) {
 	text-align: justify;
-	/* set line-height to 30 scaled pixels */
-	line-height: calc(30/18);
+	/* set line-height to scaled pixels */
+	line-height: calc(28 / 18);
 	/* text based things always are limited to content width, */
 	/* even when nested inside something else */
 	max-width: var(--main-content-width);
@@ -183,21 +195,24 @@ a {
 	text-decoration: none;
 	color: var(--theme-color);
 }
+
 a:hover {
 	filter: brightness(75%);
 }
 
 /* containers of other elements */
 
-figure, blockquote, pre, dd {
+figure, blockquote, pre {
 	background-color: var(--theme-plate-color);
 	border-radius: var(--theme-border-radius);
 	padding: var(--normal-gap);
 }
+
 /* remove top&bottom margins of nested elements */
 :is(figure, blockquote, pre, dd) > :first-child {
 	margin-top: 0;
 }
+
 :is(figure, blockquote, pre, dd) > :last-child {
 	margin-bottom: 0;
 }
@@ -213,14 +228,17 @@ pre {
 	max-width: 100%;
 	box-sizing: border-box;
 }
+
 code {
 	hyphens: none;
 }
+
 :not(pre) > code {
 	background-color: var(--theme-plate-color);
-	padding: 0.var(--normal-gap);
+	padding: 0 . var(--normal-gap);
 	border-radius: var(--theme-border-radius);
 }
+
 pre > code {
 	/* this causes the content of the pre (usually the code) to be wrapped to fit small screen widths */
 	overflow-wrap: break-word;
@@ -285,15 +303,16 @@ del {
 .bibliography li {
 	margin-top: var(--normal-gap);
 }
+
 .bibliography p {
 	line-height: initial;
 	margin: 0;
 	margin-top: var(--small-gap);
 }
+
 .bibliography .container {
 	font-style: italic;
 }
-
 
 
 /**************************************************************/
@@ -303,21 +322,25 @@ del {
 article {
 	display: flex;
 }
+
 @media screen and (max-width: 600px) {
 	article {
 		flex-direction: column;
 	}
 }
+
 @media screen and (min-width: 600px) {
 	article > .category {
 		text-align: right;
 	}
 }
+
 /* space between the items of the article */
 /* while this is part of the html, its eaten by the flex */
 article > * {
 	margin-right: var(--small-gap);
 }
+
 /* make the title get most of the space, */
 /* to cause the tags to be right aligned */
 article > .title {
@@ -328,8 +351,17 @@ article > .title {
 /**************************************************************/
 /* Sidebar design */
 /**************************************************************/
-@media screen { body { display: flex; } }
-@media print { body > aside { display: none; } }
+@media screen {
+	body {
+		display: flex;
+	}
+}
+
+@media print {
+	body > aside {
+		display: none;
+	}
+}
 
 /* body has an optional aside and a main */
 /* if the aside exists, it is pinned on the full height, */
@@ -345,6 +377,7 @@ body > aside {
 	/* max width, because sidebar with very long header names does not look great */
 	max-width: var(--sidebar-max-width);
 }
+
 body > aside > label {
 	position: fixed;
 	bottom: 0;
@@ -355,13 +388,17 @@ body > aside > label {
 	padding: var(--small-gap);
 	z-index: 1;
 }
+
 /* the label is marked as hidden in the HTML, */
 /* because it makes no sense to show it if the stylesheet is not present */
 /* we use this high specificity selector to override the hidden attribute */
-body > aside > label[hidden] { display: initial; }
+body > aside > label[hidden] {
+	display: initial;
+}
+
 body > aside > label > svg {
-		width: 100%;
-		height: 100%;
+	width: 100%;
+	height: 100%;
 }
 
 body > aside > nav {
@@ -408,6 +445,7 @@ body.fullpost > aside > nav ol {
 	counter-reset: item;
 	list-style: none;
 }
+
 body.fullpost > aside > nav li:before {
 	content: counters(item, ".") " ";
 	counter-increment: item;
@@ -415,20 +453,51 @@ body.fullpost > aside > nav li:before {
 
 
 /* remove sidebar nav content depending on screen size and clicked status … */
-#sidebar-switch:checked ~ nav { display: none; }
-#sidebar-switch ~ label .close { display: block; }
-#sidebar-switch ~ label .menu { display: none; }
-#sidebar-switch:checked ~ label .close { display: none; }
-#sidebar-switch:checked ~ label .menu { display: block; }
+#sidebar-switch:checked ~ nav {
+	display: none;
+}
+
+#sidebar-switch ~ label .close {
+	display: block;
+}
+
+#sidebar-switch ~ label .menu {
+	display: none;
+}
+
+#sidebar-switch:checked ~ label .close {
+	display: none;
+}
+
+#sidebar-switch:checked ~ label .menu {
+	display: block;
+}
 
 /* inverted logic for small screens */
 @media (max-width: 600px) {
-	#sidebar-switch ~ nav { display: none; }
-	#sidebar-switch:checked ~ nav { display: block; }
-	#sidebar-switch ~ label .close { display: none; }
-	#sidebar-switch ~ label .menu { display: block; }
-	#sidebar-switch:checked ~ label .close { display: block; }
-	#sidebar-switch:checked ~ label .menu { display: none; }
+	#sidebar-switch ~ nav {
+		display: none;
+	}
+
+	#sidebar-switch:checked ~ nav {
+		display: block;
+	}
+
+	#sidebar-switch ~ label .close {
+		display: none;
+	}
+
+	#sidebar-switch ~ label .menu {
+		display: block;
+	}
+
+	#sidebar-switch:checked ~ label .close {
+		display: block;
+	}
+
+	#sidebar-switch:checked ~ label .menu {
+		display: none;
+	}
 }
 
 /**************************************************************/
@@ -451,10 +520,12 @@ body.fullpost > aside > nav li:before {
 }
 
 
-
 @keyframes fade-target {
-	0%, 30% { background: var(--light-theme-color) }
+	0%, 30% {
+		background: var(--light-theme-color)
+	}
 }
+
 *:target {
 	animation: 1s ease 0s 1 fade-target;
 }
@@ -473,6 +544,7 @@ body.fullpost > aside > nav li:before {
 .token.bold {
 	font-weight: bold;
 }
+
 .token.italic {
 	font-style: italic;
 }
