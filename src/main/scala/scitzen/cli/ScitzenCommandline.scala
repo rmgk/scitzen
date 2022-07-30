@@ -6,51 +6,50 @@ import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
 import scopt.OParser
 import scitzen.compat.Logging.scribe
+import de.rmgk.options.*
 
+import java.awt.datatransfer.ClipboardOwner
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Path, Paths}
 
 object ScitzenCommandline {
 
   def main(args: Array[String]): Unit = {
-    OParser.parse(argsParser, args, ClOptions()) match {
+    val optInstance = ClOptions()
+    OParser.parse(
+      scopt.OParser.sequence(
+        scopt.OParser.builder[ClOptions].help('h', "help").hidden(),
+        makeParser("scitzen", optInstance)
+      ),
+      args,
+      optInstance
+    ) match {
       case None =>
       case Some(options) =>
-        if options.json then
-          val jsonpath = options.path
+        if options.json.value then
+          val jsonpath = options.path.value
           println(JsonSast.jsonFor(
             jsonpath,
-            Project(jsonpath.parent, ProjectConfig.parse("b=c".getBytes(StandardCharsets.UTF_8)), Map.empty)
+            Project(File(jsonpath).parent, ProjectConfig.parse("b=c".getBytes(StandardCharsets.UTF_8)), Map.empty)
           ))
         else
-          Project.fromSource(options.path) match
+          Project.fromSource(options.path.value) match
             case None => scribe.error(s"could not find project for $options.path")
             case Some(project) =>
-              executeConversions(options.sync, options.`image-file-map`, project)
+              executeConversions(options.sync.value, options.`image-file-map`.value, project)
     }
   }
 
-  case class ClSync(path: File = null, position: Int = -1)
+  case class ClSync(path: Path = null, position: Int = -1)
+  given scopt.Read[ClSync] = summon[scopt.Read[(Path, Int)]].map(ClSync.apply)
   case class ClOptions(
-      path: File = File(""),
-      `image-file-map`: Boolean = false,
-      sync: Option[ClSync] = None,
-      json: Boolean = false
+      path: Argument[Path, Single, Style.Positional] =
+        Argument(_.text("path to project, file, or scope to compile"), Some(Paths.get(""))),
+      `image-file-map`: Argument[Unit, Flag, Style.Named] =
+        Argument(_.text("produce json description of generated images")),
+      sync: Argument[ClSync, Option, Style.Named] =
+        Argument(_.keyName("path").valueName("pos").text("sync position")),
+      json: Argument[Unit, Flag, Style.Named] =
+        Argument(_.text("create json from a single file"))
   )
-
-  val argsParser = {
-    val builder = scopt.OParser.builder[ClOptions]
-    import builder.*
-    scopt.OParser.sequence(
-      programName("scitzen"),
-      help('h', "help").hidden(),
-      arg[java.io.File]("path").required().action((p, c) => c.copy(path = p.toScala)),
-      opt[Unit]("image-file-map").optional().text("produce json description of generated images")
-        .action((_, c) => c.copy(`image-file-map` = true)),
-      opt[(Int, java.io.File)]("sync").optional().text("sync position").hidden()
-        .action((s, c) => c.copy(sync = Some(ClSync(s._2.toScala, s._1)))),
-      opt[Unit]("json").optional().text("create json from a single file")
-        .action((_, c) => c.copy(json = true))
-    )
-  }
 }

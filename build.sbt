@@ -18,6 +18,7 @@ lazy val scitzen = project.in(file("."))
       slips.chain.value,
       slips.logging.value,
       slips.scip.value,
+      slips.options.value,
       scopt.value,
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.28.0",
       "org.webjars.npm"                 % "katex"         % "0.16.0",

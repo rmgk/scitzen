@@ -41,7 +41,7 @@ object Dependencies {
     val scalatestpluscheck = "3.2.12.0"
     val scopt              = "4.1.0"
     val scribe             = "3.8.3"
-    val slips              = "0.4.4"
+    val slips              = "3b223bd2d9"
     val sourcecode         = "0.3.0"
     val tomlScala          = "0.2.2"
     val upickle            = "2.0.0"
@@ -103,11 +103,12 @@ object Dependencies {
     .map(n => "io.circe" %%% s"circe-$n" % V.circeCore))
 
   object slips {
-    val logging  = Def.setting("de.rmgk.slips" %%% "logging" % V.slips)
-    val chain    = Def.setting("de.rmgk.slips" %%% "chain" % V.slips)
     val category = Def.setting("de.rmgk.slips" %%% "category" % V.slips)
-    val scip     = Def.setting("de.rmgk.slips" %%% "scip" % V.slips)
+    val chain    = Def.setting("de.rmgk.slips" %%% "chain" % V.slips)
     val delay    = Def.setting("de.rmgk.slips" %%% "delay" % V.slips)
+    val logging  = Def.setting("de.rmgk.slips" %%% "logging" % V.slips)
+    val options  = Def.setting("de.rmgk.slips" %%% "options" % V.slips)
+    val scip     = Def.setting("de.rmgk.slips" %%% "scip" % V.slips)
   }
 
   object loci {
