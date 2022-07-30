@@ -54,8 +54,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
     val metalist =
       article.date.map(timeFull) ++
-        categoriesSpan(categories) ++
-        article.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
+      categoriesSpan(categories) ++
+      article.named.get("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
 
     if metalist.nonEmpty then div(cls := "metadata")(metalist.toSeq*) else frag()
 
@@ -271,14 +271,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case mcro: Directive =>
         val attrs = mcro.attributes
         mcro.command match
-          case Strong => ctx.retc(strong(attrs.target))
-          case Emph   => ctx.retc(em(attrs.target))
+          case Strong => inlineValuesToHTML(attrs.text.inl)(ctx).map(c => strong(c.toList)).single
+          case Emph   => inlineValuesToHTML(attrs.text.inl)(ctx).map(c => em(c.toList)).single
           case Code   => ctx.retc(code(attrs.target))
 
           case Def | Comment => ctx.empty
           case Include       => ctx.retc(unknownMacroOutput(mcro))
 
-          case Other("raw") => ctx.retc(div(raw(attrs.named.getOrElse("html", ""))))
+          case Raw => ctx.retc(div(raw(attrs.named.getOrElse("html", ""))))
 
           case Math =>
             val inner = attrs.target
@@ -297,16 +297,19 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val cctx          = ctx.cite(citations.flatMap(_._2))
             val styledAnchors = span(cls := "citations", "(", anchors, ")")
             if attrs.arguments.nonEmpty then
-              cctx.ret(Chain(s"${attrs.arguments.head}\u2009", styledAnchors))
+              inlineValuesToHTML(attrs.argumentsT.head.inl)(cctx).map { res =>
+                if res.isEmpty then res
+                else
+                  val last = res.last
+                  val init = res.init
+                  init ++ Chain(s"$last\u2009", styledAnchors)
+              }
             else cctx.retc(styledAnchors)
 
           case Link =>
-            val target = attrs.target
-            val content = attrs.positional.headOption
-              .fold(ctx.retc(stringFrag(target))) { txt =>
-                inlineValuesToHTML(txt.inl)(ctx)
-              }
-            content.retc(a(href := target)(content.data.toList))
+            val target     = attrs.target
+            val contentCtx = inlineValuesToHTML(attrs.text.inl)(ctx)
+            contentCtx.mapc(content => a(href := target)(content.toList))
 
           case Ref =>
             val scope      = attrs.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
@@ -315,8 +318,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             if candidates.sizeIs > 1 then
               scribe.error(
                 s"multiple resolutions for ${attrs.target}" +
-                  reporter(mcro.prov) +
-                  s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                reporter(mcro.prov) +
+                s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>

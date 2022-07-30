@@ -5,7 +5,7 @@ import de.rmgk.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
-import scitzen.sast.DCommand.{Cite, Code, Comment, Def, Emph, Image, Include, Link, Lookup, Math, Other, Ref, Strong}
+import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.sast.Attribute.{Plain, Positional}
@@ -228,7 +228,7 @@ class SastToTexConverter(
           case Other("break") => ctx.retc(s"\\clearpage{}")
           case Other("rule") => inlineToTex(Directive(
               Ref,
-              attributes.copy(raw =
+              Attributes(
                 Seq(
                   Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(mcro.prov))), None),
                   Plain("style", "plain"),
@@ -239,7 +239,7 @@ class SastToTexConverter(
               mcro.prov
             ))(ctx)
           case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
-          case Other("raw")       => ctx.retc(attributes.named.getOrElse("tex", ""))
+          case Raw       => ctx.retc(attributes.named.getOrElse("tex", ""))
           case Other("todo") =>
             inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"{\\color{red}TODO:${str}}")
           case Strong => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\textbf{$str}")

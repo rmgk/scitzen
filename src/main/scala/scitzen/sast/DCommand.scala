@@ -13,6 +13,7 @@ enum DCommand {
   case Link
   case Ref
   case Lookup
+  case Raw
   case Other(str: String)
 }
 
@@ -30,6 +31,7 @@ object DCommand {
       "emph"    -> Emph,
       "strong"  -> Strong,
       "math"    -> Math,
+      "raw"     -> Raw,
       ""        -> Lookup
     )
     val aliases = Map(

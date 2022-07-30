@@ -27,7 +27,7 @@ case class Text(inl: Seq[Inline]) {
 case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast
     with Ordered[Section] {
   def autolabel: String = attributes.named.getOrElse("label", title.str)
-  def ref: String = attributes.named.getOrElse("unique ref", {throw new IllegalStateException(s"has no ref $title")})
+  def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
   override def compare(that: Section): Int = {
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
     Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))
@@ -60,6 +60,7 @@ case class Attributes(raw: Seq[Attribute]) {
   lazy val legacyPositional: Seq[String] = positional.map(_.str)
   lazy val arguments: Seq[String]        = legacyPositional.dropRight(1)
   lazy val target: String                = legacyPositional.last
+  lazy val text: Text                    = positional.head
 
   def append(other: Seq[Attribute]): Attributes  = Attributes(raw ++ other)
   def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw)
