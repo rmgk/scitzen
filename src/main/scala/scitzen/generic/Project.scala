@@ -43,15 +43,11 @@ object Project:
     else source.parentOption.flatMap(findRoot)
 
   def fromSource(file: File): Option[Project] =
-    if isScim(file) then
-      findRoot(file) match
-        case None       => Some(Project(file.parent, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8)), Map.empty))
-        case Some(file) => fromConfig(file)
-    else if file.isDirectory then
-      if (file / scitzenconfig).isRegularFile then
-        fromConfig(file)
-      else Some(Project(file, ProjectConfig.parse("c=d".getBytes(StandardCharsets.UTF_8)), Map.empty))
-    else None
+    findRoot(file) match
+      case None =>
+        val adHocRoot = if file.isDirectory then file else file.parent
+        Some(Project(adHocRoot, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8)), Map.empty))
+      case Some(file) => fromConfig(file)
 
   def fromConfig(file: File): Option[Project] =
     val configContent = (file / scitzenconfig).byteArray
@@ -63,7 +59,7 @@ object Project:
 
   def isScim(c: File): Boolean =
     c.isRegularFile &&
-      c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
+    c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
 
   val fileEnding = "scim"
   def discoverSources(source: File): List[File] =
