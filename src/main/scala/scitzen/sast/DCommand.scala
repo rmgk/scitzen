@@ -1,6 +1,21 @@
 package scitzen.sast
 
-sealed trait DCommand
+enum DCommand {
+  case Code
+  case Emph
+  case Strong
+  case Math
+  case Cite
+  case Comment
+  case Def
+  case Image
+  case Include
+  case Link
+  case Ref
+  case Lookup
+  case Other(str: String)
+}
+
 object DCommand {
   val (parseMap, printMap) = {
     val standard = List(
@@ -35,17 +50,4 @@ object DCommand {
       case o          => printMap(o)
     }
 
-  object Code                   extends DCommand
-  object Emph                   extends DCommand
-  object Strong                 extends DCommand
-  object Math                   extends DCommand
-  object Cite                   extends DCommand
-  object Comment                extends DCommand
-  object Def                    extends DCommand
-  object Image                  extends DCommand
-  object Include                extends DCommand
-  object Link                   extends DCommand
-  object Ref                    extends DCommand
-  object Lookup                 extends DCommand
-  case class Other(str: String) extends DCommand
 }
