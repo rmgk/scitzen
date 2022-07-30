@@ -22,20 +22,20 @@ object InlineParsers {
       def inlineOptions(acc: List[T]): List[T] = {
         val current = scx.index
 
-        def addPlain: List[T] =
+        def addPlain(): List[T] =
           try
             if start < current
             then plain(scx.str(start, current)) :: acc
             else acc
           finally start = scx.index
 
-        if ending.run then addPlain
+        if ending.run then addPlain()
         else
           alternatives.opt.run match
-            case Some(inl) => inlineOptions(inl :: addPlain)
+            case Some(inl) => inlineOptions(inl :: addPlain())
             case None =>
               if scx.next then inlineOptions(acc)
-              else addPlain
+              else addPlain()
       }
 
       inlineOptions(Nil).reverse
