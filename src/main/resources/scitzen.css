@@ -33,7 +33,7 @@
 body {
 	/* margins are handled for main and sidebar individually */
 	margin: 0;
-	/* that should be 18px for the default of 16px font, but scale with font size … */
+	/* that should be 18px for the default of 16px font, but scale with user defined font size */
 	font-size: 1.125rem;
 }
 
@@ -68,7 +68,13 @@ main {
 			 the content has a fixed minimum width to force a scrollbar on the content at some point
 			 note that everything breaks if --main-content-width is smaller than the minimum here,
 			 which is why the minimum is not min-content */
-		grid-template-columns: [image-start] minmax(var(--normal-gap), 2fr) [header-start] minmax(0, 1fr) [content-start] minmax(0, var(--main-content-width)) [content-end] minmax(0, 1fr) [header-end] minmax(var(--normal-gap), 2fr) [image-end];
+		grid-template-columns:
+			[image-start]   minmax(var(--normal-gap), 2fr)
+			[header-start]  minmax(0, 1fr)
+			[content-start] minmax(0, var(--main-content-width))
+			[content-end]   minmax(0, 1fr)
+			[header-end]    minmax(var(--normal-gap), 2fr)
+			[image-end];
 
 		grid-row-gap: var(--small-gap);
 	}
@@ -235,7 +241,7 @@ code {
 
 :not(pre) > code {
 	background-color: var(--theme-plate-color);
-	padding: 0 . var(--normal-gap);
+	padding: calc(var(--normal-gap) / 10);
 	border-radius: var(--theme-border-radius);
 }
 
