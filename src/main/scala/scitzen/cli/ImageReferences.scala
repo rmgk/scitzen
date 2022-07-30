@@ -1,15 +1,17 @@
 package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.outputs.SastToSastConverter
 import scitzen.sast.DCommand
-import scitzen.compat.Codecs.Reference
-import scitzen.compat.Codecs.rferenceRW
 import scitzen.extern.ImageTarget
 import scitzen.compat.Logging.scribe
 
 object ImageReferences:
+
+  case class Reference(file: String, start: Int, end: Int)
+  implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
   def listAll(project: Project, documentDirectory: DocumentDirectory): Unit =
     val fileImageMap: Map[String, List[Reference]] = documentDirectory.documents.map { doc =>

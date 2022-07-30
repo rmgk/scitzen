@@ -7,10 +7,13 @@ import org.graalvm.polyglot.proxy.ProxyObject
 import scitzen.compat.Logging.scribe
 
 import scala.jdk.CollectionConverters.*
-import com.github.plokhotnyuk.jsoniter_scala.core.writeToString
+import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, writeToString}
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
 object Katex:
-  // this MUST be inlined by native image to work
+
+  given mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
+
   private val katexstr: String = Resource.getAsString("META-INF/resources/webjars/katex/0.16.0/dist/katex.min.js")
 
   case class KatexConverter(cache: Map[String, String], katex: KatexLibrary):
@@ -41,7 +44,7 @@ object Katex:
         }.toMap
       }.getOrElse(Map.empty)
 
-      val jsonBindings = writeToString(bindings)(scitzen.compat.Codecs.mapCodec)
+      val jsonBindings = writeToString(bindings)
 
       polyglot.getBindings("js").putMember("macro_bindings", jsonBindings)
       val katexRes = polyglot.eval(

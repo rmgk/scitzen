@@ -5,13 +5,14 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
-import scitzen.compat.Codecs.mapCodec
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import scalatags.Text.all.raw
 import scalatags.Text.tags2.style
 import scitzen.bibliography.Bibtex
 import scitzen.cli.ScitzenCommandline.ClSync
 import math.Ordering.Implicits.seqOrdering
+
+import scitzen.extern.Katex.mapCodec
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Path
@@ -106,7 +107,7 @@ object ConvertHtml:
 
   private def loadKatex(katexmapfile: File): Map[String, String] =
     Try {
-      readFromStream[Map[String, String]](katexmapfile.newInputStream)(mapCodec)
+      readFromStream[Map[String, String]](katexmapfile.newInputStream)
     }.getOrElse(Map())
 
   private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any =

@@ -26,17 +26,10 @@ object ScitzenCommandline {
     ) match {
       case None =>
       case Some(options) =>
-        if options.json.value then
-          val jsonpath = options.path.value
-          println(JsonSast.jsonFor(
-            jsonpath,
-            Project(File(jsonpath).parent, ProjectConfig.parse("b=c".getBytes(StandardCharsets.UTF_8)), Map.empty)
-          ))
-        else
-          Project.fromSource(options.path.value) match
-            case None => scribe.error(s"could not find project for $options.path")
-            case Some(project) =>
-              executeConversions(options.sync.value, options.`image-file-map`.value, project)
+        Project.fromSource(options.path.value) match
+          case None => scribe.error(s"could not find project for $options.path")
+          case Some(project) =>
+            executeConversions(options.sync.value, options.`image-file-map`.value, project)
     }
   }
 
@@ -49,7 +42,5 @@ object ScitzenCommandline {
         Argument(_.text("produce json description of generated images")),
       sync: Argument[ClSync, Option, Style.Named] =
         Argument(_.keyName("path").valueName("pos").text("sync position")),
-      json: Argument[Unit, Flag, Style.Named] =
-        Argument(_.text("create json from a single file"))
   )
 }

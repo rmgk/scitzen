@@ -5,7 +5,6 @@ import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.CSLItemData
 import de.undercouch.citeproc.helper.json.{StringJsonBuilder, StringJsonBuilderFactory}
 import org.jbibtex.{BibTeXDatabase, BibTeXEntry, BibTeXParser, Key, LaTeXParser, LaTeXPrinter}
-import scitzen.compat.Codecs.given
 import scitzen.generic.Project
 
 import java.io.{FileInputStream, InputStream}
