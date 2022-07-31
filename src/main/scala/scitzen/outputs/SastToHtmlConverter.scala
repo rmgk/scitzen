@@ -29,9 +29,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
-  def includeResolver: DocumentDirectory = preprocessed.directory
-  def articles: List[Article]            = preprocessed.articles
-
   val syncPos: Int =
     if sync.exists(_.path == pathManager.cwf) then sync.get._2
     else Int.MaxValue
@@ -131,7 +128,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 if attributes.target.endsWith(".scim") then
                   pathManager.resolve(attributes.target) match
                     case Some(file) =>
-                      val doc = includeResolver.byPath(file)
+                      val doc = preprocessed.directory.byPath(file)
                       new SastToHtmlConverter(
                         bundle,
                         pathManager.changeWorkingFile(file),
@@ -361,7 +358,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 val target =
                   SastToTextConverter(
                     pathManager.project.config.definitions,
-                    Some(Includes(pathManager.project, pathManager.cwf, includeResolver))
+                    Some(Includes(pathManager.project, pathManager.cwf, preprocessed.directory))
                   ).convertInline(attrs.targetT.inl)
                 ctx.retc(a(title := target, "※"))
 
