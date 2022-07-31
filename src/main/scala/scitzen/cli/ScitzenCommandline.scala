@@ -37,7 +37,12 @@ object ScitzenCommandline {
   given scopt.Read[ClSync] = summon[scopt.Read[(Path, Int)]].map(ClSync.apply)
   case class ClOptions(
       path: Argument[Path, Single, Style.Positional] =
-        Argument(_.text("path to project, file, or scope to compile"), Some(Paths.get(""))),
+        Argument(
+          _.text("path to project, file, or scope to compile").validate { p =>
+            if File(p).exists then Right(()) else Left(s"»$p« does not exist")
+          },
+          Some(Paths.get(""))
+        ),
       `image-file-map`: Argument[Unit, Flag, Style.Named] =
         Argument(_.text("produce json description of generated images")),
       sync: Argument[ClSync, Option, Style.Named] =
