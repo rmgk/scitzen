@@ -28,12 +28,12 @@ object Format:
           )
     }
 
-  def formatContent(file: File, originalContent: String, sast: Seq[Sast]): Unit =
+  def formatContent(file: File, originalContent: Array[Byte], sast: Seq[Sast]): Unit =
     val result    = SastToScimConverter.toScimS(sast)
-    val resultStr = result.iterator.mkString("", "\n", "\n")
-    if resultStr != originalContent then
+    val resultBytes = result.iterator.mkString("", "\n", "\n").getBytes(StandardCharsets.UTF_8)
+    if !java.util.Arrays.equals(resultBytes, originalContent) then
       scribe.info(s"formatting ${file.name}")
-      file.write(resultStr)
+      file.writeByteArray(resultBytes)
 
   def renameFileFromHeader(f: File, sdoc: Article): Unit =
     val newName: String = canonicalName(sdoc) + ".scim"

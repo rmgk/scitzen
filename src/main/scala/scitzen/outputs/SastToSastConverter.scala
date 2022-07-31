@@ -24,7 +24,7 @@ class SastToSastConverter(document: Document, project: Project):
 
   def findArticle(ctx: Cta, self: Section): Option[Article] =
     (self +: ctx.sections).find(!Article.notHeader(_)).collect {
-      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, "", Nil))
+      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, Array(), Nil))
     }
 
   def ensureUniqueRef[A <: Sast](

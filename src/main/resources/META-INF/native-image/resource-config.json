@@ -2,7 +2,7 @@
   "resources":{
   "includes":[
     {
-      "pattern":"\\QMETA-INF/resources/webjars/katex/0.15.1/dist/katex.min.js\\E"
+      "pattern":"\\QMETA-INF/resources/webjars/katex/0.16.0/dist/katex.min.js\\E"
     }, 
     {
       "pattern":"\\QMETA-INF/resources/webjars/prism/components/prism-clike.min.js\\E"
@@ -39,9 +39,6 @@
     }, 
     {
       "pattern":"\\QMETA-INF/services/org.graalvm.polyglot.impl.AbstractPolyglotImpl\\E"
-    }, 
-    {
-      "pattern":"\\Qcom/oracle/truffle/llvm/nfi/SulongNFI.class\\E"
     }, 
     {
       "pattern":"\\Qcom/oracle/truffle/nfi/backend/libffi/LibFFILanguage.class\\E"

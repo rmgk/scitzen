@@ -9,7 +9,7 @@ import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
 /** A document represents a single, on disk, text file that has been successfully parsed */
-case class Document(file: File, content: String, sast: List[Sast]):
+case class Document(file: File, content: Array[Byte], sast: List[Sast]):
   lazy val reporter: FileReporter = new FileReporter(file, content)
 
 object Document:
@@ -17,7 +17,7 @@ object Document:
     val content = file.byteArray
     try
       val sast = scitzen.parser.Parse.documentUnwrap(content, Prov(0, content.length))
-      Document(file, new String(content, StandardCharsets.UTF_8), sast.toList)
+      Document(file, content, sast.toList)
     catch
       case NonFatal(e) =>
         scribe.error(s"error while parsing $file")
@@ -27,7 +27,7 @@ trait Reporter:
   def apply(im: Directive): String = apply(im.prov)
   def apply(prov: Prov): String
 
-final class FileReporter(file: File, content: String) extends Reporter:
+final class FileReporter(file: File, content: Array[Byte]) extends Reporter:
   lazy val newLines: Seq[Int] =
     def findNL(idx: Int, found: List[Int]): Array[Int] =
       val res = content.indexOf('\n', idx + 1)

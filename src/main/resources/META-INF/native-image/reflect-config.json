@@ -78,6 +78,10 @@
   ]
 },
 {
+  "name":"scitzen.cli.ScitzenCommandline$",
+  "fields":[{"name":"0bitmap$1"}]
+},
+{
   "name":"scitzen.extern.Katex$",
   "fields":[{"name":"0bitmap$1"}]
 },

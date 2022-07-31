@@ -22,12 +22,18 @@ object ImageReferences:
 
       val convertedCtx = new SastToSastConverter(doc, project).run()
 
+      // macro offsets are in bytes, but sublime expects them to be in codepoints, so we adapt
+      lazy val offsets = doc.content.iterator.zipWithIndex.collect{
+        case (b, pos) if (b & (192)) == 128 => pos
+      }.toArray
+      def adapt(v: Int) = v - offsets.count(_ <= v)
+
       val images = convertedCtx.imageMacros.filter(_.command == DCommand.Image).flatMap { mcro =>
         val path = mcro.attributes.named.getOrElse(ImageTarget.Raster.name, mcro.attributes.target)
         project.resolve(cwd, path) match
           case Some(target) =>
             // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
-            Some(Reference(target.pathAsString, mcro.prov.start, mcro.prov.end))
+            Some(Reference(target.pathAsString, adapt(mcro.prov.start), adapt(mcro.prov.end)))
           case None =>
             scribe.warn(s"could not find $path in $cwd")
             None
