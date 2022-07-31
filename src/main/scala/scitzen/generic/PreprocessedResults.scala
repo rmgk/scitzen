@@ -2,7 +2,7 @@ package scitzen.generic
 
 import scitzen.outputs.SastToSastConverter
 
-class PreprocessedResults(project: Project, val documents: List[Document]):
+class PreprocessedResults(project: Project, documents: List[Document]):
 
   project.cacheDir.createDirectories()
 
