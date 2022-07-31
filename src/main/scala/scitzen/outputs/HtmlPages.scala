@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import scalatags.Text.{Frag, Tag, RawFrag}
-import scalatags.Text.all.SeqFrag
+import scalatags.Text.all.{SeqFrag, OptionNode}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel}
 import scalatags.Text.implicits.{raw, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
@@ -36,6 +36,7 @@ class HtmlPages(cssPath: String, fullCss: String):
   def wrapContentHtml(
       content: Seq[Frag],
       bodyClass: String,
+      mainClass: Option[String],
       sidebar: Option[Frag],
       titled: String,
       language: Option[String] = None
@@ -47,5 +48,5 @@ class HtmlPages(cssPath: String, fullCss: String):
     )(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,
-      main(content)(language.map(lang := _).toSeq*)
+      main(content, mainClass.map(cls := _), language.map(lang := _))
     )))

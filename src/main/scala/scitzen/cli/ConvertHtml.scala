@@ -99,6 +99,7 @@ object ConvertHtml:
       .wrapContentHtml(
         convertedCtx.data.toList,
         "index",
+        None,
         HtmlToc.tableOfContents(convertedCtx.sections.reverse),
         "Index",
         None
@@ -163,6 +164,7 @@ object ConvertHtml:
         HtmlPages(cssrelpath, cssstring).wrapContentHtml(
           contentFrag,
           "fullpost",
+          if article.named.get("style").contains("article") then Some("preline") else None,
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.language

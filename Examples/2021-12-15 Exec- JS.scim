@@ -1,7 +1,6 @@
 = Exec: JS
-date         = 2021-12-15 20:35:11
-texTemplate  = /templates/memoir.scim
-sectionstyle = article
+date        = 2021-12-15 20:35:11
+texTemplate = /templates/memoir.scim
 
 So maybe Scitzen got the ability to execute JS now? Lets see:
 

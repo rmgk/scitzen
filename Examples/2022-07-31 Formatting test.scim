@@ -1,0 +1,9 @@
+= Formatting test
+date        = 2022-07-31
+texTemplate = /templates/memoir.scim
+style       = article
+
+Roses are red
+violets are blue
+I make my formats just for you
+

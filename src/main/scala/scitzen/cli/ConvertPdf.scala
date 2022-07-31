@@ -26,6 +26,7 @@ object ConvertPdf:
           article.sourceDoc.reporter,
           preprocessed.directory,
           preprocessed.labels,
+          article.named
         )
 
         val resultContext =

@@ -204,10 +204,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               ))(ctx)
             case None =>
               sBlock.command match
-                // Preformatted plaintext, preserve linebreaks,
-                // but also wrap for linebreaks and use paragraph width
-                case "text" => ctx.retc(pre(p(text)))
-
                 // convert scala to js and embed the result
                 case "embed" if sBlock.attributes.named.get("lang").contains("scala") =>
                   val source = if sBlock.attributes.named.contains("template") then

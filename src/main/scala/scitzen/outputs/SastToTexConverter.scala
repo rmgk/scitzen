@@ -34,6 +34,7 @@ class SastToTexConverter(
     reporter: Reporter,
     includeResolver: DocumentDirectory,
     labels: Map[String, List[SastRef]],
+    settings: Map[String, String],
 ):
 
   val cwd = cwf.parent
@@ -91,12 +92,12 @@ class SastToTexConverter(
           case ListItem(marker, _, None | Some(Slist(_))) :: _ =>
             val listType = if marker.contains(".") then "enumerate" else "itemize"
             s"\\begin{$listType}" +:
-              ctx.fold[ListItem, String](children) { (ctx, child) =>
-                val inlineCtx  = inlineValuesToTex(child.text.inl)(ctx).map(s => Chain(s"\\item{$s}"))
-                val contentCtx = child.content.fold(inlineCtx.empty[String])(sastToTex(_)(inlineCtx))
-                inlineCtx.data ++: contentCtx
-              } :+
-              s"\\end{$listType}"
+            ctx.fold[ListItem, String](children) { (ctx, child) =>
+              val inlineCtx  = inlineValuesToTex(child.text.inl)(ctx).map(s => Chain(s"\\item{$s}"))
+              val contentCtx = child.content.fold(inlineCtx.empty[String])(sastToTex(_)(inlineCtx))
+              inlineCtx.data ++: contentCtx
+            } :+
+            s"\\end{$listType}"
 
           case ListItem(_, _, _) :: _ =>
             ctx.fold[ListItem, String](children) { (ctx, child) =>
@@ -113,7 +114,7 @@ class SastToTexConverter(
               case Some(doc) =>
                 val included = includeResolver.byPath(doc.file)
 
-                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver, labels)
+                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver, labels, settings)
                   .sastSeqToTex(included.sast)(ctx)
 
               case None =>
@@ -128,13 +129,21 @@ class SastToTexConverter(
     val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
     val label     = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
-      sastSeqToTex(content)(ctx) :+
-      s"\\end{$name}"
+    sastSeqToTex(content)(ctx) :+
+    s"\\end{$name}"
 
   def blockToTex(tlblock: Block)(ctx: Cta): CtxCS =
     val innerCtx: CtxCS =
       tlblock.content match
-        case Paragraph(content) => inlineValuesToTex(content.inl)(ctx).single :+ "" :+ ""
+        case Paragraph(content) =>
+          val cctx = inlineValuesToTex(content.inl)(ctx)
+          // appending the newline adds two another newline in the source code to separate the paragraph from the following text
+          // the latexenc text does not have any newlines at the end because of the .trim
+          if settings.get("style").contains("article") then cctx.single :+ "\n"
+          else cctx.map { text =>
+            val latexenc = latexencode(text).trim.replace("\n", "\\newline{}\n")
+            Chain("\\noindent", latexenc, "\n")
+          }
 
         case Parsed(_, blockContent) =>
           tlblock.command match
@@ -148,13 +157,13 @@ class SastToTexConverter(
                     scribe.warn(s"figure has no caption" + reporter(tlblock.prov))
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
-                "\\centerfloat" +:
-                sastSeqToTex(figContent)(caption) :++
-                Chain(
-                  caption.data,
-                  tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
-                  "\\end{figure}"
-                )
+              "\\centerfloat" +:
+              sastSeqToTex(figContent)(caption) :++
+              Chain(
+                caption.data,
+                tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
+                "\\end{figure}"
+              )
 
             case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
               texbox(name, tlblock.attributes, blockContent)(ctx).useFeature("framed")
@@ -175,12 +184,6 @@ class SastToTexConverter(
             ))(ctx)
           else
             tlblock.attributes.legacyPositional.headOption match
-
-              case Some("text") =>
-                val latexenc = latexencode(text).trim
-                  .replace("\n", "\\newline{}\n")
-                // appending the empty string adds another newline in the source code to separate the paragraph from the following text – the latexenc text does not have any newlines at the end because of the .trim
-                ctx.ret(Chain("\\noindent", latexenc, ""))
 
               case _ =>
                 val labeltext = tlblock.attributes.named.get("label") match
@@ -239,7 +242,7 @@ class SastToTexConverter(
               mcro.prov
             ))(ctx)
           case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
-          case Raw       => ctx.retc(attributes.named.getOrElse("tex", ""))
+          case Raw                => ctx.retc(attributes.named.getOrElse("tex", ""))
           case Other("todo") =>
             inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"{\\color{red}TODO:${str}}")
           case Strong => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\textbf{$str}")
@@ -261,8 +264,8 @@ class SastToTexConverter(
             if candidates.sizeIs > 1 then
               scribe.error(
                 s"multiple resolutions for ${attributes.target}" +
-                  reporter(mcro) +
-                  s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                reporter(mcro) +
+                s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption match

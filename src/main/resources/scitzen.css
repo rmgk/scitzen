@@ -193,7 +193,10 @@ main :is(p, ol, ul, dl) {
 	/* text based things always are limited to content width, */
 	/* even when nested inside something else */
 	max-width: var(--main-content-width);
-	/* display linebreaks by default */
+}
+
+.preline main :is(p, ol, ul, dl) {
+	/* display linebreaks */
 	white-space: pre-line;
 }
 
