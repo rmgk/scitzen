@@ -43,7 +43,7 @@ object ScitzenCommandline {
           },
           Some(Paths.get(""))
         ),
-      `image-file-map`: Argument[Unit, Flag, Style.Named] =
+      `image-file-map`: Argument[Path, Option, Style.Named] =
         Argument(_.text("produce json description of generated images")),
       sync: Argument[ClSync, Option, Style.Named] =
         Argument(_.keyName("path").valueName("pos").text("sync position")),

@@ -8,12 +8,14 @@ import scitzen.sast.DCommand
 import scitzen.extern.ImageTarget
 import scitzen.compat.Logging.scribe
 
+import java.nio.file.Path
+
 object ImageReferences:
 
   case class Reference(file: String, start: Int, end: Int)
   implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
-  def listAll(project: Project, documentDirectory: DocumentDirectory): Unit =
+  def listAll(project: Project, documentDirectory: DocumentDirectory, output: Path): Unit =
     val fileImageMap: Map[String, List[Reference]] = documentDirectory.documents.map { doc =>
       val cwf = doc.file
       val cwd = cwf.parent
@@ -32,7 +34,7 @@ object ImageReferences:
       }
       cwf.pathAsString -> images
     }.filter(_._2.nonEmpty).toMap
-    project.outputdir./("image-file-map.json").writeByteArray(writeToArray(
+    better.files.File(output).writeByteArray(writeToArray(
       fileImageMap,
       WriterConfig.withIndentionStep(2)
     )(rferenceRW))

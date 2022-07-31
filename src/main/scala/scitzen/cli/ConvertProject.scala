@@ -5,6 +5,8 @@ import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.compat.Logging.scribe
 
+import java.nio.file.Path
+
 object ConvertProject:
 
   def makeTimediff(): () => String =
@@ -20,7 +22,7 @@ object ConvertProject:
 
   def executeConversions(
       sync: Option[ClSync],
-      imageFileMap: Boolean,
+      imageFileMap: Option[Path],
       project: Project,
   ): Unit =
     val timediff = makeTimediff()
@@ -46,7 +48,7 @@ object ConvertProject:
       List(
         Option.when(toHtml)(ImageTarget.Html),
         Option.when(toPdf)(ImageTarget.Tex),
-        Option.when(imageFileMap)(ImageTarget.Raster)
+        imageFileMap.map(_ => ImageTarget.Raster)
       ).flatten,
       preprocessed
     )
@@ -63,6 +65,6 @@ object ConvertProject:
     if toPdf then
       ConvertPdf.convertToPdf(project, preprocessed)
       scribe.info(s"generated pdfs ${timediff()}")
-    if imageFileMap then
-      ImageReferences.listAll(project, documentDirectory)
+    if imageFileMap.isDefined then
+      ImageReferences.listAll(project, documentDirectory, imageFileMap.get)
       scribe.info(s"generated imagemap ${timediff()}")
