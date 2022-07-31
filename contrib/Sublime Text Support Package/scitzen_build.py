@@ -9,6 +9,8 @@ import imghdr
 import struct
 import json
 
+import tempfile
+
 # global phantoms added by the build command
 
 
@@ -20,6 +22,7 @@ class ScitzenBuildCommand(sublime_plugin.WindowCommand):
     panel = None
     panel_lock = threading.Lock()
     phantom_sets = {}
+    image_sync_file = tempfile.NamedTemporaryFile()
 
 
     def is_enabled(self, lint=False, integration=False, kill=False):
@@ -80,7 +83,8 @@ class ScitzenBuildCommand(sublime_plugin.WindowCommand):
             self.proc = None
 
         commandstring = ["scitzen", file, 
-            "--sync-file", file, "--sync-position", str(position), "--image-file-map"]
+            # "--sync-file", file, "--sync-position", str(position),
+            "--image-file-map", self.image_sync_file.name]
         print("calling", commandstring)
 
         self.proc = subprocess.Popen(
@@ -139,7 +143,7 @@ class ScitzenBuildCommand(sublime_plugin.WindowCommand):
     def load_image_file_map(self):
         working_dir = self.get_working_dir()
         mapping = None
-        with open(working_dir + "/scitzen/out/image-file-map.json", 'r') as f:
+        with open(self.image_sync_file.name, 'r') as f:
             mapping = json.load(f)
         return mapping
 

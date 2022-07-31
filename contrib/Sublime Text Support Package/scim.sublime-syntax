@@ -6,6 +6,9 @@ file_extensions:
 version: 2
 scope: text.scim
 
+variables:
+  label: '\s*(label)\s*(=)(.+?)'
+
 contexts:
   # The prototype context is prepended to all contexts but those setting
   # meta_include_prototype: false.
@@ -31,11 +34,14 @@ contexts:
       push: light_attributes
 
   light_attributes:
-    - match: '^\s*(\w+)\s*(=)(.+)$'
+    - match: '^{{label}}$|^\s*(\w+)\s*(=)(.+)$'
       captures:
         1: entity.other.attribute-name.scim
         2: keyword.operator.assignment.scim
-        3: string.quoted.double.scim
+        3: entity.name.enum.label.scim
+        4: entity.other.attribute-name.scim
+        5: keyword.operator.assignment.scim
+        6: string.quoted.double.scim
     - match: '(?=^[^=]*$)'
       pop: true
 
@@ -72,6 +78,12 @@ contexts:
       push: 
         - block_parsed_inside
         - inside_macro
+      with_prototype:
+        - match: '{{label}}(?=[};])'
+          captures:
+            1: entity.other.attribute-name.scim
+            2: keyword.operator.assignment.scim
+            3: entity.name.enum.label.scim
 
   block_parsed_plain:
     - match: '^(\s*)(::+)(\w*)'
@@ -117,7 +129,7 @@ contexts:
     pop: true
 
   inside_unquoted:
-    - meta_scope: string.quoted.double.scim
+    - meta_scope: text.scim.embedded
     - include: macros
     - match: '[^;}]'
       pop: true
@@ -125,16 +137,16 @@ contexts:
   strings:
     # Strings begin and end with quotes, and use backslashes as an escape
     # character.
-    - match: '"'
-      scope: punctuation.definition.string.begin.scim
+    - match: '"+\[?|\['
+      scope: punctuation.definition.string.begin.scim keyword.operator.quote
       push: inside_string
 
   inside_string:
     - meta_include_prototype: false
     - include: macros
-    - meta_scope: string.quoted.double.scim
-    - match: '"'
-      scope: punctuation.definition.string.end.scim
+    - meta_scope: text.scim.embedded
+    - match: '\]?"+|\]'
+      scope: punctuation.definition.string.end.scim keyword.operator.quote
       pop: true
 
   comments:
