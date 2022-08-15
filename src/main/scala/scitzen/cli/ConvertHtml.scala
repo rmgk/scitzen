@@ -164,7 +164,7 @@ object ConvertHtml:
         HtmlPages(cssrelpath, cssstring).wrapContentHtml(
           contentFrag,
           "fullpost",
-          if article.named.get("style").contains("article") then Some("preline") else None,
+          if article.named.get("style").contains("article") then None else Some("adhoc"),
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.language

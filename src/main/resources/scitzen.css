@@ -195,7 +195,7 @@ main :is(p, ol, ul, dl) {
 	max-width: var(--main-content-width);
 }
 
-.preline main :is(p, ol, ul, dl) {
+main.adhoc :is(p, ol, ul, dl) {
 	/* display linebreaks */
 	white-space: pre-line;
 }
