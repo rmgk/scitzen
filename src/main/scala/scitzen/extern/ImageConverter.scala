@@ -46,7 +46,13 @@ object ImageConverter {
     }
   end preprocessImages
 
-  def applyTemplate(attributes: Attributes, content: String, cwd: File, project: Project, documentDirectory: DocumentDirectory): String =
+  def applyTemplate(
+      attributes: Attributes,
+      content: String,
+      cwd: File,
+      project: Project,
+      documentDirectory: DocumentDirectory
+  ): String =
     val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match
       case None => content
       case Some(templateFile) =>
@@ -55,9 +61,9 @@ object ImageConverter {
         SastToTextConverter(
           project.config.definitions ++ attributes.named + (
             "template content" -> content
-            ),
+          ),
           Some(Includes(project, templateFile, documentDirectory))
-          ).convert(sast).mkString("\n")
+        ).convert(sast).mkString("\n")
     templatedContent
 }
 
@@ -78,8 +84,9 @@ class ImageConverter(
       case "svg" | "png" if (file.extension.contains(".pdf")) => Some(pdfToCairo(file))
       case "pdf" | "png" if (file.extension.contains(".svg")) => Some(svgToCairo(file))
       case _ if (file.extension.contains(".tex")) =>
-        val dir       = (project.cacheDir / "convertedImages").path.resolve(project.root.relativize(file))
-        val templated = ImageConverter.applyTemplate(attributes, file.contentAsString, file.parent, project, documentDirectory)
+        val dir = (project.cacheDir / "convertedImages").path.resolve(project.root.relativize(file))
+        val templated =
+          ImageConverter.applyTemplate(attributes, file.contentAsString, file.parent, project, documentDirectory)
         convertTemplated("tex", templated, dir, file.nameWithoutExtension(includeAll = false))
 
   def pdfToCairo(file: File): File =
@@ -93,7 +100,7 @@ class ImageConverter(
               "-singlefile",
               s"-$preferredFormat",
               source.pathAsString,
-              target.sibling(target.nameWithoutExtension).pathAsString
+              target.sibling(target.nameWithoutExtension(includeAll = false)).pathAsString
             )
 
           case "svg" =>
@@ -112,14 +119,15 @@ class ImageConverter(
     def genCommand(source: File, target: File): List[String]
 
   private def convertExternal(file: File, command: CommandFunction): File =
-    val relative = project.root.relativize(file)
+    val relative       = project.root.relativize(file)
+    val targetfileName = file.nameWithoutExtension(includeAll = false) + s".$preferredFormat"
     val targetfile =
       if project.cacheDir.isParentOf(file) then
-        file.sibling(file.nameWithoutExtension(includeAll = false) + s".$preferredFormat")
+        file.sibling(targetfileName)
       else
         File((project.cacheDir / "convertedImages")
           .path.resolve(relative)
-          .resolve(file.nameWithoutExtension + s".$preferredFormat"))
+          .resolve(targetfileName))
     val sourceModified = file.lastModifiedTime
     if !targetfile.exists || targetfile.lastModifiedTime != sourceModified then
       targetfile.parent.createDirectories()
