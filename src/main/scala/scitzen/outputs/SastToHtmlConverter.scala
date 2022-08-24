@@ -296,11 +296,21 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 else
                   val last = res.last
                   val init = res.init
-                  init ++ Chain({last match
-                    case StringFrag(s) => s"$s\u2009"
-                    case other => last
-                  }, styledAnchors)
+                  val addSpace = last match
+                    case StringFrag(s) => stringFrag(s"$s\u2009")
+                    case other         => last
+                  init ++ Chain(addSpace, styledAnchors)
               }
+            else if attrs.named.get("style").contains("name")
+            then
+              val nameOption =
+                for
+                  first  <- citations.headOption
+                  bi     <- first._2
+                  author <- bi.authors.headOption
+                  family <- author.familyName
+                yield stringFrag(s"${family}${if bi.authors.sizeIs > 1 then " et al.\u2009" else "\u2009"}")
+              cctx.ret(nameOption ++: Chain(styledAnchors))
             else cctx.retc(styledAnchors)
 
           case Link =>
