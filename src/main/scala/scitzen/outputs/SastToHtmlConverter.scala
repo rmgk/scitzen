@@ -2,6 +2,7 @@ package scitzen.outputs
 
 import better.files.*
 import de.rmgk.Chain
+import scalatags.Text.StringFrag
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
@@ -282,7 +283,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               bibid -> pathManager.project.bibliography.get(bibid.trim)
             }
             val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
-              case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag("\u2009"))
+              case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
               case (bibid, None) =>
                 scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
                 List(code(bibid.trim), stringFrag(" "))
@@ -295,7 +296,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 else
                   val last = res.last
                   val init = res.init
-                  init ++ Chain(s"$last\u2009", styledAnchors)
+                  init ++ Chain({last match
+                    case StringFrag(s) => s"$s\u2009"
+                    case other => last
+                  }, styledAnchors)
               }
             else cctx.retc(styledAnchors)
 
