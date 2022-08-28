@@ -43,6 +43,7 @@ jobs:
         run: sbt nativeImage
         env:
           JAVA_OPTS: -Xmx6g
+          NATIVE_IMAGE_INSTALLED: 'true'
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
