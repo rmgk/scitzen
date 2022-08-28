@@ -19,7 +19,7 @@ addSbtPlugin("com.eed3si9n"              % "sbt-buildinfo" % "0.11.0")
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"  % "0.3.1") // https://github.com/typelevel/sbt-tpolecat
 
 // packaging
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.9") // https://github.com/sbt/sbt-native-packager
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.11") // https://github.com/sbt/sbt-native-packager
 addSbtPlugin("org.scalameta"  % "sbt-native-image"    % "0.3.2") // https://github.com/scalameta/sbt-native-image
 addSbtPlugin("com.github.sbt" % "sbt-pgp"             % "2.1.2")
 

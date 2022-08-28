@@ -16,9 +16,9 @@ object Dependencies {
     val directories        = "26"
     val jetty              = "9.4.48.v20220622"
     val jol                = "0.16"
-    val jsoniterScalaCore  = "2.15.0"
+    val jsoniterScalaCore  = "2.16.0"
     val jsoniterScalaOld   = "2.13.3" // this is the latest version supporting Scala 2.11 and java 8
-    val jsoup              = "1.15.2"
+    val jsoup              = "1.15.3"
     val munit              = "1.0.0-M6"
     val normalizecss       = "8.0.1"
     val okHttp             = "4.10.0"
