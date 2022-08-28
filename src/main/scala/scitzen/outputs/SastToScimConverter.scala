@@ -117,7 +117,11 @@ object AttributesToScim:
   def encodeText(text: Text): String =
     val value = SastToScimConverter.inlineToScim(text.inl)
     def parses(quoted: String): Boolean =
-      val parsedAttr = Parse.parseResult(quoted.getBytes(StandardCharsets.UTF_8), AttributesParser.attribute, Prov())
+      val parsedAttr = Parse.parseResult(
+        quoted.getBytes(StandardCharsets.UTF_8),
+        AttributesParser.attribute <~ de.rmgk.scip.end.orFail,
+        Prov()
+      )
 
       parsedAttr match {
         case Positional(`text`, _) => true
@@ -139,7 +143,12 @@ object AttributesToScim:
 
   def encodeString(value: String): String =
     def parses(quoted: String): Boolean =
-      Try{Parse.parseResult(quoted.getBytes(StandardCharsets.UTF_8), AttributesParser.namedAttributeValue)}.isSuccess
+      Try {
+        Parse.parseResult(
+          quoted.getBytes(StandardCharsets.UTF_8),
+          AttributesParser.namedAttributeValue <~ de.rmgk.scip.end.orFail
+        )
+      }.isSuccess
 
     def pickFirst(candidate: (() => String)*): Option[String] =
       candidate.view.map(_.apply()).find(parses)
