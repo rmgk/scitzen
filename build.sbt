@@ -32,6 +32,7 @@ lazy val scitzen = project.in(file("."))
     // javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
     nativeImageVersion   := graalVersion,
+    nativeImageCommand   := Seq("native-image"),
     nativeImageJvm       := "graalvm-java17",
     nativeImageOptions ++= Seq(
       "--no-fallback",
