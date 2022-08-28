@@ -59,7 +59,7 @@ class SastToTexConverter(
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",
-    val secs = Array("chapter", "section", "subsection", "paragraph")
+    val secs = settings.getOrElse("sectioning", "chapter,section,subsection,paragraph").split(',').map(_.trim)
     val sec  = secs.lift(nesting).getOrElse("paragraph")
     sec
   }
