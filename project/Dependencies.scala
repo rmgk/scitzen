@@ -83,7 +83,7 @@ object Dependencies {
   val scribeSlf4j = Def.setting("com.outr" %% "scribe-slf4j" % V.scribe)
   val sourcecode  = Def.setting("com.lihaoyi" %%% "sourcecode" % V.sourcecode)
   val tomlScala   = Def.setting("tech.sparse" %%% "toml-scala" % V.tomlScala)
-  val upickle     = Def.setting("com.lihaoyi" %% "upickle" % V.upickle)
+  val upickle     = Def.setting("com.lihaoyi" %%% "upickle" % V.upickle)
 
   val jsoniterScalaAll = Def.setting {
     val jsoniterVersion = if (Settings.`is 2.11`(scalaVersion.value))
