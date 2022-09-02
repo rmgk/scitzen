@@ -117,19 +117,21 @@ object AttributesToScim:
   def encodeText(text: Text): String =
     val value = SastToScimConverter.inlineToScim(text.inl)
     def parses(quoted: String): Boolean =
-      val parsedAttr = Parse.parseResult(
-        quoted.getBytes(StandardCharsets.UTF_8),
-        AttributesParser.attribute <~ de.rmgk.scip.end.orFail,
-        Prov()
-      )
+      try
+        val parsedAttr = Parse.parseResult(
+          quoted.getBytes(StandardCharsets.UTF_8),
+          AttributesParser.attribute <~ de.rmgk.scip.end.orFail,
+          Prov()
+        )
 
-      parsedAttr match {
-        case Positional(`text`, _) => true
-        //// format again to remove unimportant differences (mostly providence)
-        // val transformedValue = SastToScimConverter.inlineToScim(t.inl)
-        // value == transformedValue
-        case other => false
-      }
+        parsedAttr match {
+          case Positional(`text`, _) => true
+          //// format again to remove unimportant differences (mostly providence)
+          // val transformedValue = SastToScimConverter.inlineToScim(t.inl)
+          // value == transformedValue
+          case other => false
+        }
+      catch case other => false
 
     def pickFirst(candidate: (() => String)*): Option[String] =
       candidate.view.map(_.apply()).find(parses)
