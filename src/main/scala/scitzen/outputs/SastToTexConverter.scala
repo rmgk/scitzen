@@ -49,7 +49,7 @@ class SastToTexConverter(
 
     val ilc    = inlineValuesToTex(article.header.title.inl)(cta)
     val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
-    ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\scitzenmaketitle")
+    ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\scitzenmaketitle{}")
 
   def convert(mainSast: List[Sast])(ctx: Cta): CtxCS =
     sastSeqToTex(mainSast)(ctx)
