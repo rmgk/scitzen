@@ -140,10 +140,11 @@ class SastToTexConverter(
           // appending the newline adds two another newline in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
           if settings.get("style").contains("article") then cctx.single :+ "\n"
-          else cctx.map { text =>
-            val latexenc = latexencode(text).trim.replace("\n", "\\newline{}\n")
-            Chain("\\noindent", latexenc, "\n")
-          }
+          else
+            cctx.map { text =>
+              val latexenc = latexencode(text).trim.replace("\n", "\\newline{}\n")
+              Chain("\\noindent", latexenc, "\n")
+            }
 
         case Parsed(_, blockContent) =>
           tlblock.command match
@@ -284,11 +285,13 @@ class SastToTexConverter(
 
           case Link =>
             ctx.retc {
-              val target = attributes.target
+              val target   = attributes.target
+              val plainurl = s"\\url{$target}"
               if attributes.legacyPositional.size > 1 then
-                val name = "{" + latexencode(attributes.legacyPositional.head) + "}"
-                s"\\href{$target}{$name}"
-              else s"\\url{$target}"
+                val name    = "{" + latexencode(attributes.legacyPositional.head) + "}"
+                val textref = s"\\href{$target}{$name}"
+                if settings.get("footnotelinks").contains("disabled") then textref else s"$textref\\footnote{$plainurl}"
+              else plainurl
             }.useFeature("href")
 
           case Lookup =>
