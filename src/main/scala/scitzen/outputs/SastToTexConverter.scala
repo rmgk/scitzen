@@ -81,7 +81,7 @@ class SastToTexConverter(
             val sec   = sectioning(prefix.length - shift)
             s"\\$sec$numbered{${ilc.data}}"
 
-        val label = attr.named.get("label").map(l => s"\\label{$l}").toList
+        val label = attr.named.get("unique ref").map(l => s"\\label{$l}").toList
 
         pushed.retc(header) :++ Chain.from(label)
 
@@ -127,7 +127,7 @@ class SastToTexConverter(
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
     val args      = attributes.legacyPositional.tail
     val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
-    val label     = attributes.named.get("label").map(s => s"\\label{$s}").getOrElse("")
+    val label     = attributes.named.get("unique ref").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
     sastSeqToTex(content)(ctx) :+
     s"\\end{$name}"
@@ -161,7 +161,7 @@ class SastToTexConverter(
               sastSeqToTex(figContent)(caption) :++
               Chain(
                 caption.data,
-                tlblock.attributes.named.get("label").fold("")(l => s"\\label{$l}"),
+                tlblock.attributes.named.get("unique ref").fold("")(l => s"\\label{$l}"),
                 "\\end{figure}"
               )
 
@@ -186,7 +186,7 @@ class SastToTexConverter(
             tlblock.attributes.legacyPositional.headOption match
 
               case _ =>
-                val labeltext = tlblock.attributes.named.get("label") match
+                val labeltext = tlblock.attributes.named.get("unique ref") match
                   case None => text
                   case Some(label) =>
                     text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
