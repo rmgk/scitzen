@@ -29,6 +29,7 @@ lazy val scitzen = project.in(file("."))
       "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs
     ),
     libraryDependencies ++= jsoniterScalaAll.value,
+    libraryDependencySchemes += "com.lihaoyi" %% "geny" % VersionScheme.Always,
     // javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
     nativeImageVersion   := graalVersion,
