@@ -13,7 +13,9 @@ case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File):
   def resolve(path: String): Option[File] = project.resolve(cwd, path)
 
   def articleOutputPath(article: Article): File =
-    articleOutputDir / Format.sluggify(s"${article.date.map(_.full).getOrElse("")} ${article.title}.html")
+    def genName = s"${article.date.map(_.full).getOrElse("")} ${article.title}"
+    val name = article.filename.getOrElse(genName)
+    articleOutputDir / Format.sluggify(s"$name.html")
 
   def relativizeToProject(target: File): Path = project.relativizeToProject(target)
 

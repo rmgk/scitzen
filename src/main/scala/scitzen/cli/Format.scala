@@ -43,7 +43,7 @@ object Format:
       f.renameTo(newName)
 
   def canonicalName(header: Article): String =
-    val title = sluggify(header.title)
+    val title = sluggify(header.filename.getOrElse(header.title))
     header.date.map(_.date.full).fold(title)(d => d + " " + title)
 
   def sluggify(str: String): String =

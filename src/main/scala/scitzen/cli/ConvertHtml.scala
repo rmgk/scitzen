@@ -23,7 +23,6 @@ object ConvertHtml:
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  // loading ressource statically allows Graal AOT to inline on build
   val stylesheet: Array[Byte] =
     Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
 

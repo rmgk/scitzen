@@ -14,6 +14,8 @@ case class Article(header: Section, content: List[Sast], sourceDoc: Document):
 
   lazy val named: Map[String, String] = header.attributes.named
 
+  lazy val filename: Option[String] = named.get("filename")
+
   def sast: List[Sast] = header :: content
 
 object Article:
