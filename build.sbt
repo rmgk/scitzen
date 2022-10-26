@@ -1,7 +1,7 @@
 import Dependencies._
 import Settings._
 
-val graalVersion = "22.2.0"
+val graalVersion = "22.3.0"
 
 lazy val scitzen = project.in(file("."))
   .enablePlugins(NativeImagePlugin)
