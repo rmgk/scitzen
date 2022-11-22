@@ -4,7 +4,7 @@ import Settings._
 val graalVersion = "22.3.0"
 
 lazy val scitzen = project.in(file("."))
-  .enablePlugins(NativeImagePlugin)
+  // .enablePlugins(NativeImagePlugin)
   .settings(
     name         := "scitzen",
     organization := "de.rmgk",
@@ -30,24 +30,12 @@ lazy val scitzen = project.in(file("."))
     ),
     libraryDependencies ++= jsoniterScalaAll.value,
     libraryDependencySchemes += "com.lihaoyi" %% "geny" % VersionScheme.Always,
-    // javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image",
     Compile / run / fork := true,
-    nativeImageVersion   := graalVersion,
-    nativeImageJvm       := "graalvm-java17",
-    nativeImageOptions ++= Seq(
-      "--no-fallback",
-      // "--initialize-at-build-time",
-      // "--initialize-at-run-time=scala.util.Random",
-      "-J-Xmx7G",
-      "--language:js",
-      "-H:+ReportExceptionStackTraces",
-      "-H:IncludeResources=META-INF/resources/webjars/prism/components/.*.min.js$",
-      "-H:IncludeResources=META-INF/resources/webjars/prism/themes/.*.css$",
-      "-H:IncludeResources=META-INF/resources/webjars/katex/.*/dist/katex.min.js$",
-      "-H:IncludeResources=scitzen.css",
-    ),
+    TaskKey[Unit]("writeClasspath", "writes the classpath to a file in the target dir") := {
+      val cp         = (Compile / fullClasspathAsJars).value
+      val cpstring   = cp.map(at => s"""-cp "${at.data}"\n""").mkString("")
+      val targetpath = target.value.toPath.resolve("classpath.txt")
+      IO.write(targetpath.toFile, cpstring)
+      ()
+    }
   )
-
-// fix some linting nonsense
-Global / excludeLintKeys += nativeImageVersion
-Global / excludeLintKeys += nativeImageJvm
