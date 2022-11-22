@@ -8,3 +8,5 @@ $GH/bin/gu install native-image
 $GH/bin/gu install js
 cs launch sbt --jvm graalvm-java17:22.3.0 -- 'set javaOptions += "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image"' "run Examples --image-file-map imagemap.json"
 rm imagemap.json
+
+# GRAAL_HOME=(cs java-home --jvm graalvm-java17:latest.stable) NATIVE_IMAGE_INSTALLED=true sbt nativeImage
