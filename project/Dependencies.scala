@@ -16,20 +16,20 @@ object Dependencies {
     val directories        = "26"
     val jetty              = "9.4.49.v20220914"
     val jol                = "0.16"
-    val jsoniterScalaCore  = "2.17.6"
+    val jsoniterScalaCore  = "2.17.9"
     val jsoniterScalaOld   = "2.13.3.2" // this is the latest version supporting Scala 2.11 (and java 8)
     val jsoup              = "1.15.3"
-    val munit              = "1.0.0-M6"
+    val munit              = "1.0.0-M7"
     val normalizecss       = "8.0.1"
     val okHttp             = "4.10.0"
-    val pprint             = "0.7.3"
+    val pprint             = "0.8.0"
     val quicklens          = "1.9.0"
     val reactiveStreams    = "1.0.4"
     val retypecheck        = "0.10.0"
     val scala211           = "2.11.12"
     val scala212           = "2.12.16"
     val scala213           = "2.13.8"
-    val scala3             = "3.2.0"
+    val scala3             = "3.2.1"
     val scalaJavaTime      = "2.3.0"
     val scalaLoci          = "609b4c1b58"
     val scalaSwing         = "3.0.0"
@@ -142,11 +142,11 @@ object Dependencies {
     }
     Seq(
       libraryDependencies ++= Seq(
-        "org.scalafx" %% "scalafx" % "18.0.2-R29",
+        "org.scalafx" %% "scalafx" % "19.0.0-R30",
         scalaSwing.value,
       ),
       libraryDependencies ++= Seq("base", "controls", "fxml", "graphics", "media", "swing", "web").map(m =>
-        "org.openjfx" % s"javafx-$m" % "18.0.2" classifier osName
+        "org.openjfx" % s"javafx-$m" % "19" classifier osName
       )
     )
   }
