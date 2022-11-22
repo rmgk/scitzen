@@ -29,5 +29,5 @@ lazy val scitzen = project.in(file("."))
     libraryDependencies ++= jsoniterScalaAll.value,
     libraryDependencySchemes += "com.lihaoyi" %% "geny" % VersionScheme.Always,
     Compile / run / fork := true,
-    CustomUtil.writeClasspath
+    writeClasspath
   )

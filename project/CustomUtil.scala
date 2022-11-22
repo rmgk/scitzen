@@ -31,12 +31,4 @@ object CustomUtil {
     target.toFile
   }
 
-  val writeClasspath = TaskKey[Unit]("writeClasspath", "writes the classpath to a file in the target dir") := {
-    val cp         = (Compile / fullClasspathAsJars).value
-    val cpstring   = cp.map(at => s"""-cp "${at.data.toString.replace("\\", "/")}"\n""").mkString("")
-    val targetpath = target.value.toPath.resolve("classpath.txt")
-    IO.write(targetpath.toFile, cpstring)
-    ()
-  }
-
 }
