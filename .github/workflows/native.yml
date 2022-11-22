@@ -40,7 +40,7 @@ jobs:
           apps: sbt
       - run: git fetch --tags || true
       - name: generate native image
-        run: make-native-image.sh
+        run: sh make-native-image.sh
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
