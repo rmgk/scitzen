@@ -18,13 +18,13 @@ jobs:
         include:
           - os: macOS-12
             uploaded_filename: scitzen-x86_64-apple-darwin
-            local_path: /Users/runner/work/scitzen/scitzen/target/native-image/scitzen
+            local_path: /Users/runner/work/scitzen/scitzen/scitzen
           - os: ubuntu-22.04
             uploaded_filename: scitzen-x86_64-pc-linux
-            local_path: /home/runner/work/scitzen/scitzen/target/native-image/scitzen
+            local_path: /home/runner/work/scitzen/scitzen/scitzen
           - os: windows-2022
             uploaded_filename: scitzen-x86_64-pc-win32.exe
-            local_path: D:\a\scitzen\scitzen\target\native-image\scitzen.exe
+            local_path: D:\a\scitzen\scitzen\scitzen.exe
     steps:
       - uses: actions/checkout@v2
       - uses: coursier/cache-action@v6
@@ -38,9 +38,10 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           apps: sbt
-      - run: git fetch --tags || true
       - name: generate native image
-        run: sh make-native-image.sh
+        run: |
+          sbt writeClasspath
+          native-image @target/classpath.txt scitzen.cli.ScitzenCommandline
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
