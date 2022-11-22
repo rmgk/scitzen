@@ -1,8 +1,6 @@
 import Dependencies._
 import Settings._
 
-val graalVersion = "22.3.0"
-
 lazy val scitzen = project.in(file("."))
   // .enablePlugins(NativeImagePlugin)
   .settings(
@@ -26,7 +24,7 @@ lazy val scitzen = project.in(file("."))
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
       betterFiles.value.cross(CrossVersion.for3Use2_13),
       munit.value,
-      "org.graalvm.js" % "js" % graalVersion, // explicitly depend on graal.js to allow running on non-graal JVMs
+      "org.graalvm.js" % "js" % "22.3.0", // explicitly depend on graal.js to allow running on non-graal JVMs
     ),
     libraryDependencies ++= jsoniterScalaAll.value,
     libraryDependencySchemes += "com.lihaoyi" %% "geny" % VersionScheme.Always,
