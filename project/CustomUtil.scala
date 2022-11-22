@@ -5,6 +5,9 @@ import java.net.URL
 import java.nio.file.{Files, Path, StandardOpenOption}
 import java.security.MessageDigest
 
+import sbt.{TaskKey, Compile}
+import sbt.Keys.{fullClasspathAsJars,target}
+
 object CustomUtil {
 
   val sha1digester: MessageDigest = MessageDigest.getInstance("SHA-1")
@@ -27,4 +30,13 @@ object CustomUtil {
 
     target.toFile
   }
+
+  val writeClasspath = TaskKey[Unit]("writeClasspath", "writes the classpath to a file in the target dir") := {
+    val cp         = (Compile / fullClasspathAsJars).value
+    val cpstring   = cp.map(at => s"""-cp "${at.data}"\n""").mkString("")
+    val targetpath = target.value.toPath.resolve("classpath.txt")
+    IO.write(targetpath.toFile, cpstring)
+    ()
+  }
+
 }

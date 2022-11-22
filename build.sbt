@@ -31,11 +31,5 @@ lazy val scitzen = project.in(file("."))
     libraryDependencies ++= jsoniterScalaAll.value,
     libraryDependencySchemes += "com.lihaoyi" %% "geny" % VersionScheme.Always,
     Compile / run / fork := true,
-    TaskKey[Unit]("writeClasspath", "writes the classpath to a file in the target dir") := {
-      val cp         = (Compile / fullClasspathAsJars).value
-      val cpstring   = cp.map(at => s"""-cp "${at.data}"\n""").mkString("")
-      val targetpath = target.value.toPath.resolve("classpath.txt")
-      IO.write(targetpath.toFile, cpstring)
-      ()
-    }
+    CustomUtil.writeClasspath
   )
