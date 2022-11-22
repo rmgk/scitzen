@@ -41,7 +41,6 @@ jobs:
       - name: generate native image
         run: |
           sbt writeClasspath
-          cat target/classpath.txt
           native-image @target/classpath.txt scitzen.cli.ScitzenCommandline
       - uses: actions/upload-artifact@master
         with:
