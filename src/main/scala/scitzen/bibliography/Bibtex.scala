@@ -24,7 +24,7 @@ object Bibtex:
       year = Option(entry.getIssued).flatMap(i => Option(i.getDateParts).flatMap(_.flatten.headOption)),
       container = Option(entry.getContainerTitle),
       `type` = Option(entry.getType).map(_.toString).getOrElse("unknown-csl-type"),
-      url = Option(entry.getURL),
+      url = Option(entry.getURL).orElse(Option(entry.getDOI).map(doi => s"https://doi.org/$doi")),
       issue = Option(entry.getIssue),
     )
 

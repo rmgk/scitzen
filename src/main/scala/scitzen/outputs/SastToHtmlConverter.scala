@@ -280,13 +280,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
           case Cite =>
             val citations = attrs.target.split(",").toList.map { bibid =>
-              bibid -> pathManager.project.bibliography.get(bibid.trim)
+              val trimmed = bibid.trim
+              trimmed -> pathManager.project.bibliography.get(trimmed)
             }
             val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
               case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
               case (bibid, None) =>
-                scribe.error(s"bib key not found: »${bibid.trim}«" + reportPos(mcro))
-                List(code(bibid.trim), stringFrag(" "))
+                scribe.error(s"bib key not found: »${bibid}«" + reportPos(mcro))
+                List(code(bibid), stringFrag(" "))
             }.dropRight(1)
             val cctx          = ctx.cite(citations.flatMap(_._2))
             val styledAnchors = span(cls := "citations", "(", anchors, ")")
