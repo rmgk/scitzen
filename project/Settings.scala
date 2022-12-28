@@ -1,8 +1,6 @@
 /* This file is shared between multiple projects
  * and may contain unused dependencies */
 
-import _root_.io.github.davidgregory084.TpolecatPlugin.autoImport.tpolecatScalacOptions
-import _root_.io.github.davidgregory084.TpolecatPlugin.autoImport.ScalacOptions
 import sbt.Keys._
 import sbt._
 import Dependencies.{Versions => V}
@@ -12,31 +10,31 @@ object Settings {
 
   val commonCrossBuildVersions = crossScalaVersions := Seq(V.scala211, V.scala212, V.scala213, V.scala3)
 
-  val optionsOverride = tpolecatScalacOptions ~= { opts =>
-    // unused patvars are nice for documentation purposes
-    opts -- Set(ScalacOptions.warnUnusedPatVars, ScalacOptions.privateWarnUnusedPatVars)
-  }
-
   val scalaVersion_211 = Def.settings(
     scalaVersion := V.scala211,
-    optionsOverride,
     scalacOptions ++= settingsFor(scalaVersion.value)
   )
   val scalaVersion_212 = Def.settings(
     scalaVersion := V.scala212,
-    optionsOverride,
     scalacOptions ++= settingsFor(scalaVersion.value)
   )
   val scalaVersion_213 = Def.settings(
     scalaVersion := V.scala213,
-    optionsOverride,
     scalacOptions ++= settingsFor(scalaVersion.value)
   )
   val scalaVersion_3 = Def.settings(
     scalaVersion := V.scala3,
-    optionsOverride,
     scalacOptions ++= settingsFor(scalaVersion.value)
   )
+
+  val scalaFullCrossBuildSupport = commonCrossBuildVersions +: {
+    scala.sys.env.get("SCALA_VERSION") match {
+      case Some("2.11") => scalaVersion_211
+      case Some("2.12") => scalaVersion_212
+      case Some("2.13") => scalaVersion_213
+      case _            => scalaVersion_3
+    }
+  }
 
   def `is 2.11`(scalaVersion: String): Boolean =
     CrossVersion.partialVersion(scalaVersion).contains((2, 11))
@@ -47,7 +45,8 @@ object Settings {
 
   def settingsFor(version: String) =
     version match {
-      case a if a.startsWith("2.13") => List("-Ytasty-reader")
+      case v if v.startsWith("2.13") => List("-Ytasty-reader")
+      case v if v.startsWith("3.") => List("-feature")
       case other                     => Nil
     }
 

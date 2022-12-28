@@ -12,11 +12,11 @@ object Dependencies {
     val betterFiles        = "3.9.1"
     val catsCore           = "2.6.1"
     val circeCore          = "0.14.3"
-    val decline            = "2.3.1"
+    val decline            = "2.4.0"
     val directories        = "26"
     val jetty              = "11.0.12"
     val jol                = "0.16"
-    val jsoniterScalaCore  = "2.17.9"
+    val jsoniterScalaCore  = "2.20.0"
     val jsoniterScalaOld   = "2.13.3.2" // this is the latest version supporting Scala 2.11 (and java 8)
     val jsoup              = "1.15.3"
     val munit              = "1.0.0-M7"
@@ -27,11 +27,11 @@ object Dependencies {
     val reactiveStreams    = "1.0.4"
     val retypecheck        = "0.10.0"
     val scala211           = "2.11.12"
-    val scala212           = "2.12.16"
+    val scala212           = "2.12.17"
     val scala213           = "2.13.8"
     val scala3             = "3.2.1"
     val scalaJavaTime      = "2.3.0"
-    val scalaLoci          = "03ddfb7ca9"
+    val scalaLoci          = "5df6d12a45"
     val scalaSwing         = "3.0.0"
     val scalacheck         = "1.17.0"
     val scalactic          = "3.0.0"
@@ -78,13 +78,13 @@ object Dependencies {
     Def.setting(if (`is 2.11`(scalaVersion.value))
       "org.scalatestplus"    %%% "scalacheck-1-15" % "3.2.4.0-M1"         % "test"
     else "org.scalatestplus" %%% "scalacheck-1-16" % V.scalatestpluscheck % "test")
-  val scopt       = Def.setting("com.github.scopt" %%% "scopt" % V.scopt)
-  val scribe      = Def.setting("com.outr" %%% "scribe" % V.scribe)
-  val scribeSlf4j = Def.setting("com.outr" %% "scribe-slf4j" % V.scribe)
+  val scopt        = Def.setting("com.github.scopt" %%% "scopt" % V.scopt)
+  val scribe       = Def.setting("com.outr" %%% "scribe" % V.scribe)
+  val scribeSlf4j  = Def.setting("com.outr" %% "scribe-slf4j" % V.scribe)
   val scribeSlf4j2 = Def.setting("com.outr" %% "scribe-slf4j2" % V.scribe)
-  val sourcecode  = Def.setting("com.lihaoyi" %%% "sourcecode" % V.sourcecode)
-  val tomlScala   = Def.setting("tech.sparse" %%% "toml-scala" % V.tomlScala)
-  val upickle     = Def.setting("com.lihaoyi" %%% "upickle" % V.upickle)
+  val sourcecode   = Def.setting("com.lihaoyi" %%% "sourcecode" % V.sourcecode)
+  val tomlScala    = Def.setting("tech.sparse" %%% "toml-scala" % V.tomlScala)
+  val upickle      = Def.setting("com.lihaoyi" %%% "upickle" % V.upickle)
 
   val jsoniterScalaAll = Def.setting {
     val jsoniterVersion = if (Settings.`is 2.11`(scalaVersion.value))
@@ -129,7 +129,7 @@ object Dependencies {
     val wsWeb         = generic("communicator-ws-webnative")
     val wsJavalin     = generic("communicator-ws-javalin")
     val wsJetty       = generic("communicator-ws-jetty")
-    val wsJetty11       = generic("communicator-ws-jetty11")
+    val wsJetty11     = generic("communicator-ws-jetty11")
   }
 
   // Add JavaFX dependencies, should probably match whatever the scalafx version was tested against:
