@@ -62,12 +62,12 @@ main {
 		/* use grid to have text centered, but allow oversized image content */
 		display: grid;
 		/* the minmax(0, 1fr) ensures that the margins are never larger than 1fr,
-			 but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
-			 causing the thing to widen in case the content is large,
-			 as could happen with some images.
-			 the content has a fixed minimum width to force a scrollbar on the content at some point
-			 note that everything breaks if --main-content-width is smaller than the minimum here,
-			 which is why the minimum is not min-content */
+		   but can shrink arbitrarily. Plain 1fr is equal to minmax(auto, 1fr)
+		   causing the thing to widen in case the content is large,
+		   as could happen with some images.
+		   the content has a fixed minimum width to force a scrollbar on the content at some point
+		   note that everything breaks if --main-content-width is smaller than the minimum here,
+		   which is why the minimum is not min-content */
 		grid-template-columns:
 			[image-start]   minmax(var(--normal-gap), 2fr)
 			[header-start]  minmax(0, 1fr)
