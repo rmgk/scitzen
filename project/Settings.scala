@@ -1,56 +1,89 @@
 /* This file is shared between multiple projects
  * and may contain unused dependencies */
 
-import sbt.Keys._
-import sbt._
-import Dependencies.{Versions => V}
+import Dependencies.Versions as V
+import com.jsuereth.sbtpgp.PgpKeys.publishSigned
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.jsEnv
+import sbt.*
+import sbt.Keys.*
+
+import scala.math.Ordering.Implicits.infixOrderingOps
 
 object Settings {
 
   val commonCrossBuildVersions = crossScalaVersions := Seq(V.scala211, V.scala212, V.scala213, V.scala3)
 
+  private def cond(b: Boolean, opts: String*) = if (b) opts.toList else Nil
+
+  // these are scoped to compile&test only to ensure that doc tasks and such do not randomly fail for no reason
+  val fatalWarnings = Seq(Compile / compile, Test / compile).map(s =>
+    s / scalacOptions ++= {
+      val version = CrossVersion.partialVersion(scalaVersion.value).get
+      List(
+        cond(version >= (2, 13), "-Werror"),
+        cond(version < (2, 13), "-Xfatal-warnings"),
+      ).flatten
+    }
+  )
+
+  val featureOptions = Seq(
+    scalacOptions ++= {
+      val version = CrossVersion.partialVersion(scalaVersion.value).get
+      List(
+        List("-feature", "-language:higherKinds", "-language:implicitConversions", "-language:existentials"),
+        cond(version == (2, 13), "-Ytasty-reader"),
+        cond(version >= (3, 0), "-deprecation"),
+        cond(version < (3, 0), "-language:experimental.macros")
+      ).flatten
+    }
+  )
+
+  def explicitNulls(conf: Configuration*) = conf.map { c =>
+    c / scalacOptions ++= {
+      val version = CrossVersion.partialVersion(scalaVersion.value).get
+      cond(version._1 == 3, "-Yexplicit-nulls")
+    }
+  }
+
+  val commonScalacOptions = fatalWarnings ++ featureOptions
+
+  // see https://www.scala-js.org/news/2021/12/10/announcing-scalajs-1.8.0/#the-default-executioncontextglobal-is-now-deprecated
+  val jsAcceptUnfairGlobalTasks =
+    Seq(scalacOptions, Test / scalacOptions).map(s =>
+      s ++= cond(!`is 3`(scalaVersion.value), "-P:scalajs:nowarnGlobalExecutionContext")
+    )
+
   val scalaVersion_211 = Def.settings(
     scalaVersion := V.scala211,
-    scalacOptions ++= settingsFor(scalaVersion.value)
+    commonScalacOptions
   )
   val scalaVersion_212 = Def.settings(
     scalaVersion := V.scala212,
-    scalacOptions ++= settingsFor(scalaVersion.value)
+    commonScalacOptions
   )
   val scalaVersion_213 = Def.settings(
     scalaVersion := V.scala213,
-    scalacOptions ++= settingsFor(scalaVersion.value)
+    commonScalacOptions
   )
   val scalaVersion_3 = Def.settings(
     scalaVersion := V.scala3,
-    scalacOptions ++= settingsFor(scalaVersion.value)
+    commonScalacOptions
   )
 
-  val scalaFullCrossBuildSupport = commonCrossBuildVersions +: {
-    scala.sys.env.get("SCALA_VERSION") match {
-      case Some("2.11") => scalaVersion_211
-      case Some("2.12") => scalaVersion_212
-      case Some("2.13") => scalaVersion_213
-      case _            => scalaVersion_3
-    }
+  val scalaVersionFromEnv = scala.sys.env.get("SCALA_VERSION") match {
+    case Some("2.11") => scalaVersion_211
+    case Some("2.12") => scalaVersion_212
+    case Some("2.13") => scalaVersion_213
+    case _            => scalaVersion_3
   }
 
   def `is 2.11`(scalaVersion: String): Boolean =
     CrossVersion.partialVersion(scalaVersion).contains((2, 11))
   def `is 2.13`(scalaVersion: String): Boolean =
     CrossVersion.partialVersion(scalaVersion).contains((2, 13))
-  def `is 3`(version: String) =
-    CrossVersion.partialVersion(version) collect { case (3, _) => true } getOrElse false
+  def `is 3`(scalaVersion: String) =
+    CrossVersion.partialVersion(scalaVersion) collect { case (3, _) => true } getOrElse false
 
-  def settingsFor(version: String) =
-    version match {
-      case v if v.startsWith("2.13") => List("-Ytasty-reader")
-      case v if v.startsWith("3.") => List("-feature")
-      case other                     => Nil
-    }
-
-  val safeInit = scalacOptions += "-Ysafe-init"
   val dottyMigration = List(
     Compile / compile / scalacOptions ++= List("-rewrite", "-source", "3.0-migration"),
     Test / compile / scalacOptions ++= List("-rewrite", "-source", "3.0-migration")
@@ -68,16 +101,9 @@ object Settings {
     packagedArtifacts := Map.empty,
     publish           := {},
     publishLocal      := {},
-    publishM2         := {}
+    publishM2         := {},
+    publishSigned     := {}
   )
-
-  val publishOnly213 =
-    Seq(
-      publishArtifact   := (if (`is 2.13`(scalaVersion.value)) publishArtifact.value else false),
-      packagedArtifacts := (if (`is 2.13`(scalaVersion.value)) packagedArtifacts.value else Map.empty),
-      publish           := (if (`is 2.13`(scalaVersion.value)) publish.value else {}),
-      publishLocal      := (if (`is 2.13`(scalaVersion.value)) publishLocal.value else {})
-    )
 
   // this is a tool to analyse memory consumption/layout
   val jolSettings = Seq(
@@ -86,25 +112,6 @@ object Settings {
     libraryDependencies += Dependencies.jol.value
   )
 
-  // see https://www.scala-js.org/news/2021/12/10/announcing-scalajs-1.8.0/#the-default-executioncontextglobal-is-now-deprecated
-  val jsAcceptUnfairGlobalTasks = Def.settings(
-    scalacOptions ++=
-      (if (`is 3`(scalaVersion.value)) List.empty
-       else List("-P:scalajs:nowarnGlobalExecutionContext")),
-    Test / scalacOptions ++=
-      (if (`is 3`(scalaVersion.value)) List.empty
-       else List("-P:scalajs:nowarnGlobalExecutionContext")),
-  )
-
   // see https://www.scala-js.org/doc/project/js-environments.html
   val jsEnvDom = jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv()
-
-  // util to generate classpath file to be consumed by native image
-  val writeClasspath = TaskKey[Unit]("writeClasspath", "writes the classpath to a file in the target dir") := {
-    val cp         = (Compile / fullClasspathAsJars).value
-    val cpstring   = cp.map(at => s"""-cp "${at.data.toString.replace("\\", "/")}"\n""").mkString("")
-    val targetpath = target.value.toPath.resolve("classpath.txt")
-    IO.write(targetpath.toFile, cpstring)
-    ()
-  }
 }

@@ -19,7 +19,7 @@ object ScitzenCommandline {
     OParser.parse(
       scopt.OParser.sequence(
         scopt.OParser.builder[ClOptions].help('h', "help").hidden(),
-        makeParser("scitzen", optInstance)
+        makeParser(optInstance, _.programName("scitzen"))
       ),
       args,
       optInstance
