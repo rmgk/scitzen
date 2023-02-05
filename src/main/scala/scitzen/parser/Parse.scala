@@ -7,16 +7,20 @@ import de.rmgk.scip.*
 object Parse {
 
   def parseResult[T](content: Array[Byte], parser: Scip[T], prov: Prov = Prov()): T = {
+    val scx = Scx(
+      input = content,
+      index = 0,
+      maxpos = content.length,
+      depth = 0,
+      lastFail = -1,
+      tracing = false
+    )
     try
-      parser.runInContext(Scx(
-        input = content,
-        index = 0,
-        maxpos = content.length,
-        depth = 0,
-        lastFail = -1,
-        tracing = false
-      ))
-    catch case f: ScipEx => throw IllegalStateException(f.getMessage)
+      parser.runInContext(scx)
+    catch
+      case f: ScipEx => throw IllegalStateException(f.getMessage)
+      case e: Exception =>
+        throw IllegalStateException(s"parse exception: ${scx.ScipExInstance.getMessage}}", e)
   }
 
   val parserDocument: Scip[Seq[Sast]] = BlockParsers.alternatives.list(Scip { true }) <~ end.orFail
