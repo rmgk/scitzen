@@ -12,7 +12,7 @@ object Dependencies {
     val directories   = "26"
     val jetty         = "11.0.13"
     val jol           = "0.16"
-    val jsoniterScala = "2.20.2"
+    val jsoniterScala = "2.20.3" // for scalajs 1.12 (Scala 2.11)
     val jsoup         = "1.15.3"
     val munit         = "1.0.0-M7"
     val okHttp        = "4.10.0"
@@ -21,15 +21,15 @@ object Dependencies {
     val scala211      = "2.11.12"
     val scala212      = "2.12.17"
     val scala213      = "2.13.10"
-    val scala3        = "3.2.1"
+    val scala3        = "3.2.2"
     val scalaJavaTime = "2.3.0"
-    val scalaLoci     = "5df6d12a45"
+    val scalaLoci     = "eb0719f08f"
     val scalacheck    = "1.17.0"
     val scalajsDom    = "2.3.0"
     val scalatags     = "0.12.0"
     val scopt         = "4.1.0"
-    val scribe        = "3.10.5"
-    val slips         = "0.4.6"
+    val scribe        = "3.10.6"
+    val sqliteJdbc    = "3.40.0.0"
     val sourcecode    = "0.3.0"
     val upickle       = "2.0.0"
   }
@@ -56,6 +56,7 @@ object Dependencies {
   val scribeSlf4j     = Def.setting("com.outr" %% "scribe-slf4j" % V.scribe)
   val scribeSlf4j2    = Def.setting("com.outr" %% "scribe-slf4j2" % V.scribe)
   val sourcecode      = Def.setting("com.lihaoyi" %%% "sourcecode" % V.sourcecode)
+  val sqliteJdbc      = Def.setting("org.xerial" % "sqlite-jdbc" % V.sqliteJdbc)
   val upickle         = Def.setting("com.lihaoyi" %%% "upickle" % V.upickle)
 
   val jsoniterScalaAll = Def.setting {
@@ -71,21 +72,24 @@ object Dependencies {
   }
 
   object slips {
-    val category = Def.setting("de.rmgk.slips" %%% "category" % V.slips)
-    val chain    = Def.setting("de.rmgk.slips" %%% "chain" % V.slips)
-    val delay    = Def.setting("de.rmgk.slips" %%% "delay" % V.slips)
-    val logging  = Def.setting("de.rmgk.slips" %%% "logging" % V.slips)
-    val options  = Def.setting("de.rmgk.slips" %%% "options" % V.slips)
-    val scip     = Def.setting("de.rmgk.slips" %%% "scip" % V.slips)
-    val script   = Def.setting("de.rmgk.slips" %%% "script" % V.slips)
+    val oldVersion  = "0.4.7"
+    val defvVersion = "0.4.8"
+    val category    = Def.setting("de.rmgk.slips" %%% "category" % oldVersion)
+    val chain       = Def.setting("de.rmgk.slips" %%% "chain" % oldVersion)
+    val delay       = Def.setting("de.rmgk.slips" %%% "delay" % defvVersion)
+    val logging     = Def.setting("de.rmgk.slips" %%% "logging" % oldVersion)
+    val options     = Def.setting("de.rmgk.slips" %%% "options" % oldVersion)
+    val scip        = Def.setting("de.rmgk.slips" %%% "scip" % defvVersion)
+    val script      = Def.setting("de.rmgk.slips" %%% "script" % defvVersion)
   }
 
   object loci {
     def generic(n: String): Def.Initialize[sbt.ModuleID] =
       // very accurate check if this is a snapshot based version from jitpack (no .) or a normal version from maven or a local publish
-      if (!V.scalaLoci.contains("."))
+      if (V.scalaLoci.contains("."))
+        Def.setting("io.github.scala-loci" %%% s"scala-loci-$n" % V.scalaLoci)
+      else
         Def.setting("com.github.scala-loci.scala-loci" %%% s"scala-loci-$n" % V.scalaLoci)
-      else Def.setting("io.github.scala-loci"          %%% s"scala-loci-$n" % V.scalaLoci)
 
     val communication = generic("communication")
     val circe         = generic("serializer-circe")
