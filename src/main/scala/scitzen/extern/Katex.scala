@@ -9,12 +9,13 @@ import scitzen.compat.Logging.scribe
 import scala.jdk.CollectionConverters.*
 import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, writeToString}
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
+import org.jsoup.Jsoup
 
 object Katex:
 
   given mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
 
-  private val katexstr: String = Resource.getAsString("META-INF/resources/webjars/katex/0.16.0/dist/katex.min.js")
+  private val katexstr: String = Resource.getAsString("META-INF/resources/webjars/katex/0.16.4/dist/katex.min.js")
 
   case class KatexConverter(cache: Map[String, String], katex: KatexLibrary):
 
@@ -22,7 +23,10 @@ object Katex:
       cache.get(str) match
         case Some(res) => (res, None)
         case None =>
-          val res = katex.renderToString(str)
+          val katexBlob = katex.renderToString(str)
+          val doc = Jsoup.parse(katexBlob)
+          doc.outputSettings().prettyPrint(false)
+          val res       = doc.selectFirst("math").html()
           (res, Some(copy(cache = cache.updated(str, res))))
 
   end KatexConverter

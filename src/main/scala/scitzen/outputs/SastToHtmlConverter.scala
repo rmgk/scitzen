@@ -24,7 +24,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 ):
 
   import bundle.all.*
-  import bundle.tags2.{article, section, time}
+  import bundle.tags2.{article, section, time, math}
 
   type CtxCF  = ConversionContext[Chain[Frag]]
   type Ctx[T] = ConversionContext[T]
@@ -276,7 +276,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
           case Math =>
             val inner = attrs.target
-            ctx.katex(inner).map(res => Chain(span(raw(res))))
+            ctx.katex(inner).map(res => Chain(math(raw(res))))
 
           case Cite =>
             val citations = attrs.target.split(",").toList.map { bibid =>

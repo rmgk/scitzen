@@ -513,11 +513,6 @@ body.fullpost > aside > nav li:before {
 /* external and technical stuff */
 /**************************************************************/
 
-/* only display katex mathml (does not work in chrome) */
-.katex-html {
-	display: none;
-}
-
 /* highlight targets are for forward sync when writing text */
 #highlight:target + * {
 	background: yellow;
