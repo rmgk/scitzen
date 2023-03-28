@@ -18,11 +18,12 @@ object ScalaCLI:
     val returnCode =
       new ProcessBuilder(
         "scala-cli",
+        "--power",
         "package",
         "--force",
         "--output",
-        (outputdir resolve "out.js").toString(),
-        sourceFile.toString,
+        (outputdir resolve "out.js").toAbsolutePath.toString(),
+        sourceFile.toAbsolutePath.toString,
       ).directory(outputdir.toFile)
         .redirectOutput(errorFile.toFile)
         .redirectError(errorFile.toFile)

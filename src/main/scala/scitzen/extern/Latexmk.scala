@@ -16,8 +16,8 @@ object Latexmk:
         "tectonic",
         "--keep-intermediates",
         "--outdir",
-        outputdir.toString(),
-        sourceFile.toString
+        outputdir.toAbsolutePath.toString(),
+        sourceFile.toAbsolutePath.toString()
       )
         // new ProcessBuilder(
         //  "latexmk",

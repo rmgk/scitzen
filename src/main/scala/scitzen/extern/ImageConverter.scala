@@ -101,19 +101,19 @@ class ImageConverter(
               "pdftocairo",
               "-singlefile",
               s"-$preferredFormat",
-              source.toString,
-              target.resolveSibling(ImageConverter.nameWithoutExtension(target)).toString
+              source.toAbsolutePath.toString,
+              target.resolveSibling(ImageConverter.nameWithoutExtension(target)).toAbsolutePath.toString
             )
 
           case "svg" =>
-            List("pdftocairo", s"-$preferredFormat", source.toString, target.toString)
+            List("pdftocairo", s"-$preferredFormat", source.toAbsolutePath.toString, target.toAbsolutePath.toString)
     )
 
   def svgToCairo(file: Path): Path =
     convertExternal(
       file,
       (source, target) => {
-        List("cairosvg", source.toString, "-o", target.toString)
+        List("cairosvg", source.toAbsolutePath.toString, "-o", target.toAbsolutePath.toString)
       }
     )
 
@@ -124,7 +124,7 @@ class ImageConverter(
     val relative       = project.root.relativize(file)
     val targetfileName = ImageConverter.nameWithoutExtension(file) + s".$preferredFormat"
     val targetfile =
-      if project.cacheDir == file.getParent then
+      if file.startsWith(project.cacheDir) then
         file.resolveSibling(targetfileName)
       else
         project.cacheDir.resolve("convertedImages")
@@ -180,7 +180,7 @@ class ImageConverter(
       val process = new ProcessBuilder(
         "dot",
         s"-T$format",
-        s"-o${target.toString}"
+        s"-o${target.toAbsolutePath.toString}"
       )
         .inheritIO().redirectInput(Redirect.PIPE).start()
       Using.resource(process.getOutputStream) { os => os.write(bytes) }
@@ -198,7 +198,7 @@ class ImageConverter(
       Files.createDirectories(mermaidSource.getParent)
       Files.write(mermaidSource, bytes)
 
-      new ProcessBuilder("mmdc", "--input", mermaidSource.toString, "--output", target.toString)
+      new ProcessBuilder("mmdc", "--input", mermaidSource.toAbsolutePath.toString, "--output", target.toAbsolutePath.toString)
         .inheritIO().start().waitFor()
       scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     target

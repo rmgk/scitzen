@@ -322,7 +322,7 @@ class SastToTexConverter(
                 ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>
                 val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
-                ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{$data}")).useFeature(
+                ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{${data.toAbsolutePath}}")).useFeature(
                   "graphics"
                 )
 

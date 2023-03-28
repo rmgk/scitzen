@@ -32,7 +32,7 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
     */
   def resolve(currentWorkingDirectory: Path, pathString: String): Option[Path] =
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
-    Some(res).filter(p => root == p.getParent && Files.isRegularFile(p))
+    Some(res).filter(p => p.startsWith(root) && Files.isRegularFile(p))
 
 object Project:
   val scitzenconfig: String = "scitzen.project/config"
@@ -65,7 +65,7 @@ object Project:
     source match
       case f if Files.isRegularFile(f) => List(f)
       case f if Files.isDirectory(f) =>
-        Files.walk(f, 1).iterator().asScala.filter { c =>
+        Files.walk(f).iterator().asScala.filter { c =>
           isScim(c) &&
           !f.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
         }.toList
