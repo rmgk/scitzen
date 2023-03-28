@@ -1,10 +1,11 @@
 package scitzen.outputs
 
-import better.files.File
+
 import scitzen.generic.{Article, HtmlPathManager}
 import scitzen.sast.DCommand.Other
 import scitzen.sast.{Attribute, Attributes, Block, Directive, InlineText, Parsed, Prov, Sast, Section, Text}
 
+import java.nio.file.Path
 import scala.collection.immutable.ArraySeq
 
 object GenIndexPage:
@@ -31,7 +32,7 @@ object GenIndexPage:
   def makeIndex(
       articles: List[Article],
       htmlPathManager: HtmlPathManager,
-      indexDir: File
+      indexDir: Path
   ): List[Sast] =
     def ordering[T: Ordering]: Ordering[T] = Ordering[T].reverse
 

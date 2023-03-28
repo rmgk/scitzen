@@ -5,7 +5,7 @@ import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.compat.Logging.scribe
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 
 object ConvertProject:
 
@@ -37,7 +37,7 @@ object ConvertProject:
       documentDirectory.documents
     )
 
-    project.outputdir.createDirectories()
+    Files.createDirectories(project.outputdir)
 
     val toHtml = project.config.outputType.contains("html")
     val toPdf  = project.config.outputType.contains("pdf")

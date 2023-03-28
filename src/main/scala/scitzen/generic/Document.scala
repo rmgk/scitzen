@@ -1,20 +1,20 @@
 package scitzen.generic
 
-import better.files.File
 import scitzen.sast.{Directive, Prov, Sast}
 import scitzen.compat.Logging.scribe
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path, Paths}
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
 /** A document represents a single, on disk, text file that has been successfully parsed */
-case class Document(file: File, content: Array[Byte], sast: List[Sast]):
+case class Document(file: Path, content: Array[Byte], sast: List[Sast]):
   lazy val reporter: FileReporter = new FileReporter(file, content)
 
 object Document:
-  def apply(file: File): Document =
-    val content = file.byteArray
+  def apply(file: Path): Document =
+    val content = Files.readAllBytes(file)
     try
       val sast = scitzen.parser.Parse.documentUnwrap(content, Prov(0, content.length))
       Document(file, content, sast.toList)
@@ -27,7 +27,7 @@ trait Reporter:
   def apply(im: Directive): String = apply(im.prov)
   def apply(prov: Prov): String
 
-final class FileReporter(file: File, content: Array[Byte]) extends Reporter:
+final class FileReporter(file: Path, content: Array[Byte]) extends Reporter:
   lazy val newLines: Seq[Int] =
     def findNL(idx: Int, found: List[Int]): Array[Int] =
       val res = content.indexOf('\n', idx + 1)
@@ -43,5 +43,5 @@ final class FileReporter(file: File, content: Array[Byte]) extends Reporter:
 
   override def apply(prov: Prov): String =
     val pos = indexToPosition(prov.start)
-    s" at »${File.currentWorkingDirectory.relativize(file)}:" +
+    s" at »${ Paths.get("").relativize(file)}:" +
       s"${pos._1}:${pos._2}«"

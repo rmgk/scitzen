@@ -1,6 +1,5 @@
 package scitzen.extern
 
-import better.files.*
 import scitzen.compat.Logging.scribe
 import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
 import scitzen.outputs.{Includes, SastToTextConverter}
@@ -10,11 +9,14 @@ import scitzen.parser.Parse
 import java.io.IOError
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters.*
+import scala.util.Using
 
 object ImageConverter {
+
+  def nameWithoutExtension(p: Path): String = p.getFileName.toString.reverse.dropWhile(c => c != '.').drop(1).reverse
 
   def preprocessImages(
       project: Project,
@@ -38,7 +40,7 @@ object ImageConverter {
     }.toMap
 
     macros.valuesIterator.foreach { (mcro, doc) =>
-      val file = project.resolve(doc.file.parent, mcro.attributes.target)
+      val file = project.resolve(doc.file.getParent, mcro.attributes.target)
       converters.foreach { (t, ic) =>
         if t.requiresConversion(mcro.attributes.target) && file.isDefined then
           converters(t).applyConversion(file.get, mcro.attributes).map(f => (t -> f))
@@ -49,14 +51,14 @@ object ImageConverter {
   def applyTemplate(
       attributes: Attributes,
       content: String,
-      cwd: File,
+      cwd: Path,
       project: Project,
       documentDirectory: DocumentDirectory
   ): String =
     val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match
       case None => content
       case Some(templateFile) =>
-        val tc   = templateFile.byteArray
+        val tc   = Files.readAllBytes(templateFile)
         val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
         SastToTextConverter(
           project.config.definitions ++ attributes.named + (
@@ -79,17 +81,17 @@ class ImageConverter(
   def requiresConversion(filename: String): Boolean =
     unsupportedFormat.exists(fmt => filename.endsWith(fmt))
 
-  def applyConversion(file: File, attributes: Attributes): Option[File] =
+  def applyConversion(file: Path, attributes: Attributes): Option[Path] =
     preferredFormat match
-      case "svg" | "png" if (file.extension.contains(".pdf")) => Some(pdfToCairo(file))
-      case "pdf" | "png" if (file.extension.contains(".svg")) => Some(svgToCairo(file))
-      case _ if (file.extension.contains(".tex")) =>
-        val dir = (project.cacheDir / "convertedImages").path.resolve(project.root.relativize(file))
+      case "svg" | "png" if (file.getFileName.toString.endsWith(".pdf")) => Some(pdfToCairo(file))
+      case "pdf" | "png" if (file.getFileName.toString.endsWith(".svg")) => Some(svgToCairo(file))
+      case _ if (file.getFileName.toString.endsWith(".tex")) =>
+        val dir = project.cacheDir.resolve("convertedImages").resolve(project.root.relativize(file))
         val templated =
-          ImageConverter.applyTemplate(attributes, file.contentAsString, file.parent, project, documentDirectory)
-        convertTemplated("tex", templated, dir, file.nameWithoutExtension(includeAll = false))
+          ImageConverter.applyTemplate(attributes, Files.readString(file), file.getParent, project, documentDirectory)
+        convertTemplated("tex", templated, dir, ImageConverter.nameWithoutExtension(file))
 
-  def pdfToCairo(file: File): File =
+  def pdfToCairo(file: Path): Path =
     convertExternal(
       file,
       (source, target) =>
@@ -99,57 +101,57 @@ class ImageConverter(
               "pdftocairo",
               "-singlefile",
               s"-$preferredFormat",
-              source.pathAsString,
-              target.sibling(target.nameWithoutExtension(includeAll = false)).pathAsString
+              source.toString,
+              target.resolveSibling(ImageConverter.nameWithoutExtension(target)).toString
             )
 
           case "svg" =>
-            List("pdftocairo", s"-$preferredFormat", source.pathAsString, target.pathAsString)
+            List("pdftocairo", s"-$preferredFormat", source.toString, target.toString)
     )
 
-  def svgToCairo(file: File): File =
+  def svgToCairo(file: Path): Path =
     convertExternal(
       file,
       (source, target) => {
-        List("cairosvg", source.pathAsString, "-o", target.pathAsString)
+        List("cairosvg", source.toString, "-o", target.toString)
       }
     )
 
   trait CommandFunction:
-    def genCommand(source: File, target: File): List[String]
+    def genCommand(source: Path, target: Path): List[String]
 
-  private def convertExternal(file: File, command: CommandFunction): File =
+  private def convertExternal(file: Path, command: CommandFunction): Path =
     val relative       = project.root.relativize(file)
-    val targetfileName = file.nameWithoutExtension(includeAll = false) + s".$preferredFormat"
+    val targetfileName = ImageConverter.nameWithoutExtension(file) + s".$preferredFormat"
     val targetfile =
-      if project.cacheDir.isParentOf(file) then
-        file.sibling(targetfileName)
+      if project.cacheDir == file.getParent then
+        file.resolveSibling(targetfileName)
       else
-        File((project.cacheDir / "convertedImages")
-          .path.resolve(relative)
-          .resolve(targetfileName))
-    val sourceModified = file.lastModifiedTime
-    if !targetfile.exists || targetfile.lastModifiedTime != sourceModified then
-      targetfile.parent.createDirectories()
+        project.cacheDir.resolve("convertedImages")
+          .resolve(relative)
+          .resolve(targetfileName)
+    val sourceModified = Files.getLastModifiedTime(file)
+    if !Files.exists(targetfile) || Files.getLastModifiedTime(targetfile) != sourceModified then
+      Files.createDirectories(targetfile.getParent)
       scribe.debug(s"converting $file to $targetfile")
       new ProcessBuilder(command.genCommand(file, targetfile).asJava)
         .inheritIO().start().waitFor()
-      Files.setLastModifiedTime(targetfile.path, FileTime.from(file.lastModifiedTime))
+      Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(file))
     targetfile
 
-  def convertBlock(cwd: File, tlb: Block): Option[File] =
+  def convertBlock(cwd: Path, tlb: Block): Option[Path] =
     val converter = tlb.attributes.named("converter")
     val content   = tlb.content.asInstanceOf[Fenced].content
     val templated = ImageConverter.applyTemplate(tlb.attributes, content, cwd, project, documentDirectory)
     val hash      = tlb.attributes.named("content hash")
-    convertTemplated(converter, templated, project.cacheDir / hash, hash)
+    convertTemplated(converter, templated, project.cacheDir.resolve(hash), hash)
 
   def convertTemplated(
       converter: String,
       templatedContent: String,
-      dir: File,
+      dir: Path,
       name: String,
-  ): Option[File] =
+  ): Option[Path] =
     try
       converter match
         case "tex" =>
@@ -168,47 +170,47 @@ class ImageConverter(
         scribe.warn(s"converter $converter failed with: »${e.getMessage}«")
         None
 
-  def graphviz(content: String, dir: File, name: String, format: String): File =
+  def graphviz(content: String, dir: Path, name: String, format: String): Path =
     val bytes  = content.getBytes(StandardCharsets.UTF_8)
-    val target = dir / (name + s".$format")
-    if !target.exists then
-      dir.createDirectories()
+    val target = dir.resolve(name + s".$format")
+    if !Files.exists(target) then
+      Files.createDirectories(dir)
 
       val start = System.nanoTime()
       val process = new ProcessBuilder(
         "dot",
         s"-T$format",
-        s"-o${target.pathAsString}"
+        s"-o${target.toString}"
       )
         .inheritIO().redirectInput(Redirect.PIPE).start()
-      process.getOutputStream.autoClosed.foreach { _.write(bytes) }
+      Using.resource(process.getOutputStream) { os => os.write(bytes) }
       process.waitFor()
       scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     target
 
-  def mermaid(content: String, dir: File, name: String, format: String): File =
+  def mermaid(content: String, dir: Path, name: String, format: String): Path =
     val bytes         = content.getBytes(StandardCharsets.UTF_8)
-    val target        = dir / (name + s".$format")
-    val mermaidSource = dir / (name + ".mermaid")
-    if !target.exists then
+    val target        = dir.resolve(name + s".$format")
+    val mermaidSource = dir.resolve(name + ".mermaid")
+    if !Files.exists(target) then
       val start = System.nanoTime()
 
-      mermaidSource.createIfNotExists(createParents = true)
-      mermaidSource.writeByteArray(bytes)
+      Files.createDirectories(mermaidSource.getParent)
+      Files.write(mermaidSource, bytes)
 
-      new ProcessBuilder("mmdc", "--input", mermaidSource.pathAsString, "--output", target.pathAsString)
+      new ProcessBuilder("mmdc", "--input", mermaidSource.toString, "--output", target.toString)
         .inheritIO().start().waitFor()
       scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     target
 
-  def texconvert(content: String, dir: File, name: String): File =
-    val target = dir / (name + ".pdf")
-    if target.exists then target
+  def texconvert(content: String, dir: Path, name: String): Path =
+    val target = dir.resolve(name + ".pdf")
+    if Files.exists(target) then target
     else
       val texbytes = content.getBytes(StandardCharsets.UTF_8)
-      val dir      = target.parent
-      dir.createDirectories()
-      val texfile = dir / (name + ".tex")
-      texfile.writeByteArray(texbytes)
+      val dir      = target.getParent
+      Files.createDirectories(dir)
+      val texfile = dir.resolve(name + ".tex")
+      Files.write(texfile, texbytes)
       Latexmk.latexmk(dir, name, texfile)
     target

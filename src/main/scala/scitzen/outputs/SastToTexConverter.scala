@@ -1,6 +1,5 @@
 package scitzen.outputs
 
-import better.files.File
 import de.rmgk.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
@@ -10,6 +9,8 @@ import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.sast.Attribute.{Plain, Positional}
 import scitzen.compat.Logging.scribe
+
+import java.nio.file.Path
 
 object SastToTexConverter {
   def latexencode(input: String): String =
@@ -30,14 +31,14 @@ object SastToTexConverter {
 
 class SastToTexConverter(
     project: Project,
-    cwf: File,
+    cwf: Path,
     reporter: Reporter,
     includeResolver: DocumentDirectory,
     labels: Map[String, List[SastRef]],
     settings: Map[String, String],
 ):
 
-  val cwd = cwf.parent
+  val cwd = cwf.getParent
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]

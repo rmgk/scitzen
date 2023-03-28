@@ -1,14 +1,14 @@
 package scitzen.outputs
 
-import better.files.File
+
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{
-  Block, Fenced, Inline, InlineText, ListItem, Directive, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
-}
+import scitzen.sast.{Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 import scitzen.compat.Logging.scribe
 
-case class Includes(project: Project, cwf: File, includeResolver: DocumentDirectory)
+import java.nio.file.Path
+
+case class Includes(project: Project, cwf: Path, includeResolver: DocumentDirectory)
 
 case class SastToTextConverter(
     definitions: Map[String, String] = Map.empty,
@@ -59,7 +59,7 @@ case class SastToTextConverter(
             includes match
               case None => Nil
               case Some(Includes(project, cwf, includeResolver)) =>
-                project.resolve(cwf.parent, attributes.target).flatMap(includeResolver.byPath.get) match
+                project.resolve(cwf.getParent, attributes.target).flatMap(includeResolver.byPath.get) match
                   case Some(doc) =>
                     val included = includeResolver.byPath(doc.file)
 

@@ -1,6 +1,5 @@
 package scitzen.extern
 
-import better.files.*
 import com.github.plokhotnyuk.jsoniter_scala.core.writeToString
 import org.graalvm.polyglot.*
 import org.graalvm.polyglot.proxy.ProxyObject
@@ -8,6 +7,7 @@ import org.graalvm.polyglot.proxy.ProxyObject
 import java.io.{ByteArrayOutputStream, File}
 import java.lang.ProcessBuilder.Redirect
 import scala.jdk.CollectionConverters.*
+import scala.util.Using
 
 object Prism:
 
@@ -29,7 +29,14 @@ object Prism:
       if (lang != "core") ensureLoaded("core")
       dependencies.getOrElse(lang, Nil).foreach(ensureLoaded)
       val start = System.nanoTime()
-      prismcontext.eval("js", Resource.getAsString(s"$resolvePath/prism-$lang.min.js"))
+      val resstring =
+        val bo = new ByteArrayOutputStream()
+        Using.resource(getClass.getClassLoader.getResourceAsStream(s"$resolvePath/prism-$lang.min.js")) { r =>
+          r.transferTo(bo)
+        }
+        bo.toString()
+
+      prismcontext.eval("js", resstring)
       loadedLanguages = loadedLanguages + lang
       println(s"loading prism $lang took ${(System.nanoTime() - start) / 1000000}ms")
 

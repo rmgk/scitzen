@@ -1,14 +1,13 @@
 package scitzen.cli
 
-import better.files.File
-import better.files.File.CopyOptions
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{Hashes, Latexmk}
+import scitzen.extern.{Hashes, ImageConverter, Latexmk}
 import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
-import scala.jdk.CollectionConverters._
+import java.nio.file.{Files, StandardCopyOption}
+import scala.jdk.CollectionConverters.*
 
 object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8
@@ -38,17 +37,24 @@ object ConvertPdf:
 
         val articlename = Format.canonicalName(article)
 
-        val outputdir = project.outputdir / "pdfs"
-        outputdir.createDirectories()
+        val outputdir = project.outputdir.resolve("pdfs")
+        Files.createDirectories(outputdir)
 
-        val targetfile = outputdir / s"$articlename.pdf"
+        val targetfile = outputdir.resolve(s"$articlename.pdf")
 
-        val jobname    = targetfile.nameWithoutExtension(includeAll = false)
-        val temptexdir = project.cacheDir / s"$articlename.outdir"
-        temptexdir.createDirectories()
-        val temptexfile = temptexdir / (jobname + ".tex")
+        val jobname    = ImageConverter.nameWithoutExtension(targetfile)
+        val temptexdir = project.cacheDir.resolve(s"$articlename.outdir")
+        Files.createDirectories(temptexdir)
+        val temptexfile = temptexdir.resolve(jobname + ".tex")
 
-        project.bibfile.foreach(_.copyTo(temptexdir / "bibliography.bib")(copyOptions = CopyOptions(overwrite = true)))
+        project.bibfile.foreach { bf =>
+          Files.copy(
+            bf,
+            temptexdir.resolve("bibliography.bib"),
+            StandardCopyOption.REPLACE_EXISTING,
+            StandardCopyOption.COPY_ATTRIBUTES
+          )
+        }
 
         val templateSettings =
           project.config.definitions ++ article.header.attributes.named ++ List(
@@ -64,13 +70,13 @@ object ConvertPdf:
             templateSettings
           )
 
-        val successfile = temptexdir / "lastsuccess.sha1"
+        val successfile = temptexdir.resolve("lastsuccess.sha1")
         val scripthash  = Hashes.sha1hex(documentString)
-        if successfile.exists && successfile.contentAsString == scripthash then ()
+        if Files.exists(successfile) && Files.readString(successfile) == scripthash then ()
         else
-          temptexfile.write(documentString)
+          Files.writeString(temptexfile, documentString)
           val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
-          targetfile.delete(swallowIOExceptions = true)
-          res.foreach(_.linkTo(targetfile))
-          if res.isDefined then successfile.write(scripthash)
+          Files.deleteIfExists(targetfile)
+          res.foreach(r => Files.createLink(targetfile, r))
+          if res.isDefined then Files.writeString(successfile, scripthash)
       }

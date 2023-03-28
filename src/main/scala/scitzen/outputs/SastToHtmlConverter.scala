@@ -1,6 +1,5 @@
 package scitzen.outputs
 
-import better.files.*
 import de.rmgk.Chain
 import scalatags.Text.StringFrag
 import scalatags.generic
@@ -14,6 +13,8 @@ import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
 import scitzen.compat.Logging.scribe
+
+import java.nio.file.Files
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
@@ -123,7 +124,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 pathManager.resolve(attributes.target) match
                   case None => inlineValuesToHTML(List(mcro))(ctx)
                   case Some(file) =>
-                    convertSingle(Block(attributes, Fenced(file.contentAsString), mcro.prov))(ctx)
+                    convertSingle(Block(attributes, Fenced(Files.readString(file)), mcro.prov))(ctx)
 
               case None =>
                 if attributes.target.endsWith(".scim") then

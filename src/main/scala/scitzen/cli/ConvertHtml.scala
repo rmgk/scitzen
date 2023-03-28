@@ -1,6 +1,5 @@
 package scitzen.cli
 
-import better.files.*
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.generic.*
@@ -10,21 +9,28 @@ import scalatags.Text.all.raw
 import scalatags.Text.tags2.style
 import scitzen.bibliography.Bibtex
 import scitzen.cli.ScitzenCommandline.ClSync
-import math.Ordering.Implicits.seqOrdering
 
+import math.Ordering.Implicits.seqOrdering
 import scitzen.extern.Katex.mapCodec
 
+import java.io.ByteArrayOutputStream
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Path
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import scala.annotation.tailrec
-import scala.util.Try
+import scala.util.{Try, Using}
 
 object ConvertHtml:
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
   val stylesheet: Array[Byte] =
-    Resource.asStream("scitzen.css").fold(File("scitzen.css").byteArray)(_.byteArray)
+    Option(getClass.getClassLoader.getResourceAsStream("scitzen.css")).map { rs =>
+      Using.resource(rs) { ars =>
+        val bo = new ByteArrayOutputStream(14000) // size estimate from file snapshot
+        ars.transferTo(bo)
+        bo.toByteArray
+      }
+    }.getOrElse(Files.readAllBytes(Paths.get("scitzen.css")))
 
   def convertToHtml(
       project: Project,
@@ -32,28 +38,28 @@ object ConvertHtml:
       preprocessed: PreprocessedResults,
   ): Unit =
 
-    val katexmapfile = project.cacheDir / "katexmap.json"
+    val katexmapfile = project.cacheDir.resolve("katexmap.json")
 
     val nlp: Option[NLP] =
-      Option.when(project.nlpdir.isDirectory) {
+      Option.when(Files.isDirectory(project.nlpdir)) {
         NLP.loadFrom(project.nlpdir)
       }
 
     val pathManager =
-      val articleOutput = project.outputdir / "web"
-      articleOutput.createDirectories()
+      val articleOutput = project.outputdir.resolve("web")
+      Files.createDirectories(articleOutput)
       HtmlPathManager(project.root, project, articleOutput)
 
-    val cssfile   = pathManager.articleOutputDir / "scitzen.css"
+    val cssfile   = pathManager.articleOutputDir.resolve("scitzen.css")
     val cssstring = new String(stylesheet, charset)
-    cssfile.writeByteArray(stylesheet)
+    Files.write(cssfile, stylesheet)
 
     @tailrec
     def procRec(
         rem: List[Article],
         katexmap: Map[String, String],
-        resourcemap: Map[File, Path]
-    ): (Map[String, String], Map[File, Path]) =
+        resourcemap: Map[Path, Path]
+    ): (Map[String, String], Map[Path, Path]) =
       rem match
         case Nil => (katexmap, resourcemap)
         case article :: rest =>
@@ -81,7 +87,7 @@ object ConvertHtml:
   private def makeindex(
       project: Project,
       preprocessed: PreprocessedResults,
-      cssfile: File,
+      cssfile: Path,
       cssstring: String,
       pathManager: HtmlPathManager
   ): Unit =
@@ -103,17 +109,15 @@ object ConvertHtml:
         "Index",
         None
       )
-    pathManager.articleOutputDir./("index.html").write(res)
+    Files.writeString(pathManager.articleOutputDir.resolve("index.html"), res)
 
-  private def loadKatex(katexmapfile: File): Map[String, String] =
-    Try {
-      readFromStream[Map[String, String]](katexmapfile.newInputStream)
-    }.getOrElse(Map())
+  private def loadKatex(katexmapfile: Path): Map[String, String] =
+    Using(Files.newInputStream(katexmapfile)) { is => readFromStream[Map[String, String]](is) }.getOrElse(Map())
 
-  private def writeKatex(katexmapfile: File, katexMap: Map[String, String]): Any =
+  private def writeKatex(katexmapfile: Path, katexMap: Map[String, String]): Any =
     if katexMap.nonEmpty then
-      katexmapfile.parent.createDirectories()
-      katexmapfile.writeByteArray(writeToArray[Map[String, String]](
+      Files.createDirectories(katexmapfile.getParent)
+      Files.write(katexmapfile, writeToArray[Map[String, String]](
         katexMap,
         WriterConfig.withIndentionStep(2)
       )(mapCodec))
@@ -121,7 +125,7 @@ object ConvertHtml:
   def convertArticle(
       article: Article,
       pathManager: HtmlPathManager,
-      cssfile: File,
+      cssfile: Path,
       cssstring: String,
       sync: Option[ClSync],
       nlp: Option[NLP],
@@ -184,5 +188,5 @@ object ConvertHtml:
           templateSettings
         )
     val target = pathManager.articleOutputPath(article)
-    target.write(res)
+    Files.writeString(target, res)
     convertedArticleCtx

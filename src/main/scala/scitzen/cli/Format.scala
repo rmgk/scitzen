@@ -1,12 +1,12 @@
 package scitzen.cli
 
 import java.nio.charset.{Charset, StandardCharsets}
-
-import better.files.File
 import scitzen.generic.{Article, DocumentDirectory}
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.Sast
 import scitzen.compat.Logging.scribe
+
+import java.nio.file.{Files, Path}
 
 object Format:
 
@@ -28,19 +28,19 @@ object Format:
           )
     }
 
-  def formatContent(file: File, originalContent: Array[Byte], sast: Seq[Sast]): Unit =
+  def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast]): Unit =
     val result    = SastToScimConverter.toScimS(sast)
     val resultBytes = result.iterator.mkString("", "\n", "\n").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
-      scribe.info(s"formatting ${file.name}")
-      file.writeByteArray(resultBytes)
+      scribe.info(s"formatting ${file.getFileName}")
+      Files.write(file, resultBytes)
 
-  def renameFileFromHeader(f: File, sdoc: Article): Unit =
+  def renameFileFromHeader(f: Path, sdoc: Article): Unit =
     val newName: String = canonicalName(sdoc) + ".scim"
 
-    if newName != f.name then
-      scribe.info(s"rename ${f.name} to $newName")
-      f.renameTo(newName)
+    if newName != f.getFileName.toString then
+      scribe.info(s"rename ${f.getFileName} to $newName")
+      Files.move(f, f.resolveSibling(newName))
 
   def canonicalName(header: Article): String =
     val title = sluggify(header.filename.getOrElse(header.title))

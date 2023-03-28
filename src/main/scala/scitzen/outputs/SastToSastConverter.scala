@@ -1,6 +1,5 @@
 package scitzen.outputs
 
-import better.files.File
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
@@ -9,16 +8,18 @@ import scitzen.sast.*
 import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{Image, Include}
 
+import java.nio.file.Path
+
 class SastToSastConverter(document: Document, project: Project):
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
   type Cta    = Ctx[?]
 
-  def cwf: File        = document.file
-  def cwd: File        = document.file.parent
+  def cwf: Path        = document.file
+  def cwd: Path        = document.file.getParent
   val uid: String      = Integer.toHexString(cwf.hashCode())
-  val targetPrediction = ITargetPrediction(project, cwf.parent)
+  val targetPrediction = ITargetPrediction(project, cwf.getParent)
 
   def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
 

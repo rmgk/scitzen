@@ -1,6 +1,5 @@
 package scitzen.cli
 
-import better.files.*
 import scitzen.cli.ConvertProject.executeConversions
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
@@ -10,7 +9,7 @@ import de.rmgk.options.*
 
 import java.awt.datatransfer.ClipboardOwner
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 
 object ScitzenCommandline {
 
@@ -39,7 +38,7 @@ object ScitzenCommandline {
       path: Argument[Path, Single, Style.Positional] =
         Argument(
           _.text("path to project, file, or scope to compile").validate { p =>
-            if File(p).exists then Right(()) else Left(s"»$p« does not exist")
+            if Files.exists(p) then Right(()) else Left(s"»$p« does not exist")
           },
           Some(Paths.get(""))
         ),

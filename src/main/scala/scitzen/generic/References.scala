@@ -1,24 +1,24 @@
 package scitzen.generic
 
-import better.files.File
 import scitzen.sast.{Block, Sast, Section}
 import scitzen.compat.Logging.scribe
 
-import scala.jdk.CollectionConverters._
+import java.nio.file.Path
+import scala.jdk.CollectionConverters.*
 
-case class SastRef(scope: File, sast: Sast, directArticle: Option[Article])
+case class SastRef(scope: Path, sast: Sast, directArticle: Option[Article])
 
 object References:
 
-  def filterCandidates(scope: File, candidates: List[SastRef]): List[SastRef] =
+  def filterCandidates(scope: Path, candidates: List[SastRef]): List[SastRef] =
     candidates match
       case Nil     => candidates
       case List(_) => candidates
       case multiple =>
-        val searchScope = scope.path.iterator().asScala.toList
+        val searchScope = scope.iterator().asScala.toList
         val sorted = multiple.map { c =>
           c ->
-            c.scope.path.iterator().asScala.toList.zip(searchScope).takeWhile {
+            c.scope.iterator().asScala.toList.zip(searchScope).takeWhile {
               case (l, r) => l == r
             }.size
         }.sortBy(_._2).reverse

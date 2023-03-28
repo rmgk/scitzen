@@ -1,6 +1,5 @@
 package scitzen.bibliography
 
-import better.files.{File, given}
 import org.jsoup.Jsoup
 import scitzen.cli.Format
 
@@ -13,7 +12,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.FutureConverters.*
 import upickle.default.ReadWriter
 
+import java.io.OutputStream
 import java.net.http.HttpClient.Redirect
+import java.nio.file.{Files, Paths}
+import scala.util.Using
 
 object DBLPApi:
   case class Outer(result: Result) derives ReadWriter
@@ -47,10 +49,10 @@ object DBLP:
       List(Some(s"== ${bi.headerstring}"), Some(s"dblp = $key"), bi.url.map(u => s"url = $u")).flatten.mkString("\n")
     }
 
-  val AcmRx = """//dl\.acm\.org/""".r.unanchored
-  val ArxiveRx = """//arxiv\.org/""".r.unanchored
+  val AcmRx           = """//dl\.acm\.org/""".r.unanchored
+  val ArxiveRx        = """//arxiv\.org/""".r.unanchored
   val CambridgeCoreRx = """//www\.cambridge\.org/""".r.unanchored
-  val DagstuhlRx = """//drops\.dagstuhl\.de/""".r.unanchored
+  val DagstuhlRx      = """//drops\.dagstuhl\.de/""".r.unanchored
 
   def search(q: String) =
     val res = client.send(
@@ -65,19 +67,22 @@ object DBLP:
       println(s"info url: ${info.ee}")
       val pdfpage = client.send(query(info.ee), BodyHandlers.ofInputStream())
       println(s"final uri: ${pdfpage.uri()}")
-      val soup   = Jsoup.parse(pdfpage.body(), StandardCharsets.UTF_8.toString, pdfpage.uri().toString)
+      val soup = Jsoup.parse(pdfpage.body(), StandardCharsets.UTF_8.toString, pdfpage.uri().toString)
       val pdfurl = pdfpage.uri().toString match
-        case AcmRx() => soup.select("a.btn.red").attr("abs:href")
-        case ArxiveRx() => soup.select("a.download-pdf").attr("abs:href")
+        case AcmRx()           => soup.select("a.btn.red").attr("abs:href")
+        case ArxiveRx()        => soup.select("a.download-pdf").attr("abs:href")
         case CambridgeCoreRx() => soup.select("meta[name=citation_pdf_url]").attr("content")
-        case DagstuhlRx() => soup.select("table:contains(pdf-format) a[itemprop=url]").attr("href")
+        case DagstuhlRx()      => soup.select("table:contains(pdf-format) a[itemprop=url]").attr("href")
       println(s"pdfurl: $pdfurl")
       val pdfres   = client.send(query(pdfurl), BodyHandlers.ofInputStream())
       val filename = Format.sluggify(if info.title.endsWith(".") then info.title.dropRight(1) else info.title)
-      val pdfbody  = pdfres.body()
-      val pdffile  = File(s"$filename.pdf")
-      pdffile.outputStream.foreach(os => pdfbody.pipeTo(os, 256))
-      pdfbody.close()
-      val sha1 = scitzen.extern.Hashes.sha1hex(pdffile.byteArray)
+      val pdffile  = Paths.get(s"$filename.pdf")
+
+      Using.Manager { use =>
+        val pdfbody = use(pdfres.body())
+        val output  = use(Files.newOutputStream(pdffile))
+        pdfbody.transferTo(output)
+      }
+      val sha1 = scitzen.extern.Hashes.sha1hex(Files.readAllBytes(pdffile))
       s"${format.head}\nfile = $sha1"
     }

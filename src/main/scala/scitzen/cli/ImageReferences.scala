@@ -8,7 +8,7 @@ import scitzen.sast.DCommand
 import scitzen.extern.ImageTarget
 import scitzen.compat.Logging.scribe
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path, Paths}
 
 object ImageReferences:
 
@@ -18,7 +18,7 @@ object ImageReferences:
   def listAll(project: Project, documentDirectory: DocumentDirectory, output: Path): Unit =
     val fileImageMap: Map[String, List[Reference]] = documentDirectory.documents.map { doc =>
       val cwf = doc.file
-      val cwd = cwf.parent
+      val cwd = cwf.getParent
 
       val convertedCtx = new SastToSastConverter(doc, project).run()
 
@@ -33,14 +33,14 @@ object ImageReferences:
         project.resolve(cwd, path) match
           case Some(target) =>
             // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
-            Some(Reference(target.pathAsString, adapt(mcro.prov.start), adapt(mcro.prov.end)))
+            Some(Reference(target.toString, adapt(mcro.prov.start), adapt(mcro.prov.end)))
           case None =>
             scribe.warn(s"could not find $path in $cwd")
             None
       }
-      cwf.pathAsString -> images
+      cwf.toString -> images
     }.filter(_._2.nonEmpty).toMap
-    better.files.File(output).writeByteArray(writeToArray(
+    Files.write(output, writeToArray(
       fileImageMap,
       WriterConfig.withIndentionStep(2)
     )(rferenceRW))

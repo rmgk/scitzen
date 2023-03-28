@@ -1,80 +1,78 @@
 package scitzen.generic
 
-import better.files.File
 import scitzen.bibliography.{BibEntry, Bibtex}
 import scitzen.sast.{Prov, Text}
 import scitzen.compat.Logging.scribe
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 
-case class Project(root: File, config: ProjectConfig, definitions: Map[String, Text]):
+case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
 
-  val cacheDir: File  = root / config.cache
-  val outputdir: File = root / config.output
-  val nlpdir: File    = root / config.stopwords
+  val cacheDir: Path  = root resolve config.cache
+  val outputdir: Path = root resolve config.output
+  val nlpdir: Path    = root resolve config.stopwords
 
-  lazy val bibfile: Option[File]               = config.bibliography.flatMap(s => resolve(root, s))
+  lazy val bibfile: Option[Path]               = config.bibliography.flatMap(s => resolve(root, s))
   lazy val bibliography: Map[String, BibEntry] = Bibtex.makeBib(this)
 
-  def relativizeToProject(target: File): Path =
+  def relativizeToProject(target: Path): Path =
     Paths.get("/").resolve(root.relativize(target))
 
-  def resolveUnchecked(currentWorkingDirectory: File, pathString: String): File =
+  def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =
     val rawPath = Paths.get(pathString)
     val res =
-      if rawPath.isAbsolute then File(root, Paths.get("/").relativize(rawPath).toString)
-      else currentWorkingDirectory / pathString
+      if rawPath.isAbsolute then root.resolve(Paths.get("/").relativize(rawPath))
+      else currentWorkingDirectory resolve pathString
     scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
     res
 
   /** Does a project global file local resolve of the given path.
     * Ensures that only files in the current project are accessed
     */
-  def resolve(currentWorkingDirectory: File, pathString: String): Option[File] =
+  def resolve(currentWorkingDirectory: Path, pathString: String): Option[Path] =
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
-    Some(res).filter(p => root.isParentOf(p) && p.isRegularFile)
+    Some(res).filter(p => root == p.getParent && Files.isRegularFile(p))
 
 object Project:
   val scitzenconfig: String = "scitzen.project/config"
 
-  def findRoot(source: File): Option[File] =
-    if (source / scitzenconfig).isRegularFile then Some(source)
-    else source.parentOption.flatMap(findRoot)
+  def findRoot(source: Path): Option[Path] =
+    if Files.isRegularFile(source resolve scitzenconfig) then Some(source)
+    else Option(source.getParent).flatMap(findRoot)
 
-  def fromSource(file: File): Option[Project] =
+  def fromSource(file: Path): Option[Project] =
     findRoot(file) match
       case None =>
-        val adHocRoot = if file.isDirectory then file else file.parent
+        val adHocRoot = if Files.isDirectory(file) then file else file.getParent
         Some(Project(adHocRoot, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8)), Map.empty))
       case Some(file) => fromConfig(file)
 
-  def fromConfig(file: File): Option[Project] =
-    val configContent = (file / scitzenconfig).byteArray
+  def fromConfig(file: Path): Option[Project] =
+    val configContent = Files.readAllBytes(file resolve scitzenconfig)
     val value         = ProjectConfig.parse(configContent)
     val definitions = value.definitions.view.map { (k, v) =>
       k -> Text(scitzen.parser.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8), Prov()))
     }.toMap
     Some(Project(file, value, definitions))
 
-  def isScim(c: File): Boolean =
-    c.isRegularFile &&
-    c.extension(includeDot = false, toLowerCase = true).contains(fileEnding)
+  def isScim(c: Path): Boolean =
+    Files.isRegularFile(c) &&
+    c.getFileName.toString.endsWith(".scim")
 
-  val fileEnding = "scim"
-  def discoverSources(source: File): List[File] =
+  def discoverSources(source: Path): List[Path] =
     import scala.jdk.CollectionConverters.*
     source match
-      case f if f.isRegularFile => List(f)
-      case f if f.isDirectory =>
-        f.collectChildren { c =>
+      case f if Files.isRegularFile(f) => List(f)
+      case f if Files.isDirectory(f) =>
+        Files.walk(f, 1).iterator().asScala.filter { c =>
           isScim(c) &&
           !f.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
         }.toList
 
-  def directory(root: File): DocumentDirectory =
+  def directory(root: Path): DocumentDirectory =
     scribe.debug(s"discovering sources in ${root}")
-    val sources: List[File] = Project.discoverSources(root)
+    val sources: List[Path] = Project.discoverSources(root)
     scribe.debug(s"parsing ${sources.length} documents")
     val documents = sources.map(Document.apply)
     DocumentDirectory(documents)

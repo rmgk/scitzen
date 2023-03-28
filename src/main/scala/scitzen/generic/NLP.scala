@@ -1,8 +1,11 @@
 package scitzen.generic
 
-import better.files.File
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Sast
+
+import java.nio.file.{FileVisitOption, Files, Path}
+
+import scala.jdk.CollectionConverters.*
 
 case class NLP(stopwords: Map[String, Set[String]]):
 
@@ -41,10 +44,10 @@ case class NLP(stopwords: Map[String, Set[String]]):
     words(sast).groupBy(identity).view.mapValues(_.length).toMap
 
 object NLP:
-  def loadFrom(dir: File): NLP =
-    val stopwords = dir.glob("stopwords._").map { sw =>
-      val lang  = sw.extension(includeDot = false).getOrElse("unknown")
-      val words = sw.lines.toSet
+  def loadFrom(dir: Path): NLP =
+    val stopwords = Files.walk(dir).iterator().asScala.filter(p => p.getFileName.startsWith("stopwords")).map { sw =>
+      val lang  = sw.toString.takeRight(2)
+      val words = Files.lines(sw).iterator().asScala.toSet
       lang -> words
     }.toMap
     NLP(stopwords)

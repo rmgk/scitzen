@@ -2,7 +2,6 @@ package scitzen.extern
 
 import java.lang.ProcessBuilder.Redirect
 import org.graalvm.polyglot.*
-import better.files.*
 import org.graalvm.polyglot.proxy.ProxyObject
 import scitzen.compat.Logging.scribe
 
@@ -11,11 +10,22 @@ import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, writeToString
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import org.jsoup.Jsoup
 
+import java.io.ByteArrayOutputStream
+import java.nio.file.{Files, Path}
+import scala.util.Using
+
 object Katex:
 
   given mapCodec: JsonValueCodec[Map[String, String]] = JsonCodecMaker.make
 
-  private val katexstr: String = Resource.getAsString("META-INF/resources/webjars/katex/0.16.4/dist/katex.min.js")
+  private val katexstr: String =
+    val bo = new ByteArrayOutputStream()
+    Using.resource(
+      getClass.getClassLoader.getResourceAsStream("META-INF/resources/webjars/katex/0.16.4/dist/katex.min.js")
+    ) { r =>
+      r.transferTo(bo)
+      bo.toString
+    }
 
   case class KatexConverter(cache: Map[String, String], katex: KatexLibrary):
 
@@ -24,9 +34,9 @@ object Katex:
         case Some(res) => (res, None)
         case None =>
           val katexBlob = katex.renderToString(str)
-          val doc = Jsoup.parse(katexBlob)
+          val doc       = Jsoup.parse(katexBlob)
           doc.outputSettings().prettyPrint(false)
-          val res       = doc.selectFirst("math").html()
+          val res = doc.selectFirst("math").html()
           (res, Some(copy(cache = cache.updated(str, res))))
 
   end KatexConverter
@@ -38,12 +48,12 @@ object Katex:
     ctx.eval("js", katexstr)
     ctx
 
-  class KatexLibrary(katexdefs: Option[File]):
+  class KatexLibrary(katexdefs: Option[Path]):
 
     // also lazily initialize katex only when render to string is actually called
     lazy val katex =
       val bindings: Map[String, String] = katexdefs.map { f =>
-        f.lineIterator.map(_.split(":", 2)).collect {
+        Files.lines(f).iterator().asScala.map(_.split(":", 2)).collect {
           case Array(k, v) => (k, v)
         }.toMap
       }.getOrElse(Map.empty)

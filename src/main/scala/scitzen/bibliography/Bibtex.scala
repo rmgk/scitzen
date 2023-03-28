@@ -1,16 +1,17 @@
 package scitzen.bibliography
 
-import better.files.given
 import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
 import de.undercouch.citeproc.csl.CSLItemData
 import de.undercouch.citeproc.helper.json.{StringJsonBuilder, StringJsonBuilderFactory}
 import org.jbibtex.{BibTeXDatabase, BibTeXEntry, BibTeXParser, Key, LaTeXParser, LaTeXPrinter}
 import scitzen.generic.Project
 
+import java.nio.file.Files
 import java.io.{FileInputStream, InputStream}
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.*
 import scala.math.Ordering.Implicits.seqOrdering
+import scala.util.Using
 
 object Bibtex:
 
@@ -38,7 +39,7 @@ object Bibtex:
 
   def makeBib(project: Project): Map[String, BibEntry] =
     project.bibfile.map { path =>
-      path.fileInputStream(Bibtex.parse)
+      Using(Files.newInputStream(path))(Bibtex.parse).get
     }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
       case (be, i) => be.id -> be.copy(citekey = Some(be.authorYear.getOrElse((i + 1).toString)))
     }.toMap

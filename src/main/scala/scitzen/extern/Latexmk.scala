@@ -1,22 +1,23 @@
 package scitzen.extern
 
-import better.files.File
 import scitzen.compat.Logging.scribe
+
+import java.nio.file.{Files, Path}
 
 object Latexmk:
 
-  def latexmk(outputdir: File, jobname: String, sourceFile: File): Option[File] =
+  def latexmk(outputdir: Path, jobname: String, sourceFile: Path): Option[Path] =
     val start = System.nanoTime()
     scribe.info(s"compiling $sourceFile")
-    outputdir.createDirectories()
-    val errorFile = (outputdir / "latexmk.err")
+    Files.createDirectories(outputdir)
+    val errorFile = outputdir.resolve("latexmk.err")
     val returnCode =
       new ProcessBuilder(
         "tectonic",
         "--keep-intermediates",
         "--outdir",
         outputdir.toString(),
-        sourceFile.pathAsString
+        sourceFile.toString
       )
         // new ProcessBuilder(
         //  "latexmk",
@@ -29,13 +30,13 @@ object Latexmk:
         //  "--jobname=" + jobname,
         //  sourceFile.pathAsString
         // )
-        .directory(outputdir.toJava)
-        .redirectOutput((outputdir / "latexmk.out").toJava)
-        .redirectError(errorFile.toJava)
+        .directory(outputdir.toFile)
+        .redirectOutput(outputdir.resolve("latexmk.out").toFile)
+        .redirectError(errorFile.toFile)
         .start().waitFor()
     if returnCode == 0 then
       scribe.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
-      Some(outputdir / (jobname + ".pdf"))
+      Some(outputdir.resolve(jobname + ".pdf"))
     else
       scribe.error(s"error tex compiling »$sourceFile« see »$errorFile«")
       None

@@ -2,9 +2,11 @@ package scitzen.generic
 
 import scitzen.outputs.SastToSastConverter
 
+import java.nio.file.Files
+
 class PreprocessedResults(project: Project, documents: List[Document]):
 
-  project.cacheDir.createDirectories()
+  Files.createDirectories(project.cacheDir)
 
   val preprocessedCtxs: List[SastToSastConverter#CtxCS] =
     documents.map { doc =>

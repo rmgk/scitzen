@@ -1,40 +1,38 @@
 package scitzen.generic
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import scitzen.compat.Logging.scribe
-
-import better.files._
 import scitzen.cli.Format
 
-case class HtmlPathManager(cwf: File, project: Project, articleOutputDir: File):
+case class HtmlPathManager(cwf: Path, project: Project, articleOutputDir: Path):
 
-  val cwd = if cwf.isDirectory then cwf else cwf.parent
+  val cwd = if Files.isDirectory(cwf) then cwf else cwf.getParent
 
-  def resolve(path: String): Option[File] = project.resolve(cwd, path)
+  def resolve(path: String): Option[Path] = project.resolve(cwd, path)
 
-  def articleOutputPath(article: Article): File =
+  def articleOutputPath(article: Article): Path =
     def genName = s"${article.date.map(_.full).getOrElse("")} ${article.title}"
-    val name = article.filename.getOrElse(genName)
-    articleOutputDir / Format.sluggify(s"$name.html")
+    val name    = article.filename.getOrElse(genName)
+    articleOutputDir resolve Format.sluggify(s"$name.html")
 
-  def relativizeToProject(target: File): Path = project.relativizeToProject(target)
+  def relativizeToProject(target: Path): Path = project.relativizeToProject(target)
 
-  def relativizeImage(targetFile: File): Path =
-    def translateImage(image: File): File =
-      (articleOutputDir / "images").path.resolve(project.root.relativize(image))
+  def relativizeImage(targetFile: Path): Path =
+    def translateImage(image: Path): Path =
+      (articleOutputDir resolve "images").resolve(project.root.relativize(image))
     articleOutputDir.relativize(translateImage(targetFile))
 
   def relativeArticleTarget(targetPost: Article): Path =
     articleOutputDir.relativize(articleOutputPath(targetPost))
 
-  def changeWorkingFile(parent: File): HtmlPathManager = copy(cwf = parent)
+  def changeWorkingFile(parent: Path): HtmlPathManager = copy(cwf = parent)
 
-  def copyResources(resources: Iterable[(File, Path)]) =
+  def copyResources(resources: Iterable[(Path, Path)]) =
     resources.foreach {
       case (img, path) =>
-        val target = File(articleOutputDir.path.resolve(path))
-        if !target.exists then
+        val target = articleOutputDir.resolve(path)
+        if !Files.exists(target) then
           scribe.info(s"hardlink $img to $target")
-          target.parent.createDirectoryIfNotExists()
-          img.linkTo(target, symbolic = false)
+          Files.createDirectories(target.getParent)
+          Files.createLink(target, img)
     }
