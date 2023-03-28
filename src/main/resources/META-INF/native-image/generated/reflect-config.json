@@ -3,18 +3,6 @@
   "name":"[Ljava.lang.String;"
 },
 {
-  "name":"[Ljava.nio.file.FileVisitOption;"
-},
-{
-  "name":"[Ljava.nio.file.LinkOption;"
-},
-{
-  "name":"[Ljava.nio.file.OpenOption;"
-},
-{
-  "name":"[Ljava.nio.file.attribute.FileAttribute;"
-},
-{
   "name":"de.rmgk.logging$Logger$",
   "fields":[{"name":"0bitmap$1"}]
 },
