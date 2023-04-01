@@ -17,12 +17,12 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
   lazy val bibliography: Map[String, BibEntry] = Bibtex.makeBib(this)
 
   def relativizeToProject(target: Path): Path =
-    Paths.get("/").resolve(root.relativize(target))
+    Path.of("/").resolve(root.relativize(target))
 
   def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =
-    val rawPath = Paths.get(pathString)
+    val rawPath = Path.of(pathString)
     val res =
-      if rawPath.isAbsolute then root.resolve(Paths.get("/").relativize(rawPath))
+      if rawPath.isAbsolute then root.resolve(Path.of("/").relativize(rawPath))
       else currentWorkingDirectory resolve pathString
     scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
     res

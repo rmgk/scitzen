@@ -14,7 +14,7 @@ import upickle.default.ReadWriter
 
 import java.io.OutputStream
 import java.net.http.HttpClient.Redirect
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 import scala.util.Using
 
 object DBLPApi:
@@ -76,7 +76,7 @@ object DBLP:
       println(s"pdfurl: $pdfurl")
       val pdfres   = client.send(query(pdfurl), BodyHandlers.ofInputStream())
       val filename = Format.sluggify(if info.title.endsWith(".") then info.title.dropRight(1) else info.title)
-      val pdffile  = Paths.get(s"$filename.pdf")
+      val pdffile  = Path.of(s"$filename.pdf")
 
       Using.Manager { use =>
         val pdfbody = use(pdfres.body())

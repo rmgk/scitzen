@@ -40,7 +40,7 @@ object ScitzenCommandline {
           _.text("path to project, file, or scope to compile").validate { p =>
             if Files.exists(p) then Right(()) else Left(s"»$p« does not exist")
           },
-          Some(Paths.get(""))
+          Some(Path.of("").toAbsolutePath)
         ),
       `image-file-map`: Argument[Path, Option, Style.Named] =
         Argument(_.valueName("path").text("produce json description of generated images")),

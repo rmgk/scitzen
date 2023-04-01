@@ -30,7 +30,7 @@ object ConvertHtml:
         ars.transferTo(bo)
         bo.toByteArray
       }
-    }.getOrElse(Files.readAllBytes(Paths.get("scitzen.css")))
+    }.getOrElse(Files.readAllBytes(Path.of("scitzen.css")))
 
   def convertToHtml(
       project: Project,

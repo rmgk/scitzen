@@ -12,8 +12,8 @@ class Environment(globalConfigDir: Path, globalCacheDir: Path, globalConfig: Opt
 object Environment {
   def apply(): Environment =
     val pd = ProjectDirectories.fromPath("scitzen")
-    val cd = Paths.get(pd.configDir)
+    val cd = Path.of(pd.configDir)
     val conf = cd.resolve("scitzen.scim-conf")
     val config = Option.when(Files.exists(conf)){ ProjectConfig.parse(Files.readAllBytes(conf)) }
-    new Environment(cd, Paths.get(pd.cacheDir), config)
+    new Environment(cd, Path.of(pd.cacheDir), config)
 }
