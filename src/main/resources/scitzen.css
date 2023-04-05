@@ -15,6 +15,7 @@
 	/* a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm */
 	/* but use flexible width for font differences */
 	--main-content-width: 17cm;
+	--header-oversize: 5cm;
 	--sidebar-max-width: 20em;
 
 	--small-gap: 0.5em;
@@ -127,7 +128,13 @@ h1, h2, h3, h4, h5, h6 {
 	margin-bottom: 0.5rem;
 
 	text-align: center;
+
+	/* limit the width to either the grid element (scaling down for smaller screens) */
+	/* or to something a bit larger than the main content (limiting oversize for large screens) */
 	grid-column: header-start / header-end;
+	width: min(100%, calc(var(--main-content-width) + var(--header-oversize)));
+	/* safe aligns left in case of overflow */
+	justify-self: safe center;
 }
 
 h1, h2 {
