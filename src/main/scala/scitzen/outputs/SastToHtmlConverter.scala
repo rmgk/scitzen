@@ -395,9 +395,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         val path = pathManager.relativizeImage(target)
         ctx.requireInOutput(target, path).retc {
           val filename = path.getFileName.toString
+          val sizeclass = mcro.attributes.named.get("size").map(s => cls := s"sizing-$s")
           if videoEndings.exists(filename.endsWith) then
-            video(src  := path.toString, attr("loop").empty, attr("autoplay").empty)
-          else img(src := path.toString)
+            video(src  := path.toString, attr("loop").empty, attr("autoplay").empty, sizeclass)
+          else img(src := path.toString, sizeclass)
         }
       case None =>
         scribe.warn(s"could not find path ${target}" + reporter(mcro))

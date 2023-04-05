@@ -287,6 +287,10 @@ img, video {
 	max-width: 100%;
 }
 
+:is(img, video).sizing-text {
+	max-width: min(100%, var(--main-content-width));
+}
+
 
 /* center contents of a figure, in particular the caption */
 figure {
