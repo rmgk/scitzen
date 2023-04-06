@@ -126,9 +126,6 @@ object AttributesToScim:
 
         parsedAttr match {
           case Positional(`text`, _) => true
-          //// format again to remove unimportant differences (mostly providence)
-          // val transformedValue = SastToScimConverter.inlineToScim(t.inl)
-          // value == transformedValue
           case other => false
         }
       catch case other => false
