@@ -59,7 +59,7 @@ object GenIndexPage:
           Other("article"),
           Attributes(
             List(
-              Some(Attribute("", doc.header.title.str)),
+              Some(Attribute("", doc.header.title.plainString)),
               Some(Attribute(
                 "target",
                 indexDir.relativize(htmlPathManager.articleOutputPath(doc)).toString

@@ -10,13 +10,10 @@ case class ListItem(marker: String, text: Text, content: Option[Sast])
 
 sealed trait Inline
 case class InlineText(str: String) extends Inline
-case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast {
-  def toTuple: (DCommand, Attributes, Prov) = (command, attributes, prov)
-}
+case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast
 
 case class Text(inl: Seq[Inline]) {
-
-  lazy val str = {
+  lazy val plainString = {
     inl.map {
       case Directive(Strong | Emph, attributes) => attributes.target
       case m: Directive                         => ""
@@ -26,13 +23,12 @@ case class Text(inl: Seq[Inline]) {
 }
 case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast
     with Ordered[Section] {
-  def autolabel: String = attributes.named.getOrElse("label", title.str)
+  def autolabel: String = attributes.named.getOrElse("label", title.plainString)
   def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
   override def compare(that: Section): Int = {
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
     Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))
   }
-  def toTuple: (Text, String, Attributes, Prov) = (title, prefix, attributes, prov)
 }
 case class Block(attributes: Attributes, content: BlockType, prov: Prov) extends Sast {
   override def toString: String = s"Block(${content.getClass.getSimpleName}, $content, $attributes)"
@@ -57,7 +53,7 @@ case class Attributes(raw: Seq[Attribute]) {
     case Nested(id, attr) => (id, attr)
   }.toMap
 
-  lazy val legacyPositional: Seq[String] = positional.map(_.str)
+  lazy val legacyPositional: Seq[String] = positional.map(_.plainString)
   lazy val arguments: Seq[String]        = legacyPositional.dropRight(1)
   lazy val target: String                = legacyPositional.last
   lazy val text: Text                    = positional.head

@@ -10,7 +10,7 @@ case class Article(header: Section, content: List[Sast], sourceDoc: Document):
   lazy val date: Option[ScitzenDateTime] = header.attributes.named.get("date")
     .map(v => TimeParsers.parseDate(v.trim))
 
-  lazy val title: String = header.title.str
+  lazy val title: String = header.title.plainString
 
   lazy val named: Map[String, String] = header.attributes.named
 
