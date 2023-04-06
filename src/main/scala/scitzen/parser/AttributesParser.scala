@@ -37,8 +37,8 @@ object AttributesParser {
 
   val stringValue: Scip[String] = Scip {
     anySpacesF.run
-    val quotes  = "\"".all.rep.min(0).str.trace(s"kv q").run
-    val bracket = "[".all.str.opt.trace("kv b").run
+    val quotes  = "\"".all.rep.min(0).str.trace(s"opening quotes").run
+    val bracket = "[".all.str.opt.trace("opening brackets").run
     if quotes.isEmpty && bracket.isEmpty
     then until(";}\n".any).min(0).str.trace(s"unquoted").run
     else
@@ -93,6 +93,7 @@ object AttributesParser {
   val configFile: Scip[Seq[Attribute]] = Scip {
     val res = noBraces.opt.map(_.getOrElse(Nil)).run
     anySpacesF.run
+    end.orFail.run
     res
   }
 
