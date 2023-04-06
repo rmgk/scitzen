@@ -41,7 +41,7 @@ object CommonParsers {
 
   object Identifier {
     inline def startIdentifier: Scip[Boolean] = cpred(Character.isLetter)
-    inline def inIdentifier: Scip[Boolean]    = cpred(Character.isJavaIdentifierPart).rep.map(_ > 0)
+    inline def inIdentifier: Scip[Boolean]    = cpred(Character.isJavaIdentifierPart).rep.min(0)
     inline def identifier: Scip[Boolean]      = startIdentifier.and(inIdentifier)
   }
 
