@@ -19,36 +19,42 @@ object AttributesParser {
   val unquotedInlines: Scip[List[Inline]] =
     InlineParsers.full(terminationCheckB, allowEmpty = true)
 
+  val maybeQuoted: Scip[Option[String]] = Scip {
+    anySpacesF.run
+    val quotes = "\"".all.rep.min(0).str.trace(s"opening quotes").run
+    if quotes.nonEmpty
+    then
+      if "[".all.str.opt.trace("opening brackets").run.isDefined
+      then Some(s"]$quotes")
+      else Some(quotes)
+    else None
+  }
+
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote
     */
   val text: Scip[Text] = Scip {
-    anySpacesF.run
-    val r = ("\"".all.rep.dropstr.run, "[".all.str.opt.run) match {
-      case ("", None) => unquotedInlines
-      case (quotes, bracket) =>
-        val closing = bracket.fold(quotes)(_ => s"]$quotes")
+    val r = maybeQuoted.run match
+      case None => unquotedInlines
+      case Some(closing) =>
+        val closeP = seq(closing)
         InlineParsers.full(
-          (seq(closing).trace("closing") and verticalSpaces.trace("spaces") and terminationCheckB.trace(
+          (closeP.trace("closing") and verticalSpaces.trace("spaces") and terminationCheckB.trace(
             "terminate"
           )).trace("endingfun"),
           allowEmpty = true
         ).trace("inline full")
-    }
     scitzen.sast.Text(r.run)
   }.trace("text")
 
   val stringValue: Scip[String] = Scip {
-    anySpacesF.run
-    val quotes  = "\"".all.rep.min(0).str.trace(s"opening quotes").run
-    val bracket = "[".all.str.opt.trace("opening brackets").run
-    if quotes.isEmpty && bracket.isEmpty
-    then until(";}\n".any).min(0).str.trace(s"unquoted").run
-    else
-      val b = bracket.fold("")(_ => "]")
-      (until(seq(s"$b$quotes") and verticalSpaces and terminationCheckB).min(1).str <~ seq(s"$b$quotes").orFail).trace(
-        s"quoted ${s"$b$quotes"}"
-      ).run
+    maybeQuoted.run match
+      case None => until(";}\n".any).min(0).str.trace(s"unquoted").run
+      case Some(closing) =>
+        val closeP = seq(closing)
+        (until(closeP and verticalSpaces and terminationCheckB).min(1).str <~ closeP.orFail).trace(
+          s"quoted ${closing}"
+        ).run
   }.trace("string value")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
@@ -109,7 +115,7 @@ object AttributesParser {
 
 object AttributeDeparser {
 
-  val countQuotes: Regex = """(]"*)""".r
+  val countQuotes: Regex = """(]"+)""".r
 
   def quote(value: String, check: Text => Boolean): String =
 
