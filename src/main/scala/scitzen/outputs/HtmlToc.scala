@@ -2,6 +2,7 @@ package scitzen.outputs
 
 import scalatags.Text.all.*
 import scitzen.sast.{Attributes, Section, Text, Prov}
+import math.Ordering.Implicits.infixOrderingOps
 
 object HtmlToc:
 

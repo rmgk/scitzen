@@ -21,15 +21,14 @@ case class Text(inl: Seq[Inline]) {
     }.mkString("")
   }
 }
-case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast
-    with Ordered[Section] {
+case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
   def autolabel: String = attributes.named.getOrElse("label", title.plainString)
   def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
-  override def compare(that: Section): Int = {
+object Section:
+  given ordering: Ordering[Section] =
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
-    Ordering[(Int, Int)].compare(counts(prefix), counts(that.prefix))
-  }
-}
+    Ordering.by(s => counts(s.prefix))
+
 case class Block(attributes: Attributes, content: BlockType, prov: Prov) extends Sast {
   override def toString: String = s"Block(${content.getClass.getSimpleName}, $content, $attributes)"
   def command: String           = attributes.legacyPositional.headOption.getOrElse("")
