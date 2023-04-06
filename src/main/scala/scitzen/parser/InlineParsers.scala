@@ -10,6 +10,8 @@ import scala.annotation.tailrec
 
 object InlineParsers {
 
+  inline def endingChars: Scip[Boolean] = ":;\"]\n}".any
+
   def full(
       ending: Scip[Boolean],
       allowEmpty: Boolean = false
@@ -19,6 +21,11 @@ object InlineParsers {
 
     @tailrec
     def inlineOptions(acc: List[Inline]): List[Inline] = {
+
+      // quickly discard everything assumed to be unimportant
+      // be aware that this limits what `ending` may start with
+      until(endingChars).run
+
       val current = scx.index
 
       // closes the current run of plain text and adds it as a separate Inline node
