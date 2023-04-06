@@ -5,6 +5,7 @@ import scitzen.sast.{Attribute, Attributes, Inline, Text}
 import scitzen.parser.CommonParsers.*
 
 import java.nio.charset.StandardCharsets
+import scala.annotation.tailrec
 
 object AttributesParser {
 
@@ -23,8 +24,7 @@ object AttributesParser {
     val r = ("\"".all.rep.dropstr.run, "[".all.str.opt.run) match {
       case ("", None) => unquotedInlines
       case (quotes, bracket) =>
-        val closing     = bracket.fold(quotes)(_ => s"]$quotes")
-        val closingByte = closing.substring(0, 1).getBytes(StandardCharsets.UTF_8).head
+        val closing = bracket.fold(quotes)(_ => s"]$quotes")
         InlineParsers.full(
           (seq(closing).trace("closing") and verticalSpaces.trace("spaces") and terminationCheckB.trace(
             "terminate"
@@ -51,11 +51,16 @@ object AttributesParser {
   val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
     (anySpacesB ifso braces.map(Left.apply)) | stringValue.map(Right.apply)
 
-  val namedAttribute: Scip[Attribute] = Scip {
+  val namedAttributeStart: Scip[String] = Scip {
     verticalSpaces.orFail.run
     val id = identifierB.str.run
     verticalSpaces.orFail.run
     "=".all.orFail.run
+    id
+  }
+
+  val namedAttribute: Scip[Attribute] = Scip {
+    val id = namedAttributeStart.run
     namedAttributeValue.trace("attr value").run match {
       case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
       case Right(value) => scitzen.sast.Attribute.Plain(id, value)
@@ -96,5 +101,69 @@ object AttributesParser {
     end.orFail.run
     res
   }
+
+}
+
+object AttributeDeparser {
+  // these close unquoted attributes, so need quoting
+  inline def needQuotesInner: Scip[Boolean] = "\n;}".any
+
+  // count the number of closing delimiter looking "
+  inline def closingRun: Scip[Int] = Scip {
+    if "]".all.run
+    then "\"".all.rep.run
+    else -1
+  }
+
+  case class QuoteInfo(confusable: Boolean, length: Int)
+
+  def getInfo: Scip[QuoteInfo] = Scip {
+
+    val looksLikeAttributeStart = AttributesParser.namedAttributeStart.attempt.run
+
+    var inner   = false
+    var longest = 0
+    @tailrec def loop(): Unit =
+      if end.run
+      then ()
+      else
+        // try to parse directives first, as they do not need to be quoted
+        DirectiveParsers.comment.attempt.run
+        DirectiveParsers.full.attempt.run
+        if needQuotesInner.run
+        then
+          inner = true
+          loop()
+        else
+          val cr = closingRun.run
+          if cr > longest
+          then longest = cr
+
+          if cr == -1
+          then scx.next
+
+          loop()
+    loop()
+
+    QuoteInfo(inner || looksLikeAttributeStart, longest)
+
+  }
+
+  def quote(value: String): String =
+    val info = AttributeDeparser.getInfo.runInContext(Scx(value).copy(tracing = false))
+    value.headOption match
+      case None => "" // empty value
+      case Some(ch) =>
+        val someQuotes = ch == ' ' || info.confusable || ch == '{'
+        if
+          ch == '[' ||
+          ch == '"' ||
+          (someQuotes && info.length >= 1)
+        then
+          val quotes = "\"".repeat(math.max(0, info.length))
+          s"""$quotes[$value]$quotes"""
+        else if someQuotes
+        then s""""$value""""
+        else value
 
 }

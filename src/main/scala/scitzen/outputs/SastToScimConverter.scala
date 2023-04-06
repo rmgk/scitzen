@@ -1,7 +1,8 @@
 package scitzen.outputs
 
 import de.rmgk.Chain
-import scitzen.parser.{AttributesParser, Parse}
+import de.rmgk.scip.Scx
+import scitzen.parser.{AttributeDeparser, AttributesParser, Parse}
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
 import scitzen.sast.DCommand.Comment
@@ -116,48 +117,8 @@ object AttributesToScim:
 
   def encodeText(text: Text): String =
     val value = SastToScimConverter.inlineToScim(text.inl)
-    def parses(quoted: String): Boolean =
-      try
-        val parsedAttr = Parse.parseResult(
-          quoted.getBytes(StandardCharsets.UTF_8),
-          AttributesParser.attribute <~ de.rmgk.scip.end.orFail,
-          Prov()
-        )
-
-        parsedAttr match {
-          case Positional(`text`, _) => true
-          case other => false
-        }
-      catch case other => false
-
-    def pickFirst(candidate: (() => String)*): Option[String] =
-      candidate.view.map(_.apply()).find(parses)
-
-    pickFirst(() => value, () => s""""$value"""", () => s"[$value]").getOrElse {
-      val mi         = countQuotes.findAllIn(value)
-      val quoteCount = if mi.isEmpty then 0 else mi.map(_.length).max
-      val quotes     = "\"" * quoteCount
-      s"""$quotes[$value]$quotes"""
-    }
-
-  def encodeString(value: String): String =
-    def parses(quoted: String): Boolean =
-      Try {
-        Parse.parseResult(
-          quoted.getBytes(StandardCharsets.UTF_8),
-          AttributesParser.namedAttributeValue <~ de.rmgk.scip.end.orFail
-        )
-      }.isSuccess
-
-    def pickFirst(candidate: (() => String)*): Option[String] =
-      candidate.view.map(_.apply()).find(parses)
-
-    pickFirst(() => value, () => s""""$value"""", () => s"[$value]").getOrElse {
-      val mi         = countQuotes.findAllIn(value)
-      val quoteCount = if mi.isEmpty then 0 else mi.map(_.length).max
-      val quotes     = "\"" * quoteCount
-      s"""$quotes[$value]$quotes"""
-    }
+    AttributeDeparser.quote(value)
+  def encodeString(value: String): String = AttributeDeparser.quote(value)
 
   def convert(attributes: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String =
     if !force && attributes.raw.isEmpty then return ""
