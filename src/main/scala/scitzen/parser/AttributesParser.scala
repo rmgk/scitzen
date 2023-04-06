@@ -3,9 +3,12 @@ package scitzen.parser
 import de.rmgk.scip.*
 import scitzen.sast.{Attribute, Attributes, Inline, Text}
 import scitzen.parser.CommonParsers.*
+import scitzen.sast.Attribute.Positional
 
 import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
+import scala.util.matching.Regex
+import scala.util.{Success, Try}
 
 object AttributesParser {
 
@@ -105,65 +108,32 @@ object AttributesParser {
 }
 
 object AttributeDeparser {
-  // these close unquoted attributes, so need quoting
-  inline def needQuotesInner: Scip[Boolean] = "\n;}".any
 
-  // count the number of closing delimiter looking "
-  inline def closingRun: Scip[Int] = Scip {
-    if "]".all.run
-    then "\"".all.rep.run
-    else -1
-  }
+  val countQuotes: Regex = """(]"*)""".r
 
-  case class QuoteInfo(confusable: Boolean, length: Int)
+  def quote(value: String, check: Text => Boolean): String =
 
-  def getInfo: Scip[QuoteInfo] = Scip {
+    def parses(str: String): Boolean =
+      Try {
+        (AttributesParser.attribute <~ de.rmgk.scip.end.orFail).opt.runInContext(Scx(str).copy(tracing = false))
+      } match
+        case Success(Some(Positional(text, _))) if check(text) => true
+        case other                                             => false
 
-    val looksLikeAttributeStart = AttributesParser.namedAttributeStart.attempt.run
+    def pickFirst(candidate: List[() => String]): Option[String] =
+      candidate.view.map(_.apply()).find(parses)
 
-    var inner   = false
-    var longest = 0
-    @tailrec def loop(): Unit =
-      if end.run
-      then ()
-      else
-        // try to parse directives first, as they do not need to be quoted
-        DirectiveParsers.comment.attempt.run
-        DirectiveParsers.full.attempt.run
-        if needQuotesInner.run
-        then
-          inner = true
-          loop()
-        else
-          val cr = closingRun.run
-          if cr > longest
-          then longest = cr
+    val candidates =
+      if value.startsWith(" ") || value.startsWith("{")
+      then List(() => s""""$value"""")
+      else List(() => value, () => s""""$value"""")
 
-          if cr == -1
-          then scx.next
-
-          loop()
-    loop()
-
-    QuoteInfo(inner || looksLikeAttributeStart, longest)
-
-  }
-
-  def quote(value: String): String =
-    val info = AttributeDeparser.getInfo.runInContext(Scx(value).copy(tracing = false))
-    value.headOption match
-      case None => "" // empty value
-      case Some(ch) =>
-        val someQuotes = ch == ' ' || info.confusable || ch == '{'
-        if
-          ch == '[' ||
-          ch == '"' ||
-          (someQuotes && info.length >= 1)
-        then
-          val quotes = "\"".repeat(math.max(0, info.length))
-          s"""$quotes[$value]$quotes"""
-        else if someQuotes
-        then s""""$value""""
-        else value
+    pickFirst(candidates).getOrElse {
+      val mi = countQuotes.findAllIn(value)
+      val quoteCount = if mi.isEmpty then 1
+      else mi.map(_.length).max
+      val quotes = "\"" * quoteCount
+      s"""$quotes[$value]$quotes"""
+    }
 
 }

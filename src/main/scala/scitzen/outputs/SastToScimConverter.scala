@@ -113,12 +113,25 @@ object SastToScimConverter:
     }.mkString("")
 
 object AttributesToScim:
-  val countQuotes: Regex = """(]"*)""".r
 
   def encodeText(text: Text): String =
     val value = SastToScimConverter.inlineToScim(text.inl)
-    AttributeDeparser.quote(value)
-  def encodeString(value: String): String = AttributeDeparser.quote(value)
+    AttributeDeparser.quote(
+      value,
+      {
+        case `text` => true
+        case other  => false
+      }
+    )
+  def encodeString(value: String): String =
+    AttributeDeparser.quote(
+      value,
+      {
+        case Text(Nil) if value.isEmpty     => true
+        case Text(Seq(InlineText(`value`))) => true
+        case other                          => false
+      }
+    )
 
   def convert(attributes: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String =
     if !force && attributes.raw.isEmpty then return ""
