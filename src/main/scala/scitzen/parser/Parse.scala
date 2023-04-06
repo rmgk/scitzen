@@ -1,8 +1,9 @@
 package scitzen.parser
 
 import scitzen.sast.{Inline, Prov, Sast}
-
 import de.rmgk.scip.*
+
+import scala.util.Try
 
 object Parse {
 
