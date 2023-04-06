@@ -60,7 +60,7 @@ object DelimitedBlockParsers {
       val indentP     = seq(indentation).orFail
       val lines = (
         (indentP ~> untilI(eol).dropstr) |
-        (significantSpaceLine.rep.min(0).str <~ indentP.lookahead)
+          (significantSpaceLine.rep.min(0).str <~ indentP.lookahead)
       ).list(Scip { true }).run
 
       val sast: Seq[Sast] =

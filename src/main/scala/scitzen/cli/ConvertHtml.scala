@@ -117,10 +117,13 @@ object ConvertHtml:
   private def writeKatex(katexmapfile: Path, katexMap: Map[String, String]): Any =
     if katexMap.nonEmpty then
       Files.createDirectories(katexmapfile.getParent)
-      Files.write(katexmapfile, writeToArray[Map[String, String]](
-        katexMap,
-        WriterConfig.withIndentionStep(2)
-      )(mapCodec))
+      Files.write(
+        katexmapfile,
+        writeToArray[Map[String, String]](
+          katexMap,
+          WriterConfig.withIndentionStep(2)
+        )(mapCodec)
+      )
 
   def convertArticle(
       article: Article,

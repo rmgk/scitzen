@@ -18,9 +18,9 @@ object References:
         val searchScope = scope.iterator().asScala.toList
         val sorted = multiple.map { c =>
           c ->
-            c.scope.iterator().asScala.toList.zip(searchScope).takeWhile {
-              case (l, r) => l == r
-            }.size
+          c.scope.iterator().asScala.toList.zip(searchScope).takeWhile {
+            case (l, r) => l == r
+          }.size
         }.sortBy(_._2).reverse
 
         val best     = sorted.head._2

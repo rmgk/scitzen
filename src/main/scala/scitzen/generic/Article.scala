@@ -48,7 +48,7 @@ object ArticleItem:
         case (sec @ Section(_, "==", _)) :: rest =>
           val (cont, other) = rest.span(a => notHeader(a) && Article.notHeader(a))
           rec(other.dropWhile(notHeader), Article(sec, cont, document) :: acc)
-        case Nil => acc
+        case Nil           => acc
         case other :: rest => throw IllegalStateException(s"unexpected sast when looking for item: $other")
 
     rec(document.sast.dropWhile(notHeader), Nil)

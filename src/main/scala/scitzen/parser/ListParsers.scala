@@ -20,7 +20,7 @@ object ListParsers {
 
   def descriptionListContent: Scip[(String, Prov)] =
     withProv(until(((":".all and verticalSpaces and eol) or eol)).min(1).str <~
-             (":".all and verticalSpaces and eol).orFail)
+      (":".all and verticalSpaces and eol).orFail)
   def descriptionListItem: Scip[ParsedListItem] = Scip {
     val marker      = simpleMarker.str.run
     val (str, prov) = descriptionListContent.run

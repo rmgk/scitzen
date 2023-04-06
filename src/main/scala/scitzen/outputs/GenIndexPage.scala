@@ -1,6 +1,5 @@
 package scitzen.outputs
 
-
 import scitzen.generic.{Article, HtmlPathManager}
 import scitzen.sast.DCommand.Other
 import scitzen.sast.{Attribute, Attributes, Block, Directive, InlineText, Parsed, Prov, Sast, Section, Text}

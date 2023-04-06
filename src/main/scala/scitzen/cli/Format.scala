@@ -29,7 +29,7 @@ object Format:
     }
 
   def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast]): Unit =
-    val result    = SastToScimConverter.toScimS(sast)
+    val result      = SastToScimConverter.toScimS(sast)
     val resultBytes = result.iterator.mkString("", "\n", "\n").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
       scribe.info(s"formatting ${file.getFileName}")

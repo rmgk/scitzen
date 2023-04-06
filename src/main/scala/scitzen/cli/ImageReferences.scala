@@ -23,7 +23,7 @@ object ImageReferences:
       val convertedCtx = new SastToSastConverter(doc, project).run()
 
       // macro offsets are in bytes, but sublime expects them to be in codepoints, so we adapt
-      lazy val offsets = doc.content.iterator.zipWithIndex.collect{
+      lazy val offsets = doc.content.iterator.zipWithIndex.collect {
         case (b, pos) if (b & (192)) == 128 => pos
       }.toArray
       def adapt(v: Int) = v - offsets.count(_ <= v)
@@ -40,7 +40,10 @@ object ImageReferences:
       }
       cwf.toString -> images
     }.filter(_._2.nonEmpty).toMap
-    Files.write(output, writeToArray(
-      fileImageMap,
-      WriterConfig.withIndentionStep(2)
-    )(rferenceRW))
+    Files.write(
+      output,
+      writeToArray(
+        fileImageMap,
+        WriterConfig.withIndentionStep(2)
+      )(rferenceRW)
+    )

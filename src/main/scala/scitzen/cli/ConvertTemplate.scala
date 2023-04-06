@@ -10,7 +10,9 @@ object ConvertTemplate:
       template: String,
       templateSettings: Map[String, String]
   ): String =
-    val templateFile = project.resolve(project.root, template).getOrElse(throw new IllegalArgumentException(s"could not find template file »$template«"))
+    val templateFile = project.resolve(project.root, template).getOrElse(
+      throw new IllegalArgumentException(s"could not find template file »$template«")
+    )
     val templateSast = directory.byPath(templateFile).sast
     val documentString = SastToTextConverter(
       templateSettings,

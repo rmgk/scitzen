@@ -21,7 +21,9 @@ class HtmlPages(cssPath: String, fullCss: String):
     "<!DOCTYPE html>\n" + tag.render
 
   def featherIcon(cls: String, path: String): RawFrag =
-    raw(s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls"><path d="$path" /></svg>""")
+    raw(
+      s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls"><path d="$path" /></svg>"""
+    )
   val sidebarContainer: Tag =
     aside(
       input(`type` := "checkbox", id := "sidebar-switch", hidden),

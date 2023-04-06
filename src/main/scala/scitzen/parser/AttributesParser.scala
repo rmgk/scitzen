@@ -13,7 +13,7 @@ object AttributesParser {
 
   val terminationCheckB: Scip[Boolean] = (";".all or close.all or eol).lookahead
   val unquotedInlines: Scip[List[Inline]] =
-    InlineParsers.full( terminationCheckB, allowEmpty = true)
+    InlineParsers.full(terminationCheckB, allowEmpty = true)
 
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
     * but the closing quote must match the opening quote

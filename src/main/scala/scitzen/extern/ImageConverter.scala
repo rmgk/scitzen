@@ -198,7 +198,13 @@ class ImageConverter(
       Files.createDirectories(mermaidSource.getParent)
       Files.write(mermaidSource, bytes)
 
-      new ProcessBuilder("mmdc", "--input", mermaidSource.toAbsolutePath.toString, "--output", target.toAbsolutePath.toString)
+      new ProcessBuilder(
+        "mmdc",
+        "--input",
+        mermaidSource.toAbsolutePath.toString,
+        "--output",
+        target.toAbsolutePath.toString
+      )
         .inheritIO().start().waitFor()
       scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     target

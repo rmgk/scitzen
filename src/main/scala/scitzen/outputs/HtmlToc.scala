@@ -5,7 +5,7 @@ import scitzen.sast.{Attributes, Section, Text, Prov}
 
 object HtmlToc:
 
-  val maxdepth = 2
+  val maxdepth     = 2
   val startsection = List("==", "#")
 
   def tableOfContents(docsections: List[Section]): Option[Frag] =

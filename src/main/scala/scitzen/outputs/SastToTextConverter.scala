@@ -1,9 +1,10 @@
 package scitzen.outputs
 
-
 import scitzen.generic.{DocumentDirectory, Project}
 import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
+}
 import scitzen.compat.Logging.scribe
 
 import java.nio.file.Path
