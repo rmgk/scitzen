@@ -43,5 +43,5 @@ final class FileReporter(file: Path, content: Array[Byte]) extends Reporter:
 
   override def apply(prov: Prov): String =
     val pos = indexToPosition(prov.start)
-    s" at »${Path.of("").toAbsolutePath.relativize(file)}:" +
+    s" at »${Path.of("").toAbsolutePath.relativize(file.toAbsolutePath)}:" +
     s"${pos._1}:${pos._2}«"
