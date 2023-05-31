@@ -225,11 +225,17 @@ class SastToTexConverter(
       case mcro: Directive =>
         val attributes = mcro.attributes
         mcro.command match
-          case Code           => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
-          case Comment        => ctx.retc("")
-          case Def            => ctx.retc("")
-          case Emph           => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\emph{$str}")
-          case Math           => ctx.retc(s"$$${attributes.target}$$")
+          case Code    => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
+          case Comment => ctx.retc("")
+          case Def     => ctx.retc("")
+          case Emph    => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\emph{$str}")
+          case Math =>
+            val math = attributes.target
+            if math.isBlank then
+              warn("empty math", mcro)
+              ctx.ret(Chain.empty)
+            else
+              ctx.retc(s"$$${attributes.target}$$")
           case Other("break") => ctx.retc(s"\\clearpage{}")
           case Other("rule") => inlineToTex(Directive(
               Ref,
@@ -300,7 +306,7 @@ class SastToTexConverter(
               case Some(res) =>
                 inlineValuesToTex(res.inl)(ctx).map(Chain(_))
               case None =>
-                scribe.warn(s"unknown name ${attributes.target}" + reporter(mcro))
+                warn("unknown name", mcro)
                 ctx.retc(latexencode(attributes.target))
 
           case Other("footnote") =>
