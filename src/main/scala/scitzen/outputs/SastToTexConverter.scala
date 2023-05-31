@@ -143,7 +143,7 @@ class SastToTexConverter(
           if settings.get("style").contains("article") then cctx.single :+ "\n"
           else
             cctx.map { text =>
-              val latexenc = latexencode(text).trim.replace("\n", "\\newline{}\n")
+              val latexenc = text.trim.replace("\n", "\\newline{}\n")
               Chain("\\noindent", latexenc, "\n")
             }
 
