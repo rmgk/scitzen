@@ -259,7 +259,7 @@ class SastToTexConverter(
 
           case Cite =>
             val cmndCtx = attributes.named.get("style") match
-              case Some("name")   => ctx.ret("citet")
+              case Some("author") => ctx.ret("citet")
               case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
               case _              => ctx.ret("cite")
 

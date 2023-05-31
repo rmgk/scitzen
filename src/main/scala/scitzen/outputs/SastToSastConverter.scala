@@ -6,7 +6,7 @@ import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, Project, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Positional
-import scitzen.sast.DCommand.{Image, Include}
+import scitzen.sast.DCommand.{Cite, Image, Include}
 
 import java.nio.file.Path
 
@@ -154,4 +154,10 @@ class SastToSastConverter(document: Document, project: Project):
       case Image =>
         val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))(mcro.prov)
         ctx.addImage(enhanced).ret(enhanced)
+      case Cite =>
+        val style = mcro.attributes.named.get("style")
+        if style.contains("name") then
+          ctx.ret(mcro.copy(attributes = mcro.attributes.prepend(List(Attribute("style", "author"))))(mcro.prov))
+        else
+          ctx.ret(mcro)
       case _ => ctx.ret(mcro)

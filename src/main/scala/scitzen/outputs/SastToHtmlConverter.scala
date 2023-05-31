@@ -303,7 +303,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                     case other         => last
                   init ++ Chain(addSpace, styledAnchors)
               }
-            else if attrs.named.get("style").contains("name")
+            else if attrs.named.get("style").contains("author")
             then
               val nameOption =
                 for
