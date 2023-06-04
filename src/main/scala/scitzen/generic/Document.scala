@@ -10,6 +10,7 @@ import scala.util.control.NonFatal
 
 /** A document represents a single, on disk, text file that has been successfully parsed */
 case class Document(file: Path, content: Array[Byte], sast: List[Sast]):
+  val uid: String                 = Integer.toHexString(file.hashCode())
   lazy val reporter: FileReporter = new FileReporter(file, content)
 
 object Document:

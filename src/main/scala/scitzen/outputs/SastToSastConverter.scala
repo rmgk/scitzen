@@ -18,7 +18,6 @@ class SastToSastConverter(document: Document, project: Project):
 
   def cwf: Path        = document.file
   def cwd: Path        = document.file.getParent
-  val uid: String      = Integer.toHexString(cwf.hashCode())
   val targetPrediction = ITargetPrediction(project, cwf.getParent)
 
   def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
@@ -38,7 +37,7 @@ class SastToSastConverter(document: Document, project: Project):
         ctx.nextId.map(_.toString)
       else
         ctx.ret("")
-    val newLabel = s"$ref1 ($uid${counter.data})"
+    val newLabel = s"$ref1 (${document.uid}${counter.data})"
     val aliases  = ref1 :: newLabel :: attr.named.get("aliases").toList.flatMap(_.split(',').toList)
     counter.ret((aliases, attr.updated("unique ref", newLabel)))
 

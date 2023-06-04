@@ -14,7 +14,7 @@ object HtmlToc:
     def recurse(remaining: List[Section], depth: Int): Option[Frag] =
       remaining match
         case Nil => None
-        case (head @ Section(title, _, attr)) :: rest =>
+        case (head @ Section(title, _, _)) :: rest =>
           val (sub, other) = rest.span(e => e > head)
           val subtags      = if depth < maxdepth then recurse(sub, depth + 1) else None
           val thistag      = li(a(href := s"#${head.ref}", title.plainString), subtags.map(ol(_)))
