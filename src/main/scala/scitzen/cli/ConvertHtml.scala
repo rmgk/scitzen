@@ -12,6 +12,7 @@ import scitzen.cli.ScitzenCommandline.ClSync
 
 import math.Ordering.Implicits.seqOrdering
 import scitzen.extern.Katex.mapCodec
+import scitzen.sast.{Attributes, Prov, Section}
 
 import java.io.ByteArrayOutputStream
 import java.nio.charset.{Charset, StandardCharsets}
@@ -150,16 +151,28 @@ object ConvertHtml:
     val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
+
+    val bibname = "Bibliography"
+    val bibid   = s"bibliography (gen)"
+    val bibsection = Option.when(bibEntries.nonEmpty)(
+      Section(
+        scitzen.sast.Text(List(scitzen.sast.InlineText(bibname))),
+        "==",
+        Attributes(Seq(scitzen.sast.Attribute("unique ref", bibid)))
+      )(Prov())
+    ).toList
     val citations =
       if bibEntries.isEmpty then Nil
       else
         import scalatags.Text.all.{SeqFrag, h2, id, li, stringAttr, stringFrag, ul, cls}
         List(
-          h2("Bibliography"),
-          ul(cls := "bibliography", bibEntries.map { be => li(id := be.id, be.formatHtmlCitation) })
+          h2(bibname, id := bibid),
+          ul(cls         := "bibliography", bibEntries.map { be => li(id := be.id, be.formatHtmlCitation) })
         )
 
-    val toc = HtmlToc.tableOfContents(convertedArticleCtx.sections.reverse)
+    val toc = HtmlToc.tableOfContents(
+      convertedArticleCtx.sections.reverse ++ bibsection
+    )
 
     import scalatags.Text.all.{SeqFrag, a, href, stringAttr, stringFrag, Frag, frag, div}
 
