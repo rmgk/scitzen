@@ -41,7 +41,13 @@ object DBLP:
     println(s"uri: $uri")
     HttpRequest.newBuilder.uri(uri).timeout(Duration.ofSeconds(30)).build
 
-  def lookup(key: String) =
+  def lookup(key: String): Option[String] =
+    val res = client.send(query(s"https://dblp.org/rec/$key.bib"), BodyHandlers.ofString())
+    if res.statusCode() != 200
+    then None
+    else Some(res.body())
+
+  def lookupFormatted(key: String): List[String] =
     val res   = client.send(query(s"https://dblp.org/rec/$key.bib"), BodyHandlers.ofInputStream())
     val items = Bibtex.parse(res.body())
 
@@ -63,7 +69,7 @@ object DBLP:
     val json = upickle.default.read[DBLPApi.Outer](res.body())
     json.result.hits.hit.map { h =>
       val info   = h.info
-      val format = lookup(info.key)
+      val format = lookupFormatted(info.key)
       println(s"info url: ${info.ee}")
       val pdfpage = client.send(query(info.ee), BodyHandlers.ofInputStream())
       println(s"final uri: ${pdfpage.uri()}")
