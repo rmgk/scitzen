@@ -6,7 +6,7 @@ import de.undercouch.citeproc.helper.json.{StringJsonBuilder, StringJsonBuilderF
 import org.jbibtex.{BibTeXDatabase, BibTeXEntry, BibTeXParser, Key, LaTeXParser, LaTeXPrinter}
 import scitzen.generic.Project
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.io.{FileInputStream, InputStream}
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.*
@@ -37,9 +37,7 @@ object Bibtex:
     items.valuesIterator.map { citeprocToBib }.toList
   }
 
-  def makeBib(project: Project): Map[String, BibEntry] =
-    project.bibfile.map { path =>
-      Using(Files.newInputStream(path))(Bibtex.parse).get
-    }.getOrElse(Nil).sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
+  def makeBib(bibpath: Path): Map[String, BibEntry] =
+    Using(Files.newInputStream(bibpath))(Bibtex.parse).get.sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
       case (be, i) => be.id -> be.copy(citekey = Some(be.authorYear.getOrElse((i + 1).toString)))
     }.toMap

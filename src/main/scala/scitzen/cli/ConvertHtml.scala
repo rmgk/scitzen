@@ -5,9 +5,10 @@ import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import com.github.plokhotnyuk.jsoniter_scala.core.*
+import de.undercouch.citeproc.output.Bibliography
 import scalatags.Text.all.raw
 import scalatags.Text.tags2.style
-import scitzen.bibliography.Bibtex
+import scitzen.bibliography.{BibEntry, Bibtex}
 import scitzen.cli.ScitzenCommandline.ClSync
 
 import math.Ordering.Implicits.seqOrdering
@@ -37,6 +38,7 @@ object ConvertHtml:
       project: Project,
       sync: Option[ClSync],
       preprocessed: PreprocessedResults,
+      bibliography: Map[String, BibEntry]
   ): Unit =
 
     val katexmapfile = project.cacheDir.resolve("katexmap.json")
@@ -76,6 +78,7 @@ object ConvertHtml:
               katexmap,
               KatexLibrary(article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
             ),
+            bibliography
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
 
@@ -83,10 +86,9 @@ object ConvertHtml:
     pathManager.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
 
-    makeindex(project, preprocessed, cssfile, cssstring, pathManager)
+    makeindex(preprocessed, cssfile, cssstring, pathManager)
 
   private def makeindex(
-      project: Project,
       preprocessed: PreprocessedResults,
       cssfile: Path,
       cssstring: String,
@@ -99,6 +101,7 @@ object ConvertHtml:
       sync = None,
       reporter = _ => "",
       preprocessed = preprocessed,
+      bibliography = Map.empty
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(pathManager.articleOutputDir.relativize(cssfile).toString, cssstring)
@@ -135,6 +138,7 @@ object ConvertHtml:
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
+    bibliography: Map[String, BibEntry]
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
@@ -143,6 +147,7 @@ object ConvertHtml:
       sync = sync,
       reporter = article.sourceDoc.reporter,
       preprocessed = preprocessed,
+      bibliography = bibliography,
     )
     val cssrelpath = pathManager.articleOutputDir.relativize(cssfile).toString
 

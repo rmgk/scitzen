@@ -22,6 +22,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     sync: Option[ClSync],
     reporter: Reporter,
     preprocessed: PreprocessedResults,
+    bibliography: Map[String, BibEntry],
 ):
 
   import bundle.all.*
@@ -137,6 +138,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                         sync,
                         doc.reporter,
                         preprocessed,
+                        bibliography
                       ).convertSeq(doc.sast)(ctx)
                     case None =>
                       scribe.error(s"unknown include document ${attributes.target}" + reporter(mcro.prov))
@@ -155,6 +157,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                         sync,
                         doc.reporter,
                         preprocessed,
+                        bibliography
                       ).convertSeq(article.sast)(ctx)
 
               case Some(other) =>
@@ -282,7 +285,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Cite =>
             val citations = attrs.target.split(",").toList.map { bibid =>
               val trimmed = bibid.trim
-              trimmed -> pathManager.project.bibliography.get(trimmed)
+              trimmed -> bibliography.get(trimmed)
             }
             val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
               case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))

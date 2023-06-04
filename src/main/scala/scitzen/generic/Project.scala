@@ -13,8 +13,7 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
   val outputdir: Path = root resolve config.output
   val nlpdir: Path    = root resolve config.stopwords
 
-  lazy val bibfile: Option[Path]               = config.bibliography.flatMap(s => resolve(root, s))
-  lazy val bibliography: Map[String, BibEntry] = Bibtex.makeBib(this)
+  lazy val bibfile: Option[Path] = config.bibliography.flatMap(s => resolve(root, s))
 
   def relativizeToProject(target: Path): Path =
     Path.of("/").resolve(root.relativize(target))

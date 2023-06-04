@@ -62,13 +62,17 @@ class SastToSastConverter(document: Document, project: Project):
         }
 
       case Slist(children) =>
-        ctx.fold[ListItem, ListItem](children) { (ctx, child) =>
-          child.content match
-            case None => ctx.ret(Chain(child))
+        ctx.fold[ListItem, ListItem](children) { (origctx, origchild) =>
+          val textctx = convertText(origchild.text, origctx)
+          val contentctx = origchild.content match
+            case None => textctx.map(_ => None)
             case Some(content) =>
-              convertSingle(content)(ctx).map { con =>
-                Chain(ListItem(child.marker, child.text, Some(con)))
-              }
+              convertSingle(content)(textctx).map(c => Some(c))
+
+          contentctx.ret {
+            Chain(ListItem(origchild.marker, textctx.data, contentctx.data))
+          }
+
         }.map { cs =>
           scitzen.sast.Slist(cs.iterator.toSeq)
         }
@@ -135,6 +139,8 @@ class SastToSastConverter(document: Document, project: Project):
     }
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
+
+  def convertText(text: Text, ctx: Cta) = convertInlines(text.inl)(ctx).map(il => Text(il.toList))
 
   def convertInlines(inners: Seq[Inline])(ctx: Cta): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>
