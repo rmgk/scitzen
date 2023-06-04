@@ -6,7 +6,7 @@ import scitzen.generic.{PreprocessedResults, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.{Files, StandardCopyOption}
+import java.nio.file.{Files, StandardCopyOption, StandardOpenOption}
 import scala.jdk.CollectionConverters.*
 
 object ConvertPdf:
@@ -55,6 +55,13 @@ object ConvertPdf:
             StandardCopyOption.COPY_ATTRIBUTES
           )
         }
+        if Files.isRegularFile(project.bibfileDBLPcache) then
+          Files.write(
+            temptexdir.resolve("bibliography.bib"),
+            Files.readAllBytes(project.bibfileDBLPcache),
+            StandardOpenOption.CREATE,
+            StandardOpenOption.APPEND
+          )
 
         val templateSettings =
           project.config.definitions ++ article.header.attributes.named ++ List(

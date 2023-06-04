@@ -47,7 +47,7 @@ object ConvertProject:
     val toHtml = project.config.outputType.contains("html")
     val toPdf  = project.config.outputType.contains("pdf")
 
-    val dblpcachePath: Path = project.cacheDir.resolve("dblpcache.bib")
+    val dblpcachePath: Path = project.bibfileDBLPcache
     def parsebib(): Map[String, BibEntry] =
       (if Files.exists(dblpcachePath) then
          Bibtex.makeBib(dblpcachePath)
