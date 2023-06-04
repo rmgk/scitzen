@@ -2,6 +2,7 @@ package scitzen.contexts
 
 import de.rmgk.Chain
 import scitzen.generic.SastRef
+import scitzen.sast.DCommand.Cite
 import scitzen.sast.{Block, Directive, Section}
 
 /** The conversion context, used to keep state of the conversion. */
@@ -12,10 +13,12 @@ case class SastContext[T](
     imageMacros: List[Directive] = Nil,
     convertBlocks: List[Block] = Nil,
     sections: List[Section] = Nil,
+    citations: List[Directive] = Nil
 ):
-  def addImage(mcro: Directive): SastContext[T]        = copy(imageMacros = mcro :: imageMacros)
+  def addImage(image: Directive): SastContext[T]       = copy(imageMacros = image :: imageMacros)
   def addConversionBlock(block: Block): SastContext[T] = copy(convertBlocks = block :: convertBlocks)
   def addSection(section: Section): SastContext[T]     = copy(sections = section :: sections)
+  def addCitation(cite: Directive): SastContext[T]     = copy(citations = cite :: citations)
 
   def nextId: SastContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
 

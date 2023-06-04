@@ -154,9 +154,11 @@ class SastToSastConverter(document: Document, project: Project):
         val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))(mcro.prov)
         ctx.addImage(enhanced).ret(enhanced)
       case Cite =>
-        val style = mcro.attributes.named.get("style")
-        if style.contains("name") then
-          ctx.ret(mcro.copy(attributes = mcro.attributes.prepend(List(Attribute("style", "author"))))(mcro.prov))
-        else
-          ctx.ret(mcro)
+        val res =
+          val style = mcro.attributes.named.get("style")
+          if style.contains("name") then
+            mcro.copy(attributes = mcro.attributes.prepend(List(Attribute("style", "author"))))(mcro.prov)
+          else
+            mcro
+        ctx.addCitation(res).ret(res)
       case _ => ctx.ret(mcro)
