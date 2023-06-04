@@ -21,14 +21,17 @@ case class BibEntry(
     val res = authors.map(_.full).mkString(", ")
     if res.nonEmpty then Some(res) else None
   def formatHtmlCitation: Frag =
-    def line(name: String, elems: Option[Frag]*): Option[Frag] =
-      val terminator        = stringFrag(". ")
-      val inside: Seq[Frag] = elems.flatten.flatMap { v => List(v, terminator) }
+    def line(name: String, elems: Option[String | Frag]*): Option[Frag] =
+      val terminator = stringFrag(". ")
+      val inside: Seq[Frag] = elems.flatten.flatMap {
+        case s: String => List(stringFrag(s.stripSuffix(".")), terminator)
+        case f: Frag   => List(f, terminator)
+      }
       if inside.isEmpty then None else Some(p(cls := name, inside))
     frag(
-      line("authors", formatAuthors.map(stringFrag), year.map(_.toString)),
-      line("title", title.map(t => url.fold(stringFrag(t))(u => a(href := u, t)))),
-      line("container", container.map(stringFrag), issue.map(stringFrag))
+      line("authors", formatAuthors, year.map(_.toString)),
+      line("title", title.map(t => url.fold(t)(u => a(href := u, t.stripSuffix("."))))),
+      line("container", container, issue)
     )
   def authorYear: Option[String] =
     for
