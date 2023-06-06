@@ -21,12 +21,9 @@ object AttributesParser {
 
   val maybeQuoted: Scip[Option[String]] = Scip {
     anySpacesF.run
-    val quotes = "\"".all.rep.min(0).str.trace(s"opening quotes").run
+    val quotes = (("\"".all.rep.min(1) and "[".all) or "\"".all or Scip { true }).str.trace(s"opening quotes").run
     if quotes.nonEmpty
-    then
-      if "[".all.str.opt.trace("opening brackets").run.isDefined
-      then Some(s"]$quotes")
-      else Some(quotes)
+    then Some(quotes)
     else None
   }
 
@@ -52,7 +49,7 @@ object AttributesParser {
       case None => until(";}\n".any).min(0).str.trace(s"unquoted").run
       case Some(closing) =>
         val closeP = seq(closing)
-        (until(closeP and verticalSpaces and terminationCheckB).min(1).str <~ closeP.orFail).trace(
+        (until(closeP and verticalSpaces and terminationCheckB).min(0).str <~ closeP.orFail).trace(
           s"quoted ${closing}"
         ).run
   }.trace("string value")

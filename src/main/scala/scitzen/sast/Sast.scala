@@ -21,6 +21,8 @@ case class Text(inl: Seq[Inline]) {
     }.mkString("")
   }
 }
+case object Text:
+  def of(str: String): Text = Text(List(InlineText(str)))
 case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
   def autolabel: String = attributes.named.getOrElse("label", title.plainString)
   def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })

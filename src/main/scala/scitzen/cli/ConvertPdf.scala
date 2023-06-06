@@ -23,8 +23,7 @@ object ConvertPdf:
           project,
           article.sourceDoc.file,
           article.sourceDoc.reporter,
-          preprocessed.directory,
-          preprocessed.labels,
+          preprocessed,
           article.named
         )
 

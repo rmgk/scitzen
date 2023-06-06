@@ -53,8 +53,11 @@ case class SastToTextConverter(
         mcro.command match
 
           case Lookup =>
-            if !definitions.contains(attributes.target) then scribe.error(s"could not resolve ${attributes.target}")
-            List(definitions(attributes.target))
+            definitions.get(attributes.target).orElse(attributes.named.get("default")) match
+              case None =>
+                scribe.error(s"could not resolve ${attributes.target}")
+                Nil
+              case Some(res) => List(res)
 
           case Include =>
             includes match

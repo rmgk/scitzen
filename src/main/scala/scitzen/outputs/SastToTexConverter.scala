@@ -3,7 +3,7 @@ package scitzen.outputs
 import de.rmgk.Chain
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, DocumentDirectory, Project, References, Reporter, SastRef}
+import scitzen.generic.{Article, DocumentDirectory, PreprocessedResults, Project, References, Reporter, SastRef}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
@@ -33,8 +33,7 @@ class SastToTexConverter(
     project: Project,
     cwf: Path,
     reporter: Reporter,
-    includeResolver: DocumentDirectory,
-    labels: Map[String, List[SastRef]],
+    preprocessedResults: PreprocessedResults,
     settings: Map[String, String],
 ):
 
@@ -74,13 +73,12 @@ class SastToTexConverter(
 
         val pushed   = ilc.push(section)
         val numbered = if attr.named.get("style").contains("unnumbered") then "*" else ""
-        val header = prefix match
-          case "==" =>
-            s"\\chapter$numbered[${ilc.data}]{${ilc.data}}"
-          case _ =>
-            val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
-            val sec   = sectioning(prefix.length - shift)
-            s"\\$sec$numbered{${ilc.data}}"
+        val header =
+          val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
+          val sec   = sectioning(prefix.length - shift)
+          // not entirely sure what the following does
+          val chapterAdd = if prefix == "==" then s"[${ilc.data}]" else ""
+          s"\\$sec$numbered$chapterAdd{${ilc.data}}"
 
         val label = attr.named.get("unique ref").map(l => s"\\label{$l}").toList
 
@@ -111,12 +109,19 @@ class SastToTexConverter(
       case mcro: Directive =>
         mcro.command match
           case Include =>
-            project.resolve(cwd, mcro.attributes.target).flatMap(includeResolver.byPath.get) match
+            val target = mcro.attributes.target
+            val res =
+              if target.endsWith(".scim")
+              then project.resolve(cwd, mcro.attributes.target).flatMap(preprocessedResults.directory.byPath.get)
+              else
+                preprocessedResults.itemsAndArticlesByLabel.get(target).map: article =>
+                  article.sourceDoc.copy(sast =
+                    article.sast
+                  ) // TODO: maybe a bit hacky, docs have the unmodified AST ...
+            res match
               case Some(doc) =>
-                val included = includeResolver.byPath(doc.file)
-
-                new SastToTexConverter(project, doc.file, doc.reporter, includeResolver, labels, settings)
-                  .sastSeqToTex(included.sast)(ctx)
+                new SastToTexConverter(project, doc.file, doc.reporter, preprocessedResults, settings)
+                  .sastSeqToTex(doc.sast)(ctx)
 
               case None =>
                 scribe.error(s"unknown include ${mcro.attributes.target}" + reporter(mcro))
@@ -266,8 +271,9 @@ class SastToTexConverter(
             nbrs(attributes)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attributes.target}}")
 
           case Ref =>
-            val scope      = attributes.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
-            val candidates = References.filterCandidates(scope, labels.getOrElse(attributes.target, Nil))
+            val scope = attributes.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
+            val candidates =
+              References.filterCandidates(scope, preprocessedResults.labels.getOrElse(attributes.target, Nil))
 
             if candidates.sizeIs > 1 then
               scribe.error(
@@ -302,11 +308,11 @@ class SastToTexConverter(
             }.useFeature("href")
 
           case Lookup =>
-            project.definitions.get(attributes.target) match
+            project.definitions.get(attributes.target).orElse(attributes.named.get("default").map(Text.of)) match
               case Some(res) =>
                 inlineValuesToTex(res.inl)(ctx).map(Chain(_))
               case None =>
-                warn("unknown name", mcro)
+                warn(s"unknown name »${attributes.target}«", mcro)
                 ctx.retc(latexencode(attributes.target))
 
           case Other("footnote") =>

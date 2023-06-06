@@ -10,3 +10,5 @@ I make my formats just for you
 :image{this does not exist.png}
 
 :emph{test}
+
+:{failedLookup; default=}
