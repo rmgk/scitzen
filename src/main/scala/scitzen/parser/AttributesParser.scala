@@ -22,9 +22,12 @@ object AttributesParser {
   val maybeQuoted: Scip[Option[String]] = Scip {
     anySpacesF.run
     val quotes = (("\"".all.rep.min(1) and "[".all) or "\"".all or Scip { true }).str.trace(s"opening quotes").run
-    if quotes.nonEmpty
-    then Some(quotes)
-    else None
+    if quotes.isEmpty
+    then None
+    else if quotes.endsWith("[")
+    then Some("]" + quotes.stripSuffix("["))
+    else Some(quotes)
+
   }
 
   /** text is in the general form of ""[content]"" where all of the quoting is optional,
