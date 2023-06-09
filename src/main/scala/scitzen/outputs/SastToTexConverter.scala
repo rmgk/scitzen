@@ -345,6 +345,6 @@ class SastToTexConverter(
             val str: String = warn(s"tex backend does not allow inline includes", mcro)
             ctx.retc(str)
   def warn(msg: String, im: Directive): String =
-    val macroStr = SastToScimConverter.macroToScim(im)
+    val macroStr = SastToScimConverter(bibDB).macroToScim(im)
     scribe.warn(s"$msg: ⸢$macroStr⸥${reporter(im)}")
     macroStr

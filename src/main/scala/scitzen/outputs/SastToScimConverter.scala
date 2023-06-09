@@ -2,6 +2,7 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import de.rmgk.scip.Scx
+import scitzen.bibliography.BibDB
 import scitzen.parser.{AttributeDeparser, AttributesParser, Parse}
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
@@ -12,7 +13,9 @@ import scala.collection.immutable.ArraySeq
 import scala.util.Try
 import scala.util.matching.Regex
 
-object SastToScimConverter:
+class SastToScimConverter(bibDB: BibDB):
+
+  val attributeConverter = AttributesToScim(bibDB)
 
   def attributesToScim(
       attributes: Attributes,
@@ -21,7 +24,7 @@ object SastToScimConverter:
       light: Boolean = false
   ): Chain[String] =
     if !force && attributes.raw.isEmpty then Chain.nil
-    else Chain(AttributesToScim.convert(attributes, spacy, force, light))
+    else Chain(AttributesToScim(bibDB).convert(attributes, spacy, force, light))
 
   def toScimS(b: Seq[Sast]): Chain[String] =
     Chain.from(b).flatMap(toScim)
@@ -79,7 +82,7 @@ object SastToScimConverter:
           case ':' =>
             Chain(
               "::" + command +
-              AttributesToScim.convert(remattr, force = false, spacy = false),
+              AttributesToScim(bibDB).convert(remattr, force = false, spacy = false),
               content.map(addIndent(_, "\t")).iterator.mkString("\n").stripTrailing(),
               "::"
             )
@@ -95,7 +98,7 @@ object SastToScimConverter:
       case Fenced(text) =>
         val delimiter = "``"
         Chain(
-          delimiter + command + AttributesToScim.convert(remattr, spacy = false, force = false),
+          delimiter + command + AttributesToScim(bibDB).convert(remattr, spacy = false, force = false),
           addIndent(text, "\t"),
           delimiter
         )
@@ -104,7 +107,7 @@ object SastToScimConverter:
     mcro match
       case Directive(Comment, attributes) => s":%${attributes.target}"
       case _ =>
-        s":${DCommand.printMacroCommand(mcro.command)}${AttributesToScim.convert(mcro.attributes, spacy, force = true)}"
+        s":${DCommand.printMacroCommand(mcro.command)}${attributeConverter.convert(mcro.attributes, spacy, force = true)}"
 
   def inlineToScim(inners: Seq[Inline]): String =
     inners.map {
@@ -112,10 +115,10 @@ object SastToScimConverter:
       case m: Directive    => macroToScim(m)
     }.mkString("")
 
-object AttributesToScim:
+class AttributesToScim(bibDB: BibDB):
 
   def encodeText(text: Text): String =
-    val value = SastToScimConverter.inlineToScim(text.inl)
+    val value = SastToScimConverter(bibDB).inlineToScim(text.inl)
     AttributeDeparser.quote(
       value,
       {

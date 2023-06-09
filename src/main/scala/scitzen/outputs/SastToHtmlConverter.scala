@@ -357,7 +357,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   ctx.empty
             }.getOrElse {
               scribe.error(s"no resolutions for »${attrs.target}«${reporter(mcro)}")
-              ctx.retc(code(SastToScimConverter.macroToScim(mcro)))
+              ctx.retc(code(SastToScimConverter(bibliography).macroToScim(mcro)))
             }
 
           case Lookup =>
@@ -380,7 +380,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               case tagname @ ("ins" | "del") =>
                 ctx.retc(tag(tagname)(attrs.legacyPositional.mkString(", ")))
 
-              case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter.macroToScim(mcro)))
+              case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter(bibliography).macroToScim(mcro)))
               case "tableofcontents" => ctx.empty
               case "partition"       => ctx.empty
               case "rule"            => ctx.retc(span(attrs.target, `class` := "rule"))
@@ -411,6 +411,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   def reportPos(m: Directive): String = reporter(m)
 
   def unknownMacroOutput(im: Directive): Tag =
-    val str = SastToScimConverter.macroToScim(im)
+    val str = SastToScimConverter(bibliography).macroToScim(im)
     scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)

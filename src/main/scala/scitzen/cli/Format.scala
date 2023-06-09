@@ -1,5 +1,7 @@
 package scitzen.cli
 
+import scitzen.bibliography.BibDB
+
 import java.nio.charset.{Charset, StandardCharsets}
 import scitzen.generic.{Article, DocumentDirectory}
 import scitzen.outputs.SastToScimConverter
@@ -12,9 +14,9 @@ object Format:
 
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
-  def formatContents(documentDirectory: DocumentDirectory): Unit =
+  def formatContents(documentDirectory: DocumentDirectory, bibDB: BibDB): Unit =
     documentDirectory.documents.foreach { pd =>
-      formatContent(pd.file, pd.content, pd.sast)
+      formatContent(pd.file, pd.content, pd.sast, bibDB)
     }
 
   def formatRename(documentDirectory: DocumentDirectory): Unit =
@@ -28,8 +30,8 @@ object Format:
           )
     }
 
-  def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast]): Unit =
-    val result      = SastToScimConverter.toScimS(sast)
+  def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast], bibDB: BibDB): Unit =
+    val result      = SastToScimConverter(bibDB).toScimS(sast)
     val resultBytes = result.iterator.mkString("", "\n", "\n").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
       scribe.info(s"formatting ${file.getFileName}")

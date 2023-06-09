@@ -65,7 +65,7 @@ object ConvertProject:
 
 
     if project.config.format.contains("content") then
-      Format.formatContents(documentDirectory)
+      Format.formatContents(documentDirectory, bibdb)
       scribe.info(s"formatted contents ${timediff()}")
     if project.config.format.contains("filename") then
       Format.formatRename(documentDirectory)
