@@ -69,7 +69,7 @@ class SastToScimConverter(bibDB: BibDB):
   def convertBlock(sb: Block): Chain[String] =
     val (remattr, command: String) = sb.attributes.raw.headOption match
       case Some(Positional(_, value)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), value)
-      case _                                => (sb.attributes, "")
+      case _                          => (sb.attributes, "")
     sb.content match
 
       case Paragraph(content) =>
@@ -106,7 +106,7 @@ class SastToScimConverter(bibDB: BibDB):
   def macroToScim(mcro: Directive, spacy: Boolean = false): String =
     mcro match
       case Directive(Comment, attributes) => s":%${attributes.target}"
-      case Directive(BibQuery, _) => macroToScim(bibDB.convert(mcro))
+      case Directive(BibQuery, _)         => macroToScim(bibDB.convert(mcro))
       case _ =>
         s":${DCommand.printMacroCommand(mcro.command)}${attributeConverter.convert(mcro.attributes, spacy, force = true)}"
 

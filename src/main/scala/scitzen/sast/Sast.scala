@@ -9,7 +9,8 @@ case class Slist(children: Seq[ListItem]) extends Sast
 case class ListItem(marker: String, text: Text, content: Option[Sast])
 
 sealed trait Inline
-case class InlineText(str: String) extends Inline
+case class InlineText(str: String) extends Inline:
+  require(str.nonEmpty)
 case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast
 
 case class Text(inl: Seq[Inline]) {
@@ -22,7 +23,9 @@ case class Text(inl: Seq[Inline]) {
   }
 }
 case object Text:
-  def of(str: String): Text = Text(List(InlineText(str)))
+  def of(str: String): Text =
+    if str.isEmpty then Text(Nil)
+    else Text(List(InlineText(str)))
 case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
   def autolabel: String = attributes.named.getOrElse("label", title.plainString)
   def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
@@ -88,7 +91,8 @@ object Attribute {
 
   case class Positional(text: Text, string: String) extends Attribute
   object Positional {
-    def apply(string: String): Positional = Positional(Text(Seq(InlineText(string))), string)
+    def apply(string: String): Positional =
+      Positional(Text.of(string), string)
   }
 
   case class Plain(id: String, value: String)      extends Attribute

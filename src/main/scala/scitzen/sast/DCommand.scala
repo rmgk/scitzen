@@ -21,20 +21,20 @@ enum DCommand {
 object DCommand {
   val (parseMap, printMap) = {
     val standard = List(
-      "bibq"    -> BibQuery,
-      "cite"    -> Cite,
-      "comment" -> Comment,
-      "def"     -> Def,
-      "image"   -> Image,
-      "include" -> Include,
-      "link"    -> Link,
-      "ref"     -> Ref,
-      "code"    -> Code,
-      "emph"    -> Emph,
-      "strong"  -> Strong,
-      "math"    -> Math,
-      "raw"     -> Raw,
-      ""        -> Lookup
+      "bibquery" -> BibQuery,
+      "cite"     -> Cite,
+      "comment"  -> Comment,
+      "def"      -> Def,
+      "image"    -> Image,
+      "include"  -> Include,
+      "link"     -> Link,
+      "ref"      -> Ref,
+      "code"     -> Code,
+      "emph"     -> Emph,
+      "strong"   -> Strong,
+      "math"     -> Math,
+      "raw"      -> Raw,
+      ""         -> Lookup
     )
     val aliases = Map(
       "fence" -> Include,

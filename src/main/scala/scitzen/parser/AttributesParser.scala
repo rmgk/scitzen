@@ -119,6 +119,9 @@ object AttributeDeparser {
 
   def quote(value: String, check: Text => Boolean): String =
 
+    // empty value is always represented using quotes for clarity
+    if value.isEmpty then return "\"\""
+
     def parses(str: String): Boolean =
       Try {
         (AttributesParser.attribute <~ de.rmgk.scip.end.orFail).opt.runInContext(Scx(str).copy(tracing = false))

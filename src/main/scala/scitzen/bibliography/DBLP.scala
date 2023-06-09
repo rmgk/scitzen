@@ -20,7 +20,7 @@ import scala.util.Using
 object DBLPApi:
   case class Outer(result: Result) derives ReadWriter
   case class Result(hits: Hits) derives ReadWriter
-  case class Hits(hit: List[Hit]) derives ReadWriter
+  case class Hits(hit: List[Hit] = Nil) derives ReadWriter
   case class Hit(info: Info) derives ReadWriter
   case class Info(
       key: String,
