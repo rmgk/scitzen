@@ -5,7 +5,7 @@ import scalatags.Text.StringFrag
 import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
-import scitzen.bibliography.BibEntry
+import scitzen.bibliography.{BibDB, BibEntry}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.extern.{ImageConverter, ImageTarget, Prism, ScalaCLI}
 import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
@@ -22,7 +22,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     sync: Option[ClSync],
     reporter: Reporter,
     preprocessed: PreprocessedResults,
-    bibliography: Map[String, BibEntry],
+    bibliography: BibDB,
 ):
 
   import bundle.all.*
@@ -282,11 +282,11 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             val inner = attrs.target
             ctx.katex(inner).map(res => Chain(math(raw(res))))
 
+          case BibQuery =>
+            inlineToHTML(bibliography.convert(mcro))(ctx)
+
           case Cite =>
-            val citations = attrs.target.split(",").toList.map { bibid =>
-              val trimmed = bibid.trim
-              trimmed -> bibliography.get(trimmed)
-            }
+            val citations = bibliography.bibkeys(mcro).map(k => k -> bibliography.entries.get(k))
             val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
               case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
               case (bibid, None) =>

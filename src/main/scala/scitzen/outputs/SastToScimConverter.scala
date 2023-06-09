@@ -65,7 +65,7 @@ object SastToScimConverter:
 
   def convertBlock(sb: Block): Chain[String] =
     val (remattr, command: String) = sb.attributes.raw.headOption match
-      case Some(Positional(_, Some(value))) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), value)
+      case Some(Positional(_, value)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), value)
       case _                                => (sb.attributes, "")
     sb.content match
 

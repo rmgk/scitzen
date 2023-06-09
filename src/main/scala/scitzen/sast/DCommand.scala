@@ -14,12 +14,14 @@ enum DCommand {
   case Ref
   case Lookup
   case Raw
+  case BibQuery
   case Other(str: String)
 }
 
 object DCommand {
   val (parseMap, printMap) = {
     val standard = List(
+      "bibq"    -> BibQuery,
       "cite"    -> Cite,
       "comment" -> Comment,
       "def"     -> Def,

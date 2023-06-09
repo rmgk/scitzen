@@ -84,11 +84,11 @@ sealed trait Attribute {
 
 object Attribute {
   def apply(id: String, value: String): Attribute =
-    if (id.isBlank) Positional(Text(List(InlineText(value))), Some(value)) else Plain(id, value)
+    if (id.isBlank) Positional(Text(List(InlineText(value))), value) else Plain(id, value)
 
-  case class Positional(text: Text, string: Option[String]) extends Attribute
+  case class Positional(text: Text, string: String) extends Attribute
   object Positional {
-    def apply(string: String): Positional = Positional(Text(Seq(InlineText(string))), Some(string))
+    def apply(string: String): Positional = Positional(Text(Seq(InlineText(string))), string)
   }
 
   case class Plain(id: String, value: String)      extends Attribute

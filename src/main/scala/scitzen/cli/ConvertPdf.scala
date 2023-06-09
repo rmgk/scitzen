@@ -1,5 +1,6 @@
 package scitzen.cli
 
+import scitzen.bibliography.BibDB
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Hashes, ImageConverter, Latexmk}
 import scitzen.generic.{PreprocessedResults, Project}
@@ -15,6 +16,7 @@ object ConvertPdf:
   def convertToPdf(
       project: Project,
       preprocessed: PreprocessedResults,
+    bibDB: BibDB,
   ): Unit =
     preprocessed.articles
       .filter(_.header.attributes.named.contains("texTemplate"))
@@ -24,7 +26,8 @@ object ConvertPdf:
           article.sourceDoc.file,
           article.sourceDoc.reporter,
           preprocessed,
-          article.named
+          article.named,
+          bibDB
         )
 
         val resultContext =

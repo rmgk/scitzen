@@ -6,7 +6,7 @@ import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Article, Document, Project, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Positional
-import scitzen.sast.DCommand.{Cite, Image, Include}
+import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include}
 
 import java.nio.file.Path
 
@@ -91,8 +91,7 @@ class SastToSastConverter(document: Document, project: Project):
         val target          = SastRef(cwf, ublock, None)
         refAliases(resctx, aliases, target).ret(ublock)
     val refblock      = refctx.data
-    val refattributes = refblock.attributes
-    val ublock        = makeAbsolute(refattributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
+    val ublock        = makeAbsolute(refblock.attributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
     ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
@@ -131,7 +130,7 @@ class SastToSastConverter(document: Document, project: Project):
       abs.map(project.relativizeToProject).map { rel =>
         if select == "" then
           Attributes(attributes.raw.map {
-            case Positional(text, Some(value)) if value == attributes.target => Attribute("", rel.toString)
+            case Positional(text, value) if value == attributes.target => Attribute("", rel.toString)
             case other                                                       => other
           })
         else attributes.updated(select, rel.toString)
@@ -159,7 +158,7 @@ class SastToSastConverter(document: Document, project: Project):
       case Image =>
         val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))(mcro.prov)
         ctx.addImage(enhanced).ret(enhanced)
-      case Cite =>
+      case Cite | BibQuery =>
         val res =
           val style = mcro.attributes.named.get("style")
           if style.contains("name") then

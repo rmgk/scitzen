@@ -1,6 +1,7 @@
 package scitzen.outputs
 
 import de.rmgk.Chain
+import scitzen.bibliography.BibDB
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, DocumentDirectory, PreprocessedResults, Project, References, Reporter, SastRef}
@@ -35,6 +36,7 @@ class SastToTexConverter(
     reporter: Reporter,
     preprocessedResults: PreprocessedResults,
     settings: Map[String, String],
+  bibDB: BibDB,
 ):
 
   val cwd = cwf.getParent
@@ -120,7 +122,7 @@ class SastToTexConverter(
                   ) // TODO: maybe a bit hacky, docs have the unmodified AST ...
             res match
               case Some(doc) =>
-                new SastToTexConverter(project, doc.file, doc.reporter, preprocessedResults, settings)
+                new SastToTexConverter(project, doc.file, doc.reporter, preprocessedResults, settings, bibDB)
                   .sastSeqToTex(doc.sast)(ctx)
 
               case None =>
@@ -246,7 +248,7 @@ class SastToTexConverter(
               Ref,
               Attributes(
                 Seq(
-                  Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(mcro.prov))), None),
+                  Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(mcro.prov))), ""),
                   Plain("style", "plain"),
                   Positional(s"rule-${attributes.target}")
                 )
@@ -262,6 +264,7 @@ class SastToTexConverter(
           case Other("partition") =>
             inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\part{${str}}")
 
+          case BibQuery => inlineToTex(bibDB.convert(mcro))(ctx)
           case Cite =>
             val cmndCtx = attributes.named.get("style") match
               case Some("author") => ctx.ret("citet")

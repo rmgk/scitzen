@@ -8,7 +8,7 @@ import com.github.plokhotnyuk.jsoniter_scala.core.*
 import de.undercouch.citeproc.output.Bibliography
 import scalatags.Text.all.raw
 import scalatags.Text.tags2.style
-import scitzen.bibliography.{BibEntry, Bibtex}
+import scitzen.bibliography.{BibDB, BibEntry, Bibtex}
 import scitzen.cli.ScitzenCommandline.ClSync
 
 import math.Ordering.Implicits.seqOrdering
@@ -38,7 +38,7 @@ object ConvertHtml:
       project: Project,
       sync: Option[ClSync],
       preprocessed: PreprocessedResults,
-      bibliography: Map[String, BibEntry]
+      bibDB: BibDB
   ): Unit =
 
     val katexmapfile = project.cacheDir.resolve("katexmap.json")
@@ -78,7 +78,7 @@ object ConvertHtml:
               katexmap,
               KatexLibrary(article.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
             ),
-            bibliography
+            bibDB
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
 
@@ -101,7 +101,7 @@ object ConvertHtml:
       sync = None,
       reporter = _ => "",
       preprocessed = preprocessed,
-      bibliography = Map.empty
+      bibliography = BibDB.empty
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(pathManager.articleOutputDir.relativize(cssfile).toString, cssstring)
@@ -138,7 +138,7 @@ object ConvertHtml:
       nlp: Option[NLP],
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
-    bibliography: Map[String, BibEntry]
+      bibliography: BibDB
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(

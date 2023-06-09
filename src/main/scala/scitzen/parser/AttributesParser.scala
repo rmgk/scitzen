@@ -80,7 +80,7 @@ object AttributesParser {
     val begin    = scx.index
     val mtxt     = text.run
     val contents = scx.str(begin, scx.index)
-    scitzen.sast.Attribute.Positional(mtxt, Some(contents))
+    scitzen.sast.Attribute.Positional(mtxt, contents)
   }.trace("pos attr")
 
   val attribute: Scip[Attribute] = (namedAttribute | positionalAttribute).trace("attribute")

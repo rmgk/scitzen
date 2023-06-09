@@ -60,15 +60,17 @@ object DBLP:
   val CambridgeCoreRx = """//www\.cambridge\.org/""".r.unanchored
   val DagstuhlRx      = """//drops\.dagstuhl\.de/""".r.unanchored
 
-  def search(q: String) =
+  def search(q: String): List[DBLPApi.Info] =
     val res = client.send(
       query(s"https://dblp.org/search/publ/api", Map("format" -> "json", "q" -> q)),
       BodyHandlers.ofString()
     )
     println(s"json: ${res.body()}")
-    val json = upickle.default.read[DBLPApi.Outer](res.body())
-    json.result.hits.hit.map { h =>
-      val info   = h.info
+    upickle.default.read[DBLPApi.Outer](res.body()).result.hits.hit.map(_.info)
+
+  def downloadPDFAndFormat(q: String) =
+    val hits = search(q)
+    hits.map { info =>
       val format = lookupFormatted(info.key)
       println(s"info url: ${info.ee}")
       val pdfpage = client.send(query(info.ee), BodyHandlers.ofInputStream())
@@ -80,15 +82,10 @@ object DBLP:
         case CambridgeCoreRx() => soup.select("meta[name=citation_pdf_url]").attr("content")
         case DagstuhlRx()      => soup.select("table:contains(pdf-format) a[itemprop=url]").attr("href")
       println(s"pdfurl: $pdfurl")
-      val pdfres   = client.send(query(pdfurl), BodyHandlers.ofInputStream())
       val filename = Format.sluggify(if info.title.endsWith(".") then info.title.dropRight(1) else info.title)
       val pdffile  = Path.of(s"$filename.pdf")
+      client.send(query(pdfurl), BodyHandlers.ofFile(pdffile))
 
-      Using.Manager { use =>
-        val pdfbody = use(pdfres.body())
-        val output  = use(Files.newOutputStream(pdffile))
-        pdfbody.transferTo(output)
-      }
       val sha1 = scitzen.extern.Hashes.sha1hex(Files.readAllBytes(pdffile))
       s"${format.head}\nfile = $sha1"
     }

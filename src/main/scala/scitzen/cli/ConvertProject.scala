@@ -1,6 +1,6 @@
 package scitzen.cli
 
-import scitzen.bibliography.{BibEntry, Bibtex, DBLP}
+import scitzen.bibliography.{BibDB, BibEntry, BibManager, Bibtex, DBLP}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project}
@@ -47,37 +47,8 @@ object ConvertProject:
     val toHtml = project.config.outputType.contains("html")
     val toPdf  = project.config.outputType.contains("pdf")
 
-    val dblpcachePath: Path = project.bibfileDBLPcache
-    def parsebib(): Map[String, BibEntry] =
-      (if Files.exists(dblpcachePath) then
-         Bibtex.makeBib(dblpcachePath)
-       else
-         Map.empty
-      ) ++
-      project.bibfile.map(Bibtex.makeBib).getOrElse(Map.empty)
-    val currentBib = parsebib()
-
-    val dblpFuture =
-      if toHtml || toPdf then
-        val oldbib = dblpcachePath
-
-        val citeKeys =
-          for
-            context   <- preprocessed.preprocessedCtxs.iterator
-            directive <- context.citations.iterator
-            citation  <- directive.attributes.target.split(',').iterator
-          yield citation.trim
-        val allCitations = citeKeys.toSet
-        val missing      = allCitations -- currentBib.keySet
-        val dblp         = missing.filter(_.startsWith("DBLP:"))
-        if dblp.nonEmpty then
-          scribe.info(s"scheduling download of ${dblp.size} missing citations")
-          Future:
-            dblp.flatMap: key =>
-              DBLP.lookup(key.stripPrefix("DBLP:")).map: res =>
-                Files.writeString(dblpcachePath, res, StandardCharsets.UTF_8, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
-        else Future.successful(())
-      else Future.successful(())
+    val bibres = BibManager(project).prefetch(preprocessed.preprocessedCtxs.iterator.flatMap(_.citations).toSet)
+    val dblpFuture = Future { bibres.runToFuture }.flatten
 
     ImageConverter.preprocessImages(
       project,
@@ -90,20 +61,20 @@ object ConvertProject:
       preprocessed
     )
 
+    val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
+
+
     if project.config.format.contains("content") then
       Format.formatContents(documentDirectory)
       scribe.info(s"formatted contents ${timediff()}")
     if project.config.format.contains("filename") then
       Format.formatRename(documentDirectory)
       scribe.info(s"formatted filenames ${timediff()}")
-    if !dblpFuture.isCompleted then
-      scribe.info(s"awaiting DBLP results")
-      Await.ready(dblpFuture, 10.seconds)
     if toHtml then
-      ConvertHtml.convertToHtml(project, sync, preprocessed, parsebib())
+      ConvertHtml.convertToHtml(project, sync, preprocessed, bibdb)
       scribe.info(s"generated html ${timediff()}")
     if toPdf then
-      ConvertPdf.convertToPdf(project, preprocessed)
+      ConvertPdf.convertToPdf(project, preprocessed, bibdb)
       scribe.info(s"generated pdfs ${timediff()}")
     if imageFileMap.isDefined then
       ImageReferences.listAll(project, documentDirectory, imageFileMap.get)
