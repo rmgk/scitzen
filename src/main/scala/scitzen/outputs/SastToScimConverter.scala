@@ -6,7 +6,7 @@ import scitzen.bibliography.BibDB
 import scitzen.parser.{AttributeDeparser, AttributesParser, Parse}
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
-import scitzen.sast.DCommand.Comment
+import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ArraySeq
@@ -106,6 +106,7 @@ class SastToScimConverter(bibDB: BibDB):
   def macroToScim(mcro: Directive, spacy: Boolean = false): String =
     mcro match
       case Directive(Comment, attributes) => s":%${attributes.target}"
+      case Directive(BibQuery, _) => macroToScim(bibDB.convert(mcro))
       case _ =>
         s":${DCommand.printMacroCommand(mcro.command)}${attributeConverter.convert(mcro.attributes, spacy, force = true)}"
 
