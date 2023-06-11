@@ -25,7 +25,7 @@ object DBLPApi:
   case class Info(
       key: String,
       title: String,
-      ee: String
+      ee: String = ""
   ) derives ReadWriter
   case class Authors(author: List[Author]) derives ReadWriter
   case class Author(`@pid`: String, text: String) derives ReadWriter
@@ -65,7 +65,7 @@ object DBLP:
       query(s"https://dblp.org/search/publ/api", Map("format" -> "json", "q" -> q)),
       BodyHandlers.ofString()
     )
-    println(s"json: ${res.body()}")
+    //println(s"json: ${res.body()}")
     upickle.default.read[DBLPApi.Outer](res.body()).result.hits.hit.map(_.info)
 
   def downloadPDFAndFormat(q: String) =
