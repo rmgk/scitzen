@@ -68,7 +68,7 @@ case class BibDB(entries: Map[String, BibEntry], queried: Map[String, List[DBLPA
         case Positional(_, q) if q.trim == query.trim =>
           Positional(keys.mkString(", "))
         case other => other
-      })
+      } :+ Attribute("query", query))
     )(directive.prov)
   def bibkeys(directive: Directive): List[String] =
     directive.bibIds
