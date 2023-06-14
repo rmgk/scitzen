@@ -14,7 +14,7 @@
 \setotherlanguage{german}
 
 % fonts
-:{xetex fonts; default=}
+:{xetex fonts; default=""}
 
 % Memoir style
 \nouppercaseheads

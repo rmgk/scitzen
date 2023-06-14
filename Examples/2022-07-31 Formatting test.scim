@@ -11,4 +11,4 @@ I make my formats just for you
 
 :emph{test}
 
-:{failedLookup; default=}
+:{failedLookup; default=""}
