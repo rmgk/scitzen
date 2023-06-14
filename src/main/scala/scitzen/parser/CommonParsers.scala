@@ -3,7 +3,6 @@ package scitzen.parser
 import de.rmgk.scip.*
 import scitzen.sast.Prov
 
-import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 
 object CommonParsers {

@@ -1,16 +1,10 @@
 package scitzen.extern
 
-import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
-import scitzen.outputs.{Includes, SastToTextConverter}
-import scitzen.parser.Parse
-import scitzen.sast.{Attributes, Block, Fenced, Prov}
-
-import java.lang.ProcessBuilder.Redirect
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
-import java.nio.file.attribute.FileTime
-import scala.jdk.CollectionConverters.*
 import scitzen.extern.ImageTarget.*
+import scitzen.generic.Project
+import scitzen.sast.Attributes
+
+import java.nio.file.Path
 
 enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]):
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))

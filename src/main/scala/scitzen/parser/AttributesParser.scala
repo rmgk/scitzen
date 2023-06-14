@@ -6,7 +6,6 @@ import scitzen.parser.CommonParsers.*
 import scitzen.sast.Attribute.Positional
 
 import java.nio.charset.StandardCharsets
-import scala.annotation.tailrec
 import scala.util.matching.Regex
 import scala.util.{Success, Try}
 

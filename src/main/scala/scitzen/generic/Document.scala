@@ -3,8 +3,7 @@ package scitzen.generic
 import scitzen.sast.{Directive, Prov, Sast}
 import scitzen.compat.Logging.scribe
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 

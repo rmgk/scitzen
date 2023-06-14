@@ -8,7 +8,7 @@ import scitzen.sast.DCommand
 import scitzen.extern.ImageTarget
 import scitzen.compat.Logging.scribe
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 object ImageReferences:
 
@@ -47,3 +47,4 @@ object ImageReferences:
         WriterConfig.withIndentionStep(2)
       )(rferenceRW)
     )
+    ()

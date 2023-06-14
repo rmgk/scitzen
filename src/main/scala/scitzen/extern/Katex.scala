@@ -1,8 +1,6 @@
 package scitzen.extern
 
-import java.lang.ProcessBuilder.Redirect
 import org.graalvm.polyglot.*
-import org.graalvm.polyglot.proxy.ProxyObject
 import scitzen.compat.Logging.scribe
 
 import scala.jdk.CollectionConverters.*

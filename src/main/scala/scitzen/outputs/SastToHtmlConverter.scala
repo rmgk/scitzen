@@ -8,7 +8,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.bibliography.{BibDB, BibEntry}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.extern.{ImageConverter, ImageTarget, Prism, ScalaCLI}
-import scitzen.generic.{Article, DocumentDirectory, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
+import scitzen.generic.{Article, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*

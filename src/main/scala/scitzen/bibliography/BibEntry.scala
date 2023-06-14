@@ -1,6 +1,6 @@
 package scitzen.bibliography
 
-import scalatags.Text.all.{Frag, a, cls, frag, href, p, s, stringFrag, given}
+import scalatags.Text.all.{Frag, a, cls, frag, href, p, stringFrag, given}
 
 case class Author(givenName: Option[String], familyName: Option[String]) {
   def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")

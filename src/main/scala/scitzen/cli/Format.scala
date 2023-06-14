@@ -36,6 +36,7 @@ object Format:
     if !java.util.Arrays.equals(resultBytes, originalContent) then
       scribe.info(s"formatting ${file.getFileName}")
       Files.write(file, resultBytes)
+      ()
 
   def renameFileFromHeader(f: Path, sdoc: Article): Unit =
     val newName: String = canonicalName(sdoc) + ".scim"
@@ -43,6 +44,7 @@ object Format:
     if newName != f.getFileName.toString then
       scribe.info(s"rename ${f.getFileName} to $newName")
       Files.move(f, f.resolveSibling(newName))
+      ()
 
   def canonicalName(header: Article): String =
     val title = sluggify(header.filename.getOrElse(header.title))

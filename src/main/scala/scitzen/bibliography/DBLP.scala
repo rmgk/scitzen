@@ -3,19 +3,16 @@ package scitzen.bibliography
 import org.jsoup.Jsoup
 import scitzen.cli.Format
 
-import java.net.{CookieHandler, CookieManager, URI, URLEncoder}
+import java.net.{CookieManager, URI, URLEncoder}
 import java.net.http.{HttpClient, HttpRequest}
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.charset.StandardCharsets
 import java.time.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.FutureConverters.*
 import upickle.default.ReadWriter
 
-import java.io.OutputStream
 import java.net.http.HttpClient.Redirect
-import java.nio.file.{Files, Path, Paths}
-import scala.util.Using
+import java.nio.file.{Files, Path}
 
 object DBLPApi:
   case class Outer(result: Result) derives ReadWriter

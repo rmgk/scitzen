@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.bibliography.BibDB
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, DocumentDirectory, PreprocessedResults, Project, References, Reporter, SastRef}
+import scitzen.generic.{Article, PreprocessedResults, Project, References, Reporter, SastRef}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode

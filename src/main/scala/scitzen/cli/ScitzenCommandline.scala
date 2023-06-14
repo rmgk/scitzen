@@ -1,15 +1,12 @@
 package scitzen.cli
 
-import scitzen.cli.ConvertProject.executeConversions
-import scitzen.extern.{ImageConverter, ImageTarget}
-import scitzen.generic.{PreprocessedResults, Project, ProjectConfig}
-import scopt.OParser
-import scitzen.compat.Logging.scribe
 import de.rmgk.options.*
+import scitzen.cli.ConvertProject.executeConversions
+import scitzen.compat.Logging.scribe
+import scitzen.generic.Project
+import scopt.OParser
 
-import java.awt.datatransfer.ClipboardOwner
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 object ScitzenCommandline {
 

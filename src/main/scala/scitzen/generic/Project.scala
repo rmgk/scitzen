@@ -1,11 +1,10 @@
 package scitzen.generic
 
-import scitzen.bibliography.{BibEntry, Bibtex}
 import scitzen.sast.{Prov, Text}
 import scitzen.compat.Logging.scribe
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
 

@@ -64,6 +64,7 @@ object ConvertPdf:
             StandardOpenOption.CREATE,
             StandardOpenOption.APPEND
           )
+          ()
 
         val templateSettings =
           project.config.definitions ++ article.header.attributes.named ++ List(
@@ -87,5 +88,7 @@ object ConvertPdf:
           val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
           Files.deleteIfExists(targetfile)
           res.foreach(r => Files.createLink(targetfile, r))
-          if res.isDefined then Files.writeString(successfile, scripthash)
+          if res.isDefined then
+            Files.writeString(successfile, scripthash)
+            ()
       }

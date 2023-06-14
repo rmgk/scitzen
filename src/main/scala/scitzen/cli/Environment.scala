@@ -1,13 +1,12 @@
 package scitzen.cli
 
 import dev.dirs.ProjectDirectories
-import dev.dirs.BaseDirectories
-import dev.dirs.UserDirectories
 import scitzen.generic.ProjectConfig
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
+import scala.annotation.unused
 
-class Environment(globalConfigDir: Path, globalCacheDir: Path, globalConfig: Option[ProjectConfig]) {}
+class Environment(@unused globalConfigDir: Path, @unused globalCacheDir: Path, @unused globalConfig: Option[ProjectConfig]) {}
 
 object Environment {
   def apply(): Environment =

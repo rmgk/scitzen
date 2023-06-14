@@ -1,17 +1,13 @@
 package scitzen.outputs
 
 import de.rmgk.Chain
-import de.rmgk.scip.Scx
 import scitzen.bibliography.BibDB
-import scitzen.parser.{AttributeDeparser, AttributesParser, Parse}
+import scitzen.parser.{AttributeDeparser, AttributesParser}
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
 import scitzen.sast.DCommand.{BibQuery, Comment}
 
-import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ArraySeq
-import scala.util.Try
-import scala.util.matching.Regex
 
 class SastToScimConverter(bibDB: BibDB):
 

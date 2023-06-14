@@ -35,4 +35,5 @@ case class HtmlPathManager(cwf: Path, project: Project, articleOutputDir: Path):
           scribe.info(s"hardlink $img to $target")
           Files.createDirectories(target.getParent)
           Files.createLink(target, img)
+          ()
     }

@@ -1,7 +1,8 @@
 package scitzen.outputs
 
 import scalatags.Text.all.*
-import scitzen.sast.{Attributes, Section, Text, Prov}
+import scitzen.sast.Section
+
 import math.Ordering.Implicits.infixOrderingOps
 
 object HtmlToc:

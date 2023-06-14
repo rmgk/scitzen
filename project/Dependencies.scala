@@ -12,7 +12,7 @@ object Dependencies {
     val jol           = "0.17"
     val jsoniterScala = "2.23.1"
     val jsoup         = "1.16.1"
-    val munit         = "1.0.0-M7"
+    val munit         = "1.0.0-M8"
     val okHttp        = "4.10.0"
     val pprint        = "0.8.0"
     val quicklens     = "1.9.0"

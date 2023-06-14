@@ -1,25 +1,20 @@
 package scitzen.cli
 
+import com.github.plokhotnyuk.jsoniter_scala.core.*
+import scitzen.bibliography.BibDB
+import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.contexts.ConversionContext
-import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
+import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
-import com.github.plokhotnyuk.jsoniter_scala.core.*
-import de.undercouch.citeproc.output.Bibliography
-import scalatags.Text.all.raw
-import scalatags.Text.tags2.style
-import scitzen.bibliography.{BibDB, BibEntry, Bibtex}
-import scitzen.cli.ScitzenCommandline.ClSync
-
-import math.Ordering.Implicits.seqOrdering
-import scitzen.extern.Katex.mapCodec
 import scitzen.sast.{Attributes, Prov, Section}
 
 import java.io.ByteArrayOutputStream
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.nio.file.{Files, Path}
 import scala.annotation.tailrec
-import scala.util.{Try, Using}
+import scala.math.Ordering.Implicits.seqOrdering
+import scala.util.Using
 
 object ConvertHtml:
 
@@ -114,6 +109,7 @@ object ConvertHtml:
         None
       )
     Files.writeString(pathManager.articleOutputDir.resolve("index.html"), res)
+    ()
 
   private def loadKatex(katexmapfile: Path): Map[String, String] =
     Using(Files.newInputStream(katexmapfile)) { is => readFromStream[Map[String, String]](is) }.getOrElse(Map())
@@ -128,6 +124,7 @@ object ConvertHtml:
           WriterConfig.withIndentionStep(2)
         )(mapCodec)
       )
+      ()
 
   def convertArticle(
       article: Article,
@@ -169,7 +166,7 @@ object ConvertHtml:
     val citations =
       if bibEntries.isEmpty then Nil
       else
-        import scalatags.Text.all.{SeqFrag, h2, id, li, stringAttr, stringFrag, ul, cls}
+        import scalatags.Text.all.{SeqFrag, cls, h2, id, li, stringAttr, stringFrag, ul}
         List(
           h2(bibname, id := bibid),
           ul(cls         := "bibliography", bibEntries.map { be => li(id := be.id, be.formatHtmlCitation) })
@@ -179,7 +176,7 @@ object ConvertHtml:
       convertedArticleCtx.sections.reverse ++ bibsection
     )
 
-    import scalatags.Text.all.{SeqFrag, a, href, stringAttr, stringFrag, Frag, frag, div}
+    import scalatags.Text.all.{Frag, SeqFrag, a, frag, href, stringAttr, stringFrag}
 
     val res = article.header.attributes.named.get("htmlTemplate") match
       case None =>

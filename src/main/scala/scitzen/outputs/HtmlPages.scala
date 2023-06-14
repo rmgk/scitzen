@@ -1,13 +1,15 @@
 package scitzen.outputs
 
-import scalatags.Text.{Frag, Tag, RawFrag}
-import scalatags.Text.all.{SeqFrag, OptionNode}
+import scalatags.Text.{Frag, RawFrag, Tag}
+import scalatags.Text.all.{OptionNode, SeqFrag}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel}
 import scalatags.Text.implicits.{raw, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{aside, main, nav, title}
 
-class HtmlPages(cssPath: String, fullCss: String):
+import scala.annotation.unused
+
+class HtmlPages(cssPath: String, @unused fullCss: String):
 
   def tHead(titled: String): Tag =
     head(

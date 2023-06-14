@@ -1,11 +1,8 @@
 package scitzen.extern
 
-import com.github.plokhotnyuk.jsoniter_scala.core.writeToString
 import org.graalvm.polyglot.*
-import org.graalvm.polyglot.proxy.ProxyObject
 
-import java.io.{ByteArrayOutputStream, File}
-import java.lang.ProcessBuilder.Redirect
+import java.io.{ByteArrayOutputStream}
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
@@ -13,7 +10,6 @@ object Prism:
 
   val prismcontext =
     val engine: Engine = Engine.newBuilder().build()
-    val start          = System.nanoTime()
     Context.newBuilder("js").engine(engine).build()
 
   lazy val highlightVal = {

@@ -4,7 +4,7 @@ import org.graalvm.polyglot.*
 import org.graalvm.polyglot.proxy.ProxyArray
 import scitzen.sast.Attributes
 
-import java.io.{BufferedWriter, ByteArrayOutputStream, PrintStream, PrintWriter}
+import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
 import scala.util.Try
 

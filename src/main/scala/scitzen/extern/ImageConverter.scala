@@ -6,11 +6,9 @@ import scitzen.outputs.{Includes, SastToTextConverter}
 import scitzen.sast.{Attributes, Block, Fenced, Prov}
 import scitzen.parser.Parse
 
-import java.io.IOError
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.nio.file.attribute.FileTime
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
@@ -30,7 +28,7 @@ object ImageConverter {
     }.toMap
 
     blocks.valuesIterator.foreach { (block, doc) =>
-      converters.foreach { (target, ic) =>
+      converters.foreach { (_, ic) =>
         ic.convertBlock(doc.file, block)
       }
     }
@@ -41,9 +39,10 @@ object ImageConverter {
 
     macros.valuesIterator.foreach { (mcro, doc) =>
       val file = project.resolve(doc.file.getParent, mcro.attributes.target)
-      converters.foreach { (t, ic) =>
+      converters.foreach { (t, _) =>
         if t.requiresConversion(mcro.attributes.target) && file.isDefined then
           converters(t).applyConversion(file.get, mcro.attributes).map(f => (t -> f))
+          ()
       }
     }
   end preprocessImages
@@ -137,6 +136,7 @@ class ImageConverter(
       new ProcessBuilder(command.genCommand(file, targetfile).asJava)
         .inheritIO().start().waitFor()
       Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(file))
+      ()
     targetfile
 
   def convertBlock(cwd: Path, tlb: Block): Option[Path] =

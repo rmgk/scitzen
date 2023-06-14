@@ -10,7 +10,6 @@ import scitzen.sast.{Attribute, Attributes, Directive}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
 import scitzen.sast.DCommand.{BibQuery, Cite}
-import scala.util.chaining.given
 
 class BibManager(project: Project) {
 
@@ -41,8 +40,8 @@ class BibManager(project: Project) {
     val dblp         = missing.filter(_.startsWith("DBLP:"))
     if dblp.nonEmpty then
       Logging.scribe.info(s"scheduling download of ${dblp.size} missing citations")
-      dblp.flatMap: key =>
-        DBLP.lookup(key.stripPrefix("DBLP:")).map: res =>
+      dblp.foreach: key =>
+        DBLP.lookup(key.stripPrefix("DBLP:")).foreach: res =>
           Files.writeString(
             dblpcachePath,
             res,

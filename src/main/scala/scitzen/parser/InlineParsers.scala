@@ -2,7 +2,6 @@ package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.parser.CommonParsers.*
-import scitzen.parser.DirectiveParsers.{commentStart, syntaxStart}
 import scitzen.sast.DCommand.Comment
 import scitzen.sast.{Attribute, Directive, Inline, InlineText}
 

@@ -1,14 +1,10 @@
 package scitzen.bibliography
 
-import de.undercouch.citeproc.bibtex.{BibTeXConverter, BibTeXItemDataProvider}
+import de.undercouch.citeproc.bibtex.BibTeXConverter
 import de.undercouch.citeproc.csl.CSLItemData
-import de.undercouch.citeproc.helper.json.{StringJsonBuilder, StringJsonBuilderFactory}
-import org.jbibtex.{BibTeXDatabase, BibTeXEntry, BibTeXParser, Key, LaTeXParser, LaTeXPrinter}
-import scitzen.generic.Project
 
+import java.io.InputStream
 import java.nio.file.{Files, Path}
-import java.io.{FileInputStream, InputStream}
-import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.*
 import scala.math.Ordering.Implicits.seqOrdering
 import scala.util.Using

@@ -53,7 +53,6 @@ object DelimitedBlockParsers {
 
   def whitespaceLiteral: Scip[Block] = Scip {
     val (parsed, prov) = withProv(Scip {
-      val index = scx.index
       significantSpaceLine.rep.run
       val indentation = (significantVerticalSpaces.str <~ eol.lookahead.map(!_).orFail).run
       val start       = (untilI(eol)).dropstr.run

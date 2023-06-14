@@ -1,16 +1,15 @@
 package scitzen.cli
 
-import scitzen.bibliography.{BibDB, BibEntry, BibManager, Bibtex, DBLP}
+import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
+import scitzen.compat.Logging.scribe
 import scitzen.extern.{ImageConverter, ImageTarget}
 import scitzen.generic.{PreprocessedResults, Project}
-import scitzen.compat.Logging.scribe
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
-import scala.concurrent.{Await, Future}
+import java.nio.file.{Files, Path}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 
 object ConvertProject:
 
