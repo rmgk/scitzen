@@ -28,8 +28,8 @@ class PreprocessedResults(project: Project, documents: List[Document]):
       key -> all.flatMap(_.getOrElse(key, Nil))
     }.toMap
 
-  val articles: List[Article]     = preprocessedDocuments.flatMap(Article.articles)
-  val articleItems: List[Article] = preprocessedDocuments.flatMap(ArticleItem.items)
+  val articles: List[Article]    = preprocessedDocuments.flatMap(Article.articles)
+  val subArticles: List[Article] = preprocessedDocuments.flatMap(Subarticle.items)
 
   lazy val itemsAndArticlesByLabel: Map[String, Article] =
-    (articles ++ articleItems).map(a => (a.header.autolabel, a)).toMap
+    (articles ++ subArticles).map(a => (a.header.autolabel, a)).toMap

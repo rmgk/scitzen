@@ -3,7 +3,12 @@ package scitzen.generic
 import scitzen.parser.TimeParsers
 import scitzen.sast.{Sast, Section, ScitzenDateTime}
 
-case class Article(header: Section, content: List[Sast], sourceDoc: Document):
+case class Snippet(content: List[Sast], sourceDoc: Document)
+
+case class Article(header: Section, snippet: Snippet):
+
+  def content = snippet.content
+  def sourceDoc = snippet.sourceDoc
 
   lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
 
@@ -16,7 +21,7 @@ case class Article(header: Section, content: List[Sast], sourceDoc: Document):
 
   lazy val filename: Option[String] = named.get("filename")
 
-  def sast: List[Sast] = header :: content
+  def sast: List[Sast] = header :: snippet.content
 
 object Article:
   def notHeader(sast: Sast): Boolean =
@@ -30,12 +35,12 @@ object Article:
       rem match
         case (sec @ Section(_, "=", _)) :: rest =>
           val (cont, other) = rest.span(notHeader)
-          rec(other, Article(sec, cont, document) :: acc)
+          rec(other, Article(sec, Snippet(cont, document)) :: acc)
         case _ => acc
 
     rec(document.sast.dropWhile(notHeader), Nil)
 
-object ArticleItem:
+object Subarticle:
   def notHeader(sast: Sast): Boolean =
     sast match
       case Section(_, "==", _) => false
@@ -47,7 +52,7 @@ object ArticleItem:
       rem match
         case (sec @ Section(_, "==", _)) :: rest =>
           val (cont, other) = rest.span(a => notHeader(a) && Article.notHeader(a))
-          rec(other.dropWhile(notHeader), Article(sec, cont, document) :: acc)
+          rec(other.dropWhile(notHeader), Article(sec, Snippet(cont, document)) :: acc)
         case Nil           => acc
         case other :: rest => throw IllegalStateException(s"unexpected sast when looking for item: $other")
 

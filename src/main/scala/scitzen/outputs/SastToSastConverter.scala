@@ -3,7 +3,7 @@ package scitzen.outputs
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
-import scitzen.generic.{Article, Document, Project, SastRef}
+import scitzen.generic.{Article, Document, Project, SastRef, Snippet}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include}
@@ -24,7 +24,7 @@ class SastToSastConverter(document: Document, project: Project):
 
   def findArticle(ctx: Cta, self: Section): Option[Article] =
     (self +: ctx.sections).find(!Article.notHeader(_)).collect {
-      case sect @ Section(_, "=", _) => Article(sect, Nil, Document(cwf, Array(), Nil))
+      case sect @ Section(_, "=", _) => Article(sect, Snippet(Nil, Document(cwf, Array(), Nil)))
     }
 
   def ensureUniqueRef[A <: Sast](
@@ -90,8 +90,8 @@ class SastToSastConverter(document: Document, project: Project):
         val ublock          = block.copy(attributes = attr)
         val target          = SastRef(cwf, ublock, None)
         refAliases(resctx, aliases, target).ret(ublock)
-    val refblock      = refctx.data
-    val ublock        = makeAbsolute(refblock.attributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
+    val refblock = refctx.data
+    val ublock   = makeAbsolute(refblock.attributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
     ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
@@ -131,7 +131,7 @@ class SastToSastConverter(document: Document, project: Project):
         if select == "" then
           Attributes(attributes.raw.map {
             case Positional(text, value) if value == attributes.target => Attribute("", rel.toString)
-            case other                                                       => other
+            case other                                                 => other
           })
         else attributes.updated(select, rel.toString)
       }
