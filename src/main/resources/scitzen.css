@@ -126,6 +126,10 @@ h1, h2, h3, h4, h5, h6 {
 	/* for headers, we add padding instead, which works nicer with jumping to IDs */
 	padding-top: 1rem;
 	margin-bottom: 0.5rem;
+}
+
+h1, h2 {
+	border-bottom: var(--theme-border);
 
 	text-align: center;
 
@@ -135,10 +139,6 @@ h1, h2, h3, h4, h5, h6 {
 	width: min(100%, calc(var(--main-content-width) + var(--header-oversize)));
 	/* safe aligns left in case of overflow */
 	justify-self: safe center;
-}
-
-h1, h2 {
-	border-bottom: var(--theme-border);
 }
 
 h4 {
