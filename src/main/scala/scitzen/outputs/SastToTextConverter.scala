@@ -71,9 +71,7 @@ case class SastToTextConverter(
                       .convert(included.sast)
 
                   case None =>
-                    val pos = includes match
-                      case None => ""
-                      case Some(inc) => s" ${inc.includeResolver.byPath(inc.cwf).reporter(mcro)}"
+                    val pos = s" ${includeResolver.byPath(cwf).reporter(mcro)}"
                     scribe.error(s"unknown include ${attributes.target} in template ${cwf}$pos")
                     Nil
 
