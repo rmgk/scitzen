@@ -5,12 +5,14 @@ import scitzen.compat.Logging.scribe
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.util.Using
 
 case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
 
-  val cacheDir: Path  = root resolve config.cache
+  val cacheDir: Path = config.cache match
+    case None    => root resolve config.output resolve "cache"
+    case Some(p) => root resolve p
   val outputdir: Path = root resolve config.output
-  val nlpdir: Path    = root resolve config.stopwords
 
   lazy val bibfile: Option[Path]  = config.bibliography.flatMap(s => resolve(root, s))
   lazy val bibfileDBLPcache: Path = cacheDir.resolve("dblpcache.bib")
@@ -34,7 +36,7 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
     Some(res).filter(p => p.startsWith(root) && Files.isRegularFile(p))
 
 object Project:
-  val scitzenconfig: String = "scitzen.project/config"
+  val scitzenconfig: String = "scitzen.config"
 
   def findRoot(source: Path): Option[Path] =
     if Files.isRegularFile(source resolve scitzenconfig) then Some(source)
@@ -59,15 +61,16 @@ object Project:
     Files.isRegularFile(c) &&
     c.getFileName.toString.endsWith(".scim")
 
+  /** returs a list of .scim files starting at `source`. Does not follow symlinks and ignores files and folders starting with a . */
   def discoverSources(source: Path): List[Path] =
     import scala.jdk.CollectionConverters.*
-    source match
-      case f if Files.isRegularFile(f) => List(f)
-      case f if Files.isDirectory(f) =>
-        Files.walk(f).iterator().asScala.filter { c =>
-          isScim(c) &&
-          !f.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
-        }.toList
+    def hasDotComponent(c: Path): Boolean =
+      source.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
+    Using(Files.walk(source)) { stream =>
+      stream.iterator().asScala.filter { c =>
+        isScim(c) && !hasDotComponent(c)
+      }.toList
+    }.get
 
   def directory(root: Path): DocumentDirectory =
     scribe.debug(s"discovering sources in ${root}")

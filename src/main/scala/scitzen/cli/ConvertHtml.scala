@@ -5,11 +5,11 @@ import scitzen.bibliography.BibDB
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
+import scitzen.extern.ResourceUtil
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.sast.{Attributes, Prov, Section}
 
-import java.io.ByteArrayOutputStream
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
 import scala.annotation.tailrec
@@ -20,14 +20,7 @@ object ConvertHtml:
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  val stylesheet: Array[Byte] =
-    Option(getClass.getClassLoader.getResourceAsStream("scitzen.css")).map { rs =>
-      Using.resource(rs) { ars =>
-        val bo = new ByteArrayOutputStream(14000) // size estimate from file snapshot
-        ars.transferTo(bo)
-        bo.toByteArray
-      }
-    }.getOrElse(Files.readAllBytes(Path.of("scitzen.css")))
+  val stylesheet: Array[Byte] = ResourceUtil.load("scitzen.css")
 
   def convertToHtml(
       project: Project,
@@ -38,10 +31,7 @@ object ConvertHtml:
 
     val katexmapfile = project.cacheDir.resolve("katexmap.json")
 
-    val nlp: Option[NLP] =
-      Option.when(Files.isDirectory(project.nlpdir)) {
-        NLP.loadFrom(project.nlpdir)
-      }
+    val nlp: NLP = NLP.loadFromResources
 
     val pathManager =
       val articleOutput = project.outputdir.resolve("web")
@@ -132,7 +122,7 @@ object ConvertHtml:
       cssfile: Path,
       cssstring: String,
       sync: Option[ClSync],
-      nlp: Option[NLP],
+      nlp: NLP,
       preprocessed: PreprocessedResults,
       katexConverter: KatexConverter,
       bibliography: BibDB
@@ -189,7 +179,7 @@ object ConvertHtml:
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.language
-            .orElse(nlp.flatMap(_.language(article.content)))
+            .orElse(nlp.language(article.content))
         )
       case Some(templatePath) =>
         val content = SeqFrag(convertedArticleCtx.data.toList).render

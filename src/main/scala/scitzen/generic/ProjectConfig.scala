@@ -5,8 +5,7 @@ import scitzen.sast.{Attributes, Prov}
 
 case class ProjectConfig(
     output: String,
-    cache: String = "scitzen.cache",
-    stopwords: String = "scitzen.project",
+    cache: Option[String] = None,
     format: List[String] = Nil,
     outputType: List[String] = Nil,
     revealTemplate: Option[String] = None,
@@ -21,9 +20,8 @@ object ProjectConfig {
     val value = Parse.parseResult(content, AttributesParser.configFile, Prov())
     val attrs = Attributes(value)
     ProjectConfig(
-      output = attrs.named.getOrElse("output", "scitzen.out"),
-      cache = attrs.named.getOrElse("cache", "scitzen.cache"),
-      stopwords = attrs.named.getOrElse("stopwords", "scitzen.project"),
+      output = attrs.named.getOrElse("output", "output"),
+      cache = attrs.named.get("cache"),
       format = attrs.named.getOrElse("format", "").split(',').toList.map(_.trim),
       outputType = attrs.named.getOrElse("outputType", "").split(',').toList.map(_.trim),
       revealTemplate = attrs.named.get("revealTemplate"),

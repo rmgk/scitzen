@@ -1,10 +1,11 @@
 package scitzen.generic
 
+import scitzen.extern.ResourceUtil
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Sast
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.{FileVisitOption, Files, Path}
-
 import scala.jdk.CollectionConverters.*
 
 case class NLP(stopwords: Map[String, Set[String]]):
@@ -51,3 +52,13 @@ object NLP:
       lang -> words
     }.toMap
     NLP(stopwords)
+
+  def loadResource(name: String) =
+    getClass.getClassLoader.getResourceAsStream(name)
+
+  def loadFromResources: NLP =
+    val stopwords = List("de", "en").map: lang =>
+      val bytes = ResourceUtil.load(s"stopwords.$lang")
+      val words = new String(bytes, StandardCharsets.UTF_8).linesIterator.toSet
+      lang -> words
+    NLP(stopwords.toMap)
