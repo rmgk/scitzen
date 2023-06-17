@@ -2,21 +2,15 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
-import scitzen.extern.{Hashes, ITargetPrediction}
-import scitzen.generic.{Document, Project, SastRef}
+import scitzen.generic.{Document, SastRef}
 import scitzen.sast.*
 import scitzen.sast.DCommand.{BibQuery, Cite, Image}
 
-import java.nio.file.Path
-
-class SastToSastConverter(document: Document, fullSast: List[Sast], project: Project):
+class SastToSastConverter(document: Document, fullSast: List[Sast]):
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
   type Cta    = Ctx[?]
-
-  def cwf: Path        = document.path.absolute
-  val targetPrediction = ITargetPrediction(project, cwf.getParent)
 
   def run(): CtxCS = convertSeq(fullSast)(SastContext(()))
 
@@ -87,23 +81,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
           ublock.copy(content = Parsed(delimiter, bc.toList))(ublock.prov)
         )
 
-      case Fenced(text) =>
-//        val runctx =
-//          if ublock.command == "execute" && ublock.attributes.named.get("lang").contains("js") then
-//            val res = scitzen.extern.JsRunner().run(text, ublock.attributes)
-//            refctx.ret(ublock.copy(attributes = ublock.attributes.updated("exec result", res)))
-//          else refctx
-
-        val runblock = ublock
-
-        if runblock.attributes.named.contains("converter") then
-          val contentHash = Hashes.sha1hex(text)
-          val hashedBlock = runblock.copy(attributes = runblock.attributes.updated("content hash", contentHash))(runblock.prov)
-          val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))(hashedBlock.prov)
-          refctx.addConversionBlock(newBlock).ret(newBlock)
-        else refctx.ret(runblock)
-
-      case SpaceComment(_) => refctx.ret(ublock)
+      case SpaceComment(_) | Fenced(_) => refctx.ret(ublock)
 
   private def ensureSectionRef(sec: Section, ctx: Cta) = {
     val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
@@ -138,9 +116,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
 
   def convertMacro(mcro: Directive)(ctx: Cta): Ctx[Directive] =
     mcro.command match
-      case Image =>
-        val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))(mcro.prov)
-        ctx.addImage(enhanced).ret(enhanced)
+      case Image => ctx.addImage(mcro).ret(mcro)
       case Cite | BibQuery =>
         val res =
           val style = mcro.attributes.named.get("style")

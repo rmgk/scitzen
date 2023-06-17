@@ -30,7 +30,7 @@ object ArticleProcessing:
 
   def processArticles(doc: Document, project: Project): List[Article] =
     items(doc).map: art =>
-      val ctx = new SastToSastConverter(doc, art, project).run()
+      val ctx = new SastToSastConverter(doc, art).run()
       Article(ctx.data.toList, doc, ctx.ret(()), art)
 
   def headerType(sast: Sast) = sast match
