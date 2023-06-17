@@ -6,7 +6,7 @@ import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Document, Project, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Positional
-import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include}
+import scitzen.sast.DCommand.{BibQuery, Cite, Image}
 
 import java.nio.file.Path
 
@@ -146,12 +146,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
         case m: Directive           => convertMacro(m)(ctx).single
     }
 
-  def convertMacro(initial: Directive)(ctx: Cta): Ctx[Directive] =
-    val mcro =
-      initial.command match
-        case Image | Include =>
-          makeAbsolute(initial.attributes).fold(initial)(a => initial.copy(attributes = a)(initial.prov))
-        case _ => initial
+  def convertMacro(mcro: Directive)(ctx: Cta): Ctx[Directive] =
     mcro.command match
       case Image =>
         val enhanced = mcro.copy(attributes = targetPrediction.predictMacro(mcro.attributes))(mcro.prov)
