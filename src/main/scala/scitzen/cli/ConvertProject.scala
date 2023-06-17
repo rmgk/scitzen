@@ -3,7 +3,7 @@ package scitzen.cli
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.scribe
-import scitzen.extern.{ImageConverter, ImageTarget}
+import scitzen.extern.{BlockConverter, ImageConverter, ImageTarget}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project}
 
 import java.nio.file.{Files, Path}
@@ -47,6 +47,8 @@ object ConvertProject:
     val bibres     = BibManager(project).prefetch(articles.articles.flatMap(_.context.citations).toSet)
     val dblpFuture = Future { bibres.runToFuture }.flatten
 
+    val blockConversions = BlockConverter(project).apply(articles.articles)
+
     ImageConverter.preprocessImages(
       project,
       List(
@@ -66,7 +68,7 @@ object ConvertProject:
       Format.formatRename(articles)
       scribe.info(s"formatted filenames ${timediff()}")
     if toHtml then
-      ConvertHtml(project).convertToHtml(sync, articles, bibdb)
+      ConvertHtml(project, blockConversions).convertToHtml(sync, articles, bibdb)
       scribe.info(s"generated html ${timediff()}")
     if toPdf then
       ConvertPdf.convertToPdf(project, articles, bibdb)

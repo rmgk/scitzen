@@ -28,7 +28,7 @@ object ProjectConfig {
       texTemplate = attrs.named.get("texTemplate"),
       notes = attrs.named.get("notes"),
       bibliography = attrs.named.get("bibliography"),
-      definitions = attrs.nested.get("definitions").map(_.named).getOrElse(Map.empty)
+      definitions = attrs.nestedMap.get("definitions").map(_.named).getOrElse(Map.empty)
     )
   }
 }

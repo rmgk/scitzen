@@ -38,7 +38,8 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
 
   def convertSingle(sast: Sast)(ctx: Cta): Ctx[Sast] =
     sast match
-      case tlBlock: Block => convertBlock(tlBlock)(ctx)
+      case tlBlock: Block =>
+        convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _) =>
         val ctxWithRef = ensureSectionRef(sec, ctx)
@@ -71,7 +72,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
     // make all blocks labellable
     val refctx: Ctx[Block] = ensureBlockRef(block, ctx)
     val ublock             = refctx.data
-    ublock.content match
+    val resctx = ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
           .map(il => ublock.copy(content = Paragraph(Text(il.toList)))(ublock.prov))
@@ -82,6 +83,10 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
         )
 
       case SpaceComment(_) | Fenced(_) => refctx.ret(ublock)
+    if resctx.data.command == BCommand.Convert
+    then resctx.addConversionBlock(resctx.data)
+    else resctx
+
 
   private def ensureSectionRef(sec: Section, ctx: Cta) = {
     val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)

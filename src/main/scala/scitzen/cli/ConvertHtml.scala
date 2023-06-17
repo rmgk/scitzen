@@ -5,7 +5,7 @@ import scitzen.bibliography.BibDB
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.contexts.{ConversionContext, SastContext}
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
-import scitzen.extern.ResourceUtil
+import scitzen.extern.{BlockConversions, ResourceUtil}
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.sast.{Attributes, Prov, Section}
@@ -16,7 +16,7 @@ import scala.annotation.tailrec
 import scala.math.Ordering.Implicits.seqOrdering
 import scala.util.Using
 
-class ConvertHtml(project: Project):
+class ConvertHtml(project: Project, blockConversions: BlockConversions):
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
@@ -83,7 +83,8 @@ class ConvertHtml(project: Project):
         Nil
       ),
       preprocessed = preprocessed,
-      bibliography = BibDB.empty
+      bibliography = BibDB.empty,
+      blockConversions = blockConversions,
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString, cssstring)
@@ -129,6 +130,7 @@ class ConvertHtml(project: Project):
       sourceArticle = article.article,
       preprocessed = preprocessed,
       bibliography = bibliography,
+      blockConversions = blockConversions,
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 

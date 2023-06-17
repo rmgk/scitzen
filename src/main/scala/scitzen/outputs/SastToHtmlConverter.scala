@@ -6,10 +6,8 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.bibliography.{BibDB, BibEntry}
-import scitzen.extern.{ImageConverter, ImageTarget, Prism, ScalaCLI}
-import scitzen.generic.{
-  Article, ArticleDirectory, References, SastRef, TitledArticle
-}
+import scitzen.extern.{BlockConversions, ImageConverter, ImageTarget, Prism, ScalaCLI}
+import scitzen.generic.{Article, ArticleDirectory, References, SastRef, TitledArticle}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
@@ -22,12 +20,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     sourceArticle: Article,
     preprocessed: ArticleDirectory,
     bibliography: BibDB,
+    blockConversions: BlockConversions
 ):
 
   import bundle.all.*
   import bundle.tags2.{article, section, time, math}
 
-  val project = sourceArticle.sourceDoc.path.project
+  val project  = sourceArticle.sourceDoc.path.project
   val reporter = sourceArticle.sourceDoc.reporter
 
   type CtxCF  = ConversionContext[Chain[Frag]]
@@ -128,7 +127,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 sourceArticle.sourceDoc.resolve(attributes.target) match
                   case None => inlineValuesToHTML(List(mcro))(ctx)
                   case Some(file) =>
-                    convertSingle(Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(mcro.prov))(ctx)
+                    convertSingle(Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(mcro.prov))(
+                      ctx
+                    )
 
               case None =>
                 if attributes.target.endsWith(".scim") then
@@ -137,7 +138,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 else
                   preprocessed.itemsAndArticlesByLabel.get(attributes.target) match
                     case None =>
-                      scribe.error(s"unknown include article ${attributes.target}" + sourceArticle.sourceDoc.reporter(mcro.prov))
+                      scribe.error(
+                        s"unknown include article ${attributes.target}" + sourceArticle.sourceDoc.reporter(mcro.prov)
+                      )
                       println(preprocessed.itemsAndArticlesByLabel.iterator.map(_._1).foreach(println))
                       ctx.empty
                     case Some(article) =>
@@ -145,7 +148,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                         bundle,
                         article.article,
                         preprocessed,
-                        bibliography
+                        bibliography,
+                        blockConversions,
                       ).convertSeq(article.article.content)(ctx)
 
               case Some(other) =>
@@ -156,20 +160,25 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             inlineValuesToHTML(List(mcro))(ctx)
 
       case tLBlock: Block =>
-        val positiontype = tLBlock.attributes.legacyPositional.headOption
-        (positiontype, tLBlock.content) match
-          case (Some("quote"), Parsed(_, content)) =>
-            convertSeq(content)(ctx).mapc { innerHtml =>
-              blockquote(innerHtml.toList)
-            }
-          case _ =>
-            val prov = tLBlock.prov
-            convertBlock(tLBlock)(ctx).map { html =>
-              if prov.start <= syncPos && syncPos <= prov.end then
-                scribe.info(s"highlighting $syncPos: $prov")
-                div(id := "highlight") +: html
-              else html
-            }
+        if tLBlock.command == BCommand.Convert
+        then
+          blockConversions.mapping.keysIterator.foreach(println)
+          convertSeq(blockConversions.mapping(tLBlock))(ctx)
+        else
+          val positiontype = tLBlock.attributes.legacyPositional.headOption
+          (positiontype, tLBlock.content) match
+            case (Some("quote"), Parsed(_, content)) =>
+              convertSeq(content)(ctx).mapc { innerHtml =>
+                blockquote(innerHtml.toList)
+              }
+            case _ =>
+              val prov = tLBlock.prov
+              convertBlock(tLBlock)(ctx).map { html =>
+                if prov.start <= syncPos && syncPos <= prov.end then
+                  scribe.info(s"highlighting $syncPos: $prov")
+                  div(id := "highlight") +: html
+                else html
+              }
   end convertSingle
 
   def convertBlock(sBlock: Block)(ctx: Cta): CtxCF =
@@ -240,7 +249,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
         case SpaceComment(_) => ctx.empty
 
-    sBlock.attributes.nested.get("note").fold(innerCtx) { note =>
+    sBlock.attributes.nestedMap.get("note").fold(innerCtx) { note =>
       inlineValuesToHTML(note.targetT.inl)(innerCtx).map { content =>
         innerCtx.data :+ p(`class` := "marginnote", content.toList)
       }
@@ -312,7 +321,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             contentCtx.mapc(content => a(href := target)(content.toList))
 
           case Ref =>
-            val scope      = attrs.named.get("scope").flatMap(sourceArticle.sourceDoc.resolve).getOrElse(sourceArticle.sourceDoc.path)
+            val scope =
+              attrs.named.get("scope").flatMap(sourceArticle.sourceDoc.resolve).getOrElse(sourceArticle.sourceDoc.path)
             val candidates = References.filterCandidates(scope, preprocessed.labels.getOrElse(attrs.target, Nil))
 
             if candidates.sizeIs > 1 then

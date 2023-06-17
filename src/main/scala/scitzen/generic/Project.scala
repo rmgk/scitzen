@@ -42,6 +42,7 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
   lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
   lazy val bibfileDBLPcache: ProjectPath =  asProjectPath(cacheDir.resolve("dblpcache.bib"))
 
+  def cachePath(target: Path): ProjectPath = ProjectPath(this, cacheDir.resolve(target))
   def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this, target)
 
   def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =

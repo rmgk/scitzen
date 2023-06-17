@@ -201,7 +201,7 @@ class SastToTexConverter(
 
     if project.config.notes.contains("hide") then innerCtx
     else
-      tlblock.attributes.nested.get("note").fold(innerCtx) { note =>
+      tlblock.attributes.nestedMap.get("note").fold(innerCtx) { note =>
         inlineValuesToTex(note.targetT.inl)(innerCtx).map { (content: String) =>
           s"\\sidepar{$content}%" +: innerCtx.data
         }.useFeature("sidepar")

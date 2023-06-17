@@ -147,11 +147,13 @@ class ImageConverter(
     targetfile
 
   def convertBlock(cwd: Path, tlb: Block): Option[Path] =
-    val converter = tlb.attributes.named("converter")
-    val content   = tlb.content.asInstanceOf[Fenced].content
-    val templated = ImageConverter.applyTemplate(tlb.attributes, content, cwd, project, documentDirectory)
-    val hash      = tlb.attributes.named("content hash")
-    convertTemplated(converter, templated, project.cacheDir.resolve(hash), hash)
+    tlb.attributes.named.get("converter") match
+      case Some(converter) =>
+        val content   = tlb.content.asInstanceOf[Fenced].content
+        val templated = ImageConverter.applyTemplate(tlb.attributes, content, cwd, project, documentDirectory)
+        val hash      = tlb.attributes.named("content hash")
+        convertTemplated(converter, templated, project.cacheDir.resolve(hash), hash)
+      case None => None
 
   def convertTemplated(
       converter: String,
@@ -161,10 +163,6 @@ class ImageConverter(
   ): Option[Path] =
     try
       converter match
-        case "tex" =>
-          val pdffile = texconvert(templatedContent, dir, name)
-          if preferredFormat == "svg" || preferredFormat == "png" then Some(pdfToCairo(pdffile))
-          else Some(pdffile)
         case gr @ "graphviz" =>
           Some(graphviz(templatedContent, dir, name, preferredFormat))
         case "mermaid" =>
@@ -214,16 +212,4 @@ class ImageConverter(
       )
         .inheritIO().start().waitFor()
       scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-    target
-
-  def texconvert(content: String, dir: Path, name: String): Path =
-    val target = dir.resolve(name + ".pdf")
-    if Files.exists(target) then target
-    else
-      val texbytes = content.getBytes(StandardCharsets.UTF_8)
-      val dir      = target.getParent
-      Files.createDirectories(dir)
-      val texfile = dir.resolve(name + ".tex")
-      Files.write(texfile, texbytes)
-      Latexmk.latexmk(dir, name, texfile)
     target

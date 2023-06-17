@@ -43,7 +43,7 @@ object Section:
     Ordering.by(s => counts(s.prefix))
 
 case class Block(command: BCommand, attributes: Attributes, content: BlockType)(val prov: Prov) extends Sast {
-  override def toString: String = s"Block(${content.getClass.getSimpleName}, $content, $attributes)"
+  //override def toString: String = s"Block(${content.getClass.getSimpleName}, $content, $attributes)"
 }
 
 sealed trait BlockType
@@ -60,9 +60,10 @@ case class Attributes(raw: Seq[Attribute]) {
   lazy val named: Map[String, String] = raw.collect {
     case Plain(id, value) => (id, value)
   }.toMap
-  lazy val nested: Map[String, Attributes] = raw.collect {
+  lazy val nested: Seq[(String, Attributes)] = raw.collect {
     case Nested(id, attr) => (id, attr)
-  }.toMap
+  }
+  lazy val nestedMap: Map[String, Attributes] = nested.toMap
 
   lazy val legacyPositional: Seq[String] = positional.map(_.plainString)
   lazy val arguments: Seq[String]        = legacyPositional.dropRight(1)
@@ -86,6 +87,7 @@ case class Attributes(raw: Seq[Attribute]) {
 
 object Attributes {
   def target(string: String): Attributes = Attribute("", string).toAttributes
+  val emtpy = Attributes(Nil)
 }
 
 sealed trait Attribute {
