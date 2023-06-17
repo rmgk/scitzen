@@ -103,7 +103,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
         val runctx =
           if ublock.command == "execute" && ublock.attributes.named.get("lang").contains("js") then
             val res = scitzen.extern.JsRunner().run(text, ublock.attributes)
-            refctx.ret(ublock.copy(content = Fenced(res.toString)))
+            refctx.ret(ublock.copy(attributes = ublock.attributes.updated("exec result", res)))
           else refctx
 
         val runblock = runctx.data
