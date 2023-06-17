@@ -22,11 +22,14 @@ class HtmlPathManager(project: Project):
   def relativeArticleTarget(targetPost: Section): Path =
     articleOutputDir.relativize(articleOutputPath(targetPost))
 
-  def copyResources(resources: Iterable[(ProjectPath, Path)]) =
+  def copyResources(resources: Iterable[(ProjectPath, Path)]): Unit =
     resources.foreach {
       case (img, path) =>
         val target = articleOutputDir.resolve(path)
-        if !Files.exists(target) then
+        if !Files.exists(img.absolute) then
+          scribe.error(s"source image missing: ${img.absolute}")
+          ()
+        else if !Files.exists(target) then
           scribe.info(s"hardlink $img to $target")
           Files.createDirectories(target.getParent)
           Files.createLink(target, img.absolute)
