@@ -25,6 +25,9 @@ object ProjectPath:
 
 case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
 
+  require(root.isAbsolute, "project root must be absolute")
+  require(Files.isDirectory(root), "project root must be a directory")
+
   val cacheDir: Path = config.cache match
     case None    => root resolve config.output resolve "cache"
     case Some(p) => root resolve p
