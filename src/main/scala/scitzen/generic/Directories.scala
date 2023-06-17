@@ -56,7 +56,7 @@ object ArticleProcessing:
           rec(rest, (h :: body) :: acc)
         case other :: rest =>
           throw new IllegalStateException(s"unexpected sast when looking for item: $other")
-    rec(rest, Nil)
+    snip :: rec(rest, Nil)
 
   def isScim(c: Path): Boolean =
     Files.isRegularFile(c) &&
