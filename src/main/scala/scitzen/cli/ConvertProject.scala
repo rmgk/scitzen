@@ -47,7 +47,7 @@ object ConvertProject:
     val bibres     = BibManager(project).prefetch(articles.articles.flatMap(_.context.citations).toSet)
     val dblpFuture = Future { bibres.runToFuture }.flatten
 
-    val blockConversions = BlockConverter(project).apply(articles.articles)
+    val blockConversions = BlockConverter(project, articles).run()
 
     ImageConverter.preprocessImages(
       project,

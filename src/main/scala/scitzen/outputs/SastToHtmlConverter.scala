@@ -141,7 +141,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       scribe.error(
                         s"unknown include article ${attributes.target}" + sourceArticle.sourceDoc.reporter(mcro.prov)
                       )
-                      println(preprocessed.itemsAndArticlesByLabel.iterator.map(_._1).foreach(println))
                       ctx.empty
                     case Some(article) =>
                       new SastToHtmlConverter(
@@ -162,7 +161,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       case tLBlock: Block =>
         if tLBlock.command == BCommand.Convert
         then
-          blockConversions.mapping.keysIterator.foreach(println)
+          blockConversions.mapping.foreach(println)
           convertSeq(blockConversions.mapping(tLBlock))(ctx)
         else
           val positiontype = tLBlock.attributes.legacyPositional.headOption
