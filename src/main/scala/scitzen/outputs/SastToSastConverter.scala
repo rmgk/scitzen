@@ -47,12 +47,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
       case tlBlock: Block => convertBlock(tlBlock)(ctx)
 
       case sec @ Section(title, level, _) =>
-        val ctxWithRef =
-          val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
-          val (aliases, attr) = resctx.data
-          val ublock          = sec.copy(attributes = attr)(sec.prov)
-          val target          = SastRef(document.path, ublock, findArticle(ctx, sec))
-          refAliases(resctx, aliases, target).ret(ublock)
+        val ctxWithRef = ensureSectionRef(sec, ctx)
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
@@ -80,15 +75,8 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
 
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
     // make all blocks labellable
-    val refctx: Ctx[Block] = block.attributes.named.get("label") match
-      case None => ctx.ret(block)
-      case Some(ref) =>
-        val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
-        val (aliases, attr) = resctx.data
-        val ublock          = block.copy(attributes = attr)
-        val target          = SastRef(document.path, ublock, None)
-        refAliases(resctx, aliases, target).ret(ublock)
-    val ublock = refctx.data
+    val refctx: Ctx[Block] = ensureBlockRef(block, ctx)
+    val ublock             = refctx.data
     ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
@@ -117,6 +105,25 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
 
       case SpaceComment(_) => refctx.ret(ublock)
 
+  private def ensureSectionRef(sec: Section, ctx: Cta) = {
+    val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
+    val (aliases, attr) = resctx.data
+    val ublock          = sec.copy(attributes = attr)(sec.prov)
+    val target          = SastRef(document.path, ublock, findArticle(ctx, sec))
+    refAliases(resctx, aliases, target).ret(ublock)
+  }
+
+  private def ensureBlockRef(block: Block, ctx: Cta) = {
+    block.attributes.named.get("label") match
+      case None => ctx.ret(block)
+      case Some(ref) =>
+        val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
+        val (aliases, attr) = resctx.data
+        val ublock          = block.copy(attributes = attr)
+        val target          = SastRef(document.path, ublock, None)
+        refAliases(resctx, aliases, target).ret(ublock)
+  }
+  
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
 
