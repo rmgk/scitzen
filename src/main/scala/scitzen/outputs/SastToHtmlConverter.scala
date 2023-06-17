@@ -128,7 +128,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 sourceArticle.sourceDoc.resolve(attributes.target) match
                   case None => inlineValuesToHTML(List(mcro))(ctx)
                   case Some(file) =>
-                    convertSingle(Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)), mcro.prov))(ctx)
+                    convertSingle(Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(mcro.prov))(ctx)
 
               case None =>
                 if attributes.target.endsWith(".scim") then
@@ -335,7 +335,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 case sec @ Section(title, _, _) => inlineValuesToHTML(title.inl)(ctx).map { inner =>
                     Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.toList)(n => List(stringFrag(n)))))
                   }
-                case Block(_, attr, _, _) =>
+                case Block(_, attr, _) =>
                   val label = attr.named("label")
                   val name  = nameOpt.fold(label)(n => s"$n $label")
                   ctx.retc(a(href := s"$fileRef#$label", name))

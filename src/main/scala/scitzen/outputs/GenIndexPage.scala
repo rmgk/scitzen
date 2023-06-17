@@ -42,7 +42,7 @@ object GenIndexPage:
           val inner = cont(docs)
           List[Sast](
             Section(Text(List(InlineText(key))), prefix = "#", Attributes(Seq(Attribute("unique ref", key))))(Prov()),
-            Block(BCommand.Empty, Attributes(Nil), Parsed("", inner), Prov())
+            Block(BCommand.Empty, Attributes(Nil), Parsed("", inner))(Prov())
           )
       }
 

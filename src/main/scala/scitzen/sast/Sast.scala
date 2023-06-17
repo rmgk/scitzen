@@ -42,7 +42,7 @@ object Section:
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
     Ordering.by(s => counts(s.prefix))
 
-case class Block(command: BCommand, attributes: Attributes, content: BlockType, prov: Prov) extends Sast {
+case class Block(command: BCommand, attributes: Attributes, content: BlockType)(val prov: Prov) extends Sast {
   override def toString: String = s"Block(${content.getClass.getSimpleName}, $content, $attributes)"
 }
 

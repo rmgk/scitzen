@@ -29,7 +29,7 @@ object References:
   def getLabel(targetRef: SastRef): Option[String] =
     targetRef.sast match
       case sec: Section      => Some(sec.ref)
-      case Block(_, attr, _, _) => attr.named.get("unique ref")
+      case Block(_, attr, _) => attr.named.get("unique ref")
       case other =>
         scribe.error(s"can not refer to $other")
         None

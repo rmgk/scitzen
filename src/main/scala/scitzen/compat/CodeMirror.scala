@@ -20,7 +20,7 @@ object MirrorToSast {
       println(s"converting $content")
       val res = Paragraph(Text(content.map(convertInline)))
       println(s"to $res")
-      Block(BCommand.Empty, Attributes(Nil), res, Prov())
+      Block(BCommand.Empty, Attributes(Nil), res)(Prov())
   }
 
   def convertInline(value: C.Inline): Inline = value match {

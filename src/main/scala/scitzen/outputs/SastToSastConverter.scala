@@ -80,11 +80,11 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
     ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
-          .map(il => ublock.copy(content = Paragraph(Text(il.toList))): Sast)
+          .map(il => ublock.copy(content = Paragraph(Text(il.toList)))(ublock.prov))
 
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent)(refctx).map(bc =>
-          ublock.copy(content = Parsed(delimiter, bc.toList))
+          ublock.copy(content = Parsed(delimiter, bc.toList))(ublock.prov)
         )
 
       case Fenced(text) =>
@@ -98,8 +98,8 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
 
         if runblock.attributes.named.contains("converter") then
           val contentHash = Hashes.sha1hex(text)
-          val hashedBlock = runblock.copy(attributes = runblock.attributes.updated("content hash", contentHash))
-          val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))
+          val hashedBlock = runblock.copy(attributes = runblock.attributes.updated("content hash", contentHash))(runblock.prov)
+          val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))(hashedBlock.prov)
           refctx.addConversionBlock(newBlock).ret(newBlock)
         else refctx.ret(runblock)
 
@@ -119,11 +119,11 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
       case Some(ref) =>
         val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
         val (aliases, attr) = resctx.data
-        val ublock          = block.copy(attributes = attr)
+        val ublock          = block.copy(attributes = attr)(block.prov)
         val target          = SastRef(document.path, ublock, None)
         refAliases(resctx, aliases, target).ret(ublock)
   }
-  
+
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
 

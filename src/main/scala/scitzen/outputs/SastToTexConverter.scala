@@ -151,7 +151,7 @@ class SastToTexConverter(
             case BCommand.Figure =>
               val (figContent, caption) =
                 blockContent.lastOption match
-                  case Some(Block(_, _, Paragraph(content), _)) =>
+                  case Some(Block(_, _, Paragraph(content))) =>
                     val captionstr = inlineValuesToTex(content.inl)(ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>

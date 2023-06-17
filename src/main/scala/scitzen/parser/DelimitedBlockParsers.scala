@@ -27,7 +27,7 @@ object DelimitedBlockParsers {
     scitzen.sast.Block(
       BCommand.parse(command.getOrElse("")),
       Attributes(rawAttr),
-      blockContent,
+      blockContent)(
       if (stripRes.isEmpty) prov else prov.copy(indent = delimiter.length)
     )
   }.trace("make delimited")
@@ -69,7 +69,7 @@ object DelimitedBlockParsers {
         ) // Prov(index, indent = indentation.length))
       scitzen.sast.Parsed(indentation, sast)
     }).run
-    scitzen.sast.Block(BCommand.Empty, Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))
+    scitzen.sast.Block(BCommand.Empty, Attributes(Nil), parsed)(prov.copy(indent = parsed.delimiter.length))
   }
 
 }
