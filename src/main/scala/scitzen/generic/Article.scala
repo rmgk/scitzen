@@ -1,59 +1,20 @@
 package scitzen.generic
 
-import scitzen.parser.TimeParsers
-import scitzen.sast.{Sast, Section, ScitzenDateTime}
+import scitzen.contexts.SastContext
+import scitzen.sast.{Sast, Section}
 
-case class Snippet(content: List[Sast], sourceDoc: Document)
+case class Article(content: List[Sast], sourceDoc: Document, context: SastContext[Unit], prior: List[Sast]):
+  def titled: Option[Section] = content match
+    case (h @ Section(_, _ @ ("=" | "=="), _)) :: rest => Some(h)
+    case other                                         => None
 
-case class Article(header: Section, snippet: Snippet):
+  lazy val settings: Map[String, String] = titled match
+    case Some(sect) => sect.attributes.named
+    case None => Map.empty
 
-  def content = snippet.content
-  def sourceDoc = snippet.sourceDoc
-
-  lazy val language: Option[String] = header.attributes.named.get("language").map(_.trim)
-
-  lazy val date: Option[ScitzenDateTime] = header.attributes.named.get("date")
-    .map(v => TimeParsers.parseDate(v.trim))
-
-  lazy val title: String = header.title.plainString
-
-  lazy val named: Map[String, String] = header.attributes.named
-
-  lazy val filename: Option[String] = named.get("filename")
-
-  def sast: List[Sast] = header :: snippet.content
-
-object Article:
-  def notHeader(sast: Sast): Boolean =
-    sast match
-      case Section(_, "=", _) => false
-      case _                  => true
-
-  def articles(document: Document): List[Article] =
-    @scala.annotation.tailrec
-    def rec(rem: List[Sast], acc: List[Article]): List[Article] =
-      rem match
-        case (sec @ Section(_, "=", _)) :: rest =>
-          val (cont, other) = rest.span(notHeader)
-          rec(other, Article(sec, Snippet(cont, document)) :: acc)
-        case _ => acc
-
-    rec(document.sast.dropWhile(notHeader), Nil)
-
-object Subarticle:
-  def notHeader(sast: Sast): Boolean =
-    sast match
-      case Section(_, "==", _) => false
-      case _                   => true
-
-  def items(document: Document): List[Article] =
-    @scala.annotation.tailrec
-    def rec(rem: List[Sast], acc: List[Article]): List[Article] =
-      rem match
-        case (sec @ Section(_, "==", _)) :: rest =>
-          val (cont, other) = rest.span(a => notHeader(a) && Article.notHeader(a))
-          rec(other.dropWhile(notHeader), Article(sec, Snippet(cont, document)) :: acc)
-        case Nil           => acc
-        case other :: rest => throw IllegalStateException(s"unexpected sast when looking for item: $other")
-
-    rec(document.sast.dropWhile(notHeader), Nil)
+case class TitledArticle(header: Section, article: Article):
+  def body: List[Sast]           = article.content.tail
+  def named: Map[String, String] = header.attributes.named
+  def title                      = header.title
+  def full = header.prefix == "="
+  def date = header.date

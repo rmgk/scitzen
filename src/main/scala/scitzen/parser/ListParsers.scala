@@ -55,7 +55,7 @@ object ListParsers {
     private def otherList(split: Seq[(ParsedListItem, Seq[ParsedListItem])]): Slist = {
       val listItems = split.map {
         case (item, children) =>
-          val itemSast    = Parse.inlineUnwrap(item.itemText.getBytes(StandardCharsets.UTF_8), item.prov)
+          val itemSast    = Parse.inlineUnwrap(item.itemText.getBytes(StandardCharsets.UTF_8))
           val contentSast = item.content
           val childSasts  = if (children.isEmpty) None else Some(listtoSast(children))
           ListItem(item.marker, Text(itemSast), contentSast.orElse(childSasts))

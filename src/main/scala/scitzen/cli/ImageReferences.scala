@@ -2,9 +2,7 @@ package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.generic.{DocumentDirectory, Project}
-import scitzen.outputs.SastToSastConverter
-import scitzen.sast.DCommand
+import scitzen.generic.{ArticleDirectory, Project}
 import scitzen.extern.ImageTarget
 import scitzen.compat.Logging.scribe
 
@@ -15,30 +13,24 @@ object ImageReferences:
   case class Reference(file: String, start: Int, end: Int)
   implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
-  def listAll(project: Project, documentDirectory: DocumentDirectory, output: Path): Unit =
-    val fileImageMap: Map[String, List[Reference]] = documentDirectory.documents.map { doc =>
-      val cwf = doc.file
-      val cwd = cwf.getParent
+  def listAll(project: Project, articleDirectory: ArticleDirectory, output: Path): Unit =
+    val fileImageMap: Map[String, List[Reference]] = articleDirectory.articles.map { art =>
 
-      val convertedCtx = new SastToSastConverter(doc, project).run()
+      val cwd = art.sourceDoc.path.directory
 
-      // macro offsets are in bytes, but sublime expects them to be in codepoints, so we adapt
-      lazy val offsets = doc.content.iterator.zipWithIndex.collect {
-        case (b, pos) if (b & (192)) == 128 => pos
-      }.toArray
-      def adapt(v: Int) = v - offsets.count(_ <= v)
-
-      val images = convertedCtx.imageMacros.filter(_.command == DCommand.Image).flatMap { mcro =>
+      val images = art.context.imageMacros.flatMap { mcro =>
         val path = mcro.attributes.named.getOrElse(ImageTarget.Raster.name, mcro.attributes.target)
         project.resolve(cwd, path) match
           case Some(target) =>
             // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
-            Some(Reference(target.toString, adapt(mcro.prov.start), adapt(mcro.prov.end)))
+            Some(Reference(target.toString,
+              art.sourceDoc.reporter.bytePosToCodepointPos(mcro.prov.start),
+              art.sourceDoc.reporter.bytePosToCodepointPos(mcro.prov.end)))
           case None =>
             scribe.warn(s"could not find $path in $cwd")
             None
       }
-      cwf.toString -> images
+      art.sourceDoc.path.absolute.toString -> images
     }.filter(_._2.nonEmpty).toMap
     Files.write(
       output,

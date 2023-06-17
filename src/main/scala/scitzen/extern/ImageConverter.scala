@@ -1,10 +1,9 @@
 package scitzen.extern
 
 import scitzen.compat.Logging.scribe
-import scitzen.generic.{DocumentDirectory, PreprocessedResults, Project}
-import scitzen.outputs.{Includes, SastToTextConverter}
-import scitzen.sast.{Attributes, Block, Fenced, Prov}
-import scitzen.parser.Parse
+import scitzen.generic.{ArticleDirectory, Project}
+import scitzen.outputs.SastToTextConverter
+import scitzen.sast.{Attributes, Block, Fenced}
 
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
@@ -18,30 +17,29 @@ object ImageConverter {
 
   def preprocessImages(
       project: Project,
-      documentDirectory: DocumentDirectory,
       targets: List[ImageTarget] = Nil,
-      preprocessed: PreprocessedResults
+      articleDirectory: ArticleDirectory
   ): Unit =
-    val converters = targets.map(t => t -> new ImageConverter(project, t, documentDirectory)).toMap
-    val blocks = preprocessed.docCtx.flatMap { (doc, ctx) =>
-      ctx.convertBlocks.map(b => b.attributes -> (b -> doc))
+    val converters = targets.map(t => t -> new ImageConverter(project, t, articleDirectory)).toMap
+    val blocks = articleDirectory.articles.flatMap { art =>
+      art.context.convertBlocks.map(b => b.attributes -> (b -> art.sourceDoc))
     }.toMap
 
     blocks.valuesIterator.foreach { (block, doc) =>
       converters.foreach { (_, ic) =>
-        ic.convertBlock(doc.file, block)
+        ic.convertBlock(doc.path.directory, block)
       }
     }
 
-    val macros = preprocessed.docCtx.flatMap { (doc, ctx) =>
-      ctx.imageMacros.map(m => m.attributes -> (m -> doc))
+    val macros = articleDirectory.articles.flatMap { art =>
+      art.context.imageMacros.map(m => m.attributes -> (m -> art.sourceDoc))
     }.toMap
 
     macros.valuesIterator.foreach { (mcro, doc) =>
-      val file = project.resolve(doc.file.getParent, mcro.attributes.target)
+      val file = project.resolve(doc.path.directory, mcro.attributes.target)
       converters.foreach { (t, _) =>
         if t.requiresConversion(mcro.attributes.target) && file.isDefined then
-          converters(t).applyConversion(file.get, mcro.attributes).map(f => (t -> f))
+          converters(t).applyConversion(file.get.absolute, mcro.attributes).map(f => (t -> f))
           ()
       }
     }
@@ -52,18 +50,17 @@ object ImageConverter {
       content: String,
       cwd: Path,
       project: Project,
-      documentDirectory: DocumentDirectory
+      articleDirectory: ArticleDirectory
   ): String =
     val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match
       case None => content
       case Some(templateFile) =>
-        val tc   = Files.readAllBytes(templateFile)
-        val sast = Parse.documentUnwrap(tc, Prov(0, tc.length))
+        val sast = articleDirectory.byPath(templateFile).flatMap(_.content)
         SastToTextConverter(
           project.config.definitions ++ attributes.named + (
             "template content" -> content
           ),
-          Some(Includes(project, templateFile, documentDirectory))
+          articleDirectory
         ).convert(sast).mkString("\n")
     templatedContent
 }
@@ -71,7 +68,7 @@ object ImageConverter {
 class ImageConverter(
     project: Project,
     imageTarget: ImageTarget,
-    documentDirectory: DocumentDirectory,
+    documentDirectory: ArticleDirectory,
 ):
 
   def preferredFormat: String         = imageTarget.preferredFormat

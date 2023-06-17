@@ -1,13 +1,13 @@
 package scitzen.cli
 
 import scitzen.compat.Logging
-import scitzen.generic.{DocumentDirectory, Project}
-import scitzen.outputs.{Includes, SastToTextConverter}
+import scitzen.generic.{ArticleDirectory, Project}
+import scitzen.outputs.SastToTextConverter
 
 object ConvertTemplate:
   def fillTemplate(
       project: Project,
-      directory: DocumentDirectory,
+      directory: ArticleDirectory,
       templatePath: String,
       templateSettings: Map[String, String]
   ): String =
@@ -16,9 +16,10 @@ object ConvertTemplate:
         Logging.scribe.warn(s"could not find template file »$templatePath«")
         ""
       case Some(templateFile) =>
-        val templateSast = directory.byPath(templateFile).sast
+        val templateArticle = directory.byPath(templateFile).head
         val documentString = SastToTextConverter(
           templateSettings,
-          Some(Includes(project, templateFile, directory))
-        ).convert(templateSast).mkString("\n")
+          directory,
+          Some(templateArticle.sourceDoc),
+        ).convert(templateArticle.content).mkString("\n")
         documentString

@@ -3,6 +3,7 @@ package scitzen.contexts
 import de.rmgk.Chain
 import scitzen.bibliography.BibEntry
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
+import scitzen.generic.ProjectPath
 import scitzen.sast.Section
 
 import java.nio.file.Path
@@ -11,14 +12,14 @@ import java.nio.file.Path
 case class ConversionContext[+T](
     data: T,
     katexConverter: KatexConverter = KatexConverter(Map.empty, new KatexLibrary(None)),
-    resourceMap: Map[Path, Path] = Map.empty,
+    resourceMap: Map[ProjectPath, Path] = Map.empty,
     usedCitations: List[BibEntry] = Nil,
     sections: List[Section] = Nil,
     features: Set[String] = Set.empty,
 ):
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
 
-  def requireInOutput(source: Path, relative: Path): ConversionContext[T] =
+  def requireInOutput(source: ProjectPath, relative: Path): ConversionContext[T] =
     copy(resourceMap = resourceMap.updated(source, relative))
 
   def useFeature(name: String): ConversionContext[T] = copy(features = features.incl(name))

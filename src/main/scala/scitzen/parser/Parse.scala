@@ -2,6 +2,7 @@ package scitzen.parser
 
 import scitzen.sast.{Inline, Prov, Sast}
 import de.rmgk.scip.*
+import scitzen.generic.Document
 
 import scala.util.Try
 
@@ -26,15 +27,15 @@ object Parse {
         throw IllegalStateException(s"parse exception: ${scx.ScipExInstance.getMessage}}", e)
   }
 
-  val parserDocument: Scip[Seq[Sast]] = BlockParsers.alternatives.list(Scip { true }) <~ end.orFail
+  val parserDocument: Scip[List[Sast]] = BlockParsers.alternatives.list(Scip { true }) <~ end.orFail
 
-  def documentUnwrap(blockContent: Array[Byte], prov: Prov): Seq[Sast] = {
-    parseResult(blockContent, parserDocument)
+  def documentUnwrap(doc: Document): List[Sast] = {
+    parseResult(doc.content, parserDocument)
   }
 
   val allInlines = InlineParsers.full(end)
 
-  def inlineUnwrap(paragraphString: Array[Byte], prov: Prov): Seq[Inline] = {
+  def inlineUnwrap(paragraphString: Array[Byte]): List[Inline] = {
     parseResult(paragraphString, allInlines)
   }
 }

@@ -12,17 +12,17 @@ case class NLP(stopwords: Map[String, Set[String]]):
 
   def noStop(s: String) = stopwords.valuesIterator.forall(stops => !stops.contains(s))
 
-  def tfidf(wordlist: List[String], dm: DocumentDirectory) =
+  def tfidf(wordlist: List[String], articleDirectory: ArticleDirectory) =
 
-    val totalDocuments = dm.documents.size.toDouble
+    val totalDocuments = articleDirectory.articles.size.toDouble
 
     extension (list: List[String])
       def wordcount: Map[String, Int] = list.foldLeft(Map.empty[String, Int]) {
         case (curr, s) => curr.updatedWith(s) { _.map(_ + 1).orElse(Some(1)) }
       }
 
-    lazy val idf = dm.documents.flatMap { doc =>
-      words(doc.sast).distinct
+    lazy val idf = articleDirectory.articles.flatMap { art =>
+      words(art.content).distinct
     }.wordcount.view.mapValues(docWithTerm => Math.log(totalDocuments / docWithTerm))
 
     val size = wordlist.size.toDouble
@@ -38,7 +38,7 @@ case class NLP(stopwords: Map[String, Set[String]]):
     candidates.maxByOption(_._2).map(_._1)
 
   def words(sast: Seq[Sast]): List[String] =
-    SastToTextConverter().convert(sast).iterator
+    SastToTextConverter(Map.empty, new ArticleDirectory(Nil)).convert(sast).iterator
       .flatMap(_.split("[^\\p{L}]+")).map(_.toLowerCase).toList
 
   def wordcount(sast: Seq[Sast]): Map[String, Int] =

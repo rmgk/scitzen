@@ -1,33 +1,26 @@
 package scitzen.generic
 
-import scitzen.sast.{Directive, Prov, Sast}
-import scitzen.compat.Logging.scribe
+import scitzen.sast.{Directive, Prov}
 
 import java.nio.file.{Files, Path}
 import scala.collection.immutable.ArraySeq
-import scala.util.control.NonFatal
 
-/** A document represents a single, on disk, text file that has been successfully parsed */
-case class Document(file: Path, content: Array[Byte], sast: List[Sast]):
-  val uid: String                 = Integer.toHexString(file.hashCode())
-  lazy val reporter: FileReporter = new FileReporter(file, content)
+/** A document represents a single, on disk, text file */
+case class Document(path: ProjectPath, content: Array[Byte]):
+  val uid: String                 = Integer.toHexString(path.hashCode())
+  lazy val reporter: FileReporter = new FileReporter(path, content)
+  def resolve(p: String): Option[ProjectPath] = path.project.resolve(path.directory, p)
 
 object Document:
-  def apply(file: Path): Document =
-    val content = Files.readAllBytes(file)
-    try
-      val sast = scitzen.parser.Parse.documentUnwrap(content, Prov(0, content.length))
-      Document(file, content, sast.toList)
-    catch
-      case NonFatal(e) =>
-        scribe.error(s"error while parsing $file")
-        throw e
+  def apply(file: ProjectPath): Document =
+    val content = Files.readAllBytes(file.absolute)
+    Document(file, content)
 
 trait Reporter:
   def apply(im: Directive): String = apply(im.prov)
   def apply(prov: Prov): String
 
-final class FileReporter(file: Path, content: Array[Byte]) extends Reporter:
+final class FileReporter(file: ProjectPath, content: Array[Byte]) extends Reporter:
   lazy val newLines: Seq[Int] =
     def findNL(idx: Int, found: List[Int]): Array[Int] =
       val res = content.indexOf('\n', idx + 1)
@@ -43,5 +36,12 @@ final class FileReporter(file: Path, content: Array[Byte]) extends Reporter:
 
   override def apply(prov: Prov): String =
     val pos = indexToPosition(prov.start)
-    s" at »${Path.of("").toAbsolutePath.relativize(file.toAbsolutePath)}:" +
+    s" at »${Path.of("").toAbsolutePath.relativize(file.absolute)}:" +
     s"${pos._1}:${pos._2}«"
+
+
+  // macro offsets are in bytes, but sublime expects them to be in codepoints, so we adapt
+  lazy val byteOffsets: Array[Int] = content.iterator.zipWithIndex.collect {
+    case (b, pos) if (b & (192)) == 128 => pos
+  }.toArray
+  def bytePosToCodepointPos(v: Int) = v - byteOffsets.count(_ <= v)

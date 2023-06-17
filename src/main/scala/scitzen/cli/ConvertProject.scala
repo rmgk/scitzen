@@ -4,7 +4,7 @@ import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.scribe
 import scitzen.extern.{ImageConverter, ImageTarget}
-import scitzen.generic.{PreprocessedResults, Project}
+import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project}
 
 import java.nio.file.{Files, Path}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,49 +32,45 @@ object ConvertProject:
     val timediff = makeTimediff()
 
     scribe.info(s"found project in ${project.root} ${timediff()}")
-    val documentDirectory = Project.directory(project.root)
+    val documents = ArticleProcessing.loadDocuments(project)
+    val articles = ArticleDirectory:
+      documents.flatMap: doc =>
+        ArticleProcessing.processArticles(doc, project)
 
-    scribe.info(s"parsed ${documentDirectory.documents.size} documents ${timediff()}")
-
-    val preprocessed = new PreprocessedResults(
-      project,
-      documentDirectory.documents
-    )
+    scribe.info(s"parsed ${documents.size} documents ${timediff()}")
 
     Files.createDirectories(project.outputdir)
 
     val toHtml = project.config.outputType.contains("html")
     val toPdf  = project.config.outputType.contains("pdf")
 
-    val bibres = BibManager(project).prefetch(preprocessed.preprocessedCtxs.iterator.flatMap(_.citations).toSet)
+    val bibres     = BibManager(project).prefetch(articles.articles.flatMap(_.context.citations).toSet)
     val dblpFuture = Future { bibres.runToFuture }.flatten
 
     ImageConverter.preprocessImages(
       project,
-      documentDirectory,
       List(
         Option.when(toHtml)(ImageTarget.Html),
         Option.when(toPdf)(ImageTarget.Tex),
         imageFileMap.map(_ => ImageTarget.Raster)
       ).flatten,
-      preprocessed
+      articles
     )
 
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
 
-
     if project.config.format.contains("content") then
-      Format.formatContents(documentDirectory, bibdb)
+      Format.formatContents(articles, bibdb)
       scribe.info(s"formatted contents ${timediff()}")
     if project.config.format.contains("filename") then
-      Format.formatRename(documentDirectory)
+      Format.formatRename(articles)
       scribe.info(s"formatted filenames ${timediff()}")
     if toHtml then
-      ConvertHtml.convertToHtml(project, sync, preprocessed, bibdb)
+      ConvertHtml(project).convertToHtml(sync, articles, bibdb)
       scribe.info(s"generated html ${timediff()}")
     if toPdf then
-      ConvertPdf.convertToPdf(project, preprocessed, bibdb)
+      ConvertPdf.convertToPdf(project, articles, bibdb)
       scribe.info(s"generated pdfs ${timediff()}")
     if imageFileMap.isDefined then
-      ImageReferences.listAll(project, documentDirectory, imageFileMap.get)
+      ImageReferences.listAll(project, articles, imageFileMap.get)
       scribe.info(s"generated imagemap ${timediff()}")

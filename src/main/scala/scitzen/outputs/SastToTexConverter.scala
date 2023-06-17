@@ -4,14 +4,12 @@ import de.rmgk.Chain
 import scitzen.bibliography.BibDB
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, PreprocessedResults, Project, References, Reporter, SastRef}
+import scitzen.generic.{Article, ArticleDirectory, Project, References, SastRef, TitledArticle}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.sast.Attribute.{Plain, Positional}
 import scitzen.compat.Logging.scribe
-
-import java.nio.file.Path
 
 object SastToTexConverter {
   def latexencode(input: String): String =
@@ -32,24 +30,20 @@ object SastToTexConverter {
 
 class SastToTexConverter(
     project: Project,
-    cwf: Path,
-    reporter: Reporter,
-    preprocessedResults: PreprocessedResults,
-    settings: Map[String, String],
-  bibDB: BibDB,
+    article: Article,
+    articleDirectory: ArticleDirectory,
+    bibDB: BibDB,
 ):
-
-  val cwd = cwf.getParent
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
-  def articleHeader(article: Article, cta: Cta): CtxCS =
+  def articleHeader(article: TitledArticle, cta: Cta): CtxCS =
     val hasToc = cta.features.contains("tableofcontents")
     val fm     = if hasToc then Chain("\\frontmatter") else Chain.empty
 
-    val ilc    = inlineValuesToTex(article.header.title.inl)(cta)
+    val ilc    = inlineValuesToTex(article.header.titleText.inl)(cta)
     val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
     ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\scitzenmaketitle{}")
 
@@ -61,8 +55,9 @@ class SastToTexConverter(
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",
-    val secs = settings.getOrElse("sectioning", "chapter,section,subsection,paragraph").split(',').map(_.trim)
-    val sec  = secs.lift(nesting).getOrElse("paragraph")
+    val secs = project.definitions.get("sectioning").map(_.plainString)
+      .getOrElse("chapter,section,subsection,paragraph").split(',').map(_.trim)
+    val sec = secs.lift(nesting).getOrElse("paragraph")
     sec
   }
 
@@ -112,22 +107,19 @@ class SastToTexConverter(
         mcro.command match
           case Include =>
             val target = mcro.attributes.target
-            val res =
-              if target.endsWith(".scim")
-              then project.resolve(cwd, mcro.attributes.target).flatMap(preprocessedResults.directory.byPath.get)
-              else
-                preprocessedResults.itemsAndArticlesByLabel.get(target).map: article =>
-                  article.sourceDoc.copy(sast =
-                    article.sast
-                  ) // TODO: maybe a bit hacky, docs have the unmodified AST ...
-            res match
-              case Some(doc) =>
-                new SastToTexConverter(project, doc.file, doc.reporter, preprocessedResults, settings, bibDB)
-                  .sastSeqToTex(doc.sast)(ctx)
+            if target.endsWith(".scim")
+            then
+              warn("include by path no longer supported", mcro)
+              ctx.empty
+            else
+              articleDirectory.itemsAndArticlesByLabel.get(target) match
+                case Some(art) =>
+                  new SastToTexConverter(project, art.article, articleDirectory, bibDB)
+                    .sastSeqToTex(art.article.content)(ctx)
 
-              case None =>
-                scribe.error(s"unknown include ${mcro.attributes.target}" + reporter(mcro))
-                ctx.empty
+                case None =>
+                  warn(s"unknown include ${mcro.attributes.target}", mcro)
+                  ctx.empty
 
           case other =>
             inlineValuesToTex(List(mcro))(ctx).single
@@ -145,9 +137,9 @@ class SastToTexConverter(
       tlblock.content match
         case Paragraph(content) =>
           val cctx = inlineValuesToTex(content.inl)(ctx)
-          // appending the newline adds two another newline in the source code to separate the paragraph from the following text
+          // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if settings.get("style").contains("article") then cctx.single :+ "\n"
+          if article.settings.get("style").contains("article") then cctx.single :+ "\n"
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")
@@ -163,7 +155,7 @@ class SastToTexConverter(
                     val captionstr = inlineValuesToTex(content.inl)(ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
-                    scribe.warn(s"figure has no caption" + reporter(tlblock.prov))
+                    scribe.warn(s"figure has no caption" + article.sourceDoc.reporter(tlblock.prov))
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
               "\\centerfloat" +:
@@ -274,20 +266,25 @@ class SastToTexConverter(
             nbrs(attributes)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attributes.target}}")
 
           case Ref =>
-            val scope = attributes.named.get("scope").flatMap(project.resolve(cwd, _)).getOrElse(cwf)
+            if attributes.named.contains("scope") then
+              warn(s"scope support unclear", mcro)
+              ()
             val candidates =
-              References.filterCandidates(scope, preprocessedResults.labels.getOrElse(attributes.target, Nil))
+              References.filterCandidates(
+                article.sourceDoc.path,
+                articleDirectory.labels.getOrElse(attributes.target, Nil)
+              )
 
             if candidates.sizeIs > 1 then
               scribe.error(
                 s"multiple resolutions for ${attributes.target}" +
-                reporter(mcro) +
-                s"\n\tresolutions are in: ${candidates.map(c => project.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                article.sourceDoc.reporter(mcro) +
+                s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption match
               case None =>
-                scribe.error(s"no resolution found for ${attributes.target}" + reporter(mcro))
+                scribe.error(s"no resolution found for ${attributes.target}" + article.sourceDoc.reporter(mcro))
                 ctx.empty
               case Some(candidate) =>
                 // TODO: existence of line is unchecked
@@ -306,7 +303,8 @@ class SastToTexConverter(
               if attributes.legacyPositional.size > 1 then
                 val name    = "{" + latexencode(attributes.legacyPositional.head) + "}"
                 val textref = s"\\href{$target}{$name}"
-                if settings.get("footnotelinks").contains("disabled") then textref else s"$textref\\footnote{$plainurl}"
+                if article.settings.get("footnotelinks").contains("disabled") then textref
+                else s"$textref\\footnote{$plainurl}"
               else plainurl
             }.useFeature("href")
 
@@ -332,12 +330,12 @@ class SastToTexConverter(
 
           case Image =>
             val target = attributes.named.getOrElse(ImageTarget.Tex.name, attributes.target)
-            project.resolve(cwd, target) match
+            article.sourceDoc.resolve(target) match
               case None =>
                 ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>
                 val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
-                ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{${data.toAbsolutePath}}")).useFeature(
+                ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{${data.absolute}}")).useFeature(
                   "graphics"
                 )
 
@@ -346,5 +344,5 @@ class SastToTexConverter(
             ctx.retc(str)
   def warn(msg: String, im: Directive): String =
     val macroStr = SastToScimConverter(bibDB).macroToScim(im)
-    scribe.warn(s"$msg: ⸢$macroStr⸥${reporter(im)}")
+    scribe.warn(s"$msg: ⸢$macroStr⸥${article.sourceDoc.reporter(im)}")
     macroStr

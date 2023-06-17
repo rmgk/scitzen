@@ -1,11 +1,20 @@
 package scitzen.generic
 
-import scitzen.sast.{Prov, Text}
 import scitzen.compat.Logging.scribe
+import scitzen.sast.Text
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import scala.util.Using
+
+case class ProjectPath private (project: Project, relative: Path):
+  val absolute: Path = project.root.resolve(relative)
+  val directory: Path = absolute.getParent
+  val projectAbsolute: Path = Path.of("/").resolve(relative)
+
+object ProjectPath:
+  def apply(project: Project, target: Path) =
+    require(target.startsWith(project.root), s"»$target« is not within »$project.root«")
+    new ProjectPath(project, project.root.relativize(target))
 
 case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
 
@@ -14,26 +23,34 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
     case Some(p) => root resolve p
   val outputdir: Path = root resolve config.output
 
-  lazy val bibfile: Option[Path]  = config.bibliography.flatMap(s => resolve(root, s))
-  lazy val bibfileDBLPcache: Path = cacheDir.resolve("dblpcache.bib")
+  val outputdirWeb: Path = outputdir resolve "web"
+  val outputdirPdf: Path = outputdir resolve "pdfs"
 
-  def relativizeToProject(target: Path): Path =
-    Path.of("/").resolve(root.relativize(target))
+  val htmlPaths: HtmlPathManager = HtmlPathManager(this)
 
-  def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =
+  lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
+  lazy val bibfileDBLPcache: ProjectPath =  asProjectPath(cacheDir.resolve("dblpcache.bib"))
+
+  val rootPath: ProjectPath = ProjectPath(this, Path.of(""))
+
+  def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this, target)
+
+  private def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =
     val rawPath = Path.of(pathString)
     val res =
       if rawPath.isAbsolute then root.resolve(Path.of("/").relativize(rawPath))
       else currentWorkingDirectory resolve pathString
     scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
-    res
+    res.normalize()
 
   /** Does a project global file local resolve of the given path.
     * Ensures that only files in the current project are accessed
     */
-  def resolve(currentWorkingDirectory: Path, pathString: String): Option[Path] =
+  def resolve(currentWorkingDirectory: Path, pathString: String): Option[ProjectPath] =
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
-    Some(res).filter(p => p.startsWith(root) && Files.isRegularFile(p))
+    Some(res).filter(p => p.startsWith(root) && Files.isRegularFile(p)).map{ p =>
+      ProjectPath(this, root.relativize(p))
+    }
 
 object Project:
   val scitzenconfig: String = "scitzen.config"
@@ -53,28 +70,8 @@ object Project:
     val configContent = Files.readAllBytes(file resolve scitzenconfig)
     val value         = ProjectConfig.parse(configContent)
     val definitions = value.definitions.view.map { (k, v) =>
-      k -> Text(scitzen.parser.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8), Prov()))
+      k -> Text(scitzen.parser.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8)))
     }.toMap
     Some(Project(file, value, definitions))
 
-  def isScim(c: Path): Boolean =
-    Files.isRegularFile(c) &&
-    c.getFileName.toString.endsWith(".scim")
 
-  /** returs a list of .scim files starting at `source`. Does not follow symlinks and ignores files and folders starting with a . */
-  def discoverSources(source: Path): List[Path] =
-    import scala.jdk.CollectionConverters.*
-    def hasDotComponent(c: Path): Boolean =
-      source.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
-    Using(Files.walk(source)) { stream =>
-      stream.iterator().asScala.filter { c =>
-        isScim(c) && !hasDotComponent(c)
-      }.toList
-    }.get
-
-  def directory(root: Path): DocumentDirectory =
-    scribe.debug(s"discovering sources in ${root}")
-    val sources: List[Path] = Project.discoverSources(root)
-    scribe.debug(s"parsing ${sources.length} documents")
-    val documents = sources.map(Document.apply)
-    DocumentDirectory(documents)

@@ -3,7 +3,7 @@ package scitzen.cli
 import scitzen.bibliography.BibDB
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Hashes, ImageConverter, Latexmk}
-import scitzen.generic.{PreprocessedResults, Project}
+import scitzen.generic.{ArticleDirectory, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -15,34 +15,32 @@ object ConvertPdf:
 
   def convertToPdf(
       project: Project,
-      preprocessed: PreprocessedResults,
+      preprocessed: ArticleDirectory,
     bibDB: BibDB,
   ): Unit =
-    preprocessed.articles
+    preprocessed.fullArticles
       .filter(_.header.attributes.named.contains("texTemplate"))
       .asJava.parallelStream().forEach { article =>
         val converter = new SastToTexConverter(
           project,
-          article.sourceDoc.file,
-          article.sourceDoc.reporter,
+          article.article,
           preprocessed,
-          article.named,
           bibDB
         )
 
         val resultContext =
-          converter.convert(article.content)(ConversionContext(()))
+          converter.convert(article.body)(ConversionContext(()))
 
         val headerres = converter.articleHeader(article, resultContext)
 
         val content = headerres.data ++ resultContext.data
 
-        val articlename = Format.canonicalName(article)
+        val articlename = Format.canonicalName(article.header)
 
-        val outputdir = project.outputdir.resolve("pdfs")
-        Files.createDirectories(outputdir)
 
-        val targetfile = outputdir.resolve(s"$articlename.pdf")
+        Files.createDirectories(project.outputdirPdf)
+
+        val targetfile = project.outputdirPdf.resolve(s"$articlename.pdf")
 
         val jobname    = ImageConverter.nameWithoutExtension(targetfile)
         val temptexdir = project.cacheDir.resolve(s"$articlename.outdir")
@@ -51,16 +49,16 @@ object ConvertPdf:
 
         project.bibfile.foreach { bf =>
           Files.copy(
-            bf,
+            bf.absolute,
             temptexdir.resolve("bibliography.bib"),
             StandardCopyOption.REPLACE_EXISTING,
             StandardCopyOption.COPY_ATTRIBUTES
           )
         }
-        if Files.isRegularFile(project.bibfileDBLPcache) then
+        if Files.isRegularFile(project.bibfileDBLPcache.absolute) then
           Files.write(
             temptexdir.resolve("bibliography.bib"),
-            Files.readAllBytes(project.bibfileDBLPcache),
+            Files.readAllBytes(project.bibfileDBLPcache.absolute),
             StandardOpenOption.CREATE,
             StandardOpenOption.APPEND
           )
@@ -75,7 +73,7 @@ object ConvertPdf:
         val documentString: String =
           ConvertTemplate.fillTemplate(
             project,
-            preprocessed.directory,
+            preprocessed,
             article.named.get("texTemplate").orElse(project.config.texTemplate).get,
             templateSettings
           )

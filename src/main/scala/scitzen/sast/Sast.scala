@@ -1,5 +1,6 @@
 package scitzen.sast
 
+import scitzen.parser.TimeParsers
 import scitzen.sast.Attribute.{Nested, Plain, Positional}
 import scitzen.sast.DCommand.{Emph, Strong}
 
@@ -26,9 +27,16 @@ case object Text:
   def of(str: String): Text =
     if str.isEmpty then Text(Nil)
     else Text(List(InlineText(str)))
-case class Section(title: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
-  def autolabel: String = attributes.named.getOrElse("label", title.plainString)
+
+case class Section(titleText: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
+  def autolabel: String = attributes.named.getOrElse("label", title)
   def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
+  lazy val language: Option[String] = attributes.named.get("language").map(_.trim)
+  lazy val date: Option[ScitzenDateTime] = attributes.named.get("date")
+    .map(v => TimeParsers.parseDate(v.trim))
+  lazy val title: String = titleText.plainString
+  lazy val filename: Option[String] = attributes.named.get("filename")
+
 object Section:
   given ordering: Ordering[Section] =
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))

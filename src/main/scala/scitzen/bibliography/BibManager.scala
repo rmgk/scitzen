@@ -3,20 +3,20 @@ package scitzen.bibliography
 import de.rmgk.delay.{Async, Sync}
 import scitzen.bibliography.BibManager.bibIds
 import scitzen.compat.Logging
-import scitzen.generic.Project
+import scitzen.generic.{Project, ProjectPath}
 import scitzen.sast.Attribute.Positional
 import scitzen.sast.{Attribute, Attributes, Directive}
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, StandardOpenOption}
+import java.nio.file.{Files, StandardOpenOption}
 import scitzen.sast.DCommand.{BibQuery, Cite}
 
 class BibManager(project: Project) {
 
-  val dblpcachePath: Path = project.bibfileDBLPcache
+  val dblpcachePath: ProjectPath = project.bibfileDBLPcache
 
   def parsebib(): Map[String, BibEntry] =
-    (if Files.exists(dblpcachePath) then
+    (if Files.exists(dblpcachePath.absolute) then
        Bibtex.makeBib(dblpcachePath)
      else
        Map.empty
@@ -43,7 +43,7 @@ class BibManager(project: Project) {
       dblp.foreach: key =>
         DBLP.lookup(key.stripPrefix("DBLP:")).foreach: res =>
           Files.writeString(
-            dblpcachePath,
+            dblpcachePath.absolute,
             res,
             StandardCharsets.UTF_8,
             StandardOpenOption.APPEND,

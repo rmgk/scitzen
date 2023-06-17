@@ -3,29 +3,28 @@ package scitzen.outputs
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
-import scitzen.generic.{Article, Document, Project, SastRef, Snippet}
+import scitzen.generic.{Document, Project, SastRef}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include}
 
 import java.nio.file.Path
 
-class SastToSastConverter(document: Document, project: Project):
+class SastToSastConverter(document: Document, fullSast: List[Sast], project: Project):
 
   type CtxCS  = SastContext[Chain[Sast]]
   type Ctx[T] = SastContext[T]
   type Cta    = Ctx[?]
 
-  def cwf: Path        = document.file
-  def cwd: Path        = document.file.getParent
+  def cwf: Path        = document.path.absolute
   val targetPrediction = ITargetPrediction(project, cwf.getParent)
 
-  def run(): CtxCS = convertSeq(document.sast)(SastContext(()))
+  def run(): CtxCS = convertSeq(fullSast)(SastContext(()))
 
-  def findArticle(ctx: Cta, self: Section): Option[Article] =
-    (self +: ctx.sections).find(!Article.notHeader(_)).collect {
-      case sect @ Section(_, "=", _) => Article(sect, Snippet(Nil, Document(cwf, Array(), Nil)))
-    }
+  def findArticle(ctx: Cta, self: Section): Option[Section] =
+    fullSast.headOption match
+      case Some(sect @ Section(_, "=", _)) => Some(sect)
+      case other                           => None
 
   def ensureUniqueRef[A <: Sast](
       ctx: Cta,
@@ -53,7 +52,7 @@ class SastToSastConverter(document: Document, project: Project):
           val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
           val (aliases, attr) = resctx.data
           val ublock          = sec.copy(attributes = attr)(sec.prov)
-          val target          = SastRef(cwf, ublock, findArticle(ctx, sec))
+          val target          = SastRef(document.path, ublock, findArticle(ctx, sec))
           refAliases(resctx, aliases, target).ret(ublock)
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
@@ -88,7 +87,7 @@ class SastToSastConverter(document: Document, project: Project):
         val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
         val (aliases, attr) = resctx.data
         val ublock          = block.copy(attributes = attr)
-        val target          = SastRef(cwf, ublock, None)
+        val target          = SastRef(document.path, ublock, None)
         refAliases(resctx, aliases, target).ret(ublock)
     val refblock = refctx.data
     val ublock   = makeAbsolute(refblock.attributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
@@ -126,14 +125,13 @@ class SastToSastConverter(document: Document, project: Project):
         attributes.legacyPositional.lastOption
       else attributes.named.get(select)
     attr.flatMap { template =>
-      val abs = project.resolve(cwd, template)
-      abs.map(project.relativizeToProject).map { rel =>
+      document.resolve(template).map { rel =>
         if select == "" then
           Attributes(attributes.raw.map {
-            case Positional(text, value) if value == attributes.target => Attribute("", rel.toString)
+            case Positional(text, value) if value == attributes.target => Attribute("", rel.relative.toString)
             case other                                                 => other
           })
-        else attributes.updated(select, rel.toString)
+        else attributes.updated(select, rel.relative.toString)
       }
     }
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =

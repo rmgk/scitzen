@@ -19,10 +19,10 @@ case class ITargetPrediction(project: Project, cwd: Path):
       if target.requiresConversion(attr.target) then
         val abs =
           project.resolve(cwd, attr.target).getOrElse(throw IllegalStateException(s"could not resolve ${attr.target}"))
-        val filename   = s"${ImageConverter.nameWithoutExtension(abs)}.${target.preferredFormat}"
-        val rel        = project.root.relativize(abs)
+        val filename   = s"${ImageConverter.nameWithoutExtension(abs.relative)}.${target.preferredFormat}"
+        val rel        = abs.relative
         val prediction = project.cacheDir resolve "convertedImages" resolve rel.toString resolve filename
-        attr.updated(s"${target.name}", project.relativizeToProject(prediction).toString)
+        attr.updated(s"${target.name}", project.asProjectPath(prediction).toString)
       else attr
     }
 
@@ -30,5 +30,5 @@ case class ITargetPrediction(project: Project, cwd: Path):
     List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
       val hash       = attributes.named("content hash")
       val prediction = project.cacheDir resolve hash resolve s"$hash.${target.preferredFormat}"
-      attr.updated(s"${target.name}", project.relativizeToProject(prediction).toString)
+      attr.updated(s"${target.name}", project.asProjectPath(prediction).toString)
     }

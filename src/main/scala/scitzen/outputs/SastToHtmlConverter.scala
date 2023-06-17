@@ -6,9 +6,10 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.bibliography.{BibDB, BibEntry}
-import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.extern.{ImageConverter, ImageTarget, Prism, ScalaCLI}
-import scitzen.generic.{Article, HtmlPathManager, PreprocessedResults, References, Reporter, SastRef}
+import scitzen.generic.{
+  Article, ArticleDirectory, References, SastRef, TitledArticle
+}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
@@ -18,23 +19,25 @@ import java.nio.file.Files
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
-    pathManager: HtmlPathManager,
-    sync: Option[ClSync],
-    reporter: Reporter,
-    preprocessed: PreprocessedResults,
+    sourceArticle: Article,
+    preprocessed: ArticleDirectory,
     bibliography: BibDB,
 ):
 
   import bundle.all.*
   import bundle.tags2.{article, section, time, math}
 
+  val project = sourceArticle.sourceDoc.path.project
+  val reporter = sourceArticle.sourceDoc.reporter
+
   type CtxCF  = ConversionContext[Chain[Frag]]
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
   val syncPos: Int =
-    if sync.exists(_.path == pathManager.cwf) then sync.get._2
-    else Int.MaxValue
+//    if sync.exists(_.path == pathManager.cwf) then sync.get._2
+//    else
+    Int.MaxValue
 
   def listItemToHtml(child: ListItem)(ctx: Cta): CtxCF =
     val textCtx = inlineValuesToHTML(child.text.inl)(ctx)
@@ -45,7 +48,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       span(cls := "category")(categories.map(c => stringFrag(s" $c "))*)
     )
 
-  def tMeta(article: Article): generic.Frag[Builder, FragT] =
+  def tMeta(article: TitledArticle): generic.Frag[Builder, FragT] =
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
@@ -59,8 +62,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
     if metalist.nonEmpty then div(cls := "metadata")(metalist.toSeq*) else frag()
 
-  def articleHeader(article: Article)(ctx: Cta): Ctx[Frag] =
-    inlineValuesToHTML(article.header.title.inl)(ctx).map { innerFrags =>
+  def articleHeader(article: TitledArticle)(ctx: Cta): Ctx[Frag] =
+    inlineValuesToHTML(article.header.titleText.inl)(ctx).map { innerFrags =>
       frag(h1(id := article.header.ref, innerFrags.toList), tMeta(article))
     }
 
@@ -122,46 +125,31 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Include =>
             attributes.arguments.headOption match
               case Some("code") =>
-                pathManager.resolve(attributes.target) match
+                sourceArticle.sourceDoc.resolve(attributes.target) match
                   case None => inlineValuesToHTML(List(mcro))(ctx)
                   case Some(file) =>
-                    convertSingle(Block(attributes, Fenced(Files.readString(file)), mcro.prov))(ctx)
+                    convertSingle(Block(attributes, Fenced(Files.readString(file.absolute)), mcro.prov))(ctx)
 
               case None =>
                 if attributes.target.endsWith(".scim") then
-                  pathManager.resolve(attributes.target) match
-                    case Some(file) =>
-                      val doc = preprocessed.directory.byPath(file)
-                      new SastToHtmlConverter(
-                        bundle,
-                        pathManager.changeWorkingFile(file),
-                        sync,
-                        doc.reporter,
-                        preprocessed,
-                        bibliography
-                      ).convertSeq(doc.sast)(ctx)
-                    case None =>
-                      scribe.error(s"unknown include document ${attributes.target}" + reporter(mcro.prov))
-                      ctx.empty
+                  scribe.error(s"including by path no longer supported" + sourceArticle.sourceDoc.reporter(mcro))
+                  ctx.empty
                 else
                   preprocessed.itemsAndArticlesByLabel.get(attributes.target) match
                     case None =>
-                      scribe.error(s"unknown include article ${attributes.target}" + reporter(mcro.prov))
+                      scribe.error(s"unknown include article ${attributes.target}" + sourceArticle.sourceDoc.reporter(mcro.prov))
                       println(preprocessed.itemsAndArticlesByLabel.iterator.map(_._1).foreach(println))
                       ctx.empty
                     case Some(article) =>
-                      val doc = article.sourceDoc
                       new SastToHtmlConverter(
                         bundle,
-                        pathManager.changeWorkingFile(doc.file),
-                        sync,
-                        doc.reporter,
+                        article.article,
                         preprocessed,
                         bibliography
-                      ).convertSeq(article.sast)(ctx)
+                      ).convertSeq(article.article.content)(ctx)
 
               case Some(other) =>
-                scribe.error(s"unknown include type $other" + reporter(mcro.prov))
+                scribe.error(s"unknown include type $other" + sourceArticle.sourceDoc.reporter(mcro.prov))
                 ctx.empty
 
           case other =>
@@ -215,12 +203,12 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                     ImageConverter.applyTemplate(
                       sBlock.attributes,
                       text,
-                      pathManager.cwd,
-                      pathManager.project,
-                      preprocessed.directory
+                      sourceArticle.sourceDoc.path.directory,
+                      sourceArticle.sourceDoc.path.project,
+                      preprocessed
                     )
                   else text
-                  val js = ScalaCLI.compile(pathManager.project.cacheDir, source)
+                  val js = ScalaCLI.compile(project.cacheDir, source)
                   ctx.retc(script(`type` := "text/javascript", js.map(raw(_))))
 
                 // Code listing
@@ -324,14 +312,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             contentCtx.mapc(content => a(href := target)(content.toList))
 
           case Ref =>
-            val scope      = attrs.named.get("scope").flatMap(pathManager.resolve).getOrElse(pathManager.cwf)
+            val scope      = attrs.named.get("scope").flatMap(sourceArticle.sourceDoc.resolve).getOrElse(sourceArticle.sourceDoc.path)
             val candidates = References.filterCandidates(scope, preprocessed.labels.getOrElse(attrs.target, Nil))
 
             if candidates.sizeIs > 1 then
               scribe.error(
                 s"multiple resolutions for ${attrs.target}" +
                 reporter(mcro.prov) +
-                s"\n\tresolutions are in: ${candidates.map(c => pathManager.relativizeToProject(c.scope)).mkString("\n\t", "\n\t", "\n\t")}"
+                s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
@@ -340,7 +328,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               val fileRef =
                 articleOpt match
                   case Some(article) =>
-                    pathManager.relativeArticleTarget(article).toString
+                    project.htmlPaths.relativeArticleTarget(article).toString
                   case _ => ""
 
               targetDocument.sast match
@@ -361,8 +349,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             }
 
           case Lookup =>
-            if pathManager.project.definitions.contains(attrs.target) then
-              inlineValuesToHTML(pathManager.project.definitions(attrs.target).inl)(ctx)
+            if project.definitions.contains(attrs.target) then
+              inlineValuesToHTML(project.definitions(attrs.target).inl)(ctx)
             else
               scribe.warn(s"unknown name ${attrs.target}" + reporter(mcro))
               ctx.retc(code(attrs.target))
@@ -372,15 +360,15 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
               case "footnote" =>
                 val target =
                   SastToTextConverter(
-                    pathManager.project.config.definitions,
-                    Some(Includes(pathManager.project, pathManager.cwf, preprocessed.directory))
+                    project.config.definitions,
+                    preprocessed
                   ).convertInline(attrs.targetT.inl)
                 ctx.retc(a(title := target, "※"))
 
               case tagname @ ("ins" | "del") =>
                 ctx.retc(tag(tagname)(attrs.legacyPositional.mkString(", ")))
 
-              case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter(bibliography).macroToScim(mcro)))
+              case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter(bibliography).macroToScim(mcro)))
               case "tableofcontents" => ctx.empty
               case "partition"       => ctx.empty
               case "rule"            => ctx.retc(span(attrs.target, `class` := "rule"))
@@ -393,9 +381,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
     val attrs  = mcro.attributes
     val target = attrs.named.getOrElse(ImageTarget.Html.name, attrs.target)
-    pathManager.project.resolve(pathManager.cwd, target) match
+    sourceArticle.sourceDoc.resolve(target) match
       case Some(target) =>
-        val path = pathManager.relativizeImage(target)
+        val path = project.htmlPaths.relativizeImage(target)
         ctx.requireInOutput(target, path).retc {
           val filename  = path.getFileName.toString
           val sizeclass = mcro.attributes.named.get("size").map(s => cls := s"sizing-$s")

@@ -1,19 +1,16 @@
 package scitzen.outputs
 
-import scitzen.generic.{DocumentDirectory, Project}
+import scitzen.generic.{ArticleDirectory, Document, ProjectPath}
 import scitzen.sast.DCommand.{Include, Lookup}
 import scitzen.sast.{
   Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
 }
 import scitzen.compat.Logging.scribe
 
-import java.nio.file.Path
-
-case class Includes(project: Project, cwf: Path, includeResolver: DocumentDirectory)
-
 case class SastToTextConverter(
     definitions: Map[String, String] = Map.empty,
-    includes: Option[Includes] = None
+    articleDirectory: ArticleDirectory = ArticleDirectory(Nil),
+    document: Option[Document] = None,
 ):
 
   def convert(b: Seq[Sast]): Seq[String] =
@@ -60,19 +57,17 @@ case class SastToTextConverter(
               case Some(res) => List(res)
 
           case Include =>
-            includes match
+            document match
               case None => Nil
-              case Some(Includes(project, cwf, includeResolver)) =>
-                project.resolve(cwf.getParent, attributes.target).flatMap(includeResolver.byPath.get) match
-                  case Some(doc) =>
-                    val included = includeResolver.byPath(doc.file)
+              case Some(document) =>
+                document.resolve(attributes.target).flatMap(articleDirectory.byPath.get) match
+                  case Some(List(article)) =>
+                    new SastToTextConverter(definitions, articleDirectory, Some(article.sourceDoc))
+                      .convert(article.content)
 
-                    new SastToTextConverter(definitions, includes)
-                      .convert(included.sast)
-
-                  case None =>
-                    val pos = s" ${includeResolver.byPath(cwf).reporter(mcro)}"
-                    scribe.error(s"unknown include ${attributes.target} in template ${cwf}$pos")
+                  case other =>
+                    val pos = s" ${document.reporter(mcro)}"
+                    scribe.error(s"unknown include ${attributes.target} in template ${document.path.relative}$pos")
                     Nil
 
           case _ => Nil

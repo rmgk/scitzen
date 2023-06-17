@@ -3,9 +3,9 @@ package scitzen.cli
 import scitzen.bibliography.BibDB
 
 import java.nio.charset.{Charset, StandardCharsets}
-import scitzen.generic.{Article, DocumentDirectory}
+import scitzen.generic.{ArticleDirectory}
 import scitzen.outputs.SastToScimConverter
-import scitzen.sast.Sast
+import scitzen.sast.{Sast, Section}
 import scitzen.compat.Logging.scribe
 
 import java.nio.file.{Files, Path}
@@ -14,21 +14,24 @@ object Format:
 
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
-  def formatContents(documentDirectory: DocumentDirectory, bibDB: BibDB): Unit =
-    documentDirectory.documents.foreach { pd =>
-      formatContent(pd.file, pd.content, pd.sast, bibDB)
+  def formatContents(ad: ArticleDirectory, bibDB: BibDB): Unit =
+    ad.byPath.foreach { (path, articles) =>
+      formatContent(path.absolute, articles.head.sourceDoc.content, articles.flatMap(_.content), bibDB)
     }
 
-  def formatRename(documentDirectory: DocumentDirectory): Unit =
-    documentDirectory.documents.foreach { parsed =>
-      Article.articles(parsed) match
-        case List(article) if article.date.isDefined =>
-          renameFileFromHeader(parsed.file, article)
+  def formatRename(documentDirectory: ArticleDirectory): Unit =
+    documentDirectory.byPath.foreach: (document, articles) =>
+      articles match
+        case List(article) =>
+          article.titled match
+            case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute,  t)
+            case _ => scribe.trace(
+                s"could not format ${document.absolute}, did not contain a single article with a date"
+              )
         case _ =>
-          scribe.debug(
-            s"could not format ${parsed.file}, did not contain a single article with a date"
+          scribe.trace(
+            s"could not format ${document.absolute}, did not contain a single article with a date"
           )
-    }
 
   def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast], bibDB: BibDB): Unit =
     val result      = SastToScimConverter(bibDB).toScimS(sast)
@@ -38,7 +41,7 @@ object Format:
       Files.write(file, resultBytes)
       ()
 
-  def renameFileFromHeader(f: Path, sdoc: Article): Unit =
+  def renameFileFromHeader(f: Path, sdoc: Section): Unit =
     val newName: String = canonicalName(sdoc) + ".scim"
 
     if newName != f.getFileName.toString then
@@ -46,7 +49,7 @@ object Format:
       Files.move(f, f.resolveSibling(newName))
       ()
 
-  def canonicalName(header: Article): String =
+  def canonicalName(header: Section): String =
     val title = sluggify(header.filename.getOrElse(header.title))
     header.date.map(_.date.full).fold(title)(d => d + " " + title)
 

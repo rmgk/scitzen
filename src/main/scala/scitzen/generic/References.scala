@@ -3,22 +3,21 @@ package scitzen.generic
 import scitzen.sast.{Block, Sast, Section}
 import scitzen.compat.Logging.scribe
 
-import java.nio.file.Path
 import scala.jdk.CollectionConverters.*
 
-case class SastRef(scope: Path, sast: Sast, directArticle: Option[Article])
+case class SastRef(scope: ProjectPath, sast: Sast, directArticle: Option[Section])
 
 object References:
 
-  def filterCandidates(scope: Path, candidates: List[SastRef]): List[SastRef] =
+  def filterCandidates(scope: ProjectPath, candidates: List[SastRef]): List[SastRef] =
     candidates match
       case Nil     => candidates
       case List(_) => candidates
       case multiple =>
-        val searchScope = scope.iterator().asScala.toList
+        val searchScope = scope.absolute.iterator().asScala.toList
         val sorted = multiple.map { c =>
           c ->
-          c.scope.iterator().asScala.toList.zip(searchScope).takeWhile {
+          c.scope.relative.iterator().asScala.toList.zip(searchScope).takeWhile {
             case (l, r) => l == r
           }.size
         }.sortBy(_._2).reverse
@@ -27,8 +26,8 @@ object References:
         val bestOnly = sorted.takeWhile(_._2 == best)
         (if bestOnly.size == 1 then bestOnly else sorted).map(_._1)
 
-  def getLabel(targetDocument: SastRef): Option[String] =
-    targetDocument.sast match
+  def getLabel(targetRef: SastRef): Option[String] =
+    targetRef.sast match
       case sec: Section      => Some(sec.ref)
       case Block(attr, _, _) => attr.named.get("unique ref")
       case other =>

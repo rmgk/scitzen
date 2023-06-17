@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scitzen.generic.{Article, HtmlPathManager}
+import scitzen.generic.{TitledArticle, Project}
 import scitzen.sast.DCommand.Other
 import scitzen.sast.{Attribute, Attributes, Block, Directive, InlineText, Parsed, Prov, Sast, Section, Text}
 
@@ -29,13 +29,13 @@ object GenIndexPage:
   )
 
   def makeIndex(
-      articles: List[Article],
-      htmlPathManager: HtmlPathManager,
+      articles: List[TitledArticle],
+      project: Project,
       indexDir: Path
   ): List[Sast] =
     def ordering[T: Ordering]: Ordering[T] = Ordering[T].reverse
 
-    def sectionBy(pdocs: List[Article])(f: Article => String)(cont: List[Article] => List[Sast]): List[Sast] =
+    def sectionBy(pdocs: List[TitledArticle])(f: TitledArticle => String)(cont: List[TitledArticle] => List[Sast]): List[Sast] =
       val sectionTitle = pdocs.groupBy(f)
       sectionTitle.toList.sortBy(_._1)(ordering).flatMap {
         case (key, docs) =>
@@ -46,23 +46,23 @@ object GenIndexPage:
           )
       }
 
-    def secmon(fd: Article): String =
-      fd.date.fold("Dateless") { date =>
+    def secmon(fd: TitledArticle): String =
+      fd.header.date.fold("Dateless") { date =>
         val m = date.date.month
         s"${date.year}-$m " + months(m.toInt - 1)
       }
 
     sectionBy(articles)(secmon) { idocs =>
-      idocs.sortBy(_.date)(ordering).flatMap { doc =>
+      idocs.sortBy(_.header.date)(ordering).flatMap { doc =>
         def categories = doc.named.get("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
         List(Directive(
           Other("article"),
           Attributes(
             List(
-              Some(Attribute("", doc.header.title.plainString)),
+              Some(Attribute("", doc.header.title)),
               Some(Attribute(
                 "target",
-                indexDir.relativize(htmlPathManager.articleOutputPath(doc)).toString
+                indexDir.relativize(project.htmlPaths.articleOutputPath(doc.header)).toString
               )),
               doc.date.map(date => Attribute("datetime", date.dayTime))
             ).flatten ++ categories.map(Attribute("category", _))

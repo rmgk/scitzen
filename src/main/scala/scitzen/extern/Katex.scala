@@ -1,15 +1,15 @@
 package scitzen.extern
 
-import org.graalvm.polyglot.*
-import scitzen.compat.Logging.scribe
-
-import scala.jdk.CollectionConverters.*
 import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, writeToString}
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
+import org.graalvm.polyglot.*
 import org.jsoup.Jsoup
+import scitzen.compat.Logging.scribe
+import scitzen.generic.ProjectPath
 
 import java.io.ByteArrayOutputStream
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
+import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 object Katex:
@@ -46,12 +46,12 @@ object Katex:
     ctx.eval("js", katexstr)
     ctx
 
-  class KatexLibrary(katexdefs: Option[Path]):
+  class KatexLibrary(katexdefs: Option[ProjectPath]):
 
     // also lazily initialize katex only when render to string is actually called
     lazy val katex =
       val bindings: Map[String, String] = katexdefs.map { f =>
-        Files.lines(f).iterator().asScala.map(_.split(":", 2)).collect {
+        Files.lines(f.absolute).iterator().asScala.map(_.split(":", 2)).collect {
           case Array(k, v) => (k, v)
         }.toMap
       }.getOrElse(Map.empty)
