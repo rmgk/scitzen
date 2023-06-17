@@ -9,7 +9,7 @@ import scitzen.sast.DCommand.{BibQuery, Cite, Image}
 class SastToSastConverter(document: Document, fullSast: List[Sast]):
 
   type CtxCS  = SastContext[Chain[Sast]]
-  type Ctx[T] = SastContext[T]
+  type Ctx[+T] = SastContext[T]
   type Cta    = Ctx[?]
 
   def run(): CtxCS = convertSeq(fullSast)(SastContext(()))
@@ -61,11 +61,11 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
           }
 
         }.map { cs =>
-          scitzen.sast.Slist(cs.iterator.toSeq)
+          Slist(cs.toSeq)
         }
 
       case mcro: Directive =>
-        convertMacro(mcro)(ctx).map(identity(_): Sast)
+        convertMacro(mcro)(ctx)
 
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
     // make all blocks labellable

@@ -5,7 +5,7 @@ import scitzen.generic.SastRef
 import scitzen.sast.{Block, Directive, Section}
 
 /** The conversion context, used to keep state of the conversion. */
-case class SastContext[T](
+case class SastContext[+T](
     data: T,
     labelledThings: Map[String, List[SastRef]] = Map.empty,
     uniquectr: Int = 0,
