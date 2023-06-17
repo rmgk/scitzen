@@ -52,17 +52,27 @@ object ImageConverter {
       project: Project,
       articleDirectory: ArticleDirectory
   ): String =
-    val templatedContent = attributes.named.get("template").flatMap(project.resolve(cwd, _)) match
-      case None => content
-      case Some(templateFile) =>
-        val sast = articleDirectory.byPath(templateFile).flatMap(_.content)
-        SastToTextConverter(
-          project.config.definitions ++ attributes.named + (
-            "template content" -> content
-          ),
-          articleDirectory
-        ).convert(sast).mkString("\n")
-    templatedContent
+    attributes.named.get("template") match
+      case None =>
+        scribe.error(s"no template")
+        content
+      case Some(pathString) => project.resolve(cwd, pathString) match
+          case None =>
+            scribe.error(s"could not resolve $pathString")
+            content
+          case Some(templatePath) =>
+            articleDirectory.byPath.get(templatePath) match
+              case None =>
+                scribe.error(s"not resolved $templatePath")
+                content
+              case Some(articles) =>
+                val sast = articles.flatMap(_.content)
+                SastToTextConverter(
+                  project.config.definitions ++ attributes.named + (
+                    "template content" -> content
+                  ),
+                  articleDirectory
+                ).convert(sast).mkString("\n")
 }
 
 class ImageConverter(
