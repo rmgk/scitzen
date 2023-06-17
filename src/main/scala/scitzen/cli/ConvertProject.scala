@@ -31,7 +31,7 @@ object ConvertProject:
   ): Unit =
     val timediff = makeTimediff()
 
-    scribe.info(s"found project in ${project.root} ${timediff()}")
+    scribe.info(s"found project in ${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
     val documents = ArticleProcessing.loadDocuments(project)
     val articles = ArticleDirectory:
       documents.flatMap: doc =>

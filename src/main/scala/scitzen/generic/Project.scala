@@ -6,10 +6,15 @@ import scitzen.sast.Text
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-case class ProjectPath private (project: Project, relative: Path):
+class ProjectPath private (val project: Project, val relative: Path):
   val absolute: Path = project.root.resolve(relative)
   val directory: Path = absolute.getParent
-  val projectAbsolute: Path = Path.of("/").resolve(relative)
+
+  override def hashCode(): Int = relative.hashCode()
+  override def equals(obj: Any): Boolean = obj match
+    case other: ProjectPath => relative == other.relative
+    case _ => false
+  override def toString: String = s"Path(${relative.toString})"
 
 object ProjectPath:
   def apply(project: Project, target: Path) =
@@ -60,7 +65,7 @@ object Project:
     else Option(source.getParent).flatMap(findRoot)
 
   def fromSource(file: Path): Option[Project] =
-    findRoot(file) match
+    findRoot(file.toAbsolutePath) match
       case None =>
         val adHocRoot = if Files.isDirectory(file) then file else file.getParent
         Some(Project(adHocRoot, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8)), Map.empty))
