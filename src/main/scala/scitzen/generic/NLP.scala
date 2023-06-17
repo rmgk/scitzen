@@ -53,9 +53,6 @@ object NLP:
     }.toMap
     NLP(stopwords)
 
-  def loadResource(name: String) =
-    getClass.getClassLoader.getResourceAsStream(name)
-
   def loadFromResources: NLP =
     val stopwords = List("de", "en").map: lang =>
       val bytes = ResourceUtil.load(s"stopwords.$lang")

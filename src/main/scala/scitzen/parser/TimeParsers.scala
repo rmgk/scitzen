@@ -4,6 +4,7 @@ import de.rmgk.scip.*
 import scitzen.sast.{ScitzenDate, ScitzenDateTime, ScitzenTime}
 
 import java.nio.charset.StandardCharsets
+import scala.util.Try
 
 object TimeParsers {
   val digits: Scip[Boolean] = bpred(b => '0' <= b && b <= '9').rep.min(1)
@@ -36,7 +37,7 @@ object TimeParsers {
     ScitzenDateTime(sdate, stime)
   }
 
-  def parseDate(dateString: String): ScitzenDateTime = {
-    Parse.parseResult(dateString.getBytes(StandardCharsets.UTF_8), dateTime)
+  def parseDate(dateString: String): Option[ScitzenDateTime] = {
+    Try(Parse.parseResult(dateString.getBytes(StandardCharsets.UTF_8), dateTime)).toOption
   }
 }

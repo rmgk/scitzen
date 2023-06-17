@@ -9,14 +9,10 @@ class HtmlPathManager(project: Project):
 
   val articleOutputDir: Path = project.outputdirWeb
 
-  // def resolve(path: String): Option[Path] = project.resolve(cwd, path)
-
   def articleOutputPath(article: Section): Path =
-    def genName = s"${article.date.map(_.full).getOrElse("")} ${article}"
-    val name    = article.filename.getOrElse(genName)
+    def genName = s"${article.date.map(_.full).getOrElse("")} ${article.title}"
+    val name    = article.filename.getOrElse(genName.take(100))
     articleOutputDir resolve Format.sluggify(s"$name.html")
-
-  //def relativizeToProject(target: Path): ProjectPath = project.asProjectPath(target)
 
   def relativizeImage(targetFile: ProjectPath): Path =
     def translateImage(image: ProjectPath): Path =

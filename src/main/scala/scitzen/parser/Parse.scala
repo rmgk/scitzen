@@ -4,8 +4,6 @@ import scitzen.sast.{Inline, Prov, Sast}
 import de.rmgk.scip.*
 import scitzen.generic.Document
 
-import scala.util.Try
-
 object Parse {
 
   def parseResult[T](content: Array[Byte], parser: Scip[T], prov: Prov = Prov()): T = {
@@ -21,7 +19,9 @@ object Parse {
       parser.runInContext(scx)
     catch
       case f: ScipEx =>
-        Try { parser.runInContext(scx.copy(tracing = true)) }
+        try parser.runInContext(scx.copy(tracing = true))
+        catch
+          case f: ScipEx => ()
         throw IllegalStateException(f.getMessage)
       case e: Exception =>
         throw IllegalStateException(s"parse exception: ${scx.ScipExInstance.getMessage}}", e)

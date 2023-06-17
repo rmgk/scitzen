@@ -13,8 +13,10 @@ case class ProjectPath private (project: Project, relative: Path):
 
 object ProjectPath:
   def apply(project: Project, target: Path) =
-    require(target.startsWith(project.root), s"»$target« is not within »$project.root«")
-    new ProjectPath(project, project.root.relativize(target))
+    val normalized = project.root.resolve(target).normalize()
+    require(normalized.startsWith(project.root), s"»$target« is not within »$project.root«")
+    require(Files.isRegularFile(normalized) || Files.notExists(normalized), s"only regular files may be documents: $normalized")
+    new ProjectPath(project, project.root.relativize(normalized))
 
 case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
 
@@ -30,8 +32,6 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
 
   lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
   lazy val bibfileDBLPcache: ProjectPath =  asProjectPath(cacheDir.resolve("dblpcache.bib"))
-
-  val rootPath: ProjectPath = ProjectPath(this, Path.of(""))
 
   def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this, target)
 
