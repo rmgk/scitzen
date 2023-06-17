@@ -49,7 +49,7 @@ object ArticleProcessing:
     @scala.annotation.tailrec
     def rec(rem: List[Sast], acc: List[List[Sast]]): List[List[Sast]] =
       rem match
-        case Nil => acc
+        case Nil => acc.reverse
         case (h: Section) :: t =>
           val htype        = headerType(h)
           val (body, rest) = t.span(s => headerType(s) > htype)

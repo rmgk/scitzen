@@ -19,8 +19,9 @@ class SastToScimConverter(bibDB: BibDB):
       force: Boolean,
       light: Boolean = false
   ): Chain[String] =
-    if !force && attributes.raw.isEmpty then Chain.nil
-    else Chain(AttributesToScim(bibDB).convert(attributes, spacy, force, light))
+    val attrStr = AttributesToScim(bibDB).convert(attributes, spacy, force, light)
+    if attrStr.isEmpty then Chain.nil
+    else Chain(attrStr)
 
   def toScimS(b: Seq[Sast]): Chain[String] =
     Chain.from(b).flatMap(toScim)
@@ -133,7 +134,8 @@ class AttributesToScim(bibDB: BibDB):
       }
     )
 
-  def convert(attributes: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String =
+  def convert(attributesInput: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String =
+    val attributes = Attributes(attributesInput.raw.filter(p => !p.id.contains(' ')))
     if !force && attributes.raw.isEmpty then return ""
     val keylen = (attributes.raw.map {
       case Plain(id, _)  => id.length

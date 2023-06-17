@@ -33,8 +33,8 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
   def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
   lazy val language: Option[String] = attributes.named.get("language").map(_.trim)
   lazy val date: Option[ScitzenDateTime] = attributes.named.get("date").flatMap: s =>
-      TimeParsers.parseDate(s.trim)
-  lazy val title: String = titleText.plainString
+    TimeParsers.parseDate(s.trim)
+  lazy val title: String            = titleText.plainString
   lazy val filename: Option[String] = attributes.named.get("filename")
 
 object Section:
@@ -91,13 +91,16 @@ object Attributes {
 
 sealed trait Attribute {
   def toAttributes: Attributes = Attributes(List(this))
+  def id: String
 }
 
 object Attribute {
   def apply(id: String, value: String): Attribute =
     if (id.isBlank) Positional(Text(List(InlineText(value))), value) else Plain(id, value)
 
-  case class Positional(text: Text, string: String) extends Attribute
+  case class Positional(text: Text, string: String) extends Attribute {
+    override def id = ""
+  }
   object Positional {
     def apply(string: String): Positional =
       Positional(Text.of(string), string)
