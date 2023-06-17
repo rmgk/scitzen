@@ -118,6 +118,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
     mcro.command match
       case Image => ctx.addImage(mcro).ret(mcro)
       case Cite | BibQuery =>
+        // TODO this is a temporary way to rename the parameter, remove at some point
         val res =
           val style = mcro.attributes.named.get("style")
           if style.contains("name") then
