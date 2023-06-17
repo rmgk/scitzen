@@ -35,7 +35,7 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
 
   def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this, target)
 
-  private def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =
+  def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =
     val rawPath = Path.of(pathString)
     val res =
       if rawPath.isAbsolute then root.resolve(Path.of("/").relativize(rawPath))
@@ -48,7 +48,7 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
     */
   def resolve(currentWorkingDirectory: Path, pathString: String): Option[ProjectPath] =
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
-    Some(res).filter(p => p.startsWith(root) && Files.isRegularFile(p)).map{ p =>
+    Some(res).filter(p => p.startsWith(root) && ( Files.isRegularFile(p) || Files.notExists(p))).map{ p =>
       ProjectPath(this, root.relativize(p))
     }
 
