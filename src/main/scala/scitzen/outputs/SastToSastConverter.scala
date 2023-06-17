@@ -92,28 +92,28 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
     ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
-          .map(il => Block(ublock.attributes, Paragraph(Text(il.toList)), ublock.prov): Sast)
+          .map(il => ublock.copy(content = Paragraph(Text(il.toList))): Sast)
 
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent)(refctx).map(bc =>
-          Block(ublock.attributes, Parsed(delimiter, bc.toList), ublock.prov): Sast
+          ublock.copy(content = Parsed(delimiter, bc.toList))
         )
 
       case Fenced(text) =>
-        val runctx =
-          if ublock.command == "execute" && ublock.attributes.named.get("lang").contains("js") then
-            val res = scitzen.extern.JsRunner().run(text, ublock.attributes)
-            refctx.ret(ublock.copy(attributes = ublock.attributes.updated("exec result", res)))
-          else refctx
+//        val runctx =
+//          if ublock.command == "execute" && ublock.attributes.named.get("lang").contains("js") then
+//            val res = scitzen.extern.JsRunner().run(text, ublock.attributes)
+//            refctx.ret(ublock.copy(attributes = ublock.attributes.updated("exec result", res)))
+//          else refctx
 
-        val runblock = runctx.data
+        val runblock = ublock
 
         if runblock.attributes.named.contains("converter") then
           val contentHash = Hashes.sha1hex(text)
           val hashedBlock = runblock.copy(attributes = runblock.attributes.updated("content hash", contentHash))
           val newBlock    = hashedBlock.copy(attributes = targetPrediction.predictBlock(hashedBlock.attributes))
-          runctx.addConversionBlock(newBlock).ret(newBlock)
-        else runctx.ret(runblock)
+          refctx.addConversionBlock(newBlock).ret(newBlock)
+        else refctx.ret(runblock)
 
       case SpaceComment(_) => refctx.ret(ublock)
 

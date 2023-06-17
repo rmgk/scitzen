@@ -25,7 +25,7 @@ case class SastToTextConverter(
             convertInline(text.inl) +: convert(List(inner))
         }
 
-      case Block(attr, blockType, _) =>
+      case Block(_, attr, blockType, _) =>
         val filterBlock =
           attr.legacyPositional match
             case "if" :: parameter :: _ =>

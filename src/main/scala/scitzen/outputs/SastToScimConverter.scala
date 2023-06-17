@@ -64,11 +64,7 @@ class SastToScimConverter(bibDB: BibDB):
     }.mkString
 
   def convertBlock(sb: Block): Chain[String] =
-    val (remattr, command: String) = sb.attributes.raw.headOption match
-      case Some(Positional(_, value)) => (sb.attributes.copy(raw = sb.attributes.raw.drop(1)), value)
-      case _                          => (sb.attributes, "")
     sb.content match
-
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
         attrres :+ inlineToScim(content.inl) :+ ""
@@ -78,8 +74,8 @@ class SastToScimConverter(bibDB: BibDB):
         delimiter.charAt(0) match
           case ':' =>
             Chain(
-              "::" + command +
-              AttributesToScim(bibDB).convert(remattr, force = false, spacy = false),
+              "::" + BCommand.print(sb.command) +
+              AttributesToScim(bibDB).convert(sb.attributes, force = false, spacy = false),
               content.map(addIndent(_, "\t")).iterator.mkString("\n").stripTrailing(),
               "::"
             )
@@ -95,7 +91,7 @@ class SastToScimConverter(bibDB: BibDB):
       case Fenced(text) =>
         val delimiter = "``"
         Chain(
-          delimiter + command + AttributesToScim(bibDB).convert(remattr, spacy = false, force = false),
+          delimiter + BCommand.print(sb.command) + AttributesToScim(bibDB).convert(sb.attributes, spacy = false, force = false),
           addIndent(text, "\t"),
           delimiter
         )

@@ -1,7 +1,7 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
-import scitzen.sast.{Attributes, Block, Paragraph, Sast, Section, SpaceComment, Text}
+import scitzen.sast.{Attributes, BCommand, Block, Paragraph, Sast, Section, SpaceComment, Text}
 import scitzen.parser.CommonParsers.*
 
 object BlockParsers {
@@ -12,7 +12,7 @@ object BlockParsers {
   def paragraph: Scip[Block] = Scip {
     val attrOpt         = (AttributesParser.braces <~ spaceLineF).opt.run
     val (inlines, prov) = withProv(paragraphInlines).run
-    Block(scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
+    Block(BCommand.Empty, scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)), prov)
   }
 
   def sectionStart: Scip[String] = "=#".any.rep.min(1).str <~ " ".all
@@ -30,7 +30,7 @@ object BlockParsers {
       ))
         .trace("space or comment").rep.min(1).str
     ).run
-    Block(scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
+    Block(BCommand.Empty, scitzen.sast.Attributes(Nil), SpaceComment(str), prov)
   }
 
   def alternatives: Scip[Sast] =

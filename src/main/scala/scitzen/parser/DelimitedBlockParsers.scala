@@ -1,7 +1,7 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
-import scitzen.sast.{Attribute, Attributes, Block, Fenced, Parsed, Prov, Sast}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, Parsed, Prov, Sast}
 import scitzen.parser.CommonParsers.*
 
 object DelimitedBlockParsers {
@@ -15,7 +15,7 @@ object DelimitedBlockParsers {
     val (text, prov) = withProv(untilIS(eol and seq(delimiter) and spaceLineB)).trace("delim block").run
     val stripRes     = stripIfPossible(text, delimiter.length)
     val strippedText = stripRes.getOrElse(text)
-    val rawAttr      = command.map(Attribute("", _)) ++: attr.getOrElse(Nil)
+    val rawAttr      = attr.getOrElse(Nil)
     val blockContent =
       delimiter(0) match {
         case '`' => Fenced(strippedText)
@@ -25,6 +25,7 @@ object DelimitedBlockParsers {
           scitzen.sast.Parsed(delimiter, sast)
       }
     scitzen.sast.Block(
+      BCommand.parse(command.getOrElse("")),
       Attributes(rawAttr),
       blockContent,
       if (stripRes.isEmpty) prov else prov.copy(indent = delimiter.length)
@@ -68,7 +69,7 @@ object DelimitedBlockParsers {
         ) // Prov(index, indent = indentation.length))
       scitzen.sast.Parsed(indentation, sast)
     }).run
-    scitzen.sast.Block(Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))
+    scitzen.sast.Block(BCommand.Empty, Attributes(Nil), parsed, prov.copy(indent = parsed.delimiter.length))
   }
 
 }

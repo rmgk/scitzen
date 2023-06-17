@@ -148,10 +148,10 @@ class SastToTexConverter(
 
         case Parsed(_, blockContent) =>
           tlblock.command match
-            case "figure" =>
+            case BCommand.Figure =>
               val (figContent, caption) =
                 blockContent.lastOption match
-                  case Some(Block(_, Paragraph(content), _)) =>
+                  case Some(Block(_, _, Paragraph(content), _)) =>
                     val captionstr = inlineValuesToTex(content.inl)(ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
@@ -166,10 +166,10 @@ class SastToTexConverter(
                 "\\end{figure}"
               )
 
-            case name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example") =>
+            case BCommand.Other(name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example")) =>
               texbox(name, tlblock.attributes, blockContent)(ctx).useFeature("framed")
 
-            case name @ "abstract" => texbox(name, tlblock.attributes, blockContent)(ctx)
+            case BCommand.Other(name @"abstract") => texbox(name, tlblock.attributes, blockContent)(ctx)
 
             case _ =>
               sastSeqToTex(blockContent)(ctx)

@@ -1,8 +1,8 @@
 package scitzen.outputs
 
-import scitzen.generic.{TitledArticle, Project}
+import scitzen.generic.{Project, TitledArticle}
 import scitzen.sast.DCommand.Other
-import scitzen.sast.{Attribute, Attributes, Block, Directive, InlineText, Parsed, Prov, Sast, Section, Text}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, InlineText, Parsed, Prov, Sast, Section, Text}
 
 import java.nio.file.Path
 import scala.collection.immutable.ArraySeq
@@ -42,7 +42,7 @@ object GenIndexPage:
           val inner = cont(docs)
           List[Sast](
             Section(Text(List(InlineText(key))), prefix = "#", Attributes(Seq(Attribute("unique ref", key))))(Prov()),
-            Block(Attributes(Nil), Parsed("", inner), Prov())
+            Block(BCommand.Empty, Attributes(Nil), Parsed("", inner), Prov())
           )
       }
 
