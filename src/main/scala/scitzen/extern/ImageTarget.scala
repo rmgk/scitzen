@@ -22,7 +22,7 @@ case class ITargetPrediction(project: Project, cwd: Path):
         val filename   = s"${ImageConverter.nameWithoutExtension(abs.relative)}.${target.preferredFormat}"
         val rel        = abs.relative
         val prediction = project.cacheDir resolve "convertedImages" resolve rel.toString resolve filename
-        attr.updated(s"${target.name}", project.asProjectPath(prediction).toString)
+        attr.updated(s"${target.name}", (project.asProjectPath(prediction).absolute: Path).toString)
       else attr
     }
 
@@ -30,5 +30,5 @@ case class ITargetPrediction(project: Project, cwd: Path):
     List(Html, Tex, Raster).foldLeft(attributes) { case (attr, target) =>
       val hash       = attributes.named("content hash")
       val prediction = project.cacheDir resolve hash resolve s"$hash.${target.preferredFormat}"
-      attr.updated(s"${target.name}", project.asProjectPath(prediction).toString)
+      attr.updated(s"${target.name}",  (project.asProjectPath(prediction).absolute: Path).toString)
     }
