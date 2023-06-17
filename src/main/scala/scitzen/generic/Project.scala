@@ -9,6 +9,7 @@ import java.nio.file.{Files, Path}
 class ProjectPath private (val project: Project, val relative: Path):
   val absolute: Path = project.root.resolve(relative)
   val directory: Path = absolute.getParent
+  val projectAbsolute: Path = Path.of("/").resolve(relative)
 
   override def hashCode(): Int = relative.hashCode()
   override def equals(obj: Any): Boolean = obj match
