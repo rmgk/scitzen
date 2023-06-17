@@ -5,7 +5,6 @@ import scitzen.contexts.SastContext
 import scitzen.extern.{Hashes, ITargetPrediction}
 import scitzen.generic.{Document, Project, SastRef}
 import scitzen.sast.*
-import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{BibQuery, Cite, Image}
 
 import java.nio.file.Path
@@ -89,8 +88,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
         val ublock          = block.copy(attributes = attr)
         val target          = SastRef(document.path, ublock, None)
         refAliases(resctx, aliases, target).ret(ublock)
-    val refblock = refctx.data
-    val ublock   = makeAbsolute(refblock.attributes, "template").fold(refblock)(a => refblock.copy(attributes = a))
+    val ublock = refctx.data
     ublock.content match
       case Paragraph(content) =>
         convertInlines(content.inl)(refctx)
@@ -119,21 +117,6 @@ class SastToSastConverter(document: Document, fullSast: List[Sast], project: Pro
 
       case SpaceComment(_) => refctx.ret(ublock)
 
-  private def makeAbsolute(attributes: Attributes, select: String = ""): Option[Attributes] =
-    val attr =
-      if select == "" then
-        attributes.legacyPositional.lastOption
-      else attributes.named.get(select)
-    attr.flatMap { template =>
-      document.resolve(template).map { rel =>
-        if select == "" then
-          Attributes(attributes.raw.map {
-            case Positional(text, value) if value == attributes.target => Attribute("", rel.relative.toString)
-            case other                                                 => other
-          })
-        else attributes.updated(select, rel.relative.toString)
-      }
-    }
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
 
