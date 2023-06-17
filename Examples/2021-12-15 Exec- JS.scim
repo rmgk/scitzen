@@ -5,7 +5,7 @@ texTemplate = /templates/memoir.scim
 So maybe Scitzen got the ability to execute JS now? Lets see:
 
 ::figure
-	``execute{lang=js; converter=tex; template=templates/tikz.scim; [1, 10, 20, 30, 80]}
+	``convert{js={[1, 10, 20, 30, 80]}; tex={template=templates/tikz.scim}}
 		console.log(`
 		  \\begin{tikzpicture}
 		  \\begin{axis}[
