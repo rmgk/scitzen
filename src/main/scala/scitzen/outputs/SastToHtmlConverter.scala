@@ -4,27 +4,26 @@ import de.rmgk.Chain
 import scalatags.Text.StringFrag
 import scalatags.generic
 import scalatags.generic.Bundle
+import scitzen.bibliography.BibEntry
+import scitzen.cli.ConversionAnalysis
+import scitzen.compat.Logging.scribe
 import scitzen.contexts.ConversionContext
-import scitzen.bibliography.{BibDB, BibEntry}
-import scitzen.extern.{BlockConversions, ImageTarget, Prism}
-import scitzen.generic.{Article, ArticleDirectory, References, SastRef, TitledArticle}
+import scitzen.extern.{ImageTarget, Prism}
+import scitzen.generic.{Article, References, SastRef, TitledArticle}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
-import scitzen.compat.Logging.scribe
 
 import java.nio.file.Files
 
 class SastToHtmlConverter[Builder, Output <: FragT, FragT](
     val bundle: Bundle[Builder, Output, FragT],
     sourceArticle: Article,
-    preprocessed: ArticleDirectory,
-    bibliography: BibDB,
-    blockConversions: BlockConversions
+    anal: ConversionAnalysis
 ):
 
   import bundle.all.*
-  import bundle.tags2.{article, section, time, math}
+  import bundle.tags2.{article, math, section, time}
 
   val project  = sourceArticle.sourceDoc.path.project
   val reporter = sourceArticle.sourceDoc.reporter
@@ -136,7 +135,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   scribe.error(s"including by path no longer supported" + sourceArticle.sourceDoc.reporter(mcro))
                   ctx.empty
                 else
-                  preprocessed.itemsAndArticlesByLabel.get(attributes.target) match
+                  anal.directory.itemsAndArticlesByLabel.get(attributes.target) match
                     case None =>
                       scribe.error(
                         s"unknown include article ${attributes.target}" + sourceArticle.sourceDoc.reporter(mcro.prov)
@@ -146,9 +145,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       new SastToHtmlConverter(
                         bundle,
                         article.article,
-                        preprocessed,
-                        bibliography,
-                        blockConversions,
+                        anal
                       ).convertSeq(article.article.content)(ctx)
 
               case Some(other) =>
@@ -160,7 +157,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case tLBlock: Block =>
         if tLBlock.command == BCommand.Convert
-        then convertSeq(blockConversions.mapping(tLBlock))(ctx)
+        then convertSeq(anal.block.mapping(tLBlock))(ctx)
         else
           val positiontype = tLBlock.attributes.legacyPositional.headOption
           (positiontype, tLBlock.content) match
@@ -277,10 +274,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             ctx.katex(inner).map(res => Chain(math(raw(res))))
 
           case BibQuery =>
-            inlineToHTML(bibliography.convert(mcro))(ctx)
+            inlineToHTML(anal.bib.convert(mcro))(ctx)
 
           case Cite =>
-            val citations = bibliography.bibkeys(mcro).map(k => k -> bibliography.entries.get(k))
+            val citations = anal.bib.bibkeys(mcro).map(k => k -> anal.bib.entries.get(k))
             val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
               case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
               case (bibid, None) =>
@@ -320,7 +317,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Ref =>
             val scope =
               attrs.named.get("scope").flatMap(sourceArticle.sourceDoc.resolve).getOrElse(sourceArticle.sourceDoc.path)
-            val candidates = References.filterCandidates(scope, preprocessed.labels.getOrElse(attrs.target, Nil))
+            val candidates = References.filterCandidates(scope, anal.directory.labels.getOrElse(attrs.target, Nil))
 
             if candidates.sizeIs > 1 then
               scribe.error(
@@ -352,7 +349,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                   ctx.empty
             }.getOrElse {
               scribe.error(s"no resolutions for »${attrs.target}«${reporter(mcro)}")
-              ctx.retc(code(SastToScimConverter(bibliography).macroToScim(mcro)))
+              ctx.retc(code(SastToScimConverter(anal.bib).macroToScim(mcro)))
             }
 
           case Lookup =>
@@ -368,14 +365,14 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                 val target =
                   SastToTextConverter(
                     project.config.definitions,
-                    preprocessed
+                    anal.directory
                   ).convertInline(attrs.targetT.inl)
                 ctx.retc(a(title := target, "※"))
 
               case tagname @ ("ins" | "del") =>
                 ctx.retc(tag(tagname)(attrs.legacyPositional.mkString(", ")))
 
-              case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter(bibliography).macroToScim(mcro)))
+              case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter(anal.bib).macroToScim(mcro)))
               case "tableofcontents" => ctx.empty
               case "partition"       => ctx.empty
               case "rule"            => ctx.retc(span(attrs.target, `class` := "rule"))
@@ -387,25 +384,25 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
     val attrs  = mcro.attributes
-    val target = attrs.named.getOrElse(ImageTarget.Html.name, attrs.target)
-    sourceArticle.sourceDoc.resolve(target) match
-      case Some(target) =>
-        val path = project.htmlPaths.relativizeImage(target)
-        ctx.requireInOutput(target, path).retc {
-          val filename  = path.getFileName.toString
-          val sizeclass = mcro.attributes.named.get("size").map(s => cls := s"sizing-$s")
-          if videoEndings.exists(filename.endsWith) then
-            video(src  := path.toString, attr("loop").empty, attr("autoplay").empty, sizeclass)
-          else img(src := path.toString, sizeclass)
-        }
-      case None =>
-        scribe.warn(s"could not find path ${target}" + reporter(mcro))
-        ctx.empty
+    val target = anal.image.lookup(sourceArticle.sourceDoc.resolve(attrs.target).get, ImageTarget.Html)
+    if Files.exists(target.absolute)
+    then
+      val path = project.htmlPaths.relativizeImage(target)
+      ctx.requireInOutput(target, path).retc {
+        val filename  = path.getFileName.toString
+        val sizeclass = mcro.attributes.named.get("size").map(s => cls := s"sizing-$s")
+        if videoEndings.exists(filename.endsWith) then
+          video(src  := path.toString, attr("loop").empty, attr("autoplay").empty, sizeclass)
+        else img(src := path.toString, sizeclass)
+      }
+    else
+      scribe.warn(s"could not find path ${target}" + reporter(mcro))
+      ctx.empty
   }
 
   def reportPos(m: Directive): String = reporter(m)
 
   def unknownMacroOutput(im: Directive): Tag =
-    val str = SastToScimConverter(bibliography).macroToScim(im)
+    val str = SastToScimConverter(anal.bib).macroToScim(im)
     scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)

@@ -13,9 +13,9 @@ enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedF
   case Tex    extends ImageTarget("tex target", "pdf", List("svg", "tex"))
   case Raster extends ImageTarget("raster target", "png", List("svg", "pdf", "tex"))
 
-case class ImageConversions(mapping: Map[ProjectPath, Map[ImageTarget, Path]]):
-  def lookup(path: ProjectPath, target: ImageTarget): Path =
-    mapping.get(path).flatMap(_.get(target)).getOrElse(path.absolute)
+case class ImageConversions(mapping: Map[ProjectPath, Map[ImageTarget, ProjectPath]]):
+  def lookup(path: ProjectPath, target: ImageTarget): ProjectPath =
+    mapping.get(path).flatMap(_.get(target)).getOrElse(path)
 
 object ImageConverter {
 
@@ -36,7 +36,7 @@ object ImageConverter {
       paths.map: path =>
         path -> converters.flatMap: conv =>
           conv.applyConversion(path).map: res =>
-            conv.imageTarget -> res
+            conv.imageTarget -> project.resolve(project.root, res).get
         .toMap
       .toMap
 }

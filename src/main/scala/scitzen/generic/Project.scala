@@ -7,21 +7,24 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 class ProjectPath private (val project: Project, val relativeToProject: Path):
-  val absolute: Path = project.root.resolve(relativeToProject)
-  val directory: Path = absolute.getParent
+  val absolute: Path        = project.root.resolve(relativeToProject)
+  val directory: Path       = absolute.getParent
   val projectAbsolute: Path = Path.of("/").resolve(relativeToProject)
 
   override def hashCode(): Int = relativeToProject.hashCode()
   override def equals(obj: Any): Boolean = obj match
     case other: ProjectPath => relativeToProject == other.relativeToProject
-    case _ => false
+    case _                  => false
   override def toString: String = s"Path(${relativeToProject.toString})"
 
 object ProjectPath:
   def apply(project: Project, target: Path) =
     val normalized = project.root.resolve(target).normalize()
     require(normalized.startsWith(project.root), s"»$target« is not within »$project.root«")
-    require(Files.isRegularFile(normalized) || Files.notExists(normalized), s"only regular files may be documents: $normalized")
+    require(
+      Files.isRegularFile(normalized) || Files.notExists(normalized),
+      s"only regular files may be documents: $normalized"
+    )
     new ProjectPath(project, project.root.relativize(normalized))
 
 case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
@@ -40,27 +43,28 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
   val htmlPaths: HtmlPathManager = HtmlPathManager(this)
 
   lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
-  lazy val bibfileDBLPcache: ProjectPath =  asProjectPath(cacheDir.resolve("dblpcache.bib"))
+  lazy val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
 
-  def cachePath(target: Path): ProjectPath = ProjectPath(this, cacheDir.resolve(target))
+  def cachePath(target: Path): ProjectPath     = ProjectPath(this, cacheDir.resolve(target))
   def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this, target)
 
-  def resolveUnchecked(currentWorkingDirectory: Path, pathString: String): Path =
-    val rawPath = Path.of(pathString)
+  def resolveUnchecked(currentWorkingDirectory: Path, rawPath: Path): Path =
     val res =
       if rawPath.isAbsolute then root.resolve(Path.of("/").relativize(rawPath))
-      else currentWorkingDirectory resolve pathString
-    scribe.trace(s"lookup of $pathString in $currentWorkingDirectory was $res")
+      else currentWorkingDirectory resolve rawPath
+    scribe.trace(s"lookup of $rawPath in $currentWorkingDirectory was $res")
     res.normalize()
 
   /** Does a project global file local resolve of the given path.
     * Ensures that only files in the current project are accessed
     */
-  def resolve(currentWorkingDirectory: Path, pathString: String): Option[ProjectPath] =
+  def resolve(currentWorkingDirectory: Path, pathString: Path): Option[ProjectPath] =
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
-    Some(res).filter(p => p.startsWith(root) && ( Files.isRegularFile(p) || Files.notExists(p))).map{ p =>
+    Some(res).filter(p => p.startsWith(root) && (Files.isRegularFile(p) || Files.notExists(p))).map { p =>
       ProjectPath(this, root.relativize(p))
     }
+  def resolve(currentWorkingDirectory: Path, pathString: String): Option[ProjectPath] =
+    resolve(currentWorkingDirectory, Path.of(pathString))
 
 object Project:
   val scitzenconfig: String = "scitzen.config"
@@ -83,5 +87,3 @@ object Project:
       k -> Text(scitzen.parser.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8)))
     }.toMap
     Some(Project(file, value, definitions))
-
-

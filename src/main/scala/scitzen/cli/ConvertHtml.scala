@@ -34,7 +34,7 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     Files.createDirectories(project.outputdirWeb)
 
-    val cssfile   = project.outputdirWeb.resolve("scitzen.css")
+    val cssfile = project.outputdirWeb.resolve("scitzen.css")
     Files.write(cssfile, stylesheet)
 
     @tailrec
@@ -79,9 +79,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         SastContext(()),
         Nil
       ),
-      preprocessed = preprocessed,
-      bibliography = anal.bib,
-      blockConversions = anal.block,
+      anal = anal
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
@@ -124,9 +122,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val converter = new SastToHtmlConverter(
       bundle = scalatags.Text,
       sourceArticle = article.article,
-      preprocessed = preprocessed,
-      bibliography = bibliography,
-      blockConversions = anal.block,
+      anal = anal
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
