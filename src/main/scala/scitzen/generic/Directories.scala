@@ -19,11 +19,11 @@ class ArticleDirectory(val articles: List[Article]):
       key -> all.flatMap(_.getOrElse(key, Nil))
     }.toMap
 
-  val titled: List[TitledArticle] = articles.flatMap(art => art.titled.map(t => TitledArticle(t, art)))
+  val titled: List[TitledArticle]       = articles.flatMap(art => art.titled.map(t => TitledArticle(t, art)))
   val fullArticles: List[TitledArticle] = titled.filter(_.full)
-  val subArticles: List[TitledArticle] = titled.filterNot(_.full)
+  val subArticles: List[TitledArticle]  = titled.filterNot(_.full)
 
-  val byLabel: Map[String, TitledArticle] = titled.iterator.map(t => t.header.autolabel -> t).toMap
+  val byLabel: Map[String, TitledArticle]               = titled.iterator.map(t => t.header.autolabel -> t).toMap
   def findByLabel(label: String): Option[TitledArticle] = byLabel.get(label)
 
 object ArticleProcessing:
@@ -35,7 +35,7 @@ object ArticleProcessing:
 
   def headerType(sast: Sast) = sast match
     case Section(_, t @ ("=" | "=="), _) => t.length
-    case _                             => 3
+    case _                               => 3
 
   /** Splits the document into 3 parts:
     * • any initial text (not in any article)
@@ -56,11 +56,14 @@ object ArticleProcessing:
           rec(rest, (h :: body) :: acc)
         case other :: rest =>
           throw new IllegalStateException(s"unexpected sast when looking for item: $other")
-    snip :: rec(rest, Nil)
+    val res = rec(rest, Nil)
+    if snip.isEmpty
+    then res
+    else snip :: res
 
   def isScim(c: Path): Boolean =
     Files.isRegularFile(c) &&
-      c.getFileName.toString.endsWith(".scim")
+    c.getFileName.toString.endsWith(".scim")
 
   /** returs a list of .scim files starting at `source`. Does not follow symlinks and ignores files and folders starting with a . */
   def discoverSources(source: Path): List[Path] =
