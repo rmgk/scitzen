@@ -87,6 +87,13 @@ main {
 		grid-column: content-start / content-end;
 	}
 
+	/* prevent content from hugging the top. */
+	/* usually this does not matter because heading have the same padding, */
+	/* but for articles without heading this looks better. */
+	main > :first-child {
+		padding-top: 1rem;
+	}
+
 	/* oversized elements */
 	main > :is(img, figure, video, pre) {
 		/* oversized figures and images */
@@ -267,6 +274,8 @@ hr {
 	grid-column: header-start / header-end;
 	border: none;
 	border-bottom: var(--theme-border);
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
 }
 
 .marginnote {
