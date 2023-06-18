@@ -4,8 +4,11 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.scribe
 import scitzen.contexts.ConversionContext
-import scitzen.generic.Article
+import scitzen.extern.ImageTarget
+import scitzen.generic.{Article, ProjectPath}
 import scitzen.sast.*
+
+import java.nio.file.Files
 
 abstract class ProtoConverter[BlockRes, InlineRes](
     article: Article,
@@ -55,7 +58,15 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertInlineText(inlineText: InlineText, ctx: Cta): CtxInl
   def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl
 
-  def warn(msg: String, im: Directive): String =
+  def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: ProjectPath => CtxInl): CtxInl =
+    val target = anal.image.lookup(article.doc.resolve(directive.attributes.target).get, imageTarget)
+    if !Files.exists(target.absolute)
+    then ctx.retc(warn(s"could not find path", directive))
+    else cont(target)
+
+  def stringToInlineRes(str: String): InlineRes
+
+  def warn(msg: String, im: Directive): InlineRes =
     val macroStr = SastToScimConverter(anal.bib).macroToScim(im)
     scribe.warn(s"$msg: ⸢$macroStr⸥${article.doc.reporter(im)}")
-    macroStr
+    stringToInlineRes(macroStr)

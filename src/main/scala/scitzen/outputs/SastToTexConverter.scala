@@ -37,6 +37,8 @@ class SastToTexConverter(
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
+  override def stringToInlineRes(str: String): String = latexencode(str)
+
   def articleHeader(article: TitledArticle, cta: Cta): CtxCS =
     val hasToc = cta.features.contains("tableofcontents")
     val fm     = if hasToc then Chain("\\frontmatter") else Chain.empty
@@ -53,9 +55,7 @@ class SastToTexConverter(
     sec
   }
 
-
   override def inlineResToBlock(inl: Chain[String]): String = inl.mkString("")
-
 
   override def convertSection(section: Section, ctx: Cta): CtxCF =
     val Section(title, prefix, attr) = section
@@ -148,7 +148,7 @@ class SastToTexConverter(
               val (figContent, caption) =
                 blockContent.lastOption match
                   case Some(Block(_, _, Paragraph(content))) =>
-                    val captionstr = convertInlineSeq(content.inl, ctx)
+                    val captionstr = convertInlinesAsBlock(content.inl, ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
                     scribe.warn(s"figure has no caption" + article.doc.reporter(tlblock.prov))
@@ -222,7 +222,7 @@ class SastToTexConverter(
       case Code    => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
       case Comment => ctx.retc("")
       case Def     => ctx.retc("")
-      case Emph    => convertInlineSeq(attributes.targetT.inl, ctx).mapc(str => s"\\emph{$str}")
+      case Emph    => convertInlinesAsBlock(attributes.targetT.inl, ctx).mapc((str: String) => s"\\emph{$str}")
       case Math =>
         val math = attributes.target
         if math.isBlank then
@@ -327,15 +327,11 @@ class SastToTexConverter(
         ctx.retc(str)
 
       case Image =>
-        val target = attributes.named.getOrElse(ImageTarget.Tex.name, attributes.target)
-        article.doc.resolve(target) match
-          case None =>
-            ctx.retc(warn(s"could not find path", directive))
-          case Some(data) =>
-            val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
-            ctx.retc(s"\\includegraphics[max width=$mw\\columnwidth]{${data.absolute}}").useFeature(
-              "graphics"
-            )
+        convertImage(ctx, directive, ImageTarget.Tex): target =>
+          val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
+          ctx.retc(s"\\includegraphics[max width=$mw\\columnwidth]{${target.absolute}}").useFeature(
+            "graphics"
+          )
 
       case Include =>
         val str: String = warn(s"tex backend does not allow inline includes", directive)
