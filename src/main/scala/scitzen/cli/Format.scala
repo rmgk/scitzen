@@ -14,9 +14,9 @@ object Format:
 
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
-  def formatContents(ad: ArticleDirectory, bibDB: BibDB): Unit =
-    ad.byPath.foreach { (path, articles) =>
-      formatContent(path.absolute, articles.head.sourceDoc.content, articles.flatMap(_.content), bibDB)
+  def formatContents(ca: ConversionAnalysis): Unit =
+    ca.directory.byPath.foreach { (path, articles) =>
+      formatContent(path.absolute, articles.head.sourceDoc.content, articles.flatMap(_.content), ca.bib)
     }
 
   def formatRename(documentDirectory: ArticleDirectory): Unit =

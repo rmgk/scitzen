@@ -3,7 +3,7 @@ package scitzen.cli
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.scribe
-import scitzen.extern.{BlockConverter, ImageConverter, ImageTarget}
+import scitzen.extern.{BlockConversions, BlockConverter, ImageConversions, ImageConverter, ImageTarget}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project}
 import scitzen.sast.{DCommand, Directive}
 
@@ -11,6 +11,14 @@ import java.nio.file.{Files, Path}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+
+case class ConversionAnalysis(
+    project: Project,
+    directory: ArticleDirectory,
+    block: BlockConversions,
+    image: ImageConversions,
+    bib: BibDB,
+)
 
 object ConvertProject:
 
@@ -60,7 +68,7 @@ object ConvertProject:
 
       bi.flatten.concat(di).toList
 
-    ImageConverter.preprocessImages(
+    val imageConversions = ImageConverter.preprocessImages(
       project,
       List(
         Option.when(toHtml)(ImageTarget.Html),
@@ -72,18 +80,26 @@ object ConvertProject:
 
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
 
+    val anal = ConversionAnalysis(
+      project = project,
+      directory = directory,
+      block = blockConversions,
+      image = imageConversions,
+      bib = bibdb
+    )
+
     if project.config.format.contains("content") then
-      Format.formatContents(directory, bibdb)
+      Format.formatContents(anal)
       scribe.info(s"formatted contents ${timediff()}")
     if project.config.format.contains("filename") then
       Format.formatRename(directory)
       scribe.info(s"formatted filenames ${timediff()}")
     if toHtml then
-      ConvertHtml(project, blockConversions).convertToHtml(sync, directory, bibdb)
+      ConvertHtml(anal).convertToHtml(sync)
       scribe.info(s"generated html ${timediff()}")
     if toPdf then
-      ConvertPdf.convertToPdf(project, directory, bibdb)
+      ConvertPdf.convertToPdf(anal)
       scribe.info(s"generated pdfs ${timediff()}")
     if imageFileMap.isDefined then
-      ImageReferences.listAll(project, directory, imageFileMap.get)
+      ImageReferences.listAll(anal, imageFileMap.get)
       scribe.info(s"generated imagemap ${timediff()}")

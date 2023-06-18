@@ -5,7 +5,7 @@ import scitzen.bibliography.BibDB
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.contexts.{ConversionContext, SastContext}
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
-import scitzen.extern.{BlockConversions, ResourceUtil}
+import scitzen.extern.{ResourceUtil}
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.sast.{Attributes, Prov, Section}
@@ -16,7 +16,9 @@ import scala.annotation.tailrec
 import scala.math.Ordering.Implicits.seqOrdering
 import scala.util.Using
 
-class ConvertHtml(project: Project, blockConversions: BlockConversions):
+class ConvertHtml(anal: ConversionAnalysis):
+
+  def project = anal.project
 
   implicit val charset: Charset = StandardCharsets.UTF_8
 
@@ -24,8 +26,6 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
 
   def convertToHtml(
       sync: Option[ClSync],
-      articles: ArticleDirectory,
-      bibDB: BibDB
   ): Unit =
 
     val katexmapfile = project.cacheDir.resolve("katexmap.json")
@@ -51,20 +51,20 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
             cssfile,
             sync,
             nlp,
-            articles,
+            anal.directory,
             KatexConverter(
               katexmap,
               KatexLibrary(article.header.attributes.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
             ),
-            bibDB
+            anal.bib
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
 
-    val (katexRes, resources) = procRec(articles.titled, loadKatex(katexmapfile), Map.empty)
+    val (katexRes, resources) = procRec(anal.directory.titled, loadKatex(katexmapfile), Map.empty)
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
 
-    makeindex(articles, cssfile)
+    makeindex(anal.directory, cssfile)
 
   private def makeindex(
       preprocessed: ArticleDirectory,
@@ -80,8 +80,8 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
         Nil
       ),
       preprocessed = preprocessed,
-      bibliography = BibDB.empty,
-      blockConversions = blockConversions,
+      bibliography = anal.bib,
+      blockConversions = anal.block,
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
@@ -126,7 +126,7 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
       sourceArticle = article.article,
       preprocessed = preprocessed,
       bibliography = bibliography,
-      blockConversions = blockConversions,
+      blockConversions = anal.block,
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 

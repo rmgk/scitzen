@@ -1,9 +1,7 @@
 package scitzen.cli
 
-import scitzen.bibliography.BibDB
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Hashes, ImageConverter, Latexmk}
-import scitzen.generic.{ArticleDirectory, Project}
 import scitzen.outputs.SastToTexConverter
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -14,18 +12,19 @@ object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8
 
   def convertToPdf(
-      project: Project,
-      preprocessed: ArticleDirectory,
-    bibDB: BibDB,
+      anal: ConversionAnalysis
   ): Unit =
-    preprocessed.fullArticles
+
+    def project = anal.project
+
+    anal.directory.fullArticles
       .filter(_.header.attributes.named.contains("texTemplate"))
       .asJava.parallelStream().forEach { article =>
         val converter = new SastToTexConverter(
-          project,
+          anal.project,
           article.article,
-          preprocessed,
-          bibDB
+          anal.directory,
+          anal.bib
         )
 
         val resultContext =
@@ -36,7 +35,6 @@ object ConvertPdf:
         val content = headerres.data ++ resultContext.data
 
         val articlename = Format.canonicalName(article.header)
-
 
         Files.createDirectories(project.outputdirPdf)
 
@@ -73,7 +71,7 @@ object ConvertPdf:
         val documentString: String =
           ConvertTemplate.fillTemplate(
             project,
-            preprocessed,
+            anal.directory,
             article.named.get("texTemplate").orElse(project.config.texTemplate).get,
             templateSettings
           )
