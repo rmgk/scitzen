@@ -28,7 +28,8 @@ case object Text:
     else Text(List(InlineText(str)))
 
 case class Section(titleText: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
-  def autolabel: String = attributes.named.getOrElse("label", title)
+  private def label: Option[String] = attributes.named.get("label")
+  val autolabel: String             = label.getOrElse(title)
   def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
   lazy val language: Option[String] = attributes.named.get("language").map(_.trim)
   lazy val date: Option[ScitzenDateTime] = attributes.named.get("date").flatMap: s =>

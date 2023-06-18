@@ -109,7 +109,7 @@ class SastToTexConverter(
           warn("include by path no longer supported", directive)
           ctx.empty
         else
-          anal.directory.itemsAndArticlesByLabel.get(target) match
+          anal.directory.findByLabel(target) match
             case Some(art) =>
               new SastToTexConverter(art.article, anal)
                 .convertSastSeq(art.article.sast, ctx)

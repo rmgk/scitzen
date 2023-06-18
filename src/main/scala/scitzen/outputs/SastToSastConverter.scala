@@ -8,9 +8,9 @@ import scitzen.sast.DCommand.{BibQuery, Cite, Image}
 
 class SastToSastConverter(document: Document, fullSast: List[Sast]):
 
-  type CtxCS  = SastContext[Chain[Sast]]
+  type CtxCS   = SastContext[Chain[Sast]]
   type Ctx[+T] = SastContext[T]
-  type Cta    = Ctx[?]
+  type Cta     = Ctx[?]
 
   def run(): CtxCS = convertSeq(fullSast)(SastContext(()))
 
@@ -87,7 +87,6 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
     then resctx.addConversionBlock(resctx.data)
     else resctx
 
-
   private def ensureSectionRef(sec: Section, ctx: Cta) = {
     val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
     val (aliases, attr) = resctx.data
@@ -121,7 +120,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
 
   def convertMacro(mcro: Directive)(ctx: Cta): Ctx[Directive] =
     mcro.command match
-      case Image => ctx.addImage(mcro).ret(mcro)
+      case Image           => ctx.addImage(mcro).ret(mcro)
       case Cite | BibQuery =>
         // TODO this is a temporary way to rename the parameter, remove at some point
         val res =

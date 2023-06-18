@@ -128,7 +128,7 @@ class SastToHtmlConverter(
               scribe.error(s"including by path no longer supported" + article.doc.reporter(directive))
               ctx.empty
             else
-              anal.directory.itemsAndArticlesByLabel.get(attributes.target) match
+              anal.directory.findByLabel(attributes.target) match
                 case None =>
                   scribe.error(
                     s"unknown include article ${attributes.target}" + article.doc.reporter(directive.prov)
