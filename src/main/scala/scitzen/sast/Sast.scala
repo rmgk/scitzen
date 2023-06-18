@@ -36,6 +36,12 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
     TimeParsers.parseDate(s.trim)
   lazy val title: String            = titleText.plainString
   lazy val filename: Option[String] = attributes.named.get("filename")
+  lazy val level: Int = prefix match
+    case "=" => -1
+    case "==" => 0
+    case "#" => 1
+    case "##" => 2
+    case "###" => 3
 
 object Section:
   given ordering: Ordering[Section] =

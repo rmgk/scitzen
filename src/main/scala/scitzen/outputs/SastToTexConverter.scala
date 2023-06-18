@@ -70,9 +70,9 @@ class SastToTexConverter(
     else ""
     val header =
       val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
-      val sec   = sectioning(prefix.length - shift)
+      val sec   = sectioning(section.level - shift)
       // not entirely sure what the following does
-      val chapterAdd = if prefix == "==" then s"[${ilc.data}]"
+      val chapterAdd = if section.level == 0 then s"[${ilc.data}]"
       else ""
       s"\\$sec$numbered$chapterAdd{${ilc.data}}"
 
