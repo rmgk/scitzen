@@ -85,7 +85,7 @@ class SastToTexConverter(
         else "itemize"
         s"\\begin{$listType}" +:
         ctx.fold[ListItem, String](children) { (ctx, child) =>
-          val inlineCtx  = convertInlineSeq(child.text.inl, ctx).map(s => Chain(s"\\item{$s}"))
+          val inlineCtx  = convertInlinesAsBlock(child.text.inl, ctx).map(s => Chain(s"\\item{$s}"))
           val contentCtx = child.content.fold(inlineCtx.empty[String])(convertSast(_, inlineCtx))
           inlineCtx.data ++: contentCtx
         } :+
@@ -93,7 +93,7 @@ class SastToTexConverter(
 
       case ListItem(_, _, _) :: _ =>
         ctx.fold[ListItem, String](children) { (ctx, child) =>
-          val inlinesCtx = convertInlineSeq(child.text.inl, ctx).map(s => s"\\item[$s]{}")
+          val inlinesCtx = convertInlinesAsBlock(child.text.inl, ctx).map(s => s"\\item[$s]{}")
           inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])(convertSast(_, inlinesCtx))
         }.map { content =>
           "\\begin{description}" +: content :+ "\\end{description}"
@@ -132,13 +132,13 @@ class SastToTexConverter(
     val innerCtx: CtxCS =
       tlblock.content match
         case Paragraph(content) =>
-          val cctx = convertInlineSeq(content.inl, ctx)
+          val cctx = convertInlinesAsBlock(content.inl, ctx)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if article.settings.get("style").contains("article") then cctx :+ "\n"
+          if article.settings.get("style").contains("article") then cctx.single :+ "\n"
           else
             cctx.map { text =>
-              val latexenc = text.mkString("").trim.replace("\n", "\\newline{}\n")
+              val latexenc = text.trim.replace("\n", "\\newline{}\n")
               Chain("\\noindent", latexenc, "\n")
             }
 
@@ -309,7 +309,7 @@ class SastToTexConverter(
       case Lookup =>
         project.definitions.get(attributes.target).orElse(attributes.named.get("default").map(Text.of)) match
           case Some(res) =>
-            convertInlinesAsBlock(res.inl, ctx).map(Chain(_))
+            convertInlinesAsBlock(res.inl, ctx).single
           case None =>
             warn(s"unknown name »${attributes.target}«", directive)
             ctx.retc(latexencode(attributes.target))
@@ -333,7 +333,7 @@ class SastToTexConverter(
             ctx.retc(warn(s"could not find path", directive))
           case Some(data) =>
             val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
-            ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{${data.absolute}}")).useFeature(
+            ctx.retc(s"\\includegraphics[max width=$mw\\columnwidth]{${data.absolute}}").useFeature(
               "graphics"
             )
 
