@@ -114,6 +114,7 @@ class AttributesToScim(bibDB: BibDB):
   def encodeText(text: Text): String =
     val value = SastToScimConverter(bibDB).inlineToScim(text.inl)
     AttributeDeparser.quote(
+      forceEmpty = false,
       value,
       {
         case `text` => true
@@ -122,6 +123,7 @@ class AttributesToScim(bibDB: BibDB):
     )
   def encodeString(value: String): String =
     AttributeDeparser.quote(
+      forceEmpty = true,
       value,
       {
         case Text(Nil) if value.isEmpty     => true

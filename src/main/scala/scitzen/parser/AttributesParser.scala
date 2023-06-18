@@ -116,10 +116,10 @@ object AttributeDeparser {
 
   val countQuotes: Regex = """(]"+)""".r
 
-  def quote(value: String, check: Text => Boolean): String =
+  def quote(forceEmpty: Boolean, value: String, check: Text => Boolean): String =
 
     // empty value is always represented using quotes for clarity
-    if value.isEmpty then return "\"\""
+    if forceEmpty && value.isEmpty  then return "\"\""
 
     def parses(str: String): Boolean =
       Try {
