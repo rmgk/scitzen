@@ -1,9 +1,7 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
-import scitzen.parser.CommonParsers.*
-import scitzen.sast.DCommand.Comment
-import scitzen.sast.{Attribute, Directive, Inline, InlineText}
+import scitzen.sast.{Inline, InlineText}
 
 import scala.annotation.tailrec
 
@@ -11,9 +9,9 @@ object InlineParsers {
 
   inline def endingChars: Scip[Boolean] = ":;\"]\n}".any
 
-  def full(
-      ending: Scip[Boolean],
-      allowEmpty: Boolean = false
+  inline def full(
+      inline ending: Scip[Boolean],
+      inline allowEmpty: Boolean = false
   ): Scip[List[Inline]] = Scip {
 
     var start = scx.index

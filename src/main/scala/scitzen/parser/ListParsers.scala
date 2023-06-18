@@ -35,8 +35,8 @@ object ListParsers {
 
   object ListConverter {
 
-    def splitted[ID, Item](items: Seq[(ID, Item)]): Seq[(Item, Seq[Item])] =
-      items.toList match {
+    def splitted[ID, Item](items: List[(ID, Item)]): Seq[(Item, Seq[Item])] =
+      items match {
         case Nil => Nil
         case (marker, item) :: tail =>
           val (take, drop) = tail.span { case (c, _) => marker != c }
@@ -47,7 +47,7 @@ object ListParsers {
       /* defines which characters are distinguishing list levels */
       def norm(m: String) = m.replaceAll("""[^\s\*\.•\-]""", "")
 
-      val split = splitted(items.map(i => (norm(i.marker), i)))
+      val split = splitted(items.iterator.map(i => (norm(i.marker), i)).toList)
 
       if (split.isEmpty) Slist(Nil) else otherList(split)
     }

@@ -25,7 +25,7 @@ object DirectiveParsers {
 
   val syntaxStart: Scip[Boolean] = commentStart or DirectiveParsers.detectStart
 
-  inline def commentEnding(endingFun: Scip[Boolean]): Scip[Directive] =
+  def commentEnding(endingFun: Scip[Boolean]): Scip[Directive] =
     withProv(commentStart ifso (until(eol).min(0) and (endingFun.lookahead or eol)).str)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 

@@ -7,8 +7,8 @@ import java.nio.charset.StandardCharsets
 import scala.util.Try
 
 object TimeParsers {
-  val digits: Scip[Boolean] = bpred(b => '0' <= b && b <= '9').rep.min(1)
-  val date: Scip[ScitzenDate] = Scip {
+  inline def digits: Scip[Boolean] = bpred(b => '0' <= b && b <= '9').rep.min(1)
+  inline def date: Scip[ScitzenDate] = Scip {
     val y = digits.str.run
     "-".all.run
     val m = digits.str.run
@@ -16,7 +16,7 @@ object TimeParsers {
     val d = digits.str.run
     ScitzenDate(y, m, d)
   }
-  val time = Scip {
+  inline def time = Scip {
     val res = ScitzenTime(
       digits.str.run,
       (":".all ifso digits.str).run,
@@ -25,8 +25,8 @@ object TimeParsers {
     (".".all.orFail ~> digits).attempt.run
     res
   }
-  val timezone = "+".all.ifso(digits <~> (":".all ifso digits))
-  val dateTime = Scip {
+  inline def timezone = "+".all.ifso(digits <~> (":".all ifso digits))
+  inline def dateTime = Scip {
     val sdate = date.run
     val stime = Scip {
       ("T".all or cpred(Character.isWhitespace)).str.run
