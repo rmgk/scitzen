@@ -66,6 +66,7 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
   def resolve(currentWorkingDirectory: Path, pathString: String): Option[ProjectPath] =
     resolve(currentWorkingDirectory, Path.of(pathString))
 
+
 object Project:
   val scitzenconfig: String = "scitzen.config"
 

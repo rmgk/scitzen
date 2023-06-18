@@ -36,7 +36,7 @@ object ImageConverter {
       paths.map: path =>
         path -> converters.flatMap: conv =>
           conv.applyConversion(path).map: res =>
-            conv.imageTarget -> project.resolve(project.root, res).get
+            conv.imageTarget -> project.asProjectPath(res)
         .toMap
       .toMap
 }

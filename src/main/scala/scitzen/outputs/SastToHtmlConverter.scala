@@ -157,7 +157,9 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
       case tLBlock: Block =>
         if tLBlock.command == BCommand.Convert
-        then convertSeq(anal.block.mapping(tLBlock))(ctx)
+        then
+          val substitute = anal.block.mapping(tLBlock)
+          convertSeq(substitute)(ctx)
         else
           val positiontype = tLBlock.attributes.legacyPositional.headOption
           (positiontype, tLBlock.content) match
