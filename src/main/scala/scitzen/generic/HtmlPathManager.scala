@@ -15,9 +15,7 @@ class HtmlPathManager(project: Project):
     articleOutputDir resolve Format.sluggify(s"$name.html")
 
   def relativizeImage(targetFile: ProjectPath): Path =
-    def translateImage(image: ProjectPath): Path =
-      (articleOutputDir resolve "images").resolve(image.relative)
-    articleOutputDir.relativize(translateImage(targetFile))
+    Path.of("images").resolve(targetFile.relativeToProject)
 
   def relativeArticleTarget(targetPost: Section): Path =
     articleOutputDir.relativize(articleOutputPath(targetPost))

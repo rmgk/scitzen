@@ -67,7 +67,7 @@ case class SastToTextConverter(
 
                   case other =>
                     val pos = s" ${document.reporter(mcro)}"
-                    scribe.error(s"unknown include ${attributes.target} in template ${document.path.relative}$pos")
+                    scribe.error(s"unknown include ${attributes.target} in template ${document.path.relativeToProject}$pos")
                     Nil
 
           case _ => Nil

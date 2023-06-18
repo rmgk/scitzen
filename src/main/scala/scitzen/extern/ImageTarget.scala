@@ -19,8 +19,8 @@ case class ITargetPrediction(project: Project, cwd: Path):
       if target.requiresConversion(attr.target) then
         val abs =
           project.resolve(cwd, attr.target).getOrElse(throw IllegalStateException(s"could not resolve ${attr.target}"))
-        val filename   = s"${ImageConverter.nameWithoutExtension(abs.relative)}.${target.preferredFormat}"
-        val rel        = abs.relative
+        val filename   = s"${ImageConverter.nameWithoutExtension(abs.relativeToProject)}.${target.preferredFormat}"
+        val rel        = abs.relativeToProject
         val prediction = project.cacheDir resolve "convertedImages" resolve rel.toString resolve filename
         attr.updated(s"${target.name}", (project.asProjectPath(prediction).projectAbsolute: Path).toString)
       else attr

@@ -6,16 +6,16 @@ import scitzen.sast.Text
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-class ProjectPath private (val project: Project, val relative: Path):
-  val absolute: Path = project.root.resolve(relative)
+class ProjectPath private (val project: Project, val relativeToProject: Path):
+  val absolute: Path = project.root.resolve(relativeToProject)
   val directory: Path = absolute.getParent
-  val projectAbsolute: Path = Path.of("/").resolve(relative)
+  val projectAbsolute: Path = Path.of("/").resolve(relativeToProject)
 
-  override def hashCode(): Int = relative.hashCode()
+  override def hashCode(): Int = relativeToProject.hashCode()
   override def equals(obj: Any): Boolean = obj match
-    case other: ProjectPath => relative == other.relative
+    case other: ProjectPath => relativeToProject == other.relativeToProject
     case _ => false
-  override def toString: String = s"Path(${relative.toString})"
+  override def toString: String = s"Path(${relativeToProject.toString})"
 
 object ProjectPath:
   def apply(project: Project, target: Path) =

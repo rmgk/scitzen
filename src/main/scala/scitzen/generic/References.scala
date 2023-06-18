@@ -17,7 +17,7 @@ object References:
         val searchScope = scope.absolute.iterator().asScala.toList
         val sorted = multiple.map { c =>
           c ->
-          c.scope.relative.iterator().asScala.toList.zip(searchScope).takeWhile {
+          c.scope.relativeToProject.iterator().asScala.toList.zip(searchScope).takeWhile {
             case (l, r) => l == r
           }.size
         }.sortBy(_._2).reverse
