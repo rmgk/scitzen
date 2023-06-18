@@ -25,10 +25,18 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
   def applyConversions(article: Article, block: Block) =
     val conversions = block.attributes.nested
     conversions.foldLeft(List[Sast](block)) { case (current, (name, attrs)) =>
-      name match
-        case "template" => applyTemplate(attrs, current, article)
-        case "js"       => convertJS(current, attrs)
-        case "tex"      => convertTex(article, current, attrs)
+      current match
+        case Nil => Nil
+        case List(block @ Block(_, _, Fenced(content))) =>
+          name match
+            case "template" => applyTemplate(attrs, block, content, article)
+            case "js"       => convertJS(current, attrs)
+            case "tex"      => convertTex(article, block, content, attrs)
+            case "graphviz" => graphviz(content, block)
+            case "mermaid"  => mermaid(content, block)
+        case other =>
+          scribe.error(s"can not convert $other")
+          Nil
 
     }
 
@@ -41,101 +49,95 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         Logging.scribe.error(s"js conversion not applicable")
         sast
 
-  def convertTex(article: Article, sast: List[Sast], attr: Attributes): List[Sast] =
-    sast match
-      case List(block @ Block(_, _, Fenced(content))) =>
-        val texbytes    = content.getBytes(StandardCharsets.UTF_8)
-        val contentHash = Hashes.sha1hex(texbytes)
-        val target      = project.cachePath(Path.of(s"$contentHash/$contentHash.pdf"))
-        val res =
-          if Files.exists(target.absolute)
-          then Some(target.absolute)
-          else
-            val dir = target.directory
-            Files.createDirectories(dir)
-            val texfile = dir.resolve(contentHash + ".tex")
-            Files.write(texfile, texbytes)
-            Latexmk.latexmk(dir, contentHash, texfile)
-        res match
-          case Some(res) =>
-            List(
-              Directive(DCommand.Image, Attributes(List(Attribute("", target.projectAbsolute.toString))))(block.prov)
-            )
-          case None =>
-            Nil
-      case other =>
-        Logging.scribe.error(s"tex conversion not applicable")
-        sast
+  def convertTex(article: Article, block: Block, content: String, attr: Attributes): List[Sast] =
+    val texbytes    = content.getBytes(StandardCharsets.UTF_8)
+    val contentHash = Hashes.sha1hex(texbytes)
+    val target      = project.cachePath(Path.of(s"$contentHash/$contentHash.pdf"))
+    val res =
+      if Files.exists(target.absolute)
+      then Some(target.absolute)
+      else
+        val dir = target.directory
+        Files.createDirectories(dir)
+        val texfile = dir.resolve(contentHash + ".tex")
+        Files.write(texfile, texbytes)
+        Latexmk.latexmk(dir, contentHash, texfile)
+    res match
+      case Some(res) =>
+        List(
+          Directive(DCommand.Image, Attributes(List(Attribute("", target.projectAbsolute.toString))))(block.prov)
+        )
+      case None =>
+        Nil
 
-  def graphviz(content: String, dir: Path, name: String, format: String): Path =
+  def graphviz(content: String, block: Block): List[Sast] =
     val bytes  = content.getBytes(StandardCharsets.UTF_8)
-    val target = dir.resolve(name + s".$format")
-    if !Files.exists(target) then
-      Files.createDirectories(dir)
+    val name   = Hashes.sha1hex(bytes)
+    val format = "pdf"
+    val target = project.cachePath(Path.of(s"$name/$name.$format"))
+    if !Files.exists(target.absolute) then
+      Files.createDirectories(target.directory)
 
       val start = System.nanoTime()
       val process = new ProcessBuilder(
         "dot",
         s"-T$format",
-        s"-o${target.toAbsolutePath.toString}"
+        s"-o${target.absolute.toString}"
       )
         .inheritIO().redirectInput(Redirect.PIPE).start()
       Using.resource(process.getOutputStream) { os => os.write(bytes) }
       process.waitFor()
       scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-    target
+    List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString))(block.prov))
 
-  def mermaid(content: String, dir: Path, name: String, format: String): Path =
+  def mermaid(content: String, block: Block): List[Sast] =
     val bytes         = content.getBytes(StandardCharsets.UTF_8)
-    val target        = dir.resolve(name + s".$format")
-    val mermaidSource = dir.resolve(name + ".mermaid")
-    if !Files.exists(target) then
+    val name          = Hashes.sha1hex(bytes)
+    val format        = "svg"
+    val target        = project.cachePath(Path.of(s"$name/$name.$format"))
+    val mermaidSource = project.cachePath(Path.of(s"$name/$name.mermaid"))
+    if !Files.exists(target.absolute) then
       val start = System.nanoTime()
 
-      Files.createDirectories(mermaidSource.getParent)
-      Files.write(mermaidSource, bytes)
+      Files.createDirectories(mermaidSource.directory)
+      Files.write(mermaidSource.absolute, bytes)
 
       new ProcessBuilder(
         "mmdc",
         "--input",
-        mermaidSource.toAbsolutePath.toString,
+        mermaidSource.absolute.toString,
         "--output",
-        target.toAbsolutePath.toString
+        target.absolute.toString
       )
         .inheritIO().start().waitFor()
       scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-    target
+    List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString))(block.prov))
 
   def applyTemplate(
       attributes: Attributes,
-      currentInput: List[Sast],
+      block: Block,
+      origContent: String,
       article: Article,
   ): List[Sast] =
-    currentInput match
-      case List(block @ Block(_, _, Fenced(origContent))) =>
-        val resolved = attributes.named.get("template") match {
-          case None =>
-            scribe.error(s"no template")
-            origContent
-          case Some(pathString) => article.sourceDoc.resolve(pathString) match
-              case None =>
-                scribe.error(s"could not resolve $pathString")
-                origContent
-              case Some(templatePath) =>
-                articleDirectory.byPath.get(templatePath) match
-                  case None =>
-                    scribe.error(s"not resolved $templatePath")
-                    origContent
-                  case Some(articles) =>
-                    val sast = articles.flatMap(_.content)
-                    SastToTextConverter(
-                      project.config.definitions ++ attributes.named + (
-                        "template content" -> origContent
-                      ),
-                      articleDirectory
-                    ).convert(sast).mkString("\n")
-        }
-        List(block.copy(content = Fenced(resolved))(block.prov))
-      case other => currentInput
+    val resolved =
+      val pathString = attributes.target
+      article.sourceDoc.resolve(pathString) match
+        case None =>
+          scribe.error(s"could not resolve $pathString")
+          origContent
+        case Some(templatePath) =>
+          articleDirectory.byPath.get(templatePath) match
+            case None =>
+              scribe.error(s"not resolved $templatePath")
+              origContent
+            case Some(articles) =>
+              val sast = articles.flatMap(_.content)
+              SastToTextConverter(
+                project.config.definitions ++ attributes.named + (
+                  "template content" -> origContent
+                ),
+                articleDirectory
+              ).convert(sast).mkString("\n")
+    List(block.copy(content = Fenced(resolved))(block.prov))
 
 }
