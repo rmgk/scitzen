@@ -18,3 +18,4 @@ case class TitledArticle(header: Section, article: Article):
   def title                      = header.title
   def full                       = header.prefix == "="
   def date                       = header.date
+  val hardNewlines = !named.get("style").exists(_.contains("article"))

@@ -115,7 +115,7 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     val converter = new SastToHtmlConverter(
       article = article.article,
-      anal = anal.copy(hardNewlines = !article.named.get("style").exists(_.contains("article")))
+      anal = anal
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
@@ -158,7 +158,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           if article.named.get("style").exists(_.contains("plain"))
           then ""
           else "numbered-sections",
-          if anal.hardNewlines then None else Some("adhoc"),
+          if article.hardNewlines then None else Some("adhoc"),
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.header.language

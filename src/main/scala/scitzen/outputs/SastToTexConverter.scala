@@ -63,7 +63,7 @@ class SastToTexConverter(
 
   override def convertSection(section: Section, ctx: Cta): CtxCF =
     val Section(title, prefix, attr) = section
-    val ilc                          = convertInlineSeq(title.inl, ctx)
+    val ilc                          = convertInlineSeq(title.inl, ctx).map(inlineResToBlock)
 
     val pushed = ilc.push(section)
     val numbered = if attr.named.get("style").contains("unnumbered") then "*"
@@ -126,7 +126,7 @@ class SastToTexConverter(
           val cctx = convertInlinesAsBlock(content.inl, ctx)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if !anal.hardNewlines then cctx.single :+ ""
+          if true then cctx.single :+ ""
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")
