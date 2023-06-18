@@ -2,9 +2,7 @@ package scitzen.outputs
 
 import scitzen.generic.{ArticleDirectory, Document, ProjectPath}
 import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{
-  Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text
-}
+import scitzen.sast.{BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 import scitzen.compat.Logging.scribe
 
 case class SastToTextConverter(
@@ -25,12 +23,12 @@ case class SastToTextConverter(
             convertInline(text.inl) +: convert(List(inner))
         }
 
-      case Block(_, attr, blockType) =>
+      case Block(command, attr, blockType) =>
         val filterBlock =
-          attr.legacyPositional match
-            case "if" :: parameter :: _ =>
+          command match
+            case BCommand.If =>
               val res =
-                definitions.get(parameter) match
+                definitions.get(attr.target) match
                   case Some(value) =>
                     attr.named.get("equals").forall(_ == value)
                   case None => false

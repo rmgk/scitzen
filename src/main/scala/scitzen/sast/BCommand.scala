@@ -6,6 +6,7 @@ enum BCommand {
   case Code
   case Figure
   case Embed
+  case If
   case Other(str: String)
 }
 
@@ -16,6 +17,7 @@ object BCommand {
       "code" -> Code,
       "figure" -> Figure,
       "embed" -> Embed,
+      "if" -> If,
       "" -> Empty
     )
     val aliases = Map()
