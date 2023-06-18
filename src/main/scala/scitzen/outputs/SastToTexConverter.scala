@@ -319,6 +319,9 @@ class SastToTexConverter(
 
       case Image =>
         convertImage(ctx, directive, ImageTarget.Tex): target =>
+          if target.absolute.toString.endsWith(".tex") then
+            warn("tex image no longer supported", directive)
+            ()
           val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
           ctx.retc(s"\\includegraphics[max width=$mw\\columnwidth]{${target.absolute}}").useFeature(
             "graphics"
