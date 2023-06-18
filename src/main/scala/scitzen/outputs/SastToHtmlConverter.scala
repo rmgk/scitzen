@@ -340,7 +340,6 @@ class SastToHtmlConverter(
             val target =
               SastToTextConverter(
                 project.config.definitions,
-                anal.directory
               ).convertInline(attrs.targetT.inl)
             ctx.retc(a(title := target, "※"))
 

@@ -1,17 +1,11 @@
 package scitzen.outputs
 
-import scitzen.generic.{ArticleDirectory, Document, ProjectPath}
-import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{
-  BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist,
-  SpaceComment, Text
-}
+import scitzen.sast.{BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 import scitzen.compat.Logging.scribe
+import scitzen.sast.DCommand.Lookup
 
 case class SastToTextConverter(
-    definitions: Map[String, String] = Map.empty,
-    articleDirectory: ArticleDirectory = ArticleDirectory(Nil),
-    document: Option[Document] = None,
+    definitions: Map[String, String],
 ):
 
   def convert(b: Seq[Sast]): Seq[String] =
@@ -56,22 +50,6 @@ case class SastToTextConverter(
                 scribe.error(s"could not resolve ${attributes.target}")
                 Nil
               case Some(res) => List(res)
-
-          case Include =>
-            document match
-              case None => Nil
-              case Some(document) =>
-                document.resolve(attributes.target).flatMap(articleDirectory.byPath.get) match
-                  case Some(List(article)) =>
-                    new SastToTextConverter(definitions, articleDirectory, Some(article.doc))
-                      .convert(article.sast)
-
-                  case other =>
-                    val pos = s" ${document.reporter(mcro)}"
-                    scribe.error(
-                      s"unknown include ${attributes.target} in template ${document.path.relativeToProject}$pos"
-                    )
-                    Nil
 
           case _ => Nil
 

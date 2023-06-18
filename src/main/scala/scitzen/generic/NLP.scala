@@ -38,7 +38,7 @@ case class NLP(stopwords: Map[String, Seq[String]]):
     candidates.maxByOption(_._2).map(_._1)
 
   def words(sast: Seq[Sast]): List[String] =
-    SastToTextConverter(Map.empty, new ArticleDirectory(Nil)).convert(sast).iterator
+    SastToTextConverter(Map.empty).convert(sast).iterator
       .flatMap(_.split("[^\\p{L}]+")).map(_.toLowerCase).toList
 
   def wordcount(sast: Seq[Sast]): Map[String, Int] =

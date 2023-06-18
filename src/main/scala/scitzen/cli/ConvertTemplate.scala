@@ -19,7 +19,5 @@ object ConvertTemplate:
         val templateArticle = directory.byPath(templateFile).head
         val documentString = SastToTextConverter(
           templateSettings,
-          directory,
-          Some(templateArticle.doc),
         ).convert(templateArticle.sast).mkString("\n")
         documentString
