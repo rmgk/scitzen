@@ -6,7 +6,7 @@ import scalatags.generic
 import scalatags.generic.Bundle
 import scitzen.contexts.ConversionContext
 import scitzen.bibliography.{BibDB, BibEntry}
-import scitzen.extern.{BlockConversions, ImageConverter, ImageTarget, Prism, ScalaCLI}
+import scitzen.extern.{BlockConversions, ImageTarget, Prism}
 import scitzen.generic.{Article, ArticleDirectory, References, SastRef, TitledArticle}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
@@ -204,18 +204,18 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
             case None =>
               sBlock.command match
                 // convert scala to js and embed the result
-                case BCommand.Embed if sBlock.attributes.named.get("lang").contains("scala") =>
-                  val source = if sBlock.attributes.named.contains("template") then
-                    ImageConverter.applyTemplate(
-                      sBlock.attributes,
-                      text,
-                      sourceArticle.sourceDoc.path.directory,
-                      sourceArticle.sourceDoc.path.project,
-                      preprocessed
-                    )
-                  else text
-                  val js = ScalaCLI.compile(project.cacheDir, source)
-                  ctx.retc(script(`type` := "text/javascript", js.map(raw(_))))
+//                case BCommand.Embed if sBlock.attributes.named.get("lang").contains("scala") =>
+//                  val source = if sBlock.attributes.named.contains("template") then
+//                    ImageConverter.applyTemplate(
+//                      sBlock.attributes,
+//                      text,
+//                      sourceArticle.sourceDoc.path.directory,
+//                      sourceArticle.sourceDoc.path.project,
+//                      preprocessed
+//                    )
+//                  else text
+//                  val js = ScalaCLI.compile(project.cacheDir, source)
+//                  ctx.retc(script(`type` := "text/javascript", js.map(raw(_))))
 
                 // Code listing
                 // Use this for monospace, space preserving, line preserving text

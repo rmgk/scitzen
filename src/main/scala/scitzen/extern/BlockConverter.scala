@@ -1,11 +1,15 @@
 package scitzen.extern
 
 import scitzen.compat.Logging
+import scitzen.compat.Logging.scribe
 import scitzen.generic.{Article, ArticleDirectory, Project}
+import scitzen.outputs.SastToTextConverter
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Sast}
 
+import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.util.Using
 
 case class BlockConversions(mapping: Map[Block, List[Sast]])
 
@@ -22,6 +26,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     val conversions = block.attributes.nested
     conversions.foldLeft(List[Sast](block)) { case (current, (name, attrs)) =>
       name match
+        case "template" => ??? //applyTemplate(attrs, )
         case "js"  => convertJS(current, attrs)
         case "tex" => convertTex(article, current, attrs)
 
@@ -43,7 +48,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
           if !attr.named.contains("template")
           then origContent
           else
-            ImageConverter.applyTemplate(
+            applyTemplate(
               attr,
               origContent,
               article.sourceDoc.path.directory,
@@ -74,4 +79,71 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         Logging.scribe.error(s"tex conversion not applicable")
         sast
 
+  def graphviz(content: String, dir: Path, name: String, format: String): Path =
+    val bytes  = content.getBytes(StandardCharsets.UTF_8)
+    val target = dir.resolve(name + s".$format")
+    if !Files.exists(target) then
+      Files.createDirectories(dir)
+
+      val start = System.nanoTime()
+      val process = new ProcessBuilder(
+        "dot",
+        s"-T$format",
+        s"-o${target.toAbsolutePath.toString}"
+      )
+        .inheritIO().redirectInput(Redirect.PIPE).start()
+      Using.resource(process.getOutputStream) { os => os.write(bytes) }
+      process.waitFor()
+      scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+    target
+
+  def mermaid(content: String, dir: Path, name: String, format: String): Path =
+    val bytes         = content.getBytes(StandardCharsets.UTF_8)
+    val target        = dir.resolve(name + s".$format")
+    val mermaidSource = dir.resolve(name + ".mermaid")
+    if !Files.exists(target) then
+      val start = System.nanoTime()
+
+      Files.createDirectories(mermaidSource.getParent)
+      Files.write(mermaidSource, bytes)
+
+      new ProcessBuilder(
+        "mmdc",
+        "--input",
+        mermaidSource.toAbsolutePath.toString,
+        "--output",
+        target.toAbsolutePath.toString
+      )
+        .inheritIO().start().waitFor()
+      scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+    target
+
+  def applyTemplate(
+      attributes: Attributes,
+      content: String,
+      cwd: Path,
+      project: Project,
+      articleDirectory: ArticleDirectory
+  ): String =
+    attributes.named.get("template") match
+      case None =>
+        scribe.error(s"no template")
+        content
+      case Some(pathString) => project.resolve(cwd, pathString) match
+          case None =>
+            scribe.error(s"could not resolve $pathString")
+            content
+          case Some(templatePath) =>
+            articleDirectory.byPath.get(templatePath) match
+              case None =>
+                scribe.error(s"not resolved $templatePath")
+                content
+              case Some(articles) =>
+                val sast = articles.flatMap(_.content)
+                SastToTextConverter(
+                  project.config.definitions ++ attributes.named + (
+                    "template content" -> content
+                  ),
+                  articleDirectory
+                ).convert(sast).mkString("\n")
 }
