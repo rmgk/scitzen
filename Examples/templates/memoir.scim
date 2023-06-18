@@ -40,7 +40,6 @@
 	% adds a visual indicator for overfull lines
 	\overfullrule=5pt
 ::
-
 ::if{pagestyle}
 	\hypersetup{
 	    colorlinks,
@@ -57,14 +56,11 @@
 	    urlcolor={blue!80!black}
 	}
 ::
-
-
 ::if{feature sidepar}
 	% size of side paragraphs (notes) and placement (left is actually the default)
 	\renewcommand{\sideparfont}{\footnotesize\normalfont}
 	\sideparmargin{left}
 ::
-
 ::if{bibliography path}
 	% required for author name citations
 	\usepackage[square,numbers,sort]{natbib}
@@ -73,9 +69,6 @@
 	\renewcommand*{\NAT@spacechar}{~}
 	\makeatother
 ::
-
-
-
 ::if{feature graphics}
 	% adjustbox loads graphicx, but allows includes with max width
 	\usepackage[export]{adjustbox}
@@ -83,14 +76,12 @@
 	% for some reason, graphics does not embed graphics in draft mode …
 	% \setkeys{Gin}{draft=false}
 ::
-
 ::if{feature bibentry}
 	% enables bibentry macro for inline bib items
 	\usepackage{bibentry}
 	% uses standard bibliography?
 	\nobibliography*
 ::
-
 ::if{settings sloppy}
 	% sloppyStuff
 	% set \clubpenalty, etc. to distinctive values for use
@@ -118,7 +109,6 @@
 	% allows more spaces in paragarphs to prevent overfull hboxes
 	\sloppy
 ::
-
 ::if{feature listings}
 	% colors and definition for scalastyle
 	\usepackage{listings}
@@ -144,8 +134,6 @@
 	}
 	\lstset{style=scitzenCodestyle}
 ::
-
-
 ::if{feature framed}
 	\usepackage[framemethod=tikz]{mdframed}
 
@@ -167,7 +155,6 @@
 	\newtheorem{example}[scithm]{Example}
 	\newtheorem{definition}[scithm]{Definition}
 ::
-
 % double brackets (llbracket rrbracket)
 \usepackage{ stmaryrd }
 
