@@ -30,9 +30,6 @@ case class Attributes(raw: Seq[Attribute]) {
   def updated(key: String, value: String) = {
     remove(key).append(List(Attribute.apply(key, value)))
   }
-
-  // override def toString: String =
-  //  s"Attributes(${AttributesToScim.convert(this, spacy = false, force = true, light = false)})"
 }
 
 object Attributes {
@@ -49,6 +46,8 @@ object Attribute {
   def apply(id: String, value: String): Attribute =
     if (id.isBlank) Positional(Text(List(InlineText(value))), value) else Plain(id, value)
 
+  case class Plain(id: String, value: String)      extends Attribute
+  case class Nested(id: String, inner: Attributes) extends Attribute
   case class Positional(text: Text, string: String) extends Attribute {
     override def id = ""
   }
@@ -56,8 +55,5 @@ object Attribute {
     def apply(string: String): Positional =
       Positional(Text.of(string), string)
   }
-
-  case class Plain(id: String, value: String)      extends Attribute
-  case class Nested(id: String, inner: Attributes) extends Attribute
 
 }
