@@ -160,8 +160,10 @@ class ConvertHtml(anal: ConversionAnalysis):
 
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
-          "fullpost",
-          if article.named.get("style").contains("article") then None else Some("adhoc"),
+          if article.named.get("style").exists(_.contains("plain"))
+          then ""
+          else "numbered-sections",
+          if converter.hardNewlines then None else Some("adhoc"),
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.header.language

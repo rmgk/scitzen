@@ -148,24 +148,24 @@ h4 {
 }
 
 /* headers counting */
-.fullpost main {
+.numbered-sections main {
 	counter-reset: section;
 }
 
-.fullpost h2 {
+.numbered-sections h2 {
 	counter-increment: section;
 	counter-reset: subsection;
 }
 
-.fullpost h3 {
+.numbered-sections h3 {
 	counter-increment: subsection;
 }
 
-.fullpost h2:before {
+.numbered-sections h2:before {
 	content: counter(section) ". ";
 }
 
-.fullpost h3:before {
+.numbered-sections h3:before {
 	content: counter(section) "." counter(subsection) ". ";
 }
 
@@ -457,12 +457,12 @@ body > aside > nav li {
 }
 
 /* sidebar counters */
-body.fullpost > aside > nav ol {
+body.numbered-sections > aside > nav ol {
 	counter-reset: item;
 	list-style: none;
 }
 
-body.fullpost > aside > nav li:before {
+body.numbered-sections > aside > nav li:before {
 	content: counters(item, ".") " ";
 	counter-increment: item;
 }

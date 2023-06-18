@@ -18,6 +18,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   val project  = article.doc.path.project
   val reporter = article.doc.reporter
 
+  val hardNewlines = !article.settings.get("style").exists(_.contains("article"))
+
   type CtxCF  = ConversionContext[Chain[BlockRes]]
   type CtxInl = ConversionContext[Chain[InlineRes]]
   type Ctx[T] = ConversionContext[T]
