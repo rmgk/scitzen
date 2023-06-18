@@ -11,7 +11,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.util.Using
 
-case class BlockConversions(mapping: Map[Block, List[Sast]])
+case class BlockConversions(mapping: Map[Block, List[Sast]]):
+  def substitute(block: Block): List[Sast] = mapping.getOrElse(block, Nil)
 
 class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
 

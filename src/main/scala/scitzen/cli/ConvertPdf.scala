@@ -21,14 +21,12 @@ object ConvertPdf:
       .filter(_.header.attributes.named.contains("texTemplate"))
       .asJava.parallelStream().forEach { article =>
         val converter = new SastToTexConverter(
-          anal.project,
           article.article,
-          anal.directory,
-          anal.bib
+          anal
         )
 
         val resultContext =
-          converter.convert(article.body)(ConversionContext(()))
+          converter.convertSastSeq(article.body, ConversionContext(()))
 
         val headerres = converter.articleHeader(article, resultContext)
 

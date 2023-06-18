@@ -1,10 +1,10 @@
 package scitzen.outputs
 
 import de.rmgk.Chain
-import scitzen.bibliography.BibDB
+import scitzen.cli.ConversionAnalysis
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, ArticleDirectory, Project, References, SastRef, TitledArticle}
+import scitzen.generic.{Article, References, SastRef, TitledArticle}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
@@ -29,11 +29,9 @@ object SastToTexConverter {
 }
 
 class SastToTexConverter(
-    project: Project,
     article: Article,
-    articleDirectory: ArticleDirectory,
-    bibDB: BibDB,
-):
+    anal: ConversionAnalysis
+) extends ProtoConverter[String, String](article, anal):
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
@@ -43,15 +41,9 @@ class SastToTexConverter(
     val hasToc = cta.features.contains("tableofcontents")
     val fm     = if hasToc then Chain("\\frontmatter") else Chain.empty
 
-    val ilc    = inlineValuesToTex(article.header.titleText.inl)(cta)
+    val ilc    = convertInlineSeq(article.header.titleText.inl, cta)
     val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
     ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\scitzenmaketitle{}")
-
-  def convert(mainSast: List[Sast])(ctx: Cta): CtxCS =
-    sastSeqToTex(mainSast)(ctx)
-
-  def sastSeqToTex(b: Seq[Sast])(ctx: Cta): CtxCS =
-    ctx.fold(b) { (ctx, sast) => sastToTex(sast)(ctx) }
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",
@@ -61,88 +53,92 @@ class SastToTexConverter(
     sec
   }
 
-  def sastToTex(sast: Sast)(ctx: Cta): CtxCS =
-    sast match
-      case tlBlock: Block => blockToTex(tlBlock)(ctx)
 
-      case section @ Section(title, prefix, attr) =>
-        val ilc = inlineValuesToTex(title.inl)(ctx)
+  override def inlineResToBlock(inl: Chain[String]): String = inl.mkString("")
 
-        val pushed   = ilc.push(section)
-        val numbered = if attr.named.get("style").contains("unnumbered") then "*" else ""
-        val header =
-          val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
-          val sec   = sectioning(prefix.length - shift)
-          // not entirely sure what the following does
-          val chapterAdd = if prefix == "==" then s"[${ilc.data}]" else ""
-          s"\\$sec$numbered$chapterAdd{${ilc.data}}"
 
-        val label = attr.named.get("unique ref").map(l => s"\\label{$l}").toList
+  override def convertSection(section: Section, ctx: Cta): CtxCF =
+    val Section(title, prefix, attr) = section
+    val ilc                          = convertInlineSeq(title.inl, ctx)
 
-        pushed.retc(header) :++ Chain.from(label)
+    val pushed = ilc.push(section)
+    val numbered = if attr.named.get("style").contains("unnumbered") then "*"
+    else ""
+    val header =
+      val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
+      val sec   = sectioning(prefix.length - shift)
+      // not entirely sure what the following does
+      val chapterAdd = if prefix == "==" then s"[${ilc.data}]"
+      else ""
+      s"\\$sec$numbered$chapterAdd{${ilc.data}}"
 
-      case Slist(children) =>
-        children match
-          case Nil => ctx.ret(Chain.nil)
+    val label = attr.named.get("unique ref").map(l => s"\\label{$l}").toList
+    pushed.retc(header) :++ Chain.from(label)
 
-          case ListItem(marker, _, None | Some(Slist(_))) :: _ =>
-            val listType = if marker.contains(".") then "enumerate" else "itemize"
-            s"\\begin{$listType}" +:
-            ctx.fold[ListItem, String](children) { (ctx, child) =>
-              val inlineCtx  = inlineValuesToTex(child.text.inl)(ctx).map(s => Chain(s"\\item{$s}"))
-              val contentCtx = child.content.fold(inlineCtx.empty[String])(sastToTex(_)(inlineCtx))
-              inlineCtx.data ++: contentCtx
-            } :+
-            s"\\end{$listType}"
+  override def convertSlist(slist: Slist, ctx: Cta): CtxCF =
+    val children = slist.children
+    children match
+      case Nil => ctx.ret(Chain.nil)
 
-          case ListItem(_, _, _) :: _ =>
-            ctx.fold[ListItem, String](children) { (ctx, child) =>
-              val inlinesCtx = inlineValuesToTex(child.text.inl)(ctx).map(s => s"\\item[$s]{}")
-              inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])(sastToTex(_)(inlinesCtx))
-            }.map { content =>
-              "\\begin{description}" +: content :+ "\\end{description}"
-            }
+      case ListItem(marker, _, None | Some(Slist(_))) :: _ =>
+        val listType = if marker.contains(".") then "enumerate"
+        else "itemize"
+        s"\\begin{$listType}" +:
+        ctx.fold[ListItem, String](children) { (ctx, child) =>
+          val inlineCtx  = convertInlineSeq(child.text.inl, ctx).map(s => Chain(s"\\item{$s}"))
+          val contentCtx = child.content.fold(inlineCtx.empty[String])(convertSast(_, inlineCtx))
+          inlineCtx.data ++: contentCtx
+        } :+
+        s"\\end{$listType}"
 
-      case mcro: Directive =>
-        mcro.command match
-          case Include =>
-            val target = mcro.attributes.target
-            if target.endsWith(".scim")
-            then
-              warn("include by path no longer supported", mcro)
+      case ListItem(_, _, _) :: _ =>
+        ctx.fold[ListItem, String](children) { (ctx, child) =>
+          val inlinesCtx = convertInlineSeq(child.text.inl, ctx).map(s => s"\\item[$s]{}")
+          inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])(convertSast(_, inlinesCtx))
+        }.map { content =>
+          "\\begin{description}" +: content :+ "\\end{description}"
+        }
+
+  override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
+    directive.command match
+      case Include =>
+        val target = directive.attributes.target
+        if target.endsWith(".scim")
+        then
+          warn("include by path no longer supported", directive)
+          ctx.empty
+        else
+          anal.directory.itemsAndArticlesByLabel.get(target) match
+            case Some(art) =>
+              new SastToTexConverter(art.article, anal)
+                .convertSastSeq(art.article.sast, ctx)
+
+            case None =>
+              warn(s"unknown include", directive)
               ctx.empty
-            else
-              articleDirectory.itemsAndArticlesByLabel.get(target) match
-                case Some(art) =>
-                  new SastToTexConverter(project, art.article, articleDirectory, bibDB)
-                    .sastSeqToTex(art.article.sast)(ctx)
 
-                case None =>
-                  warn(s"unknown include ${mcro.attributes.target}", mcro)
-                  ctx.empty
-
-          case other =>
-            inlineValuesToTex(List(mcro))(ctx).single
+      case other =>
+        convertInlineDirective(directive, ctx)
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
     val args      = attributes.legacyPositional.tail
     val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
     val label     = attributes.named.get("unique ref").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
-    sastSeqToTex(content)(ctx) :+
+    convertSastSeq(content, ctx) :+
     s"\\end{$name}"
 
-  def blockToTex(tlblock: Block)(ctx: Cta): CtxCS =
+  override def convertBlock(tlblock: Block, ctx: Cta): CtxCS =
     val innerCtx: CtxCS =
       tlblock.content match
         case Paragraph(content) =>
-          val cctx = inlineValuesToTex(content.inl)(ctx)
+          val cctx = convertInlineSeq(content.inl, ctx)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if article.settings.get("style").contains("article") then cctx.single :+ "\n"
+          if article.settings.get("style").contains("article") then cctx :+ "\n"
           else
             cctx.map { text =>
-              val latexenc = text.trim.replace("\n", "\\newline{}\n")
+              val latexenc = text.mkString("").trim.replace("\n", "\\newline{}\n")
               Chain("\\noindent", latexenc, "\n")
             }
 
@@ -152,14 +148,14 @@ class SastToTexConverter(
               val (figContent, caption) =
                 blockContent.lastOption match
                   case Some(Block(_, _, Paragraph(content))) =>
-                    val captionstr = inlineValuesToTex(content.inl)(ctx)
+                    val captionstr = convertInlineSeq(content.inl, ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
                     scribe.warn(s"figure has no caption" + article.doc.reporter(tlblock.prov))
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
               "\\centerfloat" +:
-              sastSeqToTex(figContent)(caption) :++
+              convertSastSeq(figContent, caption) :++
               Chain(
                 caption.data,
                 tlblock.attributes.named.get("unique ref").fold("")(l => s"\\label{$l}"),
@@ -169,20 +165,23 @@ class SastToTexConverter(
             case BCommand.Other(name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example")) =>
               texbox(name, tlblock.attributes, blockContent)(ctx).useFeature("framed")
 
-            case BCommand.Other(name @"abstract") => texbox(name, tlblock.attributes, blockContent)(ctx)
+            case BCommand.Other(name @ "abstract") => texbox(name, tlblock.attributes, blockContent)(ctx)
 
             case _ =>
-              sastSeqToTex(blockContent)(ctx)
+              convertSastSeq(blockContent, ctx)
 
         case Fenced(text) =>
           if tlblock.attributes.named.contains(ImageTarget.Tex.name) then
             val target = tlblock.attributes.named(ImageTarget.Tex.name)
-            inlineToTex(Directive(
-              Image,
-              tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target)))
-            )(
-              tlblock.prov
-            ))(ctx)
+            convertInlineDirective(
+              Directive(
+                Image,
+                tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target)))
+              )(
+                tlblock.prov
+              ),
+              ctx
+            )
           else
             tlblock.attributes.legacyPositional.headOption match
 
@@ -202,7 +201,7 @@ class SastToTexConverter(
     if project.config.notes.contains("hide") then innerCtx
     else
       tlblock.attributes.nestedMap.get("note").fold(innerCtx) { note =>
-        inlineValuesToTex(note.targetT.inl)(innerCtx).map { (content: String) =>
+        convertInlinesAsBlock(note.targetT.inl, innerCtx).map { (content: String) =>
           s"\\sidepar{$content}%" +: innerCtx.data
         }.useFeature("sidepar")
       }
@@ -211,138 +210,133 @@ class SastToTexConverter(
     attributes.argumentsT match
       case Nil => ctx.ret("")
       case arg :: _ =>
-        inlineValuesToTex(attributes.argumentsT.head.inl)(ctx).map { str =>
+        convertInlinesAsBlock(attributes.argumentsT.head.inl, ctx).map { str =>
           s"${str}~"
         }
 
-  def inlineValuesToTex(inners: Seq[Inline])(ctx: Cta): Ctx[String] =
-    ctx.fold(inners) { (ctx: Ctx[Chain[String]], inline) => inlineToTex(inline)(ctx) }.map(_.toList.mkString(""))
+  override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxCF = ctx.retc(latexencode(inlineText.str))
 
-  def inlineToTex(inln: Inline)(ctx: Cta): CtxCS =
-    inln match
-      case InlineText(str) => ctx.retc(latexencode(str))
-      case mcro: Directive =>
-        val attributes = mcro.attributes
-        mcro.command match
-          case Code    => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
-          case Comment => ctx.retc("")
-          case Def     => ctx.retc("")
-          case Emph    => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\emph{$str}")
-          case Math =>
-            val math = attributes.target
-            if math.isBlank then
-              warn("empty math", mcro)
-              ctx.ret(Chain.empty)
-            else
-              ctx.retc(s"$$${attributes.target}$$")
-          case Other("break") => ctx.retc(s"\\clearpage{}")
-          case Other("rule") => inlineToTex(Directive(
-              Ref,
-              Attributes(
-                Seq(
-                  Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(mcro.prov))), ""),
-                  Plain("style", "plain"),
-                  Positional(s"rule-${attributes.target}")
-                )
+  override def convertInlineDirective(directive: Directive, ctx: Cta): CtxCF =
+    val attributes = directive.attributes
+    directive.command match
+      case Code    => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
+      case Comment => ctx.retc("")
+      case Def     => ctx.retc("")
+      case Emph    => convertInlineSeq(attributes.targetT.inl, ctx).mapc(str => s"\\emph{$str}")
+      case Math =>
+        val math = attributes.target
+        if math.isBlank then
+          warn("empty math", directive)
+          ctx.ret(Chain.empty)
+        else
+          ctx.retc(s"$$${attributes.target}$$")
+      case Other("break") => ctx.retc(s"\\clearpage{}")
+      case Other("rule") => convertDirective(
+          Directive(
+            Ref,
+            Attributes(
+              Seq(
+                Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov))), ""),
+                Plain("style", "plain"),
+                Positional(s"rule-${attributes.target}")
               )
-            )(
-              mcro.prov
-            ))(ctx)
-          case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
-          case Raw                => ctx.retc(attributes.named.getOrElse("tex", ""))
-          case Other("todo") =>
-            inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"{\\color{red}TODO:${str}}")
-          case Strong => inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\textbf{$str}")
-          case Other("partition") =>
-            inlineValuesToTex(attributes.targetT.inl)(ctx).mapc(str => s"\\part{${str}}")
+            )
+          )(
+            directive.prov
+          ),
+          ctx
+        )
+      case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
+      case Raw                => ctx.retc(attributes.named.getOrElse("tex", ""))
+      case Other("todo") =>
+        convertInlinesAsBlock(attributes.targetT.inl, ctx).mapc(str => s"{\\color{red}TODO:${str}}")
+      case Strong => convertInlinesAsBlock(attributes.targetT.inl, ctx).mapc(str => s"\\textbf{$str}")
+      case Other("partition") =>
+        convertInlinesAsBlock(attributes.targetT.inl, ctx).mapc(str => s"\\part{${str}}")
 
-          case BibQuery => inlineToTex(bibDB.convert(mcro))(ctx)
-          case Cite =>
-            val cmndCtx = attributes.named.get("style") match
-              case Some("author") => ctx.ret("citet")
-              case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
-              case _              => ctx.ret("cite")
+      case BibQuery => convertInline(anal.bib.convert(directive), ctx)
+      case Cite =>
+        val cmndCtx = attributes.named.get("style") match
+          case Some("author") => ctx.ret("citet")
+          case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
+          case _              => ctx.ret("cite")
 
-            nbrs(attributes)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attributes.target}}")
+        nbrs(attributes)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attributes.target}}")
 
-          case Ref =>
-            if attributes.named.contains("scope") then
-              warn(s"scope support unclear", mcro)
-              ()
-            val candidates =
-              References.filterCandidates(
-                article.doc.path,
-                articleDirectory.labels.getOrElse(attributes.target, Nil)
-              )
+      case Ref =>
+        if attributes.named.contains("scope") then
+          warn(s"scope support unclear", directive)
+          ()
+        val candidates =
+          References.filterCandidates(
+            article.doc.path,
+            anal.directory.labels.getOrElse(attributes.target, Nil)
+          )
 
-            if candidates.sizeIs > 1 then
-              scribe.error(
-                s"multiple resolutions for ${attributes.target}" +
-                article.doc.reporter(mcro) +
-                s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
-              )
+        if candidates.sizeIs > 1 then
+          scribe.error(
+            s"multiple resolutions for ${attributes.target}" +
+            article.doc.reporter(directive) +
+            s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
+          )
 
-            candidates.headOption match
-              case None =>
-                scribe.error(s"no resolution found for ${attributes.target}" + article.doc.reporter(mcro))
-                ctx.empty
-              case Some(candidate) =>
-                // TODO: existence of line is unchecked
-                val label = References.getLabel(candidate).get + attributes.named.getOrElse("line", "")
-                attributes.named.get("style") match
-                  case Some("plain") =>
-                    inlineValuesToTex(attributes.argumentsT.head.inl)(ctx).mapc { str =>
-                      s"\\hyperref[${label}]{${str}}"
-                    }
-                  case _ => nbrs(attributes)(ctx).mapc { str => s"${str}\\ref{${label}}" }
+        candidates.headOption match
+          case None =>
+            scribe.error(s"no resolution found for ${attributes.target}" + article.doc.reporter(directive))
+            ctx.empty
+          case Some(candidate) =>
+            // TODO: existence of line is unchecked
+            val label = References.getLabel(candidate).get + attributes.named.getOrElse("line", "")
+            attributes.named.get("style") match
+              case Some("plain") =>
+                convertInlinesAsBlock(attributes.argumentsT.head.inl, ctx).mapc { str =>
+                  s"\\hyperref[${label}]{${str}}"
+                }
+              case _ => nbrs(attributes)(ctx).mapc { str => s"${str}\\ref{${label}}" }
 
-          case Link =>
-            ctx.retc {
-              val target   = attributes.target
-              val plainurl = s"\\url{$target}"
-              if attributes.legacyPositional.size > 1 then
-                val name    = "{" + latexencode(attributes.legacyPositional.head) + "}"
-                val textref = s"\\href{$target}{$name}"
-                if article.settings.get("footnotelinks").contains("disabled") then textref
-                else s"$textref\\footnote{$plainurl}"
-              else plainurl
-            }.useFeature("href")
+      case Link =>
+        ctx.retc {
+          val target   = attributes.target
+          val plainurl = s"\\url{$target}"
+          if attributes.legacyPositional.size > 1 then
+            val name    = "{" + latexencode(attributes.legacyPositional.head) + "}"
+            val textref = s"\\href{$target}{$name}"
+            if article.settings.get("footnotelinks").contains("disabled") then textref
+            else s"$textref\\footnote{$plainurl}"
+          else plainurl
+        }.useFeature("href")
 
-          case Lookup =>
-            project.definitions.get(attributes.target).orElse(attributes.named.get("default").map(Text.of)) match
-              case Some(res) =>
-                inlineValuesToTex(res.inl)(ctx).map(Chain(_))
-              case None =>
-                warn(s"unknown name »${attributes.target}«", mcro)
-                ctx.retc(latexencode(attributes.target))
+      case Lookup =>
+        project.definitions.get(attributes.target).orElse(attributes.named.get("default").map(Text.of)) match
+          case Some(res) =>
+            convertInlinesAsBlock(res.inl, ctx).map(Chain(_))
+          case None =>
+            warn(s"unknown name »${attributes.target}«", directive)
+            ctx.retc(latexencode(attributes.target))
 
-          case Other("footnote") =>
-            inlineValuesToTex(attributes.targetT.inl)(ctx).map(target => s"\\footnote{$target}").single
+      case Other("footnote") =>
+        convertInlinesAsBlock(attributes.targetT.inl, ctx).map(target => s"\\footnote{$target}").single
 
-          case Other("tableofcontents") =>
-            ctx.useFeature("tableofcontents").retc(
-              List("\\cleardoublepage", "\\tableofcontents*", "\\mainmatter").mkString("\n")
+      case Other("tableofcontents") =>
+        ctx.useFeature("tableofcontents").retc(
+          List("\\cleardoublepage", "\\tableofcontents*", "\\mainmatter").mkString("\n")
+        )
+
+      case Other(_) =>
+        val str = warn(s"unknown macro", directive)
+        ctx.retc(str)
+
+      case Image =>
+        val target = attributes.named.getOrElse(ImageTarget.Tex.name, attributes.target)
+        article.doc.resolve(target) match
+          case None =>
+            ctx.retc(warn(s"could not find path", directive))
+          case Some(data) =>
+            val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
+            ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{${data.absolute}}")).useFeature(
+              "graphics"
             )
 
-          case Other(_) =>
-            val str = warn(s"unknown macro", mcro)
-            ctx.retc(str)
-
-          case Image =>
-            val target = attributes.named.getOrElse(ImageTarget.Tex.name, attributes.target)
-            article.doc.resolve(target) match
-              case None =>
-                ctx.retc(warn(s"could not find path", mcro))
-              case Some(data) =>
-                val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
-                ctx.ret(Chain(s"\\includegraphics[max width=$mw\\columnwidth]{${data.absolute}}")).useFeature(
-                  "graphics"
-                )
-
-          case Include =>
-            val str: String = warn(s"tex backend does not allow inline includes", mcro)
-            ctx.retc(str)
-  def warn(msg: String, im: Directive): String =
-    val macroStr = SastToScimConverter(bibDB).macroToScim(im)
-    scribe.warn(s"$msg: ⸢$macroStr⸥${article.doc.reporter(im)}")
-    macroStr
+      case Include =>
+        val str: String = warn(s"tex backend does not allow inline includes", directive)
+        ctx.retc(str)
