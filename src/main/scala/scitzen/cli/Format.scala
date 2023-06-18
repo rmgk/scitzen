@@ -16,7 +16,7 @@ object Format:
 
   def formatContents(ca: ConversionAnalysis): Unit =
     ca.directory.byPath.foreach { (path, articles) =>
-      formatContent(path.absolute, articles.head.sourceDoc.content, articles.flatMap(_.content), ca.bib)
+      formatContent(path.absolute, articles.head.doc.content, articles.flatMap(_.sast), ca.bib)
     }
 
   def formatRename(documentDirectory: ArticleDirectory): Unit =

@@ -44,7 +44,7 @@ case class ConversionContext[+T](
   def empty[U]: ConversionContext[Chain[U]]       = ret(Chain.empty[U])
   def single[U >: T]: ConversionContext[Chain[U]] = ret(Chain.one(data))
 
-  def fold[U, V](seq: Seq[U])(f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])
+  def fold[U, V](seq: Iterable[U])(f: (ConversionContext[Chain[V]], U) => ConversionContext[Chain[V]])
       : ConversionContext[Chain[V]] =
     seq.foldLeft(ret(Chain.empty[V])) { (ctx, elem) =>
       val nctx = f(ctx, elem)

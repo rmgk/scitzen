@@ -64,7 +64,7 @@ object ConvertProject:
 
       val di = directory.articles.iterator.flatMap: art =>
         art.context.imageDirectives.iterator.flatMap: d =>
-          art.sourceDoc.resolve(d.attributes.target)
+          art.doc.resolve(d.attributes.target)
 
       bi.flatten.concat(di).toList
 

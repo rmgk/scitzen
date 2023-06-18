@@ -20,6 +20,6 @@ object ConvertTemplate:
         val documentString = SastToTextConverter(
           templateSettings,
           directory,
-          Some(templateArticle.sourceDoc),
-        ).convert(templateArticle.content).mkString("\n")
+          Some(templateArticle.doc),
+        ).convert(templateArticle.sast).mkString("\n")
         documentString

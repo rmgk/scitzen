@@ -115,7 +115,7 @@ class SastToTexConverter(
               articleDirectory.itemsAndArticlesByLabel.get(target) match
                 case Some(art) =>
                   new SastToTexConverter(project, art.article, articleDirectory, bibDB)
-                    .sastSeqToTex(art.article.content)(ctx)
+                    .sastSeqToTex(art.article.sast)(ctx)
 
                 case None =>
                   warn(s"unknown include ${mcro.attributes.target}", mcro)
@@ -155,7 +155,7 @@ class SastToTexConverter(
                     val captionstr = inlineValuesToTex(content.inl)(ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
-                    scribe.warn(s"figure has no caption" + article.sourceDoc.reporter(tlblock.prov))
+                    scribe.warn(s"figure has no caption" + article.doc.reporter(tlblock.prov))
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
               "\\centerfloat" +:
@@ -271,20 +271,20 @@ class SastToTexConverter(
               ()
             val candidates =
               References.filterCandidates(
-                article.sourceDoc.path,
+                article.doc.path,
                 articleDirectory.labels.getOrElse(attributes.target, Nil)
               )
 
             if candidates.sizeIs > 1 then
               scribe.error(
                 s"multiple resolutions for ${attributes.target}" +
-                article.sourceDoc.reporter(mcro) +
+                article.doc.reporter(mcro) +
                 s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
               )
 
             candidates.headOption match
               case None =>
-                scribe.error(s"no resolution found for ${attributes.target}" + article.sourceDoc.reporter(mcro))
+                scribe.error(s"no resolution found for ${attributes.target}" + article.doc.reporter(mcro))
                 ctx.empty
               case Some(candidate) =>
                 // TODO: existence of line is unchecked
@@ -330,7 +330,7 @@ class SastToTexConverter(
 
           case Image =>
             val target = attributes.named.getOrElse(ImageTarget.Tex.name, attributes.target)
-            article.sourceDoc.resolve(target) match
+            article.doc.resolve(target) match
               case None =>
                 ctx.retc(warn(s"could not find path", mcro))
               case Some(data) =>
@@ -344,5 +344,5 @@ class SastToTexConverter(
             ctx.retc(str)
   def warn(msg: String, im: Directive): String =
     val macroStr = SastToScimConverter(bibDB).macroToScim(im)
-    scribe.warn(s"$msg: ⸢$macroStr⸥${article.sourceDoc.reporter(im)}")
+    scribe.warn(s"$msg: ⸢$macroStr⸥${article.doc.reporter(im)}")
     macroStr

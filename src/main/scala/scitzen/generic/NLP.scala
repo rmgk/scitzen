@@ -22,7 +22,7 @@ case class NLP(stopwords: Map[String, Set[String]]):
       }
 
     lazy val idf = articleDirectory.articles.flatMap { art =>
-      words(art.content).distinct
+      words(art.sast).distinct
     }.wordcount.view.mapValues(docWithTerm => Math.log(totalDocuments / docWithTerm))
 
     val size = wordlist.size.toDouble

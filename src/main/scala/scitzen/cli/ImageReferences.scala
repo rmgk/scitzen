@@ -15,7 +15,7 @@ object ImageReferences:
   def listAll(anal: ConversionAnalysis, output: Path): Unit =
     val fileImageMap: Map[String, List[Reference]] = anal.directory.articles.map { art =>
 
-      val cwd = art.sourceDoc.path.directory
+      val cwd = art.doc.path.directory
 
       val images = art.context.imageDirectives.flatMap { mcro =>
         val path = mcro.attributes.named.getOrElse(ImageTarget.Raster.name, mcro.attributes.target)
@@ -24,14 +24,14 @@ object ImageReferences:
             // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
             Some(Reference(
               target.toString,
-              art.sourceDoc.reporter.bytePosToCodepointPos(mcro.prov.start),
-              art.sourceDoc.reporter.bytePosToCodepointPos(mcro.prov.end)
+              art.doc.reporter.bytePosToCodepointPos(mcro.prov.start),
+              art.doc.reporter.bytePosToCodepointPos(mcro.prov.end)
             ))
           case None =>
             scribe.warn(s"could not find $path in $cwd")
             None
       }
-      art.sourceDoc.path.absolute.toString -> images
+      art.doc.path.absolute.toString -> images
     }.filter(_._2.nonEmpty).toMap
     Files.write(
       output,

@@ -60,8 +60,8 @@ case class SastToTextConverter(
               case Some(document) =>
                 document.resolve(attributes.target).flatMap(articleDirectory.byPath.get) match
                   case Some(List(article)) =>
-                    new SastToTextConverter(definitions, articleDirectory, Some(article.sourceDoc))
-                      .convert(article.content)
+                    new SastToTextConverter(definitions, articleDirectory, Some(article.doc))
+                      .convert(article.sast)
 
                   case other =>
                     val pos = s" ${document.reporter(mcro)}"

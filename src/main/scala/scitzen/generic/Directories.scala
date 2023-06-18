@@ -10,7 +10,7 @@ import scala.util.Using
 
 class ArticleDirectory(val articles: List[Article]):
   lazy val byPath: Map[ProjectPath, List[Article]] =
-    articles.groupBy(fd => fd.sourceDoc.path)
+    articles.groupBy(fd => fd.doc.path)
 
   val labels: Map[String, List[SastRef]] =
     val all     = articles.map(_.context.labelledThings)

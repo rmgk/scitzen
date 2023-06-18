@@ -25,8 +25,8 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
   import bundle.all.*
   import bundle.tags2.{article, math, section, time}
 
-  val project  = sourceArticle.sourceDoc.path.project
-  val reporter = sourceArticle.sourceDoc.reporter
+  val project  = sourceArticle.doc.path.project
+  val reporter = sourceArticle.doc.reporter
 
   type CtxCF  = ConversionContext[Chain[Frag]]
   type Ctx[T] = ConversionContext[T]
@@ -123,7 +123,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
           case Include =>
             attributes.arguments.headOption match
               case Some("code") =>
-                sourceArticle.sourceDoc.resolve(attributes.target) match
+                sourceArticle.doc.resolve(attributes.target) match
                   case None => inlineValuesToHTML(List(mcro))(ctx)
                   case Some(file) =>
                     convertSingle(Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(mcro.prov))(
@@ -132,13 +132,13 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
               case None =>
                 if attributes.target.endsWith(".scim") then
-                  scribe.error(s"including by path no longer supported" + sourceArticle.sourceDoc.reporter(mcro))
+                  scribe.error(s"including by path no longer supported" + sourceArticle.doc.reporter(mcro))
                   ctx.empty
                 else
                   anal.directory.itemsAndArticlesByLabel.get(attributes.target) match
                     case None =>
                       scribe.error(
-                        s"unknown include article ${attributes.target}" + sourceArticle.sourceDoc.reporter(mcro.prov)
+                        s"unknown include article ${attributes.target}" + sourceArticle.doc.reporter(mcro.prov)
                       )
                       ctx.empty
                     case Some(article) =>
@@ -146,10 +146,10 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                         bundle,
                         article.article,
                         anal
-                      ).convertSeq(article.article.content)(ctx)
+                      ).convertSeq(article.article.sast)(ctx)
 
               case Some(other) =>
-                scribe.error(s"unknown include type $other" + sourceArticle.sourceDoc.reporter(mcro.prov))
+                scribe.error(s"unknown include type $other" + sourceArticle.doc.reporter(mcro.prov))
                 ctx.empty
 
           case other =>
@@ -318,7 +318,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
           case Ref =>
             val scope =
-              attrs.named.get("scope").flatMap(sourceArticle.sourceDoc.resolve).getOrElse(sourceArticle.sourceDoc.path)
+              attrs.named.get("scope").flatMap(sourceArticle.doc.resolve).getOrElse(sourceArticle.doc.path)
             val candidates = References.filterCandidates(scope, anal.directory.labels.getOrElse(attrs.target, Nil))
 
             if candidates.sizeIs > 1 then
@@ -386,7 +386,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
 
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
     val attrs  = mcro.attributes
-    val target = anal.image.lookup(sourceArticle.sourceDoc.resolve(attrs.target).get, ImageTarget.Html)
+    val target = anal.image.lookup(sourceArticle.doc.resolve(attrs.target).get, ImageTarget.Html)
     if Files.exists(target.absolute)
     then
       val path = project.htmlPaths.relativizeImage(target)
