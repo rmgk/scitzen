@@ -72,14 +72,14 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): Unit =
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.titled, project, project.htmlPaths.articleOutputDir)
     val convertedCtx = new SastToHtmlConverter(
-      sourceArticle = Article(
+      article = Article(
         generatedIndex,
         Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
         SastContext(()),
         Nil
       ),
       anal = anal
-    ).convertSeq(generatedIndex)(ConversionContext(()))
+    ).convertSastSeq(generatedIndex, ConversionContext(()))
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
       .wrapContentHtml(
@@ -119,13 +119,13 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
-      sourceArticle = article.article,
+      article = article.article,
       anal = anal
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
     val convertedArticleCtx =
-      converter.convertSeq(article.body)(ConversionContext((), katexConverter = katexConverter))
+      converter.convertSastSeq(article.body, ConversionContext((), katexConverter = katexConverter))
     val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct

@@ -15,6 +15,7 @@ enum DCommand {
   case Lookup
   case Raw
   case BibQuery
+  case Script
   case Other(str: String)
 }
 

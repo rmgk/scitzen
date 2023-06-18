@@ -35,11 +35,43 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
             case "tex"      => convertTex(article, block, content, attrs)
             case "graphviz" => graphviz(content, block)
             case "mermaid"  => mermaid(content, block)
+            case "scalaCli" => convertScalaCli(content, block)
         case other =>
           scribe.error(s"can not convert $other")
           Nil
 
     }
+
+  def convertScalaCli(text: String, block: Block) =
+    val start      = System.nanoTime()
+    val hash       = Hashes.sha1hex(text)
+    val sourcepath = project.cachePath(Path.of("scala-cli").resolve(hash + ".scala"))
+    Files.createDirectories(sourcepath.directory)
+    Files.writeString(sourcepath.absolute, text)
+    val outpath   = sourcepath.directory resolve s"$hash.js"
+    val errorFile = sourcepath.directory resolve s"log-$hash.txt"
+    val returnCode =
+      new ProcessBuilder(
+        "scala-cli",
+        "--power",
+        "package",
+        "--force",
+        "--output",
+        outpath.toString,
+        sourcepath.absolute.toString,
+      ).directory(sourcepath.directory.toFile)
+        .redirectOutput(errorFile.toFile)
+        .redirectError(errorFile.toFile)
+        .start().waitFor()
+    if returnCode == 0 then
+      scribe.info(s"scala compilation of »$sourcepath« finished in ${(System.nanoTime() - start) / 1000000}ms")
+      val pp = project.asProjectPath(outpath)
+      List(
+        Directive(DCommand.Script, Attributes.target(pp.projectAbsolute.toString))(block.prov)
+      )
+    else
+      scribe.error(s"error scala compiling »$sourcepath« see »$errorFile«")
+      Nil
 
   def convertJS(sast: List[Sast], attr: Attributes): List[Sast] =
     sast match

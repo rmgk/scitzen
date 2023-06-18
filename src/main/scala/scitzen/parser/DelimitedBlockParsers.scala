@@ -20,14 +20,16 @@ object DelimitedBlockParsers {
       delimiter(0) match {
         case '`' => Fenced(strippedText)
         case ':' =>
-          val sast: Seq[Sast] = Parse.parserDocument.trace("subparser delim").run(using
-          Scx(strippedText).copy(tracing = scx.tracing, depth = scx.depth))
+          val sast: Seq[Sast] = Parse.parserDocument.trace("subparser delim").runInContext(
+            Scx(strippedText).copy(tracing = scx.tracing, depth = scx.depth)
+          )
           scitzen.sast.Parsed(delimiter, sast)
       }
     scitzen.sast.Block(
       BCommand.parse(command.getOrElse("")),
       Attributes(rawAttr),
-      blockContent)(
+      blockContent
+    )(
       if (stripRes.isEmpty) prov else prov.copy(indent = delimiter.length)
     )
   }.trace("make delimited")
@@ -56,7 +58,7 @@ object DelimitedBlockParsers {
     val (parsed, prov) = withProv(Scip {
       significantSpaceLine.rep.run
       val indentation = (significantVerticalSpaces.str <~ eol.lookahead.map(!_).orFail).run
-      val start       = (untilI(eol)).dropstr.run
+      val start       = untilI(eol).dropstr.run
       val indentP     = seq(indentation).orFail
       val lines = (
         (indentP ~> untilI(eol).dropstr) |

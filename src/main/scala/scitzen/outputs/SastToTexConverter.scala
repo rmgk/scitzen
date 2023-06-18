@@ -334,6 +334,6 @@ class SastToTexConverter(
             "graphics"
           )
 
-      case Include =>
-        val str: String = warn(s"tex backend does not allow inline includes", directive)
+      case Include | Script =>
+        val str: String = warn(s"not supported by tex backend", directive)
         ctx.retc(str)
