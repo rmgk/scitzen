@@ -31,14 +31,14 @@ case class ConversionContext[+T](
   def map[U](f: T => U): ConversionContext[U]         = ret(f(data))
   def mapc[U](f: T => U): ConversionContext[Chain[U]] = ret(Chain(f(data)))
 
-  def +:[I](value: I)(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
+  def +:[I](value: I)(using T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => value +: data)
-  def :+[I](value: I)(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
+  def :+[I](value: I)(using T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => data :+ value)
-  def ++:[I](value: Chain[I])(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
+  def ++:[I](value: Chain[I])(using T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => value ++ data)
 
-  def :++[I](value: Chain[I])(implicit ev: T <:< Chain[I]): ConversionContext[Chain[I]] =
+  def :++[I](value: Chain[I])(using T <:< Chain[I]): ConversionContext[Chain[I]] =
     map(data => data ++ value)
 
   def empty[U]: ConversionContext[Chain[U]]       = ret(Chain.empty[U])
