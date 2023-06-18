@@ -13,7 +13,8 @@ import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
 
 import scalatags.Text.all.*
-import scalatags.Text.tags2.{article, math, section, time}
+import scalatags.Text.tags2
+import scalatags.Text.tags2.{math, section, time}
 
 import java.nio.file.Files
 
@@ -21,8 +22,6 @@ class SastToHtmlConverter(
     sourceArticle: Article,
     anal: ConversionAnalysis
 ):
-
-
 
   val project  = sourceArticle.doc.path.project
   val reporter = sourceArticle.doc.reporter
@@ -107,7 +106,7 @@ class SastToHtmlConverter(
 
             val aref = attributes.named("target")
 
-            ctx.ret(Chain(article(
+            ctx.ret(Chain(tags2.article(
               timeShort(attributes.named.get("datetime")),
               " ", // whitespace prevents elements from hugging without stylesheet
               a(
