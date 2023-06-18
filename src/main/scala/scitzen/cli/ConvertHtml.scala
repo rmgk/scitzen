@@ -1,7 +1,6 @@
 package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
-import scitzen.bibliography.BibDB
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.contexts.{ConversionContext, SastContext}
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
@@ -51,12 +50,10 @@ class ConvertHtml(anal: ConversionAnalysis):
             cssfile,
             sync,
             nlp,
-            anal.directory,
             KatexConverter(
               katexmap,
               KatexLibrary(article.header.attributes.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
             ),
-            anal.bib
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
 
@@ -113,14 +110,12 @@ class ConvertHtml(anal: ConversionAnalysis):
       cssfile: Path,
       sync: Option[ClSync],
       nlp: NLP,
-      preprocessed: ArticleDirectory,
       katexConverter: KatexConverter,
-      bibliography: BibDB
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
       article = article.article,
-      anal = anal
+      anal = anal.copy(hardNewlines = !article.named.get("style").exists(_.contains("article")))
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
@@ -163,7 +158,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           if article.named.get("style").exists(_.contains("plain"))
           then ""
           else "numbered-sections",
-          if converter.hardNewlines then None else Some("adhoc"),
+          if anal.hardNewlines then None else Some("adhoc"),
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.header.language
@@ -179,7 +174,7 @@ class ConvertHtml(anal: ConversionAnalysis):
 
         ConvertTemplate.fillTemplate(
           project,
-          preprocessed,
+          anal.directory,
           templatePath,
           templateSettings
         )

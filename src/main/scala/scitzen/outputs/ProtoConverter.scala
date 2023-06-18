@@ -12,13 +12,11 @@ import java.nio.file.Files
 
 abstract class ProtoConverter[BlockRes, InlineRes](
     article: Article,
-    anal: ConversionAnalysis
+    anal: ConversionAnalysis,
 ):
 
   val project  = article.doc.path.project
   val reporter = article.doc.reporter
-
-  val hardNewlines = !article.settings.get("style").exists(_.contains("article"))
 
   type CtxCF  = ConversionContext[Chain[BlockRes]]
   type CtxInl = ConversionContext[Chain[InlineRes]]
@@ -106,21 +104,21 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             )
 
       case None =>
-        if attributes.target.endsWith(".scim") then
-          scribe.error(s"including by path no longer supported" + article.doc.reporter(directive))
-          ctx.empty
+        val resolution: Option[Article] = if attributes.target.endsWith(".scim") then
+          article.doc.resolve(attributes.target).flatMap(anal.directory.byPath.get).flatMap(_.headOption)
         else
-          anal.directory.findByLabel(attributes.target) match
-            case None =>
-              scribe.error(
-                s"unknown include article ${attributes.target}" + article.doc.reporter(directive.prov)
-              )
-              ctx.empty
-            case Some(article) =>
-              subconverter(
-                article.article,
-                anal
-              ).convertSastSeq(article.article.sast, ctx)
+          anal.directory.findByLabel(attributes.target).map(_.article)
+        resolution match
+          case None =>
+            scribe.error(
+              s"unknown include article ${attributes.target}" + article.doc.reporter(directive.prov)
+            )
+            ctx.empty
+          case Some(article) =>
+            subconverter(
+              article,
+              anal
+            ).convertSastSeq(article.sast, ctx)
 
       case Some(other) =>
         scribe.error(s"unknown include type $other" + article.doc.reporter(directive.prov))

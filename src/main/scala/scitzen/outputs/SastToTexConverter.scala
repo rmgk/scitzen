@@ -112,7 +112,7 @@ class SastToTexConverter(
         convertInlineDirective(directive, ctx).mapc(inlinesAsToplevel)
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
-    val args      = attributes.legacyPositional.tail
+    val args      = attributes.legacyPositional
     val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
     val label     = attributes.named.get("unique ref").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
@@ -126,7 +126,7 @@ class SastToTexConverter(
           val cctx = convertInlinesAsBlock(content.inl, ctx)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if !hardNewlines then cctx.single :+ ""
+          if !anal.hardNewlines then cctx.single :+ ""
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")

@@ -18,6 +18,7 @@ case class ConversionAnalysis(
     block: BlockConversions,
     image: ImageConversions,
     bib: BibDB,
+    hardNewlines: Boolean,
 )
 
 object ConvertProject:
@@ -85,7 +86,8 @@ object ConvertProject:
       directory = directory,
       block = blockConversions,
       image = imageConversions,
-      bib = bibdb
+      bib = bibdb,
+      hardNewlines = true,
     )
 
     if project.config.format.contains("content") then

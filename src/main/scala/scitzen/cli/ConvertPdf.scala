@@ -22,7 +22,7 @@ object ConvertPdf:
       .asJava.parallelStream().forEach { article =>
         val converter = new SastToTexConverter(
           article.article,
-          anal
+          anal.copy(hardNewlines = article.named.get("style").exists(_.contains("article")))
         )
 
         val resultContext =
