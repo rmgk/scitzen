@@ -7,9 +7,7 @@ import scalatags.Text.implicits.{raw, stringAttr, stringFrag}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{aside, main, nav, title}
 
-import scala.annotation.unused
-
-class HtmlPages(cssPath: String, @unused fullCss: String):
+class HtmlPages(cssPath: String):
 
   def tHead(titled: String): Tag =
     head(

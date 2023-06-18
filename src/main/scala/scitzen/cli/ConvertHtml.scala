@@ -35,7 +35,6 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
     Files.createDirectories(project.outputdirWeb)
 
     val cssfile   = project.outputdirWeb.resolve("scitzen.css")
-    val cssstring = new String(stylesheet, charset)
     Files.write(cssfile, stylesheet)
 
     @tailrec
@@ -50,7 +49,6 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
           val cctx = convertArticle(
             article,
             cssfile,
-            cssstring,
             sync,
             nlp,
             articles,
@@ -66,12 +64,11 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
 
-    makeindex(articles, cssfile, cssstring)
+    makeindex(articles, cssfile)
 
   private def makeindex(
       preprocessed: ArticleDirectory,
       cssfile: Path,
-      cssstring: String,
   ): Unit =
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.titled, project, project.htmlPaths.articleOutputDir)
     val convertedCtx = new SastToHtmlConverter(
@@ -87,7 +84,7 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
       blockConversions = blockConversions,
     ).convertSeq(generatedIndex)(ConversionContext(()))
 
-    val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString, cssstring)
+    val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
       .wrapContentHtml(
         convertedCtx.data.toList,
         "index",
@@ -117,7 +114,6 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
   def convertArticle(
       article: TitledArticle,
       cssfile: Path,
-      cssstring: String,
       sync: Option[ClSync],
       nlp: NLP,
       preprocessed: ArticleDirectory,
@@ -168,7 +164,7 @@ class ConvertHtml(project: Project, blockConversions: BlockConversions):
       case None =>
         val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
 
-        HtmlPages(cssrelpath, cssstring).wrapContentHtml(
+        HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           "fullpost",
           if article.named.get("style").contains("article") then None else Some("adhoc"),
