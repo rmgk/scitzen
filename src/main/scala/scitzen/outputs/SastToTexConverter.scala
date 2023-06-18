@@ -46,7 +46,7 @@ class SastToTexConverter(
     val hasToc = cta.features.contains("tableofcontents")
     val fm     = if hasToc then Chain("\\frontmatter") else Chain.empty
 
-    val ilc    = convertInlineSeq(article.header.titleText.inl, cta)
+    val ilc    = convertInlineSeq(article.header.titleText.inl, cta).map(inlineResToBlock)
     val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
     ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\scitzenmaketitle{}")
 
