@@ -1,6 +1,9 @@
 package scitzen.cli
 
+import scitzen.bibliography.BibDB
 import scitzen.compat.Logging
+import scitzen.contexts.ConversionContext
+import scitzen.extern.{BlockConversions, ImageConversions}
 import scitzen.generic.{ArticleDirectory, Project}
 import scitzen.outputs.SastToTextConverter
 
@@ -18,6 +21,8 @@ object ConvertTemplate:
       case Some(templateFile) =>
         val templateArticle = directory.byPath(templateFile).head
         val documentString = SastToTextConverter(
+          templateArticle,
+          ConversionAnalysis(project, directory, BlockConversions(Map.empty), ImageConversions(Map.empty), BibDB.empty),
           templateSettings,
-        ).convert(templateArticle.sast).mkString("\n")
-        documentString
+        ).convertSastSeq(templateArticle.sast, ConversionContext(()))
+        documentString.data.mkString("")

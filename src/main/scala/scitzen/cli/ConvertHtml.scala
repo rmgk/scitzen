@@ -29,7 +29,7 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     val katexmapfile = project.cacheDir.resolve("katexmap.json")
 
-    val nlp: NLP = NLP.loadFromResources
+    val nlp: NLP = NLP.loadFromResources(anal)
 
     Files.createDirectories(project.outputdirWeb)
 
@@ -162,7 +162,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.header.language
-            .orElse(nlp.language(article.body))
+            .orElse(nlp.language(article.article))
         )
       case Some(templatePath) =>
         val content = SeqFrag(convertedArticleCtx.data.toList).render

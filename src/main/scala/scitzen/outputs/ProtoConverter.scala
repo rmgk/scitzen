@@ -39,7 +39,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       case section: Section     => convertSection(section, ctx)
       case slist: Slist         => convertSlist(slist, ctx)
 
-  def convertBlock(sBlock: Block, ctx: Cta): CtxCF
+  def convertBlock(block: Block, ctx: Cta): CtxCF
   def convertDirective(directive: Directive, ctx: Cta): CtxCF =
     convertInlineDirective(directive, ctx).map(v => Chain(inlinesAsToplevel(v)))
   def convertSection(section: Section, ctx: Cta): CtxCF

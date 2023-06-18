@@ -1,64 +1,76 @@
 package scitzen.outputs
 
-import scitzen.sast.{BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import de.rmgk.Chain
+import scitzen.cli.ConversionAnalysis
+import scitzen.sast.{
+  BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist,
+  SpaceComment, Text
+}
 import scitzen.compat.Logging.scribe
+import scitzen.generic.Article
 import scitzen.sast.DCommand.Lookup
 
 case class SastToTextConverter(
+    article: Article,
+    anal: ConversionAnalysis,
     definitions: Map[String, String],
-):
+) extends ProtoConverter[String, String](article, anal):
 
-  def convert(b: Seq[Sast]): Seq[String] =
-    b.flatMap {
-      case Section(title, _, _) =>
-        List(convertInline(title.inl))
+  override def subconverter(article: Article, analysis: ConversionAnalysis): ProtoConverter[String, String] =
+    new SastToTextConverter(article, analysis, definitions)
+  override def convertBlock(block: Block, ctx: Cta): CtxCF =
+    val Block(command, attr, blockType) = block
+    val filterBlock =
+      command match
+        case BCommand.If =>
+          val res =
+            definitions.get(attr.target) match
+              case Some(value) =>
+                attr.named.get("equals").forall(_ == value)
+              case None => false
+          if attr.named.contains("not") then !res
+          else res
+        case _ => true
 
-      case Slist(children) => children.flatMap {
-          case ListItem(_, Text(inl), None) =>
-            List(convertInline(inl))
-          case ListItem(_, text, Some(inner)) =>
-            convertInline(text.inl) +: convert(List(inner))
-        }
+    if !filterBlock then ctx.empty
+    else
+      blockType match
+        case Paragraph(content)      =>
+          convertInlinesAsBlock(content.inl, ctx).map(r => Chain(r, ""))
+        case Parsed(_, blockContent) => convertSastSeq(blockContent, ctx)
+        case Fenced(text)            => ctx.retc(text)
+        case SpaceComment(str)       => ctx.retc(str)
 
-      case Block(command, attr, blockType) =>
-        val filterBlock =
-          command match
-            case BCommand.If =>
-              val res =
-                definitions.get(attr.target) match
-                  case Some(value) =>
-                    attr.named.get("equals").forall(_ == value)
-                  case None => false
-              if attr.named.contains("not") then !res else res
-            case _ => true
+  override def convertSection(section: Section, ctx: Cta): CtxCF =
+    convertInlineSeq(section.titleText.inl, ctx).mapc(inlinesAsToplevel)
+  override def convertSlist(slist: Slist, ctx: Cta): CtxCF =
+    val Slist(children) = slist
+    ctx.fold(children): (ctx, child) =>
+      child match
+        case ListItem(_, Text(inl), None) =>
+          convertInlineSeq(inl, ctx)
+        case ListItem(_, text, Some(inner)) =>
+          val tctx = convertInlineSeq(text.inl, ctx)
+          tctx.data ++: convertSast(inner, tctx)
+  override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
+  override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")
 
-        if !filterBlock then Nil
-        else
-          blockType match
-            case Paragraph(content)      => List(convertInline(content.inl), "")
-            case Parsed(_, blockContent) => convert(blockContent)
-            case Fenced(text)            => List(text)
-            case SpaceComment(str)       => List(str)
+  override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
+    val attributes = directive.attributes
+    directive.command match
+      case Lookup =>
+        definitions.get(attributes.target).orElse(attributes.named.get("default")) match
+          case None =>
+            scribe.error(s"could not resolve ${attributes.target}")
+            ctx.empty
+          case Some(res) => ctx.retc(res)
 
-      case mcro: Directive =>
-        val attributes = mcro.attributes
-        mcro.command match
+      case _ => ctx.empty
+  override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(inlineText.str)
+  override def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl = directive match
+    case Directive(Lookup, attr) =>
+      ctx.retc(definitions.get(attr.target).orElse(attr.named.get("default")).getOrElse(""))
+    case _: Directive => ctx.retc("")
 
-          case Lookup =>
-            definitions.get(attributes.target).orElse(attributes.named.get("default")) match
-              case None =>
-                scribe.error(s"could not resolve ${attributes.target}")
-                Nil
-              case Some(res) => List(res)
-
-          case _ => Nil
-
-    }
-
-  def convertInline(inners: Seq[Inline]): String =
-    inners.map {
-      case InlineText(str) => str
-      case Directive(Lookup, attr) =>
-        definitions.get(attr.target).orElse(attr.named.get("default")).getOrElse("")
-      case _: Directive => ""
-    }.mkString("")
+  override def stringToInlineRes(str: String): String = str
+  override def addDetail(ctx: CtxCF): CtxCF           = ctx

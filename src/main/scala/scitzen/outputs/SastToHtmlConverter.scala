@@ -125,11 +125,11 @@ class SastToHtmlConverter(
         convertInlineSeq(List(directive), ctx)
   end convertDirective
 
-  def convertBlock(sBlock: Block, ctx: Cta): CtxCF =
+  def convertBlock(block: Block, ctx: Cta): CtxCF =
 
-    val innerCtx = sBlock.command match
+    val innerCtx = block.command match
       case BCommand.Other("quote") =>
-        val inner = sBlock.content match
+        val inner = block.content match
           case Parsed(_, content) =>
             convertSastSeq(content, ctx)
           case Fenced(content) =>
@@ -138,15 +138,15 @@ class SastToHtmlConverter(
         inner.mapc(i => blockquote(i.toList))
 
       case BCommand.Embed =>
-        val js = sBlock.content match
+        val js = block.content match
           case Fenced(js) => Some(js)
           case _          => None
         ctx.retc(script(`type` := "text/javascript", js.map(raw(_))))
 
       case other =>
-        convertStandardBlock(sBlock, ctx)
+        convertStandardBlock(block, ctx)
 
-    sBlock.attributes.nestedMap.get("note").fold(innerCtx) { note =>
+    block.attributes.nestedMap.get("note").fold(innerCtx) { note =>
       convertInlineSeq(note.targetT.inl, innerCtx).map { content =>
         innerCtx.data :+ p(`class` := "marginnote", content.toList)
       }
@@ -316,9 +316,12 @@ class SastToHtmlConverter(
           case "footnote" =>
             val target =
               SastToTextConverter(
+                article,
+                anal,
                 project.config.definitions,
-              ).convertInline(attrs.targetT.inl)
-            ctx.retc(a(title := target, "※"))
+              ).convertInlinesAsBlock(attrs.targetT.inl, ctx)
+            target.mapc: target =>
+              a(title := target, "※")
 
           case tagname @ ("ins" | "del") =>
             ctx.retc(tag(tagname)(attrs.legacyPositional.mkString(", ")))

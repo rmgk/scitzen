@@ -119,9 +119,9 @@ class SastToTexConverter(
     convertSastSeq(content, ctx) :+
     s"\\end{$name}"
 
-  override def convertBlock(tlblock: Block, ctx: Cta): CtxCS =
+  override def convertBlock(block: Block, ctx: Cta): CtxCS =
     val innerCtx: CtxCS =
-      tlblock.content match
+      block.content match
         case Paragraph(content) =>
           val cctx = convertInlinesAsBlock(content.inl, ctx)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
@@ -134,7 +134,7 @@ class SastToTexConverter(
             }
 
         case Parsed(_, blockContent) =>
-          tlblock.command match
+          block.command match
             case BCommand.Figure =>
               val (figContent, caption) =
                 blockContent.lastOption match
@@ -142,47 +142,47 @@ class SastToTexConverter(
                     val captionstr = convertInlinesAsBlock(content.inl, ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
-                    scribe.warn(s"figure has no caption" + article.doc.reporter(tlblock.prov))
+                    scribe.warn(s"figure has no caption" + article.doc.reporter(block.prov))
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
               "\\centerfloat" +:
               convertSastSeq(figContent, caption) :++
               Chain(
                 caption.data,
-                tlblock.attributes.named.get("unique ref").fold("")(l => s"\\label{$l}"),
+                block.attributes.named.get("unique ref").fold("")(l => s"\\label{$l}"),
                 "\\end{figure}"
               )
 
             case BCommand.Other(name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example")) =>
-              texbox(name, tlblock.attributes, blockContent)(ctx).useFeature("framed")
+              texbox(name, block.attributes, blockContent)(ctx).useFeature("framed")
 
-            case BCommand.Other(name @ "abstract") => texbox(name, tlblock.attributes, blockContent)(ctx)
+            case BCommand.Other(name @ "abstract") => texbox(name, block.attributes, blockContent)(ctx)
 
             case _ =>
               convertSastSeq(blockContent, ctx)
 
         case Fenced(text) =>
-          if tlblock.attributes.named.contains(ImageTarget.Tex.name) then
-            val target = tlblock.attributes.named(ImageTarget.Tex.name)
+          if block.attributes.named.contains(ImageTarget.Tex.name) then
+            val target = block.attributes.named(ImageTarget.Tex.name)
             convertInlineDirective(
               Directive(
                 Image,
-                tlblock.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target)))
+                block.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target)))
               )(
-                tlblock.prov
+                block.prov
               ),
               ctx
             )
           else
-            tlblock.attributes.legacyPositional.headOption match
+            block.attributes.legacyPositional.headOption match
 
               case _ =>
-                val labeltext = tlblock.attributes.named.get("unique ref") match
+                val labeltext = block.attributes.named.get("unique ref") match
                   case None => text
                   case Some(label) =>
                     text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
                 val restext =
-                  if !tlblock.attributes.legacyPositional.contains("highlight") then labeltext
+                  if !block.attributes.legacyPositional.contains("highlight") then labeltext
                   else
                     labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
                 ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
@@ -191,7 +191,7 @@ class SastToTexConverter(
 
     if project.config.notes.contains("hide") then innerCtx
     else
-      tlblock.attributes.nestedMap.get("note").fold(innerCtx) { note =>
+      block.attributes.nestedMap.get("note").fold(innerCtx) { note =>
         convertInlinesAsBlock(note.targetT.inl, innerCtx).map { (content: String) =>
           s"\\sidepar{$content}%" +: innerCtx.data
         }.useFeature("sidepar")
