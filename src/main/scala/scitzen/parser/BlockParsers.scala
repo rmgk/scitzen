@@ -25,9 +25,9 @@ object BlockParsers {
 
   val extendedWhitespace: Scip[Block] = Scip {
     val (str, prov) = withProv(
-      (significantSpaceLine.trace("spaceline").or(
+      significantSpaceLine.trace("spaceline").or(
         DirectiveParsers.comment.attempt.trace("comment")
-      ))
+      )
         .trace("space or comment").rep.min(1).str
     ).run
     Block(BCommand.Empty, scitzen.sast.Attributes(Nil), SpaceComment(str))(prov)

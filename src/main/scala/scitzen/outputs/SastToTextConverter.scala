@@ -2,7 +2,10 @@ package scitzen.outputs
 
 import scitzen.generic.{ArticleDirectory, Document, ProjectPath}
 import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist,
+  SpaceComment, Text
+}
 import scitzen.compat.Logging.scribe
 
 case class SastToTextConverter(
@@ -38,10 +41,10 @@ case class SastToTextConverter(
         if !filterBlock then Nil
         else
           blockType match
-            case Paragraph(content)      => List(convertInline(content.inl))
+            case Paragraph(content)      => List(convertInline(content.inl), "")
             case Parsed(_, blockContent) => convert(blockContent)
             case Fenced(text)            => List(text)
-            case SpaceComment(_)         => Nil
+            case SpaceComment(str)       => List(str)
 
       case mcro: Directive =>
         val attributes = mcro.attributes
@@ -65,7 +68,9 @@ case class SastToTextConverter(
 
                   case other =>
                     val pos = s" ${document.reporter(mcro)}"
-                    scribe.error(s"unknown include ${attributes.target} in template ${document.path.relativeToProject}$pos")
+                    scribe.error(
+                      s"unknown include ${attributes.target} in template ${document.path.relativeToProject}$pos"
+                    )
                     Nil
 
           case _ => Nil
