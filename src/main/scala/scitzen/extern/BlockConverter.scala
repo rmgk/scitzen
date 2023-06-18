@@ -1,9 +1,9 @@
 package scitzen.extern
 
+import scitzen.cli.ConvertTemplate
 import scitzen.compat.Logging
 import scitzen.compat.Logging.scribe
 import scitzen.generic.{Article, ArticleDirectory, Project}
-import scitzen.outputs.SastToTextConverter
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Sast}
 
 import java.lang.ProcessBuilder.Redirect
@@ -65,10 +65,13 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     res match
       case Some(res) =>
         List(
-          Directive(DCommand.Image, Attributes(List(
-            Attribute("", target.projectAbsolute.toString),
-            Attribute("css_style", "background-color:white")
-          )))(block.prov)
+          Directive(
+            DCommand.Image,
+            Attributes(List(
+              Attribute("", target.projectAbsolute.toString),
+              Attribute("css_style", "background-color:white")
+            ))
+          )(block.prov)
         )
       case None =>
         Nil
@@ -124,23 +127,12 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
   ): List[Sast] =
     val resolved =
       val pathString = attributes.target
-      article.sourceDoc.resolve(pathString) match
-        case None =>
-          scribe.error(s"could not resolve $pathString")
-          origContent
-        case Some(templatePath) =>
-          articleDirectory.byPath.get(templatePath) match
-            case None =>
-              scribe.error(s"not resolved $templatePath")
-              origContent
-            case Some(articles) =>
-              val sast = articles.flatMap(_.content)
-              SastToTextConverter(
-                project.config.definitions ++ attributes.named + (
-                  "template content" -> origContent
-                ),
-                articleDirectory
-              ).convert(sast).mkString("\n")
+      ConvertTemplate.fillTemplate(
+        project,
+        articleDirectory,
+        pathString,
+        project.config.definitions ++ attributes.named + ("template content" -> origContent)
+      )
     List(block.copy(content = Fenced(resolved))(block.prov))
 
 }
