@@ -26,9 +26,9 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     val conversions = block.attributes.nested
     conversions.foldLeft(List[Sast](block)) { case (current, (name, attrs)) =>
       name match
-        case "template" => ??? //applyTemplate(attrs, )
-        case "js"  => convertJS(current, attrs)
-        case "tex" => convertTex(article, current, attrs)
+        case "template" => applyTemplate(attrs, current, article)
+        case "js"       => convertJS(current, attrs)
+        case "tex"      => convertTex(article, current, attrs)
 
     }
 
@@ -43,19 +43,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
 
   def convertTex(article: Article, sast: List[Sast], attr: Attributes): List[Sast] =
     sast match
-      case List(block @ Block(_, _, Fenced(origContent))) =>
-        val content =
-          if !attr.named.contains("template")
-          then origContent
-          else
-            applyTemplate(
-              attr,
-              origContent,
-              article.sourceDoc.path.directory,
-              article.sourceDoc.path.project,
-              articleDirectory
-            )
-
+      case List(block @ Block(_, _, Fenced(content))) =>
         val texbytes    = content.getBytes(StandardCharsets.UTF_8)
         val contentHash = Hashes.sha1hex(texbytes)
         val target      = project.cachePath(Path.of(s"$contentHash/$contentHash.pdf"))
@@ -120,30 +108,34 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
 
   def applyTemplate(
       attributes: Attributes,
-      content: String,
-      cwd: Path,
-      project: Project,
-      articleDirectory: ArticleDirectory
-  ): String =
-    attributes.named.get("template") match
-      case None =>
-        scribe.error(s"no template")
-        content
-      case Some(pathString) => project.resolve(cwd, pathString) match
+      currentInput: List[Sast],
+      article: Article,
+  ): List[Sast] =
+    currentInput match
+      case List(block @ Block(_, _, Fenced(origContent))) =>
+        val resolved = attributes.named.get("template") match {
           case None =>
-            scribe.error(s"could not resolve $pathString")
-            content
-          case Some(templatePath) =>
-            articleDirectory.byPath.get(templatePath) match
+            scribe.error(s"no template")
+            origContent
+          case Some(pathString) => article.sourceDoc.resolve(pathString) match
               case None =>
-                scribe.error(s"not resolved $templatePath")
-                content
-              case Some(articles) =>
-                val sast = articles.flatMap(_.content)
-                SastToTextConverter(
-                  project.config.definitions ++ attributes.named + (
-                    "template content" -> content
-                  ),
-                  articleDirectory
-                ).convert(sast).mkString("\n")
+                scribe.error(s"could not resolve $pathString")
+                origContent
+              case Some(templatePath) =>
+                articleDirectory.byPath.get(templatePath) match
+                  case None =>
+                    scribe.error(s"not resolved $templatePath")
+                    origContent
+                  case Some(articles) =>
+                    val sast = articles.flatMap(_.content)
+                    SastToTextConverter(
+                      project.config.definitions ++ attributes.named + (
+                        "template content" -> origContent
+                      ),
+                      articleDirectory
+                    ).convert(sast).mkString("\n")
+        }
+        List(block.copy(content = Fenced(resolved))(block.prov))
+      case other => currentInput
+
 }
