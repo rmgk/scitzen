@@ -70,7 +70,7 @@ class ConvertHtml(anal: ConversionAnalysis):
       preprocessed: ArticleDirectory,
       cssfile: Path,
   ): Unit =
-    val generatedIndex = GenIndexPage.makeIndex(preprocessed.titled, project, project.htmlPaths.articleOutputDir)
+    val generatedIndex = GenIndexPage.makeIndex(preprocessed.fullArticles, project, project.htmlPaths.articleOutputDir)
     val convertedCtx = new SastToHtmlConverter(
       article = Article(
         generatedIndex,
