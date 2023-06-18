@@ -358,4 +358,13 @@ class SastToHtmlConverter(
     scribe.warn(s"unknown macro “$str”" + reportPos(im))
     code(str)
 
+  override def addDetail(ctx: CtxCF): CtxCF =
+    ctx.data.toList match
+      case h :: t =>
+        ctx.retc(tags2.details(
+          tags2.summary(h),
+          t
+        ))
+      case Nil => ctx.empty
+
 end SastToHtmlConverter

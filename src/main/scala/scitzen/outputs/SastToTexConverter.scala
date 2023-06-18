@@ -327,3 +327,8 @@ class SastToTexConverter(
       case Include | Script =>
         val str: String = warn(s"not supported by tex backend", directive)
         ctx.retc(str)
+
+
+  override def addDetail(ctx: CtxCF): CtxCF = ctx
+
+end SastToTexConverter

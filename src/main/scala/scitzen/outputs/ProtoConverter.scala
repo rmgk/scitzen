@@ -75,6 +75,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     scribe.warn(s"$msg: ⸢$macroStr⸥${article.doc.reporter(im)}")
     stringToInlineRes(macroStr)
 
+  def addDetail(ctx: CtxCF): CtxCF
+
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val pathpart = article.doc.path.directory.resolve(directive.attributes.target).normalize()
     val found = anal.directory.byPath.flatMap: (p, arts) =>
