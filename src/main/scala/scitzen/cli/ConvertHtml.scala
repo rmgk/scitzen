@@ -72,7 +72,6 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): Unit =
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.titled, project, project.htmlPaths.articleOutputDir)
     val convertedCtx = new SastToHtmlConverter(
-      bundle = scalatags.Text,
       sourceArticle = Article(
         generatedIndex,
         Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
@@ -120,7 +119,6 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
-      bundle = scalatags.Text,
       sourceArticle = article.article,
       anal = anal
     )

@@ -2,8 +2,6 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scalatags.Text.StringFrag
-import scalatags.generic
-import scalatags.generic.Bundle
 import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.scribe
@@ -14,16 +12,17 @@ import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
 
+import scalatags.Text.all.*
+import scalatags.Text.tags2.{article, math, section, time}
+
 import java.nio.file.Files
 
-class SastToHtmlConverter[Builder, Output <: FragT, FragT](
-    val bundle: Bundle[Builder, Output, FragT],
+class SastToHtmlConverter(
     sourceArticle: Article,
     anal: ConversionAnalysis
 ):
 
-  import bundle.all.*
-  import bundle.tags2.{article, math, section, time}
+
 
   val project  = sourceArticle.doc.path.project
   val reporter = sourceArticle.doc.reporter
@@ -46,7 +45,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
       span(cls := "category")(categories.map(c => stringFrag(s" $c "))*)
     )
 
-  def tMeta(article: TitledArticle): generic.Frag[Builder, FragT] =
+  def tMeta(article: TitledArticle): Frag =
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
@@ -143,7 +142,6 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
                       ctx.empty
                     case Some(article) =>
                       new SastToHtmlConverter(
-                        bundle,
                         article.article,
                         anal
                       ).convertSeq(article.article.sast)(ctx)
