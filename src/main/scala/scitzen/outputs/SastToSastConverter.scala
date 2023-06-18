@@ -126,7 +126,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
         val res =
           val style = mcro.attributes.named.get("style")
           if style.contains("name") then
-            mcro.copy(attributes = mcro.attributes.prepend(List(Attribute("style", "author"))))(mcro.prov)
+            mcro.copy(attributes = mcro.attributes.updated("style", "author"))(mcro.prov)
           else
             mcro
         ctx.addCitation(res).ret(res)
