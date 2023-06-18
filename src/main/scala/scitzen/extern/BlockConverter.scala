@@ -65,7 +65,10 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     res match
       case Some(res) =>
         List(
-          Directive(DCommand.Image, Attributes(List(Attribute("", target.projectAbsolute.toString))))(block.prov)
+          Directive(DCommand.Image, Attributes(List(
+            Attribute("", target.projectAbsolute.toString),
+            Attribute("css_style", "background-color:white")
+          )))(block.prov)
         )
       case None =>
         Nil

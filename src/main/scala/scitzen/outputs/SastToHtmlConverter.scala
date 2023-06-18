@@ -395,7 +395,7 @@ class SastToHtmlConverter[Builder, Output <: FragT, FragT](
         val sizeclass = mcro.attributes.named.get("size").map(s => cls := s"sizing-$s")
         if videoEndings.exists(filename.endsWith) then
           video(src  := path.toString, attr("loop").empty, attr("autoplay").empty, sizeclass)
-        else img(src := path.toString, sizeclass)
+        else img(src := path.toString, sizeclass, attrs.named.get("css_style").map(style := _))
       }
     else
       scribe.warn(s"could not find path ${target}" + reporter(mcro))
