@@ -22,6 +22,12 @@ class SastToHtmlConverter(
     anal: ConversionAnalysis
 ) extends ProtoConverter[Frag, Frag](article, anal):
 
+  override def subconverter(
+      article: Article,
+      analysis: ConversionAnalysis
+  ): ProtoConverter[Text.all.Frag, Text.all.Frag] =
+    new SastToHtmlConverter(article, analysis)
+
   val syncPos: Int =
 //    if sync.exists(_.path == pathManager.cwf) then sync.get._2
 //    else
@@ -92,6 +98,7 @@ class SastToHtmlConverter(
   override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
     val attributes = directive.attributes
     directive.command match
+      case Other("aggregate") => handleAggregate(ctx, directive)
       case Other("break") =>
         ctx.ret(Chain(hr))
 
@@ -112,37 +119,7 @@ class SastToHtmlConverter(
           categoriesSpan(attributes.raw.collect { case Plain("category", value) => value })
         )))
 
-      case Include =>
-        attributes.arguments.headOption match
-          case Some("code") =>
-            article.doc.resolve(attributes.target) match
-              case None => convertInlineSeq(List(directive), ctx)
-              case Some(file) =>
-                convertSast(
-                  Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov),
-                  ctx
-                )
-
-          case None =>
-            if attributes.target.endsWith(".scim") then
-              scribe.error(s"including by path no longer supported" + article.doc.reporter(directive))
-              ctx.empty
-            else
-              anal.directory.findByLabel(attributes.target) match
-                case None =>
-                  scribe.error(
-                    s"unknown include article ${attributes.target}" + article.doc.reporter(directive.prov)
-                  )
-                  ctx.empty
-                case Some(article) =>
-                  new SastToHtmlConverter(
-                    article.article,
-                    anal
-                  ).convertSastSeq(article.article.sast, ctx)
-
-          case Some(other) =>
-            scribe.error(s"unknown include type $other" + article.doc.reporter(directive.prov))
-            ctx.empty
+      case Include => handleInclude(ctx, directive)
 
       case other =>
         convertInlineSeq(List(directive), ctx)

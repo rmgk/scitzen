@@ -37,6 +37,9 @@ class SastToTexConverter(
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
+  override def subconverter(article: Article, analysis: ConversionAnalysis): ProtoConverter[String, String] =
+    new SastToTexConverter(article, analysis)
+
   override def stringToInlineRes(str: String): String = latexencode(str)
 
   def articleHeader(article: TitledArticle, cta: Cta): CtxCS =
@@ -102,21 +105,8 @@ class SastToTexConverter(
 
   override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
     directive.command match
-      case Include =>
-        val target = directive.attributes.target
-        if target.endsWith(".scim")
-        then
-          warn("include by path no longer supported", directive)
-          ctx.empty
-        else
-          anal.directory.findByLabel(target) match
-            case Some(art) =>
-              new SastToTexConverter(art.article, anal)
-                .convertSastSeq(art.article.sast, ctx)
-
-            case None =>
-              warn(s"unknown include", directive)
-              ctx.empty
+      case Include => handleInclude(ctx, directive)
+      case Other("aggregate") => handleAggregate(ctx, directive)
 
       case other =>
         convertInlineDirective(directive, ctx).mapc(inlinesAsToplevel)

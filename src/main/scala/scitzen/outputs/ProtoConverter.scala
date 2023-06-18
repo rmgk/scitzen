@@ -25,6 +25,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
+  def subconverter(article: Article, analysis: ConversionAnalysis): ProtoConverter[BlockRes, InlineRes]
+
   def convertSastSeq(b: Iterable[Sast], ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(sast, ctx))
 
   def convertSast(singleSast: Sast, ctx: Cta): CtxCF =
@@ -72,3 +74,53 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     val macroStr = SastToScimConverter(anal.bib).macroToScim(im)
     scribe.warn(s"$msg: ⸢$macroStr⸥${article.doc.reporter(im)}")
     stringToInlineRes(macroStr)
+
+  def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
+    val pathpart = article.doc.path.directory.resolve(directive.attributes.target).normalize()
+    val found = anal.directory.byPath.flatMap: (p, arts) =>
+      if p.absolute.startsWith(pathpart)
+      then arts
+      else Nil
+
+    ctx.fold(found): (cc, art) =>
+      subconverter(
+        art,
+        anal
+      ).convertSastSeq(art.sast, cc)
+  }
+
+  def handleInclude(ctx: Cta, directive: Directive) = {
+    val attributes = directive.attributes
+    attributes.arguments.headOption match
+      case Some("code") =>
+        article.doc.resolve(attributes.target) match
+          case None => convertInlineSeq(List(directive), ctx)
+          case Some(file) =>
+            convertSast(
+              Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov),
+              ctx
+            )
+
+      case None =>
+        if attributes.target.endsWith(".scim") then
+          scribe.error(s"including by path no longer supported" + article.doc.reporter(directive))
+          ctx.empty
+        else
+          anal.directory.findByLabel(attributes.target) match
+            case None =>
+              scribe.error(
+                s"unknown include article ${attributes.target}" + article.doc.reporter(directive.prov)
+              )
+              ctx.empty
+            case Some(article) =>
+              subconverter(
+                article.article,
+                anal
+              ).convertSastSeq(article.article.sast, ctx)
+
+      case Some(other) =>
+        scribe.error(s"unknown include type $other" + article.doc.reporter(directive.prov))
+        ctx.empty
+  }
+
+end ProtoConverter
