@@ -13,7 +13,12 @@ import scala.util.Using
 
 object ImageConverter {
 
-  def nameWithoutExtension(p: Path): String = p.getFileName.toString.reverse.dropWhile(c => c != '.').drop(1).reverse
+  def nameWithoutExtension(p: Path): String =
+    val filename = p.getFileName.toString
+    val ext      = filename.lastIndexOf('.')
+    if ext >= 0
+    then filename.substring(0, ext)
+    else filename
 
   def preprocessImages(
       project: Project,

@@ -8,7 +8,6 @@ import java.nio.file.Path
 
 enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]):
   def requiresConversion(filename: String): Boolean = unsupportedFormat.exists(fmt => filename.endsWith(fmt))
-  case Undetermined extends ImageTarget("undetermined target", "", Nil)
   case Html         extends ImageTarget("html target", "svg", List("pdf", "tex"))
   case Tex          extends ImageTarget("tex target", "pdf", List("svg", "tex"))
   case Raster       extends ImageTarget("raster target", "png", List("svg", "pdf", "tex"))
