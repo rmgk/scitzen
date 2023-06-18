@@ -2,13 +2,10 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
-import scitzen.sast.{
-  BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist,
-  SpaceComment, Text
-}
+import scitzen.sast.{BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 import scitzen.compat.Logging.scribe
 import scitzen.generic.Article
-import scitzen.sast.DCommand.Lookup
+import scitzen.sast.DCommand.{Include, Lookup}
 
 case class SastToTextConverter(
     article: Article,
@@ -58,6 +55,8 @@ case class SastToTextConverter(
   override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
     val attributes = directive.attributes
     directive.command match
+      case Include =>
+        handleInclude(ctx, directive)
       case Lookup =>
         definitions.get(attributes.target).orElse(attributes.named.get("default")) match
           case None =>
