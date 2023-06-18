@@ -22,10 +22,15 @@ object ScitzenCommandline {
     ) match {
       case None =>
       case Some(options) =>
-        Project.fromSource(options.path.value) match
-          case None => scribe.error(s"could not find project for $options.path")
-          case Some(project) =>
-            executeConversions(options.sync.value, options.`image-file-map`.value, project)
+        def run() =
+          Project.fromSource(options.path.value) match
+            case None => scribe.error(s"could not find project for $options.path")
+            case Some(project) =>
+              executeConversions(options.sync.value, options.`image-file-map`.value, project)
+
+        if options.benchmark.value > 0
+        then (0 to options.benchmark.value).foreach(_ => run())
+        else run()
     }
   }
 
@@ -43,5 +48,6 @@ object ScitzenCommandline {
         Argument(_.valueName("path").text("produce json description of generated images")),
       sync: Argument[ClSync, Option, Style.Named] =
         Argument(_.keyName("path").valueName("pos").text("sync position")),
+      benchmark: Argument[Int, Single, Style.Named] = Argument(_.text("run conversions multiple times"), Some(0))
   )
 }

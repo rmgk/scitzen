@@ -9,7 +9,7 @@ import java.nio.file.{Files, Path}
 import scala.util.Using
 
 class ArticleDirectory(val articles: List[Article]):
-  lazy val byPath: Map[ProjectPath, List[Article]] =
+  val byPath: Map[ProjectPath, List[Article]] =
     articles.groupBy(fd => fd.doc.path)
 
   val labels: Map[String, List[SastRef]] =
@@ -23,7 +23,7 @@ class ArticleDirectory(val articles: List[Article]):
   val fullArticles: List[TitledArticle] = titled.filter(_.full)
   val subArticles: List[TitledArticle] = titled.filterNot(_.full)
 
-  lazy val itemsAndArticlesByLabel: Map[String, TitledArticle] =
+  val itemsAndArticlesByLabel: Map[String, TitledArticle] =
     titled.map(t => t.header.autolabel -> t).toMap
 
 object ArticleProcessing:

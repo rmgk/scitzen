@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{FileVisitOption, Files, Path}
 import scala.jdk.CollectionConverters.*
 
-case class NLP(stopwords: Map[String, Set[String]]):
+case class NLP(stopwords: Map[String, Seq[String]]):
 
   def noStop(s: String) = stopwords.valuesIterator.forall(stops => !stops.contains(s))
 
@@ -33,7 +33,7 @@ case class NLP(stopwords: Map[String, Set[String]]):
     val counts = wordcount(sast)
     val candidates =
       stopwords.view.mapValues {
-        _.toList.map(counts.getOrElse(_, 0)).sum
+        _.iterator.map(counts.getOrElse(_, 0)).sum
       }.iterator
     candidates.maxByOption(_._2).map(_._1)
 
@@ -48,7 +48,7 @@ object NLP:
   def loadFrom(dir: Path): NLP =
     val stopwords = Files.walk(dir).iterator().asScala.filter(p => p.getFileName.startsWith("stopwords")).map { sw =>
       val lang  = sw.toString.takeRight(2)
-      val words = Files.lines(sw).iterator().asScala.toSet
+      val words = Files.lines(sw).iterator().asScala.toSeq
       lang -> words
     }.toMap
     NLP(stopwords)
@@ -56,6 +56,6 @@ object NLP:
   def loadFromResources: NLP =
     val stopwords = List("de", "en").map: lang =>
       val bytes = ResourceUtil.load(s"stopwords.$lang")
-      val words = new String(bytes, StandardCharsets.UTF_8).linesIterator.toSet
+      val words = new String(bytes, StandardCharsets.UTF_8).linesIterator.toSeq
       lang -> words
     NLP(stopwords.toMap)
