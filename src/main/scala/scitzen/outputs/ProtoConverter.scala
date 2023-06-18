@@ -39,13 +39,15 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def convertBlock(sBlock: Block, ctx: Cta): CtxCF
   def convertDirective(directive: Directive, ctx: Cta): CtxCF =
-    convertInlineDirective(directive, ctx).map(v => Chain(inlineResToBlock(v)))
+    convertInlineDirective(directive, ctx).map(v => Chain(inlinesAsToplevel(v)))
   def convertSection(section: Section, ctx: Cta): CtxCF
   def convertSlist(slist: Slist, ctx: Cta): CtxCF
 
   def convertInlinesAsBlock(inlines: Iterable[Inline], ctx: Cta): Ctx[BlockRes] =
     convertInlineSeq(inlines, ctx).map(v => inlineResToBlock(v))
+
   def inlineResToBlock(inl: Chain[InlineRes]): BlockRes
+  def inlinesAsToplevel(inl: Chain[InlineRes]): BlockRes
 
   def convertInlineSeq(inlines: Iterable[Inline], ctx: Cta): CtxInl =
     ctx.fold(inlines) { (ctx, inline) => convertInline(inline, ctx) }

@@ -55,7 +55,8 @@ class SastToTexConverter(
     sec
   }
 
-  override def inlineResToBlock(inl: Chain[String]): String = inl.mkString("")
+  override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
+  override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("", "", "\n")
 
   override def convertSection(section: Section, ctx: Cta): CtxCF =
     val Section(title, prefix, attr) = section
@@ -118,7 +119,7 @@ class SastToTexConverter(
               ctx.empty
 
       case other =>
-        convertInlineDirective(directive, ctx)
+        convertInlineDirective(directive, ctx).mapc(inlinesAsToplevel)
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
     val args      = attributes.legacyPositional.tail
@@ -135,7 +136,7 @@ class SastToTexConverter(
           val cctx = convertInlinesAsBlock(content.inl, ctx)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if article.settings.get("style").contains("article") then cctx.single :+ "\n"
+          if article.settings.get("style").contains("article") then cctx.single :+ ""
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")
