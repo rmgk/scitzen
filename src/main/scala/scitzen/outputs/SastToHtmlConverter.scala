@@ -182,7 +182,6 @@ class SastToHtmlConverter(
     case Parsed(delimiter, blockContent) =>
       convertSastSeq(blockContent, ctx).map { blockContent =>
         if delimiter.isBlank then
-          scribe.warn(s"blank delimiter" + reporter(block.prov))
           blockContent
         else
           val tag = if block.command == BCommand.Figure then figure
