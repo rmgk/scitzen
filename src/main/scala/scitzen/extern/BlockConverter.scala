@@ -36,11 +36,17 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
             case "graphviz" => graphviz(content, block)
             case "mermaid"  => mermaid(content, block)
             case "scalaCli" => convertScalaCli(content, block)
+            case "load" => loadFileAsContent(block, article, attrs)
         case other =>
           scribe.error(s"can not convert $other")
           Nil
 
     }
+
+  def loadFileAsContent(block: Block, article: Article, attributes: Attributes) =
+    article.doc.resolve(attributes.target) match
+      case Some(path) => List(Block(BCommand.Empty, Attributes.emtpy, Fenced(Files.readString(path.absolute)))(block.prov))
+      case None => Nil
 
   def convertScalaCli(text: String, block: Block) =
     val start      = System.nanoTime()
