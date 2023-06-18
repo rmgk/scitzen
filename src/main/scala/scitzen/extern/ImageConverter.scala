@@ -1,11 +1,21 @@
 package scitzen.extern
 
 import scitzen.compat.Logging.scribe
-import scitzen.generic.{ArticleDirectory, Project}
-import scitzen.sast.{Attributes}
+import scitzen.generic.{Project, ProjectPath}
 
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters.*
+
+enum ImageTarget(val name: String, val preferredFormat: String, val unsupportedFormat: List[String]):
+  def requiresConversion(filename: ProjectPath): Boolean =
+    unsupportedFormat.exists(fmt => filename.absolute.toString.endsWith(fmt))
+  case Html   extends ImageTarget("html target", "svg", List("pdf", "tex"))
+  case Tex    extends ImageTarget("tex target", "pdf", List("svg", "tex"))
+  case Raster extends ImageTarget("raster target", "png", List("svg", "pdf", "tex"))
+
+case class ImageConversions(mapping: Map[ProjectPath, Map[ImageTarget, Path]]):
+  def lookup(path: ProjectPath, target: ImageTarget): Path =
+    mapping.get(path).flatMap(_.get(target)).getOrElse(path.absolute)
 
 object ImageConverter {
 
@@ -18,53 +28,34 @@ object ImageConverter {
 
   def preprocessImages(
       project: Project,
-      targets: List[ImageTarget] = Nil,
-      articleDirectory: ArticleDirectory
-  ): Unit =
-    val converters = targets.map(t => t -> new ImageConverter(project, t)).toMap
-//    val blocks = articleDirectory.articles.flatMap { art =>
-//      art.context.convertBlocks.map(b => b.attributes -> (b -> art.sourceDoc))
-//    }.toMap
-
-//    blocks.valuesIterator.foreach { (block, doc) =>
-//      converters.foreach { (_, ic) =>
-//        ic.convertBlock(doc.path.directory, block)
-//      }
-//    }
-
-    val macros = articleDirectory.articles.flatMap { art =>
-      art.context.imageMacros.map(m => m.attributes -> (m -> art.sourceDoc))
-    }.toMap
-
-    macros.valuesIterator.foreach { (mcro, doc) =>
-      val file = project.resolve(doc.path.directory, mcro.attributes.target)
-      converters.foreach { (t, _) =>
-        if t.requiresConversion(mcro.attributes.target) && file.isDefined then
-          converters(t).applyConversion(file.get.absolute, mcro.attributes).map(f => (t -> f))
-          ()
-      }
-    }
-  end preprocessImages
-
-
+      targets: List[ImageTarget],
+      paths: Iterable[ProjectPath]
+  ): ImageConversions =
+    val converters = targets.map(t => ImageConverter.apply(project, t))
+    ImageConversions:
+      paths.map: path =>
+        path -> converters.flatMap: conv =>
+          conv.applyConversion(path).map: res =>
+            conv.imageTarget -> res
+        .toMap
+      .toMap
 }
 
-class ImageConverter(
+case class ImageConverter(
     project: Project,
     imageTarget: ImageTarget,
 ):
 
-  def preferredFormat: String         = imageTarget.preferredFormat
+  def preferredFormat: String = imageTarget.preferredFormat
 
-  def applyConversion(file: Path, attributes: Attributes): Option[Path] =
-    preferredFormat match
-      case "svg" | "png" if (file.getFileName.toString.endsWith(".pdf")) => Some(pdfToCairo(file))
-      case "pdf" | "png" if (file.getFileName.toString.endsWith(".svg")) => Some(svgToCairo(file))
-//      case _ if (file.getFileName.toString.endsWith(".tex")) =>
-//        val dir = project.cacheDir.resolve("convertedImages").resolve(project.root.relativize(file))
-//        val templated =
-//          ImageConverter.applyTemplate(attributes, Files.readString(file), file.getParent, project, documentDirectory)
-//        convertTemplated("tex", templated, dir, ImageConverter.nameWithoutExtension(file))
+  def applyConversion(file: ProjectPath): Option[Path] =
+    if imageTarget.requiresConversion(file)
+    then
+      preferredFormat match
+        case "svg" | "png" if (file.absolute.getFileName.toString.endsWith(".pdf")) => Some(pdfToCairo(file.absolute))
+        case "pdf" | "png" if (file.absolute.getFileName.toString.endsWith(".svg")) => Some(svgToCairo(file.absolute))
+        case other                                                                  => None
+    else None
 
   def pdfToCairo(file: Path): Path =
     convertExternal(

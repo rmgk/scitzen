@@ -18,7 +18,7 @@ object ImageReferences:
 
       val cwd = art.sourceDoc.path.directory
 
-      val images = art.context.imageMacros.flatMap { mcro =>
+      val images = art.context.imageDirectives.flatMap { mcro =>
         val path = mcro.attributes.named.getOrElse(ImageTarget.Raster.name, mcro.attributes.target)
         project.resolve(cwd, path) match
           case Some(target) =>

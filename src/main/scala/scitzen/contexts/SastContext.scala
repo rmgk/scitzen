@@ -9,12 +9,12 @@ case class SastContext[+T](
     data: T,
     labelledThings: Map[String, List[SastRef]] = Map.empty,
     uniquectr: Int = 0,
-    imageMacros: List[Directive] = Nil,
+    imageDirectives: List[Directive] = Nil,
     convertBlocks: List[Block] = Nil,
     sections: List[Section] = Nil,
     citations: List[Directive] = Nil
 ):
-  def addImage(image: Directive): SastContext[T]       = copy(imageMacros = image :: imageMacros)
+  def addImage(image: Directive): SastContext[T]       = copy(imageDirectives = image :: imageDirectives)
   def addConversionBlock(block: Block): SastContext[T] = copy(convertBlocks = block :: convertBlocks)
   def addSection(section: Section): SastContext[T]     = copy(sections = section :: sections)
   def addCitation(cite: Directive): SastContext[T]     = copy(citations = cite :: citations)
