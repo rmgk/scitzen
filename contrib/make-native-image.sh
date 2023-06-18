@@ -1,5 +1,5 @@
 #!/bin/sh
-sbt stageJars
+sbt --client stageJars
 # we have this dependency due to some JS compat, just remove it here
 rm target/jars/graal-sdk-*.jar
 rm target/jars/truffle-api-*.jar
