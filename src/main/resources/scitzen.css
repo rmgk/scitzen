@@ -87,13 +87,6 @@ main {
 		grid-column: content-start / content-end;
 	}
 
-	/* prevent content from hugging the top. */
-	/* usually this does not matter because heading have the same padding, */
-	/* but for articles without heading this looks better. */
-	main > :first-child {
-		padding-top: 1rem;
-	}
-
 	/* oversized elements */
 	main > :is(img, figure, video, pre) {
 		/* oversized figures and images */
@@ -128,24 +121,26 @@ main {
 /* general styling of elements follow, these should not affect overall layout */
 /******************************************************************************/
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6, hr {
 	/* we disabled all margins because they do not fold in grids */
 	/* for headers, we add padding instead, which works nicer with jumping to IDs */
 	padding-top: 1rem;
 	margin-bottom: 0.5rem;
 }
 
-h1, h2 {
-	border-bottom: var(--theme-border);
+h1, h2, hr {
+	/* hr is basically a header without text */
+	border: none;
 
 	text-align: center;
+	/* safe aligns left in case of overflow */
+	justify-self: safe center;
 
+	border-bottom: var(--theme-border);
 	/* limit the width to either the grid element (scaling down for smaller screens) */
 	/* or to something a bit larger than the main content (limiting oversize for large screens) */
 	grid-column: header-start / header-end;
 	width: min(100%, calc(var(--main-content-width) + var(--header-oversize)));
-	/* safe aligns left in case of overflow */
-	justify-self: safe center;
 }
 
 h4 {
@@ -269,14 +264,6 @@ pre > code {
 
 
 /* individual element styles */
-
-hr {
-	grid-column: header-start / header-end;
-	border: none;
-	border-bottom: var(--theme-border);
-	margin-top: 0.5rem;
-	margin-bottom: 0.5rem;
-}
 
 .marginnote {
 	grid-column: content-end;
