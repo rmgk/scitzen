@@ -56,7 +56,12 @@ object ConvertProject:
     val bibres     = BibManager(project).prefetch(directory.articles.flatMap(_.context.citations).toSet)
     val dblpFuture = Future { bibres.runToFuture }.flatten
 
+    scribe.info(s"scheduled bib ${timediff()}")
+
     val blockConversions = BlockConverter(project, directory).run()
+
+    scribe.info(s"block converted ${blockConversions.mapping.size} ${timediff()}")
+
 
     val imagePaths =
       val bi = blockConversions.mapping.valuesIterator.flatten.collect:
@@ -68,6 +73,8 @@ object ConvertProject:
 
       bi.flatten.concat(di).toList
 
+    scribe.info(s"image paths collected ${imagePaths.size} ${timediff()}")
+
     val imageConversions = ImageConverter.preprocessImages(
       project,
       List(
@@ -78,7 +85,11 @@ object ConvertProject:
       imagePaths
     )
 
+    scribe.info(s"images converted ${imageConversions.mapping.size} ${timediff()}")
+
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
+
+    scribe.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
 
     val anal = ConversionAnalysis(
       project = project,
@@ -87,6 +98,8 @@ object ConvertProject:
       image = imageConversions,
       bib = bibdb,
     )
+
+    scribe.info(s"completed conversions ${timediff()}")
 
     if project.config.format.contains("content") then
       Format.formatContents(anal)

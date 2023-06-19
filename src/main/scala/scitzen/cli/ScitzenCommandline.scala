@@ -48,6 +48,7 @@ object ScitzenCommandline {
         Argument(_.valueName("path").text("produce json description of generated images")),
       sync: Argument[ClSync, Option, Style.Named] =
         Argument(_.keyName("path").valueName("pos").text("sync position")),
-      benchmark: Argument[Int, Single, Style.Named] = Argument(_.text("run conversions multiple times"), Some(0))
+      benchmark: Argument[Int, Single, Style.Named] = Argument(_.text("run conversions multiple times"), Some(0)),
+      tracing: Argument[Boolean, Single, Style.Named] = Argument(_.text("enable trace logging"), Some(false)),
   )
 }
