@@ -105,11 +105,11 @@ class SastToTexConverter(
 
   override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
     directive.command match
-      case Include => handleInclude(ctx, directive)
+      case Include            => handleInclude(ctx, directive)
       case Other("aggregate") => handleAggregate(ctx, directive)
 
       case other =>
-        convertInlineDirective(directive, ctx).mapc(inlinesAsToplevel)
+        convertInlineDirective(directive, ctx).mapc(inlineResToBlock)
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
     val args      = attributes.legacyPositional
@@ -162,30 +162,17 @@ class SastToTexConverter(
               convertSastSeq(blockContent, ctx)
 
         case Fenced(text) =>
-          if block.attributes.named.contains(ImageTarget.Tex.name) then
-            val target = block.attributes.named(ImageTarget.Tex.name)
-            convertInlineDirective(
-              Directive(
-                Image,
-                block.attributes.remove(ImageTarget.Tex.name).append(List(Attribute("", target)))
-              )(
-                block.prov
-              ),
-              ctx
-            )
-          else
-            block.attributes.legacyPositional.headOption match
-
-              case _ =>
-                val labeltext = block.attributes.named.get("unique ref") match
-                  case None => text
-                  case Some(label) =>
-                    text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
-                val restext =
-                  if !block.attributes.legacyPositional.contains("highlight") then labeltext
-                  else
-                    labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
-                ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
+          val labeltext = block.attributes.named.get("unique ref") match
+            case None => text
+            case Some(label) =>
+              text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
+          val restext =
+            if !block.attributes.legacyPositional.contains("highlight") then labeltext
+            else
+              labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
+          if block.command == BCommand.Other("text")
+            then ctx.ret(Chain(s"\\begin{verbatim}", restext, "\\end{verbatim}"))
+          else ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
 
         case SpaceComment(_) => ctx.empty
 
@@ -330,7 +317,6 @@ class SastToTexConverter(
       case Include | Script =>
         val str: String = warn(s"not supported by tex backend", directive)
         ctx.retc(str)
-
 
   override def addDetail(ctx: CtxCF): CtxCF = ctx
 
