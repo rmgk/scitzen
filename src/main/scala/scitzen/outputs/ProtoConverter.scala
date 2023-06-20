@@ -19,6 +19,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   val project  = article.doc.path.project
   val reporter = article.doc.reporter
 
+  val hardNewlines = !combinedAttributes.named.get("style").exists(_.contains("article"))
+
   type CtxCF  = ConversionContext[Chain[BlockRes]]
   type CtxInl = ConversionContext[Chain[InlineRes]]
   type Ctx[T] = ConversionContext[T]
@@ -26,7 +28,30 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
-  def subconverter(article: Article, analysis: ConversionAnalysis, attr: Attributes): ProtoConverter[BlockRes, InlineRes]
+  def subconverter(
+      article: Article,
+      analysis: ConversionAnalysis,
+      attr: Attributes
+  ): ProtoConverter[BlockRes, InlineRes]
+
+  // todo … this implies that we need some way to handle such named cases systematically
+  // currently, the default could not be named for example, which seems weird
+  // basically, needing a rendering of an `Attribute` – or probably better a systematic flattening of an attribute to a Text
+  // I think this might warrant an experiment if we want to:
+  // • embrace the dynamic nature of `Attributes`
+  // • properly type them during parsing
+  def handleLookup(directive: Directive): Option[Text] =
+    val id = directive.attributes.target
+    val res =
+      combinedAttributes.nestedMap.get(id).map: attr =>
+        attr.targetT
+      .orElse:
+        combinedAttributes.named.get(id).map: str =>
+          Text.of(str)
+      .orElse(directive.attributes.named.get("default").map(Text.of))
+    if res.isEmpty then
+      scribe.warn(s"unknown name ${id}" + reporter(directive))
+    res
 
   def convertSastSeq(b: Iterable[Sast], ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(sast, ctx))
 
@@ -113,7 +138,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             )
             ctx.empty
           case Some(article) =>
-            subconverter(article, anal,combinedAttributes).convertSastSeq(article.sast, ctx)
+            subconverter(article, anal, combinedAttributes).convertSastSeq(article.sast, ctx)
 
       case Some(other) =>
         scribe.error(s"unknown include type $other" + article.doc.reporter(directive.prov))

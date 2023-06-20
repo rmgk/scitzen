@@ -23,7 +23,11 @@ class SastToHtmlConverter(
     combinedAttributes: Attributes,
 ) extends ProtoConverter[Frag, Frag](article, anal, combinedAttributes):
 
-  override def subconverter(article: Article, analysis: ConversionAnalysis, attr: Attributes): ProtoConverter[Text.all.Frag, Text.all.Frag] =
+  override def subconverter(
+      article: Article,
+      analysis: ConversionAnalysis,
+      attr: Attributes
+  ): ProtoConverter[Text.all.Frag, Text.all.Frag] =
     new SastToHtmlConverter(article, analysis, attr)
 
   val syncPos: Int =
@@ -199,9 +203,9 @@ class SastToHtmlConverter(
   end handleCodeListing
 
   override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(stringFrag(inlineText.str))
-  override def convertInlineDirective(mcro: Directive, ctx: Cta): CtxInl =
-    val attrs = mcro.attributes
-    mcro.command match
+  override def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl =
+    val attrs = directive.attributes
+    directive.command match
       case Strong => convertInlineSeq(attrs.text.inl, ctx).map(c => strong(c.toList)).single
       case Emph   => convertInlineSeq(attrs.text.inl, ctx).map(c => em(c.toList)).single
       case Code   => ctx.retc(code(attrs.target))
@@ -212,10 +216,10 @@ class SastToHtmlConverter(
             ctx.retc(script(`type` := "text/javascript", src := rel.toString))
               .requireInOutput(path, rel)
           case None =>
-            ctx.retc(warn("no script", mcro))
+            ctx.retc(warn("no script", directive))
 
       case Def | Comment => ctx.empty
-      case Include       => ctx.retc(unknownMacroOutput(mcro))
+      case Include       => ctx.retc(unknownMacroOutput(directive))
 
       case Raw => ctx.retc(div(raw(attrs.named.getOrElse("html", ""))))
 
@@ -224,14 +228,14 @@ class SastToHtmlConverter(
         ctx.katex(inner).map(res => Chain(math(raw(res))))
 
       case BibQuery =>
-        convertInlineDirective(anal.bib.convert(mcro), ctx)
+        convertInlineDirective(anal.bib.convert(directive), ctx)
 
       case Cite =>
-        val citations = anal.bib.bibkeys(mcro).map(k => k -> anal.bib.entries.get(k))
+        val citations = anal.bib.bibkeys(directive).map(k => k -> anal.bib.entries.get(k))
         val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
           case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
           case (bibid, None) =>
-            scribe.error(s"bib key not found: »${bibid}«" + reportPos(mcro))
+            scribe.error(s"bib key not found: »${bibid}«" + reportPos(directive))
             List(code(bibid), stringFrag(" "))
         }.dropRight(1)
         val cctx          = ctx.cite(citations.flatMap(_._2))
@@ -272,7 +276,7 @@ class SastToHtmlConverter(
         if candidates.sizeIs > 1 then
           scribe.error(
             s"multiple resolutions for ${attrs.target}" +
-            reporter(mcro.prov) +
+            reporter(directive.prov) +
             s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
           )
 
@@ -298,16 +302,15 @@ class SastToHtmlConverter(
               scribe.error(s"can not refer to $other")
               ctx.empty
         }.getOrElse {
-          scribe.error(s"no resolutions for »${attrs.target}«${reporter(mcro)}")
-          ctx.retc(code(SastToScimConverter(anal.bib).macroToScim(mcro)))
+          scribe.error(s"no resolutions for »${attrs.target}«${reporter(directive)}")
+          ctx.retc(code(SastToScimConverter(anal.bib).macroToScim(directive)))
         }
 
       case Lookup =>
-        if project.definitions.contains(attrs.target) then
-          convertInlineSeq(project.definitions(attrs.target).inl, ctx)
-        else
-          scribe.warn(s"unknown name ${attrs.target}" + reporter(mcro))
-          ctx.retc(code(attrs.target))
+        handleLookup(directive) match
+          case Some(res) => convertInlineSeq(res.inl, ctx)
+          case None =>
+            ctx.retc(code(attrs.target))
 
       case Other(otherCommand) =>
         otherCommand match
@@ -324,14 +327,14 @@ class SastToHtmlConverter(
           case tagname @ ("ins" | "del") =>
             ctx.retc(tag(tagname)(attrs.legacyPositional.mkString(", ")))
 
-          case "todo"            => ctx.retc(code(`class` := "todo", SastToScimConverter(anal.bib).macroToScim(mcro)))
+          case "todo" => ctx.retc(code(`class` := "todo", SastToScimConverter(anal.bib).macroToScim(directive)))
           case "tableofcontents" => ctx.empty
           case "partition"       => ctx.empty
           case "rule"            => ctx.retc(span(attrs.target, `class` := "rule"))
 
-          case _ => ctx.retc(unknownMacroOutput(mcro))
+          case _ => ctx.retc(unknownMacroOutput(directive))
 
-      case Image => convertImage(ctx, mcro)
+      case Image => convertImage(ctx, directive)
   end convertInlineDirective
 
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {

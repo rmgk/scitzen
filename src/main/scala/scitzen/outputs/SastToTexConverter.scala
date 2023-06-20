@@ -31,8 +31,8 @@ object SastToTexConverter {
 class SastToTexConverter(
     article: Article,
     anal: ConversionAnalysis,
-    combinedAttributes: Attributes
-) extends ProtoConverter[String, String](article, anal, combinedAttributes):
+    settings: Attributes
+) extends ProtoConverter[String, String](article, anal, settings):
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
@@ -43,7 +43,7 @@ class SastToTexConverter(
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTexConverter(article, analysis, combinedAttributes)
+    new SastToTexConverter(article, analysis, settings)
 
   override def stringToInlineRes(str: String): String = latexencode(str)
 
@@ -57,7 +57,7 @@ class SastToTexConverter(
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",
-    val secs = project.definitions.get("sectioning").map(_.plainString)
+    val secs = settings.named.get("sectioning")
       .getOrElse("chapter,section,subsection,paragraph").split(',').map(_.trim)
     val sec = secs.lift(nesting).getOrElse("paragraph")
     sec
@@ -131,7 +131,7 @@ class SastToTexConverter(
           val cctx = convertInlinesAsBlock(content.inl, ctx)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if true then cctx.single :+ ""
+          if !hardNewlines then cctx.single :+ ""
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")
@@ -290,11 +290,10 @@ class SastToTexConverter(
         }.useFeature("href")
 
       case Lookup =>
-        project.definitions.get(attributes.target).orElse(attributes.named.get("default").map(Text.of)) match
+        handleLookup(directive) match
           case Some(res) =>
             convertInlinesAsBlock(res.inl, ctx).single
           case None =>
-            warn(s"unknown name »${attributes.target}«", directive)
             ctx.retc(latexencode(attributes.target))
 
       case Other("footnote") =>

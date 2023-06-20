@@ -28,7 +28,7 @@ case class SastToTextConverter(
       command match
         case BCommand.If =>
           val res =
-            settings.definition(attr.target) match
+            settings.named.get(attr.target) match
               case Some(value) =>
                 attr.named.get("equals").forall(_ == value)
               case None => false
@@ -65,7 +65,7 @@ case class SastToTextConverter(
       case Include =>
         handleInclude(ctx, directive)
       case Lookup =>
-        settings.definition(attributes.target).orElse(attributes.named.get("default")) match
+        settings.named.get(attributes.target).orElse(attributes.named.get("default")) match
           case None =>
             scribe.error(s"could not resolve ${attributes.target}")
             ctx.empty

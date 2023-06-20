@@ -1,7 +1,6 @@
 package scitzen.generic
 
 import scitzen.compat.Logging.scribe
-import scitzen.sast.Text
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -27,7 +26,7 @@ object ProjectPath:
     )
     new ProjectPath(project, project.root.relativize(normalized))
 
-case class Project private (root: Path, config: ProjectConfig, definitions: Map[String, Text]):
+case class Project private (root: Path, config: ProjectConfig):
 
   val cacheDir: Path = config.cache match
     case None    => root resolve config.output resolve "cache"
@@ -66,10 +65,10 @@ case class Project private (root: Path, config: ProjectConfig, definitions: Map[
 object Project:
   val scitzenconfig: String = "scitzen.config"
 
-  def apply(root: Path, config: ProjectConfig, definitions: Map[String, Text]) =
+  def apply(root: Path, config: ProjectConfig) =
     val absolutelyNormal = root.toAbsolutePath.normalize()
     require(Files.isDirectory(absolutelyNormal), "project root must be a directory")
-    new Project(absolutelyNormal, config, definitions)
+    new Project(absolutelyNormal, config)
 
   def findRoot(source: Path): Option[Path] =
     if Files.isRegularFile(source resolve scitzenconfig) then Some(source)
@@ -79,13 +78,10 @@ object Project:
     findRoot(file.toAbsolutePath) match
       case None =>
         val adHocRoot = if Files.isDirectory(file) then file else file.getParent
-        Some(Project(adHocRoot, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8)), Map.empty))
+        Some(Project(adHocRoot, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8))))
       case Some(file) => fromConfig(file)
 
   def fromConfig(file: Path): Option[Project] =
     val configContent = Files.readAllBytes(file resolve scitzenconfig)
     val value         = ProjectConfig.parse(configContent)
-    val definitions = value.definitions.view.map { (k, v) =>
-      k -> Text(scitzen.parser.Parse.inlineUnwrap(v.getBytes(StandardCharsets.UTF_8)))
-    }.toMap
-    Some(Project(file, value, definitions))
+    Some(Project(file, value))
