@@ -1,4 +1,5 @@
 == v1.1
+2021-12-07
 
 Note that there should be a :link{GH action building binaries; https://github.com/rmgk/scitzen/actions/workflows/native.yml} for each commit, and versioned releases have no better guarantees than any other random build.
 
@@ -17,6 +18,7 @@ This also feels more like a blog post than a changelog, but … why not 🤷.
 
 
 == v1.0
+date = 2020-11-21
 
 First versioned release.
 Includes the following features.
