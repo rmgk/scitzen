@@ -69,15 +69,11 @@ case class SastToTextConverter(
   override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(inlineText.str)
   override def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl = directive.command match
     case Lookup =>
-      println(s"loookup of ${directive.attributes.target}")
-      val res = handleLookup(directive) match
+      handleLookup(directive) match
         case None =>
-          println(s"is empty")
           ctx.empty
         case Some(res) =>
           convertInlineSeq(res.inl, ctx)
-      println(s"returned $res")
-      res
 
     case other => ctx.retc("")
 
