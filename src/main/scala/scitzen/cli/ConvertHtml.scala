@@ -4,10 +4,10 @@ import com.github.plokhotnyuk.jsoniter_scala.core.*
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.contexts.{ConversionContext, SastContext}
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
-import scitzen.extern.{ResourceUtil}
+import scitzen.extern.ResourceUtil
 import scitzen.generic.*
 import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
-import scitzen.sast.{Attributes, Prov, Section}
+import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
@@ -75,7 +75,8 @@ class ConvertHtml(anal: ConversionAnalysis):
         SastContext(()),
         Nil
       ),
-      anal = anal
+      anal = anal,
+      Attributes.empty
     ).convertSastSeq(generatedIndex, ConversionContext(()))
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
@@ -115,7 +116,8 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     val converter = new SastToHtmlConverter(
       article = article.article,
-      anal = anal
+      anal = anal,
+      article.header.attributes
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
@@ -168,9 +170,9 @@ class ConvertHtml(anal: ConversionAnalysis):
         val content = SeqFrag(convertedArticleCtx.data.toList).render
 
         val templateSettings =
-          project.config.definitions ++ article.header.attributes.named ++ List(
-            Some("template content" -> content)
-          ).flatten ++ convertedArticleCtx.features.toList.map(s => s"feature $s" -> "")
+          Attributes(project.config.rawAttributes.raw ++ article.header.attributes.raw ++
+            convertedArticleCtx.features.map(s => Attribute(s"feature $s", "")) :+
+            Attribute("template content", content))
 
         ConvertTemplate.fillTemplate(
           project,

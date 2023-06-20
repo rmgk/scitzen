@@ -19,14 +19,12 @@ import java.nio.file.Files
 
 class SastToHtmlConverter(
     article: Article,
-    anal: ConversionAnalysis
-) extends ProtoConverter[Frag, Frag](article, anal):
+    anal: ConversionAnalysis,
+    combinedAttributes: Attributes,
+) extends ProtoConverter[Frag, Frag](article, anal, combinedAttributes):
 
-  override def subconverter(
-      article: Article,
-      analysis: ConversionAnalysis
-  ): ProtoConverter[Text.all.Frag, Text.all.Frag] =
-    new SastToHtmlConverter(article, analysis)
+  override def subconverter(article: Article, analysis: ConversionAnalysis, attr: Attributes): ProtoConverter[Text.all.Frag, Text.all.Frag] =
+    new SastToHtmlConverter(article, analysis, attr)
 
   val syncPos: Int =
 //    if sync.exists(_.path == pathManager.cwf) then sync.get._2
@@ -318,7 +316,7 @@ class SastToHtmlConverter(
               SastToTextConverter(
                 article,
                 anal,
-                project.config.definitions,
+                project.config.rawAttributes,
               ).convertInlinesAsBlock(attrs.targetT.inl, ctx)
             target.mapc: target =>
               a(title := target, "※")

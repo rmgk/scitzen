@@ -6,13 +6,14 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.{BlockConversions, ImageConversions}
 import scitzen.generic.{ArticleDirectory, Project}
 import scitzen.outputs.SastToTextConverter
+import scitzen.sast.Attributes
 
 object ConvertTemplate:
   def fillTemplate(
       project: Project,
       directory: ArticleDirectory,
       templatePath: String,
-      templateSettings: Map[String, String]
+      templateSettings: Attributes
   ): String =
     project.resolve(project.root, templatePath) match
       case None =>
@@ -23,6 +24,6 @@ object ConvertTemplate:
         val documentString = SastToTextConverter(
           templateArticle,
           ConversionAnalysis(project, directory, BlockConversions(Map.empty), ImageConversions(Map.empty), BibDB.empty),
-          templateSettings,
+          templateSettings
         ).convertSastSeq(templateArticle.sast, ConversionContext(()))
         documentString.data.mkString("")

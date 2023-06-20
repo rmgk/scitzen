@@ -4,6 +4,7 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ResourceUtil
 import scitzen.outputs.SastToTextConverter
+import scitzen.sast.Attributes
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{FileVisitOption, Files, Path}
@@ -39,7 +40,7 @@ case class NLP(stopwords: Map[String, Seq[String]], analysis: ConversionAnalysis
     candidates.maxByOption(_._2).map(_._1)
 
   def words(article: Article): List[String] =
-    SastToTextConverter(article, analysis, Map.empty)
+    SastToTextConverter(article, analysis, Attributes.empty)
       .convertSastSeq(article.sast, ConversionContext(())).data
       .iterator
       .flatMap(_.split("[^\\p{L}]+")).map(_.toLowerCase).toList

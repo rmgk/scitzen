@@ -20,6 +20,9 @@ case class Attributes(raw: Seq[Attribute]) {
   lazy val target: String                = legacyPositional.last
   lazy val text: Text                    = positional.head
 
+  def definition(name: String): Option[String] =
+    nestedMap.get("definitions").flatMap(_.named.get(name))
+
   def append(other: Seq[Attribute]): Attributes  = Attributes(raw ++ other)
   def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw)
   def remove(key: String): Attributes = Attributes(raw.filterNot {
@@ -34,7 +37,7 @@ case class Attributes(raw: Seq[Attribute]) {
 
 object Attributes {
   def target(string: String): Attributes = Attribute("", string).toAttributes
-  val emtpy                              = Attributes(Nil)
+  val empty                              = Attributes(Nil)
 }
 
 sealed trait Attribute {

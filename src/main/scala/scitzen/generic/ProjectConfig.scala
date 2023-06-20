@@ -13,9 +13,11 @@ case class ProjectConfig(
     texTemplate: Option[String] = None,
     notes: Option[String] = None,
     bibliography: Option[String] = None,
+    rawAttributes: Attributes = Attributes.empty
 )
 
 object ProjectConfig {
+  //TODO: generalize this for all directives
   def parse(content: Array[Byte]): ProjectConfig = {
     val value = Parse.parseResult(content, AttributesParser.configFile, Prov())
     val attrs = Attributes(value)
@@ -28,7 +30,8 @@ object ProjectConfig {
       texTemplate = attrs.named.get("texTemplate"),
       notes = attrs.named.get("notes"),
       bibliography = attrs.named.get("bibliography"),
-      definitions = attrs.nestedMap.get("definitions").map(_.named).getOrElse(Map.empty)
+      definitions = attrs.nestedMap.get("definitions").map(_.named).getOrElse(Map.empty),
+      rawAttributes = attrs
     )
   }
 }

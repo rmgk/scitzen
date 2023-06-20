@@ -13,6 +13,7 @@ import java.nio.file.Files
 abstract class ProtoConverter[BlockRes, InlineRes](
     article: Article,
     anal: ConversionAnalysis,
+    combinedAttributes: Attributes,
 ):
 
   val project  = article.doc.path.project
@@ -25,7 +26,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
-  def subconverter(article: Article, analysis: ConversionAnalysis): ProtoConverter[BlockRes, InlineRes]
+  def subconverter(article: Article, analysis: ConversionAnalysis, attr: Attributes): ProtoConverter[BlockRes, InlineRes]
 
   def convertSastSeq(b: Iterable[Sast], ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(sast, ctx))
 
@@ -85,10 +86,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       else Nil
 
     ctx.fold(found): (cc, art) =>
-      subconverter(
-        art,
-        anal
-      ).convertSastSeq(art.sast, cc)
+      subconverter(art, anal, combinedAttributes).convertSastSeq(art.sast, cc)
   }
 
   def handleInclude(ctx: Cta, directive: Directive) = {
@@ -115,10 +113,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             )
             ctx.empty
           case Some(article) =>
-            subconverter(
-              article,
-              anal
-            ).convertSastSeq(article.sast, ctx)
+            subconverter(article, anal,combinedAttributes).convertSastSeq(article.sast, ctx)
 
       case Some(other) =>
         scribe.error(s"unknown include type $other" + article.doc.reporter(directive.prov))

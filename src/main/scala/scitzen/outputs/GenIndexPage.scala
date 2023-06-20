@@ -76,7 +76,7 @@ object GenIndexPage:
           rec(
             rest,
             (if current.isBlank
-             then Directive(DCommand.Other("break"), Attributes.emtpy)(Prov()) :: content
+             then Directive(DCommand.Other("break"), Attributes.empty)(Prov()) :: content
              else sectionFor(current) :: content)
               .:::(acc)
           )

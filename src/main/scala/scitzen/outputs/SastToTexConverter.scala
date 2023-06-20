@@ -30,15 +30,20 @@ object SastToTexConverter {
 
 class SastToTexConverter(
     article: Article,
-    anal: ConversionAnalysis
-) extends ProtoConverter[String, String](article, anal):
+    anal: ConversionAnalysis,
+    combinedAttributes: Attributes
+) extends ProtoConverter[String, String](article, anal, combinedAttributes):
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
-  override def subconverter(article: Article, analysis: ConversionAnalysis): ProtoConverter[String, String] =
-    new SastToTexConverter(article, analysis)
+  override def subconverter(
+      article: Article,
+      analysis: ConversionAnalysis,
+      attr: Attributes
+  ): ProtoConverter[String, String] =
+    new SastToTexConverter(article, analysis, combinedAttributes)
 
   override def stringToInlineRes(str: String): String = latexencode(str)
 
@@ -171,7 +176,7 @@ class SastToTexConverter(
             else
               labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
           if block.command == BCommand.Other("text")
-            then ctx.ret(Chain(s"\\begin{verbatim}", restext, "\\end{verbatim}"))
+          then ctx.ret(Chain(s"\\begin{verbatim}", restext, "\\end{verbatim}"))
           else ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
 
         case SpaceComment(_) => ctx.empty

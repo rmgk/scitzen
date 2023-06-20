@@ -2,7 +2,10 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
-import scitzen.sast.{BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist,
+  SpaceComment, Text
+}
 import scitzen.compat.Logging.scribe
 import scitzen.generic.Article
 import scitzen.sast.DCommand.{Include, Lookup}
@@ -10,18 +13,22 @@ import scitzen.sast.DCommand.{Include, Lookup}
 case class SastToTextConverter(
     article: Article,
     anal: ConversionAnalysis,
-    definitions: Map[String, String],
-) extends ProtoConverter[String, String](article, anal):
+    settings: Attributes,
+) extends ProtoConverter[String, String](article, anal, settings):
 
-  override def subconverter(article: Article, analysis: ConversionAnalysis): ProtoConverter[String, String] =
-    new SastToTextConverter(article, analysis, definitions)
+  override def subconverter(
+      article: Article,
+      analysis: ConversionAnalysis,
+      attr: Attributes
+  ): ProtoConverter[String, String] =
+    new SastToTextConverter(article, analysis, attr)
   override def convertBlock(block: Block, ctx: Cta): CtxCF =
     val Block(command, attr, blockType) = block
     val filterBlock =
       command match
         case BCommand.If =>
           val res =
-            definitions.get(attr.target) match
+            settings.definition(attr.target) match
               case Some(value) =>
                 attr.named.get("equals").forall(_ == value)
               case None => false
@@ -32,7 +39,7 @@ case class SastToTextConverter(
     if !filterBlock then ctx.empty
     else
       blockType match
-        case Paragraph(content)      =>
+        case Paragraph(content) =>
           convertInlinesAsBlock(content.inl, ctx).map(r => Chain(r, ""))
         case Parsed(_, blockContent) => convertSastSeq(blockContent, ctx)
         case Fenced(text)            => ctx.retc(text)
@@ -58,7 +65,7 @@ case class SastToTextConverter(
       case Include =>
         handleInclude(ctx, directive)
       case Lookup =>
-        definitions.get(attributes.target).orElse(attributes.named.get("default")) match
+        settings.definition(attributes.target).orElse(attributes.named.get("default")) match
           case None =>
             scribe.error(s"could not resolve ${attributes.target}")
             ctx.empty
@@ -68,7 +75,7 @@ case class SastToTextConverter(
   override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(inlineText.str)
   override def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl = directive match
     case Directive(Lookup, attr) =>
-      ctx.retc(definitions.get(attr.target).orElse(attr.named.get("default")).getOrElse(""))
+      ctx.retc(settings.definition(attr.target).orElse(attr.named.get("default")).getOrElse(""))
     case _: Directive => ctx.retc("")
 
   override def stringToInlineRes(str: String): String = str

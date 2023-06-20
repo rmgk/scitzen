@@ -3,6 +3,7 @@ package scitzen.cli
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Hashes, ImageConverter, Latexmk}
 import scitzen.outputs.SastToTexConverter
+import scitzen.sast.{Attribute, Attributes}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, StandardCopyOption, StandardOpenOption}
@@ -22,7 +23,8 @@ object ConvertPdf:
       .asJava.parallelStream().forEach { article =>
         val converter = new SastToTexConverter(
           article.article,
-          anal
+          anal,
+          article.header.attributes
         )
 
         val resultContext =
@@ -61,10 +63,10 @@ object ConvertPdf:
           ()
 
         val templateSettings =
-          project.config.definitions ++ article.header.attributes.named ++ List(
-            Some("template content" -> content.iterator.mkString("\n")),
-            project.bibfile.map(_ => "bibliography path" -> "bibliography.bib")
-          ).flatten ++ resultContext.features.toList.map(s => s"feature $s" -> "")
+          Attributes(project.config.rawAttributes.raw ++ article.header.attributes.raw ++
+            resultContext.features.map(s => Attribute(s"feature $s", "")) ++
+            project.bibfile.map(_ => Attribute("bibliography path", "bibliography.bib")).toList :+
+            Attribute("template content", content.mkString("\n")))
 
         val documentString: String =
           ConvertTemplate.fillTemplate(

@@ -36,7 +36,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
             case "graphviz" => graphviz(content, block)
             case "mermaid"  => mermaid(content, block)
             case "scalaCli" => convertScalaCli(content, block)
-            case "load" => loadFileAsContent(block, article, attrs)
+            case "load"     => loadFileAsContent(block, article, attrs)
         case other =>
           scribe.error(s"can not convert $other")
           Nil
@@ -45,7 +45,8 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
 
   def loadFileAsContent(block: Block, article: Article, attributes: Attributes) =
     article.doc.resolve(attributes.target) match
-      case Some(path) => List(Block(BCommand.Empty, Attributes.emtpy, Fenced(Files.readString(path.absolute)))(block.prov))
+      case Some(path) =>
+        List(Block(BCommand.Empty, Attributes.empty, Fenced(Files.readString(path.absolute)))(block.prov))
       case None => Nil
 
   def convertScalaCli(text: String, block: Block) =
@@ -83,7 +84,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     sast match
       case List(block @ Block(_, _, Fenced(content))) =>
         val res = scitzen.extern.JsRunner().run(content, attr)
-        List(Block(BCommand.Code, Attributes.emtpy, Fenced(res))(block.prov))
+        List(Block(BCommand.Code, Attributes.empty, Fenced(res))(block.prov))
       case other =>
         Logging.scribe.error(s"js conversion not applicable")
         sast
@@ -170,7 +171,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         project,
         articleDirectory,
         pathString,
-        project.config.definitions ++ attributes.named + ("template content" -> origContent)
+        Attributes(project.config.rawAttributes.raw ++ attributes.raw :+ Attribute("template content", origContent))
       )
     List(block.copy(content = Fenced(resolved))(block.prov))
 
