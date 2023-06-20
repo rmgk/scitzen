@@ -1,10 +1,12 @@
 :root {
-	--theme-hue: 100;
-	--theme-saturation: 50%;
-	--theme-lightness: 40%;
+	/*--theme-hue: 220;*/
+	/*--theme-saturation: 50%;*/
+	/*--theme-lightness: 40%;*/
 
-	--theme-color: hsl(var(--theme-hue), var(--theme-saturation), var(--theme-lightness));
-	--light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);
+	/*--theme-color: hsl(var(--theme-hue), var(--theme-saturation), var(--theme-lightness));*/
+	/*--light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);*/
+	--theme-color: #9C27B0FF;
+	--light-theme-color: #9C27B066;
 	--color-subdued: GrayText;
 
 	--theme-border-radius: 5px;
