@@ -160,7 +160,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           if article.named.get("style").exists(_.contains("plain"))
           then ""
           else "numbered-sections",
-          if converter.hardNewlines then None else Some("adhoc"),
+          if converter.hardNewlines then Some("adhoc") else None,
           toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
           article.title,
           article.header.language
