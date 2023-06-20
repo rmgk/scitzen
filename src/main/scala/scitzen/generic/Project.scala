@@ -27,10 +27,7 @@ object ProjectPath:
     )
     new ProjectPath(project, project.root.relativize(normalized))
 
-case class Project(root: Path, config: ProjectConfig, definitions: Map[String, Text]):
-
-  require(root.isAbsolute, "project root must be absolute")
-  require(Files.isDirectory(root), "project root must be a directory")
+case class Project private (root: Path, config: ProjectConfig, definitions: Map[String, Text]):
 
   val cacheDir: Path = config.cache match
     case None    => root resolve config.output resolve "cache"
@@ -66,9 +63,13 @@ case class Project(root: Path, config: ProjectConfig, definitions: Map[String, T
   def resolve(currentWorkingDirectory: Path, pathString: String): Option[ProjectPath] =
     resolve(currentWorkingDirectory, Path.of(pathString))
 
-
 object Project:
   val scitzenconfig: String = "scitzen.config"
+
+  def apply(root: Path, config: ProjectConfig, definitions: Map[String, Text]) =
+    val absolutelyNormal = root.toAbsolutePath.normalize()
+    require(Files.isDirectory(absolutelyNormal), "project root must be a directory")
+    new Project(absolutelyNormal, config, definitions)
 
   def findRoot(source: Path): Option[Path] =
     if Files.isRegularFile(source resolve scitzenconfig) then Some(source)
