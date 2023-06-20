@@ -14,6 +14,7 @@ case class Attributes(raw: Seq[Attribute]) {
     case Nested(id, attr) => (id, attr)
   }
   lazy val nestedMap: Map[String, Attributes] = nested.toMap
+  lazy val attrMap: Map[String, Attribute]    = raw.iterator.filter(_.id.nonEmpty).map(a => Tuple2(a.id, a)).toMap
 
   lazy val legacyPositional: Seq[String] = positional.map(_.plainString)
   lazy val arguments: Seq[String]        = legacyPositional.dropRight(1)
