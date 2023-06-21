@@ -89,7 +89,7 @@ class SastToScimConverter(bibDB: BibDB):
           text.stripLineEnd.split("\\n", -1).map(_.trim)
         ))
       case Fenced(text) =>
-        val delimiter = "``"
+        val delimiter = "```"
         Chain(
           delimiter + BCommand.print(sb.command) + AttributesToScim(bibDB).convert(
             sb.attributes,
