@@ -91,7 +91,11 @@ class SastToScimConverter(bibDB: BibDB):
       case Fenced(text) =>
         val delimiter = "``"
         Chain(
-          delimiter + BCommand.print(sb.command) + AttributesToScim(bibDB).convert(sb.attributes, spacy = false, force = false),
+          delimiter + BCommand.print(sb.command) + AttributesToScim(bibDB).convert(
+            sb.attributes,
+            spacy = false,
+            force = false
+          ),
           addIndent(text, "\t"),
           delimiter
         )
@@ -105,8 +109,11 @@ class SastToScimConverter(bibDB: BibDB):
 
   def inlineToScim(inners: Seq[Inline]): String =
     inners.map {
-      case InlineText(str) => str
-      case m: Directive    => macroToScim(m)
+      case InlineText(str, 0) => str
+      case InlineText(str, x) =>
+        val qs = "\"" * x
+        s":$qs[$str]$qs"
+      case m: Directive => macroToScim(m)
     }.mkString("")
 
 class AttributesToScim(bibDB: BibDB):
@@ -126,9 +133,9 @@ class AttributesToScim(bibDB: BibDB):
       forceEmpty = true,
       value,
       {
-        case Text(Nil) if value.isEmpty     => true
-        case Text(Seq(InlineText(`value`))) => true
-        case other                          => false
+        case Text(Nil) if value.isEmpty        => true
+        case Text(Seq(InlineText(`value`, _))) => true
+        case other                             => false
       }
     )
 

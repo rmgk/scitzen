@@ -9,7 +9,7 @@ case class Slist(children: Seq[ListItem]) extends Sast
 case class ListItem(marker: String, text: Text, content: Option[Sast])
 
 sealed trait Inline
-case class InlineText(str: String) extends Inline:
+case class InlineText(str: String, quoted: Int = 0) extends Inline:
   require(str.nonEmpty)
 case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast
 
@@ -18,7 +18,7 @@ case class Text(inl: Seq[Inline]) {
     inl.map {
       case Directive(Strong | Emph, attributes) => attributes.target
       case m: Directive                         => ""
-      case InlineText(string)                   => string
+      case InlineText(string, _)                => string
     }.mkString("")
   }
 }
@@ -37,10 +37,10 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
   lazy val title: String            = titleText.plainString
   lazy val filename: Option[String] = attributes.named.get("filename")
   lazy val level: Int = prefix match
-    case "=" => -1
-    case "==" => 0
-    case "#" => 1
-    case "##" => 2
+    case "="   => -1
+    case "=="  => 0
+    case "#"   => 1
+    case "##"  => 2
     case "###" => 3
 
 object Section:

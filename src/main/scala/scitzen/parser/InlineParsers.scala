@@ -7,7 +7,8 @@ import scala.annotation.tailrec
 
 object InlineParsers {
 
-  inline def endingChars: Scip[Boolean] = ":;\"]\n}".any
+  inline def directiveStart: Scip[Boolean] = ":".all
+  inline def endingChars: Scip[Boolean]    = ":;\"]\n}".any
 
   inline def full(
       inline ending: Scip[Boolean],
@@ -35,7 +36,7 @@ object InlineParsers {
 
       if ending.run then addPlain()
       else
-        (DirectiveParsers.commentEnding(ending) | DirectiveParsers.full).opt.run match
+        (DirectiveParsers.commentEnding(ending) | DirectiveParsers.raw | DirectiveParsers.full).opt.run match
           case Some(inl) => inlineOptions(inl :: addPlain())
           case None =>
             if scx.next then inlineOptions(acc)

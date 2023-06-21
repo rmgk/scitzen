@@ -1,14 +1,12 @@
 package scitzen.parser
 
-import scitzen.parser.CommonParsers._
+import scitzen.parser.CommonParsers.*
 import scitzen.sast.DCommand.Comment
-import scitzen.sast.{Attribute, Attributes, Directive, DCommand}
+import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText}
 import de.rmgk.scip.*
+import InlineParsers.directiveStart
 
 object DirectiveParsers {
-
-  // also modify `InlineParsers.endingChars`
-  inline def directiveStart: Scip[Boolean] = ":".all
 
   val detectStart: Scip[Boolean] = directiveStart and Identifier.identifier.opt and AttributesParser.open.all
   val macroCommand: Scip[String] = identifierB.str
@@ -21,11 +19,21 @@ object DirectiveParsers {
       Directive(DCommand.parseMacroCommand(name.getOrElse("")), Attributes(attributes))(prov)
   }
 
+  val raw: Scip[InlineText] = Scip {
+    directiveStart.orFail.run
+    val open = ("\"".all.rep.min(1).str <~ "[".all.orFail).run
+    println(s"raw")
+    val len  = open.length
+    val str  = untilIS("]".all and "\"".all.rep.min(len)).run
+    println(s"raw len")
+    InlineText(str, len)
+  }
+
   inline def commentStart: Scip[Boolean] = ":%".all
 
   val syntaxStart: Scip[Boolean] = commentStart or DirectiveParsers.detectStart
 
-  def commentEnding(endingFun: Scip[Boolean]): Scip[Directive] =
+  inline def commentEnding(inline endingFun: Scip[Boolean]): Scip[Directive] =
     withProv(commentStart ifso (until(eol).min(0) and (endingFun.lookahead or eol)).str)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
