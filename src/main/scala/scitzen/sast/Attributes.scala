@@ -21,11 +21,7 @@ case class Attributes(raw: Seq[Attribute]) {
   lazy val target: String                = legacyPositional.last
   lazy val text: Text                    = positional.head
 
-  def definition(name: String): Option[String] =
-    nestedMap.get("definitions").flatMap(_.named.get(name))
-
   def append(other: Seq[Attribute]): Attributes  = Attributes(raw ++ other)
-  def prepend(other: Seq[Attribute]): Attributes = Attributes(other ++ raw)
   def remove(key: String): Attributes = Attributes(raw.filterNot {
     case Plain(`key`, _)  => true
     case Nested(`key`, _) => true
