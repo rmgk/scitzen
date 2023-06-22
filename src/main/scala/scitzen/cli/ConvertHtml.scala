@@ -2,7 +2,7 @@ package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import scitzen.cli.ScitzenCommandline.ClSync
-import scitzen.contexts.{ConversionContext, SastContext}
+import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
 import scitzen.extern.ResourceUtil
 import scitzen.generic.*
@@ -69,12 +69,7 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): Unit =
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.fullArticles, project, project.htmlPaths.articleOutputDir)
     val convertedCtx = new SastToHtmlConverter(
-      article = Article(
-        generatedIndex,
-        Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
-        SastContext(()),
-        Nil
-      ),
+      Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
       anal = anal,
       Attributes.empty
     ).convertSastSeq(generatedIndex, ConversionContext(()))
@@ -115,7 +110,7 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
-      article = article.article,
+      doc = article.article.doc,
       anal = anal,
       article.header.attributes
     )
