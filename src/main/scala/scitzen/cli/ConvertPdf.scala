@@ -22,7 +22,7 @@ object ConvertPdf:
       .filter(_.header.attributes.named.contains("texTemplate"))
       .asJava.parallelStream().forEach { article =>
         val converter = new SastToTexConverter(
-          article.article,
+          article.article.doc,
           anal,
           article.header.attributes
         )

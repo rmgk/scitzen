@@ -2,25 +2,22 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section,
-  Slist, SpaceComment, Text
-}
-import scitzen.generic.Article
+import scitzen.generic.Document
 import scitzen.sast.DCommand.{Include, Lookup}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 
 case class SastToTextConverter(
-    article: Article,
+    doc: Document,
     anal: ConversionAnalysis,
     settings: Attributes,
-) extends ProtoConverter[String, String](article, anal, settings):
+) extends ProtoConverter[String, String](doc, anal, settings):
 
   override def subconverter(
-      article: Article,
+      doc: Document,
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTextConverter(article, analysis, attr)
+    new SastToTextConverter(doc, analysis, attr)
   override def convertBlock(block: Block, ctx: Cta): CtxCF =
     val Block(command, attr, blockType) = block
     val keepBlock =

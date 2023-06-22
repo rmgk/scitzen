@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, References, SastRef, TitledArticle}
+import scitzen.generic.{Document, References, SastRef, TitledArticle}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
@@ -29,21 +29,21 @@ object SastToTexConverter {
 }
 
 class SastToTexConverter(
-    article: Article,
+    doc: Document,
     anal: ConversionAnalysis,
     settings: Attributes
-) extends ProtoConverter[String, String](article, anal, settings):
+) extends ProtoConverter[String, String](doc, anal, settings):
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
   override def subconverter(
-      article: Article,
+      doc: Document,
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTexConverter(article, analysis, settings)
+    new SastToTexConverter(doc, analysis, settings)
 
   override def stringToInlineRes(str: String): String = latexencode(str)
 
@@ -147,7 +147,7 @@ class SastToTexConverter(
                     val captionstr = convertInlinesAsBlock(content.inl, ctx)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
-                    scribe.warn(s"figure has no caption" + article.doc.reporter(block.prov))
+                    scribe.warn(s"figure has no caption" + doc.reporter(block.prov))
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
               "\\centerfloat" +:
@@ -252,20 +252,20 @@ class SastToTexConverter(
           ()
         val candidates =
           References.filterCandidates(
-            article.doc.path,
+            doc.path,
             anal.directory.labels.getOrElse(attributes.target, Nil)
           )
 
         if candidates.sizeIs > 1 then
           scribe.error(
             s"multiple resolutions for ${attributes.target}" +
-            article.doc.reporter(directive) +
+            doc.reporter(directive) +
             s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
           )
 
         candidates.headOption match
           case None =>
-            scribe.error(s"no resolution found for ${attributes.target}" + article.doc.reporter(directive))
+            scribe.error(s"no resolution found for ${attributes.target}" + doc.reporter(directive))
             ctx.empty
           case Some(candidate) =>
             // TODO: existence of line is unchecked
@@ -284,7 +284,7 @@ class SastToTexConverter(
           if attributes.legacyPositional.size > 1 then
             val name    = "{" + latexencode(attributes.legacyPositional.head) + "}"
             val textref = s"\\href{$target}{$name}"
-            if article.settings.get("footnotelinks").contains("disabled") then textref
+            if settings.named.get("footnotelinks").contains("disabled") then textref
             else s"$textref\\footnote{$plainurl}"
           else plainurl
         }.useFeature("href")

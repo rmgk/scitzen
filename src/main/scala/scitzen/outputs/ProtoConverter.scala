@@ -5,19 +5,19 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.scribe
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, ProjectPath}
+import scitzen.generic.{Article, Document, ProjectPath}
 import scitzen.sast.*
 
 import java.nio.file.Files
 
 abstract class ProtoConverter[BlockRes, InlineRes](
-    article: Article,
+    doc: Document,
     anal: ConversionAnalysis,
     combinedAttributes: Attributes,
 ):
 
-  val project  = article.doc.path.project
-  val reporter = article.doc.reporter
+  val project  = doc.path.project
+  val reporter = doc.reporter
 
   val hardNewlines = !combinedAttributes.named.get("style").exists(_.contains("article"))
 
@@ -29,7 +29,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
   def subconverter(
-      article: Article,
+      doc: Document,
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[BlockRes, InlineRes]
@@ -89,7 +89,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl
 
   def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: ProjectPath => CtxInl): CtxInl =
-    val target = anal.image.lookup(article.doc.resolve(directive.attributes.target).get, imageTarget)
+    val target = anal.image.lookup(doc.resolve(directive.attributes.target).get, imageTarget)
     if !Files.exists(target.absolute)
     then ctx.retc(warn(s"could not find path", directive))
     else cont(target)
@@ -98,27 +98,27 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def warn(msg: String, im: Directive): InlineRes =
     val macroStr = SastToScimConverter(anal.bib).macroToScim(im)
-    scribe.warn(s"$msg: ⸢$macroStr⸥${article.doc.reporter(im)}")
+    scribe.warn(s"$msg: ⸢$macroStr⸥${doc.reporter(im)}")
     stringToInlineRes(macroStr)
 
   def addDetail(ctx: CtxCF): CtxCF
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
-    val pathpart = article.doc.path.directory.resolve(directive.attributes.target).normalize()
+    val pathpart = doc.path.directory.resolve(directive.attributes.target).normalize()
     val found = anal.directory.byPath.flatMap: (p, arts) =>
       if p.absolute.startsWith(pathpart)
       then arts
       else Nil
 
     ctx.fold(found): (cc, art) =>
-      subconverter(art, anal, combinedAttributes).convertSastSeq(art.sast, cc)
+      subconverter(art.doc, anal, combinedAttributes).convertSastSeq(art.sast, cc)
   }
 
   def handleInclude(ctx: Cta, directive: Directive) = {
     val attributes = directive.attributes
     attributes.arguments.headOption match
       case Some("code") =>
-        article.doc.resolve(attributes.target) match
+        doc.resolve(attributes.target) match
           case None => convertInlineSeq(List(directive), ctx)
           case Some(file) =>
             convertSast(
@@ -128,20 +128,20 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
       case None =>
         val resolution: Option[Article] = if attributes.target.endsWith(".scim") then
-          article.doc.resolve(attributes.target).flatMap(anal.directory.byPath.get).flatMap(_.headOption)
+          doc.resolve(attributes.target).flatMap(anal.directory.byPath.get).flatMap(_.headOption)
         else
           anal.directory.findByLabel(attributes.target).map(_.article)
         resolution match
           case None =>
             scribe.error(
-              s"unknown include article ${attributes.target}" + article.doc.reporter(directive.prov)
+              s"unknown include article ${attributes.target}" + doc.reporter(directive.prov)
             )
             ctx.empty
           case Some(article) =>
-            subconverter(article, anal, combinedAttributes).convertSastSeq(article.sast, ctx)
+            subconverter(article.doc, anal, combinedAttributes).convertSastSeq(article.sast, ctx)
 
       case Some(other) =>
-        scribe.error(s"unknown include type $other" + article.doc.reporter(directive.prov))
+        scribe.error(s"unknown include type $other" + doc.reporter(directive.prov))
         ctx.empty
   }
 

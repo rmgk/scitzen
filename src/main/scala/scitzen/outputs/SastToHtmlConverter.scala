@@ -7,7 +7,7 @@ import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.scribe
 import scitzen.extern.{ImageTarget, Prism}
-import scitzen.generic.{Article, References, SastRef, TitledArticle}
+import scitzen.generic.{Document, References, SastRef, TitledArticle}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Plain
 import scitzen.sast.DCommand.*
@@ -18,17 +18,17 @@ import scalatags.Text.tags2.{math, section, time}
 import java.nio.file.Files
 
 class SastToHtmlConverter(
-    article: Article,
+    doc: Document,
     anal: ConversionAnalysis,
     combinedAttributes: Attributes,
-) extends ProtoConverter[Frag, Frag](article, anal, combinedAttributes):
+) extends ProtoConverter[Frag, Frag](doc, anal, combinedAttributes):
 
   override def subconverter(
-      article: Article,
+      doc: Document,
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[Text.all.Frag, Text.all.Frag] =
-    new SastToHtmlConverter(article, analysis, attr)
+    new SastToHtmlConverter(doc, analysis, attr)
 
   val syncPos: Int =
 //    if sync.exists(_.path == pathManager.cwf) then sync.get._2
@@ -210,7 +210,7 @@ class SastToHtmlConverter(
       case Emph   => convertInlineSeq(attrs.text.inl, ctx).map(c => em(c.toList)).single
       case Code   => ctx.retc(code(attrs.target))
       case Script =>
-        article.doc.resolve(attrs.target) match
+        doc.resolve(attrs.target) match
           case Some(path) =>
             val rel = project.htmlPaths.relativizeImage(path)
             ctx.retc(script(`type` := "text/javascript", src := rel.toString))
@@ -270,7 +270,7 @@ class SastToHtmlConverter(
 
       case Ref =>
         val scope =
-          attrs.named.get("scope").flatMap(article.doc.resolve).getOrElse(article.doc.path)
+          attrs.named.get("scope").flatMap(doc.resolve).getOrElse(doc.path)
         val candidates = References.filterCandidates(scope, anal.directory.labels.getOrElse(attrs.target, Nil))
 
         if candidates.sizeIs > 1 then
@@ -317,7 +317,7 @@ class SastToHtmlConverter(
           case "footnote" =>
             val target =
               SastToTextConverter(
-                article,
+                doc,
                 anal,
                 project.config.rawAttributes,
               ).convertInlinesAsBlock(attrs.targetT.inl, ctx)
@@ -339,7 +339,7 @@ class SastToHtmlConverter(
 
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
     val attrs  = mcro.attributes
-    val target = anal.image.lookup(article.doc.resolve(attrs.target).get, ImageTarget.Html)
+    val target = anal.image.lookup(doc.resolve(attrs.target).get, ImageTarget.Html)
     if Files.exists(target.absolute)
     then
       val path = project.htmlPaths.relativizeImage(target)
