@@ -49,7 +49,7 @@ class SastToHtmlConverter(
 
   def listItemToHtml(child: ListItem)(ctx: Cta): CtxCF =
     val textCtx = convertInlineSeq(child.text.inl, ctx)
-    textCtx.data ++: child.content.fold(textCtx.empty[Frag])(convertSast(_, textCtx))
+    textCtx.data ++: child.content.fold(textCtx.empty[Frag])((singleSast: Sast) => convertSast(textCtx, singleSast))
 
   def categoriesSpan(categories: Seq[String]): Option[Tag] =
     Option.when(categories.nonEmpty)(
@@ -100,7 +100,7 @@ class SastToHtmlConverter(
         case _ =>
           ctx.fold[ListItem, Frag](children) { (ctx, c) =>
             val inlinesCtx = convertInlineSeq(c.text.inl, ctx)
-            c.content.fold(inlinesCtx.empty[Frag])(convertSast(_, inlinesCtx)).map { innerFrags =>
+            c.content.fold(inlinesCtx.empty[Frag])((singleSast: Sast) => convertSast(inlinesCtx, singleSast)).map { innerFrags =>
               Chain(dt(inlinesCtx.data.convert), dd(innerFrags.convert))
             }
           }.map(i => Chain(dl(i.convert)))

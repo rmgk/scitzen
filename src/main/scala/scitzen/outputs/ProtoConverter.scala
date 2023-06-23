@@ -53,9 +53,9 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       scribe.warn(s"unknown name ${id}" + reporter(directive))
     res
 
-  def convertSastSeq(ctx: Cta, b: Iterable[Sast]): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(sast, ctx))
+  def convertSastSeq(ctx: Cta, b: Iterable[Sast]): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(ctx, sast))
 
-  def convertSast(singleSast: Sast, ctx: Cta): CtxCF =
+  def convertSast(ctx: Cta, singleSast: Sast): CtxCF =
     singleSast match
       case block: Block =>
         if block.command == BCommand.Convert then
@@ -119,10 +119,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         doc.resolve(attributes.target) match
           case None => convertInlineSeq(List(directive), ctx)
           case Some(file) =>
-            convertSast(
-              Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov),
-              ctx
-            )
+            convertSast(ctx, Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov))
 
       case None =>
         val resolution: Option[Article] = if attributes.target.endsWith(".scim") then

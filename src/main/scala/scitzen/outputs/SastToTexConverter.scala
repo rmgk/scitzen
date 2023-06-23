@@ -95,7 +95,7 @@ class SastToTexConverter(
         s"\\begin{$listType}" +:
         ctx.fold[ListItem, String](children) { (ctx, child) =>
           val inlineCtx  = convertInlinesAsBlock(child.text.inl, ctx).map(s => Chain(s"\\item{$s}"))
-          val contentCtx = child.content.fold(inlineCtx.empty[String])(convertSast(_, inlineCtx))
+          val contentCtx = child.content.fold(inlineCtx.empty[String])((singleSast: Sast) => convertSast(inlineCtx, singleSast))
           inlineCtx.data ++: contentCtx
         } :+
         s"\\end{$listType}"
@@ -103,7 +103,7 @@ class SastToTexConverter(
       case ListItem(_, _, _) :: _ =>
         ctx.fold[ListItem, String](children) { (ctx, child) =>
           val inlinesCtx = convertInlinesAsBlock(child.text.inl, ctx).map(s => s"\\item[$s]{}")
-          inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])(convertSast(_, inlinesCtx))
+          inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])((singleSast: Sast) => convertSast(inlinesCtx, singleSast))
         }.map { content =>
           "\\begin{description}" +: content :+ "\\end{description}"
         }

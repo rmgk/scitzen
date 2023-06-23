@@ -57,7 +57,7 @@ case class SastToTextConverter(
           convertInlineSeq(inl, ctx)
         case ListItem(_, text, Some(inner)) =>
           val tctx = convertInlineSeq(text.inl, ctx)
-          tctx.data ++: convertSast(inner, tctx)
+          tctx.data ++: convertSast(tctx, inner)
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")
 
