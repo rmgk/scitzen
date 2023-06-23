@@ -61,7 +61,7 @@ case class SastToTextConverter(
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")
 
-  override def convertBlockDirective(directive: Directive, ctx: Cta): CtxCF =
+  override def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     directive.command match
       case Include =>
         handleInclude(ctx, directive)

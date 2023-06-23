@@ -108,7 +108,7 @@ class SastToTexConverter(
           "\\begin{description}" +: content :+ "\\end{description}"
         }
 
-  override def convertBlockDirective(directive: Directive, ctx: Cta): CtxCF =
+  override def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     directive.command match
       case Include            => handleInclude(ctx, directive)
       case Other("aggregate") => handleAggregate(ctx, directive)
@@ -214,21 +214,18 @@ class SastToTexConverter(
         else
           ctx.retc(s"$$${attributes.target}$$")
       case Other("break") => ctx.retc(s"\\clearpage{}")
-      case Other("rule") => convertBlockDirective(
-          Directive(
-            Ref,
-            Attributes(
-              Seq(
-                Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov))), ""),
-                Plain("style", "plain"),
-                Positional(s"rule-${attributes.target}")
-              )
-            )
-          )(
-            directive.prov
-          ),
-          ctx
+      case Other("rule") => convertBlockDirective(ctx, Directive(
+        Ref,
+        Attributes(
+          Seq(
+            Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov))), ""),
+            Plain("style", "plain"),
+            Positional(s"rule-${attributes.target}")
+          )
         )
+      )(
+        directive.prov
+      ))
       case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
       case Raw                => ctx.retc(attributes.named.getOrElse("tex", ""))
       case Other("todo") =>

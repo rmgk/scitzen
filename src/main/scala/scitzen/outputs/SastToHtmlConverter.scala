@@ -105,7 +105,7 @@ class SastToHtmlConverter(
             }
           }.map(i => Chain(dl(i.convert)))
 
-  override def convertBlockDirective(directive: Directive, ctx: Cta): CtxCF =
+  override def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     val attributes = directive.attributes
     directive.command match
       case Other("aggregate") => handleAggregate(ctx, directive)
