@@ -56,8 +56,8 @@ object AttributesParser {
         ).run
   }.trace("string value")
 
-  val namedAttributeValue: Scip[Either[Seq[Attribute], String]] =
-    (anySpacesB ifso braces.map(Left.apply)) | stringValue.map(Right.apply)
+  val namedAttributeValue: Scip[Either[Seq[Attribute], Text]] =
+    (anySpacesB ifso braces.map(Left.apply)) | text.map(Right.apply)
 
   val namedAttributeStart: Scip[String] = Scip {
     verticalSpaces.orFail.run
@@ -71,7 +71,7 @@ object AttributesParser {
     val id = namedAttributeStart.run
     namedAttributeValue.trace("attr value").run match {
       case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
-      case Right(value) => scitzen.sast.Attribute(id, value)
+      case Right(value) => scitzen.sast.Attribute.Named(id, value)
     }
   }.trace("named attr")
 
