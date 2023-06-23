@@ -110,7 +110,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
           Directive(
             DCommand.Image,
             Attributes(List(
-              Attribute("", target.projectAbsolute.toString),
+              Attribute(target.projectAbsolute.toString),
               Attribute("css_style", "background-color:white")
             ))
           )(block.prov)

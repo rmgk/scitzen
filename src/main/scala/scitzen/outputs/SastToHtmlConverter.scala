@@ -172,8 +172,8 @@ class SastToHtmlConverter(
       then
         blockContent.splitAt(blockContent.size - 1) match
           case (content, Seq(Block(_, _, Paragraph(caption)))) =>
-            val contentCtx              = convertSastSeq(ctx, content)
-            val captionCtx              = convertInlinesCombined(contentCtx, caption.inl)
+            val contentCtx = convertSastSeq(ctx, content)
+            val captionCtx = convertInlinesCombined(contentCtx, caption.inl)
             captionCtx.retc(figure(label, contentCtx.data, figcaption(captionCtx.data)))
           case other =>
             warn(s"figure needs to end with a paragraph as its caption", block)
@@ -374,8 +374,13 @@ class SastToHtmlConverter(
         val filename  = path.getFileName.toString
         val sizeclass = mcro.attributes.plain("size").map(s => cls := s"sizing-$s")
         if videoEndings.exists(filename.endsWith) then
-          video(src  := path.toString, attr("loop").empty, attr("autoplay").empty, sizeclass)
-        else img(src := path.toString, sizeclass, attrs.plain("css_style").map(style := _))
+          video(src := path.toString, attr("loop").empty, attr("autoplay").empty, sizeclass)
+        else
+          val myStyle: Modifier =
+            if attrs.target.endsWith(".pdf")
+            then style := s"background-color: white; ${attrs.plain("css_style").getOrElse("")}"
+            else attrs.plain("css_style").map(style := _)
+          img(src := path.toString, sizeclass, myStyle)
       }
     else
       scribe.warn(s"could not find path ${target}" + reporter(mcro))
