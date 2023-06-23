@@ -71,7 +71,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val convertedCtx = new SastToHtmlConverter(
       Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
       anal = anal,
-      Attributes.empty
+      Attributes(project.config.settings)
     ).convertSastSeq(ConversionContext(()), generatedIndex)
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
@@ -112,7 +112,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val converter = new SastToHtmlConverter(
       doc = article.article.doc,
       anal = anal,
-      article.header.attributes
+      Attributes(project.config.settings ++ article.header.attributes.raw)
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
@@ -165,7 +165,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         val content = SeqFrag(convertedArticleCtx.data.toList).render
 
         val templateSettings =
-          Attributes(project.config.rawAttributes.raw ++ article.header.attributes.raw ++
+          Attributes(project.config.settings ++ article.header.attributes.raw ++
             convertedArticleCtx.features.map(s => Attribute(s"feature $s", "")) :+
             Attribute("template content", content))
 
