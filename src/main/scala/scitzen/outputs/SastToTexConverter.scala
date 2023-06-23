@@ -9,7 +9,7 @@ import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.compat.Logging.scribe
-import scitzen.sast.Attribute.Normal
+import scitzen.sast.Attribute.Named
 
 object SastToTexConverter {
   def latexencode(input: String): String =
@@ -223,7 +223,7 @@ class SastToTexConverter(
             Ref,
             Attributes(
               Seq(
-                Normal("", Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov)))),
+                Named("", Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov)))),
                 Attribute("style", "plain"),
                 Attribute("", s"rule-${attributes.target}")
               )

@@ -7,7 +7,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, Document, ProjectPath}
 import scitzen.sast.*
-import scitzen.sast.Attribute.Normal
+import scitzen.sast.Attribute.Named
 
 import java.nio.file.Files
 
@@ -45,7 +45,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     val id = directive.attributes.target
     val res =
       combinedAttributes.get(id).orElse(directive.attributes.get("default")).collect:
-        case Normal(_, value) => value
+        case Named(_, value) => value
     if res.isEmpty then
       scribe.warn(s"unknown name ${id}" + reporter(directive))
     res

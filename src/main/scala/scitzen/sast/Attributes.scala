@@ -1,13 +1,17 @@
 package scitzen.sast
 
+import scitzen.sast.Attribute.Positional
+
+import scala.collection.View
 
 case class Attributes(raw: Seq[Attribute]) {
 
-  def positional = raw.view.filter(_.id == "")
+  def positional: View[Positional] = raw.view.collect:
+    case p: Positional => p
 
-  def target = positional.lastOption.fold("")(_.text.plainString)
-  def text   = positional.headOption.fold(Text.empty)(_.text)
-  def textOption =
+  def target: String = positional.lastOption.fold("")(_.text.plainString)
+  def text: Text     = positional.headOption.fold(Text.empty)(_.text)
+  def textOption: Option[Text] =
     val pos = positional
     if pos.sizeIs > 1 then
       Some(text)
@@ -29,17 +33,25 @@ object Attributes {
   val empty                              = Attributes(Nil)
 }
 
-trait Attribute {
+sealed trait Attribute {
   def toAttributes: Attributes = Attributes(List(this))
   def id: String
   def text: Text
 }
 
 object Attribute {
-  def apply(id: String, value: String): Attribute = Normal(id, Text.of(value))
-  def apply(id: String, value: Text): Attribute   = Normal(id, value)
+  def apply(value: String): Positional = apply(Text.of(value))
+  def apply(value: Text): Positional   = Positional(value)
+  def apply(id: String, value: String): Attribute =
+    apply(id, Text.of(value))
+  def apply(id: String, value: Text): Attribute =
+    if id == ""
+    then Positional(value)
+    else Named(id, value)
 
-  case class Normal(id: String, text: Text) extends Attribute
+  case class Positional(text: Text) extends Attribute:
+    def id: String = ""
+  case class Named(id: String, text: Text) extends Attribute
   case class Nested(id: String, inner: Attributes) extends Attribute {
     def text: Text = inner.text
   }

@@ -1,9 +1,9 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
-import scitzen.sast.{Attribute, Attributes, Inline, Text}
 import scitzen.parser.CommonParsers.*
-import scitzen.sast.Attribute.Normal
+import scitzen.sast.Attribute.Positional
+import scitzen.sast.{Attribute, Attributes, Inline, Text}
 
 import java.nio.charset.StandardCharsets
 import scala.util.matching.Regex
@@ -76,8 +76,8 @@ object AttributesParser {
   }.trace("named attr")
 
   val positionalAttribute: Scip[Attribute] = Scip {
-    val mtxt     = text.run
-    scitzen.sast.Attribute("", mtxt)
+    val mtxt = text.run
+    scitzen.sast.Attribute.Positional(mtxt)
   }.trace("pos attr")
 
   val attribute: Scip[Attribute] = (namedAttribute | positionalAttribute).trace("attribute")
@@ -117,14 +117,14 @@ object AttributeDeparser {
   def quote(forceEmpty: Boolean, value: String, check: Text => Boolean): String =
 
     // empty value is always represented using quotes for clarity
-    if forceEmpty && value.isEmpty  then return "\"\""
+    if forceEmpty && value.isEmpty then return "\"\""
 
     def parses(str: String): Boolean =
       Try {
         (AttributesParser.attribute <~ de.rmgk.scip.end.orFail).opt.runInContext(Scx(str).copy(tracing = false))
       } match
-        case Success(Some(Normal("", text))) if check(text) => true
-        case other                                             => false
+        case Success(Some(Positional(text))) if check(text) => true
+        case other                                          => false
 
     def pickFirst(candidate: List[() => String]): Option[String] =
       candidate.view.map(_.apply()).find(parses)

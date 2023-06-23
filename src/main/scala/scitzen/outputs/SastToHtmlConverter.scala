@@ -14,7 +14,7 @@ import scalatags.Text.all.*
 import scalatags.Text.tags2
 import scalatags.Text.tags2.{math, section, time}
 import scalatags.text.Builder
-import scitzen.sast.Attribute.Normal
+import scitzen.sast.Attribute.Named
 
 import java.nio.file.Files
 
@@ -116,19 +116,18 @@ class SastToHtmlConverter(
       case Other("article") =>
         def timeShort(date: Option[String]) = time(f"${date.getOrElse("")}%-8s")
 
-        val aref = attributes.plain("target").get
-
-        ctx.ret(Chain(tags2.article(
-          timeShort(attributes.plain("datetime")),
-          " ", // whitespace prevents elements from hugging without stylesheet
-          a(
-            cls  := "title",
-            href := aref,
-            attributes.target
-          ),
-          " ",
-          categoriesSpan(attributes.raw.collect { case Normal("category", value) => value.plainString })
-        )))
+        convertInlineSeq(ctx, attributes.text.inl).mapc: text =>
+          Chain(tags2.article(
+            timeShort(attributes.plain("datetime")),
+            " ", // whitespace prevents elements from hugging without stylesheet
+            a(
+              cls  := "title",
+              href := attributes.target,
+              text
+            ),
+            " ",
+            categoriesSpan(attributes.raw.collect { case Named("category", value) => value.plainString })
+          ))
 
       case Include => handleInclude(ctx, directive)
 
@@ -273,9 +272,9 @@ class SastToHtmlConverter(
         else cctx.retc(styledAnchors)
 
       case Link =>
-        val target     = attrs.target
-        val contentCtx = convertInlineSeq(ctx, attrs.text.inl)
-        contentCtx.mapc(content => a(href := target).apply(content.convert))
+        val target = attrs.target
+        convertInlineSeq(ctx, attrs.text.inl).mapc: content =>
+          a(href := target).apply(content.convert)
 
       case Ref =>
         val scope =

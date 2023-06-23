@@ -45,11 +45,8 @@ object GenIndexPage:
       Other("article"),
       Attributes(
         List(
-          Some(Attribute("", doc.header.title)),
-          Some(Attribute(
-            "target",
-            indexDir.relativize(project.htmlPaths.articleOutputPath(doc.header)).toString
-          )),
+          Some(Attribute(doc.header.titleText)),
+          Some(Attribute(indexDir.relativize(project.htmlPaths.articleOutputPath(doc.header)).toString)),
           doc.date.map(date => Attribute("datetime", date.dayTime))
         ).flatten ++ categories.map(Attribute("category", _))
       )

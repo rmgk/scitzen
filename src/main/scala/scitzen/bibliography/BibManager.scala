@@ -4,7 +4,7 @@ import de.rmgk.delay.{Async, Sync}
 import scitzen.bibliography.BibManager.bibIds
 import scitzen.compat.Logging
 import scitzen.generic.{Project, ProjectPath}
-import scitzen.sast.Attribute.Normal
+import scitzen.sast.Attribute.Named
 import scitzen.sast.{Attribute, Attributes, Directive}
 
 import java.nio.charset.StandardCharsets
@@ -65,7 +65,7 @@ case class BibDB(entries: Map[String, BibEntry], queried: Map[String, List[DBLPA
     Directive(
       command = Cite,
       attributes = Attributes(directive.attributes.raw.map {
-        case Normal(_, q) if q.plainString.trim == query.trim =>
+        case Named(_, q) if q.plainString.trim == query.trim =>
           Attribute("", keys.mkString(", "))
         case other => other
       } :+ Attribute("query", query))

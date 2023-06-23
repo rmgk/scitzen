@@ -31,7 +31,7 @@ case class SastToTextConverter(
             settings.get(attr.target) match
               case Some(_) if attr.plain("equals").isEmpty =>
                 true
-              case Some(Attribute.Normal(id, value)) =>
+              case Some(Attribute.Named(id, value)) =>
                 attr.get("equals").forall(_ == value)
               case other => false
           if attr.get("not").isDefined then !res

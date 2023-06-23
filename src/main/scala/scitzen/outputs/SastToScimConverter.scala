@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.bibliography.BibDB
 import scitzen.parser.{AttributeDeparser, AttributesParser}
 import scitzen.sast.*
-import scitzen.sast.Attribute.{Nested, Normal}
+import scitzen.sast.Attribute.{Named, Nested, Positional}
 import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import scala.collection.immutable.ArraySeq
@@ -144,8 +144,8 @@ class AttributesToScim(bibDB: BibDB):
     if !force && attributes.raw.isEmpty then return ""
     val keylen = (attributes.raw.map { _.id.length }).maxOption.getOrElse(0)
     val pairs = attributes.raw.map {
-      case Normal("", v) => encodeText(v)
-      case Normal(k, v) =>
+      case Positional(v) => encodeText(v)
+      case Named(k, v) =>
         val spaces = " " * math.max(keylen - k.length, 0)
         if spacy then s"""$k $spaces= ${encodeText(v)}"""
         else s"""$k=${encodeText(v)}"""
