@@ -18,7 +18,7 @@ object ImageReferences:
       val cwd = art.doc.path.directory
 
       val images = art.context.imageDirectives.flatMap { mcro =>
-        val path = mcro.attributes.named.getOrElse(ImageTarget.Raster.name, mcro.attributes.target)
+        val path = mcro.attributes.plain(ImageTarget.Raster.name).getOrElse(mcro.attributes.target)
         anal.project.resolve(cwd, path) match
           case Some(target) =>
             // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)

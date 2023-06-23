@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.bibliography.BibDB
 import scitzen.parser.{AttributeDeparser, AttributesParser}
 import scitzen.sast.*
-import scitzen.sast.Attribute.{Nested, Plain, Positional}
+import scitzen.sast.Attribute.{Nested, Normal}
 import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import scala.collection.immutable.ArraySeq
@@ -142,17 +142,13 @@ class AttributesToScim(bibDB: BibDB):
   def convert(attributesInput: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String =
     val attributes = Attributes(attributesInput.raw.filter(p => !p.id.contains(' ')))
     if !force && attributes.raw.isEmpty then return ""
-    val keylen = (attributes.raw.map {
-      case Plain(id, _)  => id.length
-      case Nested(id, _) => id.length
-      case other         => 0
-    }).maxOption.getOrElse(0)
+    val keylen = (attributes.raw.map { _.id.length }).maxOption.getOrElse(0)
     val pairs = attributes.raw.map {
-      case Positional(v, _) => encodeText(v)
-      case Plain(k, v) =>
+      case Normal("", v) => encodeText(v)
+      case Normal(k, v) =>
         val spaces = " " * math.max(keylen - k.length, 0)
-        if spacy then s"""$k $spaces= ${encodeString(v)}"""
-        else s"""$k=${encodeString(v)}"""
+        if spacy then s"""$k $spaces= ${encodeText(v)}"""
+        else s"""$k=${encodeText(v)}"""
       case Nested(k, v) =>
         val spaces = " " * math.max(keylen - k.length, 0)
         if spacy then s"""$k $spaces= ${convert(v, spacy, force, light)}"""
@@ -160,7 +156,7 @@ class AttributesToScim(bibDB: BibDB):
     }
 
     if !(spacy && attributes.raw.size > 1) then
-      if light && attributes.legacyPositional.isEmpty then pairs.mkString("", "; ", "\n")
+      if light && attributes.positional.isEmpty then pairs.mkString("", "; ", "\n")
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
-    else if light && attributes.legacyPositional.isEmpty then pairs.mkString("", "\n", "\n")
+    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", "\n")
     else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")

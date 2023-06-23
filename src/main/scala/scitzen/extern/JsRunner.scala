@@ -17,8 +17,10 @@ class JsRunner:
     val os       = ByteArrayOutputStream()
     val ctx      = Context.newBuilder("js").engine(engine).out(os).build()
     val bindings = ctx.getBindings("js")
-    attributes.named.foreach((k, v) => bindings.putMember(k, v))
-    val argv: Array[String] = attributes.legacyPositional.toArray
+    attributes.raw.foreach: attr =>
+      if attr.id.nonEmpty then
+        bindings.putMember(attr.id, attr.text.plainString)
+    val argv: Array[String] = attributes.positional.map(_.text.plainString).toArray
     bindings.putMember("argv", ProxyArray.fromArray(argv: _*))
     val ex = Try(ctx.eval("js", javascript))
 

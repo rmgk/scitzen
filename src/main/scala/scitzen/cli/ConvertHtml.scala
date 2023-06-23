@@ -52,7 +52,7 @@ class ConvertHtml(anal: ConversionAnalysis):
             nlp,
             KatexConverter(
               katexmap,
-              KatexLibrary(article.header.attributes.named.get("katexMacros").flatMap(project.resolve(project.root, _)))
+              KatexLibrary(article.header.attributes.plain("katexMacros").flatMap(project.resolve(project.root, _)))
             ),
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
@@ -146,13 +146,13 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     import scalatags.Text.all.{Frag, SeqFrag, a, frag, href, stringAttr, stringFrag}
 
-    val res = article.header.attributes.named.get("htmlTemplate") match
+    val res = article.header.attributes.plain("htmlTemplate") match
       case None =>
         val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
 
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
-          if article.named.get("style").exists(_.contains("plain"))
+          if article.header.attributes.plain("style").exists(_.contains("plain"))
           then ""
           else "numbered-sections",
           if converter.hardNewlines then Some("adhoc") else None,

@@ -40,7 +40,7 @@ object GenIndexPage:
     }
 
   def directiveFor(project: Project, indexDir: Path, doc: TitledArticle): Directive =
-    def categories = doc.named.get("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
+    def categories = doc.attr.plain("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
     Directive(
       Other("article"),
       Attributes(

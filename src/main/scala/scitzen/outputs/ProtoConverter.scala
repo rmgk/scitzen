@@ -7,6 +7,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, Document, ProjectPath}
 import scitzen.sast.*
+import scitzen.sast.Attribute.Normal
 
 import java.nio.file.Files
 
@@ -19,7 +20,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   val project  = doc.path.project
   val reporter = doc.reporter
 
-  val hardNewlines = !combinedAttributes.named.get("style").exists(_.contains("article"))
+  val hardNewlines = !combinedAttributes.plain("style").exists(_.contains("article"))
 
   type CtxCF  = ConversionContext[Chain[BlockRes]]
   type CtxInl = ConversionContext[Chain[InlineRes]]
@@ -43,12 +44,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def handleLookup(directive: Directive): Option[Text] =
     val id = directive.attributes.target
     val res =
-      combinedAttributes.nestedMap.get(id).map: attr =>
-        attr.targetT
-      .orElse:
-        combinedAttributes.named.get(id).map: str =>
-          Text.of(str)
-      .orElse(directive.attributes.named.get("default").map(Text.of))
+      combinedAttributes.get(id).orElse(directive.attributes.get("default")).collect:
+        case Normal(_, value) => value
     if res.isEmpty then
       scribe.warn(s"unknown name ${id}" + reporter(directive))
     res
@@ -67,11 +64,11 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def convertBlock(ctx: Cta, block: Block): CtxCF
   def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
-    convertDirective(ctx, directive).map(v => Chain(inlinesAsToplevel(v)))
+    convertInlineDirective(ctx, directive).map(v => Chain(inlinesAsToplevel(v)))
   def convertSection(ctx: Cta, section: Section): CtxCF
   def convertSlist(ctx: Cta, slist: Slist): CtxCF
 
-  def convertInlinesAsBlock(ctx: Cta, inlines: Iterable[Inline]): Ctx[BlockRes] =
+  def convertInlinesCombined(ctx: Cta, inlines: Iterable[Inline]): Ctx[BlockRes] =
     convertInlineSeq(ctx, inlines).map(v => inlineResToBlock(v))
 
   def inlineResToBlock(inl: Chain[InlineRes]): BlockRes
@@ -82,11 +79,11 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def convertInline(ctx: Cta, inlineSast: Inline): CtxInl =
     inlineSast match
-      case inlineText: InlineText => convertText(ctx, inlineText)
-      case directive: Directive   => convertDirective(ctx, directive)
+      case inlineText: InlineText => convertInlineText(ctx, inlineText)
+      case directive: Directive   => convertInlineDirective(ctx, directive)
 
-  def convertText(ctx: Cta, inlineText: InlineText): CtxInl
-  def convertDirective(ctx: Cta, directive: Directive): CtxInl
+  def convertInlineText(ctx: Cta, inlineText: InlineText): CtxInl
+  def convertInlineDirective(ctx: Cta, directive: Directive): CtxInl
 
   def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: ProjectPath => CtxInl): CtxInl =
     val target = anal.image.lookup(doc.resolve(directive.attributes.target).get, imageTarget)
@@ -114,14 +111,14 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleInclude(ctx: Cta, directive: Directive) = {
     val attributes = directive.attributes
-    attributes.arguments.headOption match
-      case Some("code") =>
+    attributes.text.plainString match
+      case "code" =>
         doc.resolve(attributes.target) match
           case None => convertInlineSeq(ctx, List(directive))
           case Some(file) =>
             convertSast(ctx, Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov))
 
-      case None =>
+      case other =>
         val resolution: Option[Article] = if attributes.target.endsWith(".scim") then
           doc.resolve(attributes.target).flatMap(anal.directory.byPath.get).flatMap(_.headOption)
         else
@@ -134,10 +131,6 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             ctx.empty
           case Some(article) =>
             subconverter(article.doc, anal, combinedAttributes).convertSastSeq(ctx, article.sast)
-
-      case Some(other) =>
-        scribe.error(s"unknown include type $other" + doc.reporter(directive.prov))
-        ctx.empty
   }
 
 end ProtoConverter

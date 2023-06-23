@@ -3,7 +3,7 @@ package scitzen.parser
 import de.rmgk.scip.*
 import scitzen.sast.{Attribute, Attributes, Inline, Text}
 import scitzen.parser.CommonParsers.*
-import scitzen.sast.Attribute.Positional
+import scitzen.sast.Attribute.Normal
 
 import java.nio.charset.StandardCharsets
 import scala.util.matching.Regex
@@ -71,15 +71,13 @@ object AttributesParser {
     val id = namedAttributeStart.run
     namedAttributeValue.trace("attr value").run match {
       case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
-      case Right(value) => scitzen.sast.Attribute.Plain(id, value)
+      case Right(value) => scitzen.sast.Attribute(id, value)
     }
   }.trace("named attr")
 
   val positionalAttribute: Scip[Attribute] = Scip {
-    val begin    = scx.index
     val mtxt     = text.run
-    val contents = scx.str(begin, scx.index)
-    scitzen.sast.Attribute.Positional(mtxt, contents)
+    scitzen.sast.Attribute("", mtxt)
   }.trace("pos attr")
 
   val attribute: Scip[Attribute] = (namedAttribute | positionalAttribute).trace("attribute")
@@ -125,7 +123,7 @@ object AttributeDeparser {
       Try {
         (AttributesParser.attribute <~ de.rmgk.scip.end.orFail).opt.runInContext(Scx(str).copy(tracing = false))
       } match
-        case Success(Some(Positional(text, _))) if check(text) => true
+        case Success(Some(Normal("", text))) if check(text) => true
         case other                                             => false
 
     def pickFirst(candidate: List[() => String]): Option[String] =

@@ -8,8 +8,8 @@ import scitzen.generic.{Document, References, SastRef, TitledArticle}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
-import scitzen.sast.Attribute.{Plain, Positional}
 import scitzen.compat.Logging.scribe
+import scitzen.sast.Attribute.Normal
 
 object SastToTexConverter {
   def latexencode(input: String): String =
@@ -52,12 +52,12 @@ class SastToTexConverter(
     val fm     = if hasToc then Chain("\\frontmatter") else Chain.empty
 
     val ilc    = convertInlineSeq(cta, article.header.titleText.inl).map(inlineResToBlock)
-    val author = article.header.attributes.named.get("author").fold("")(n => s"\\author{${latexencode(n)}}")
+    val author = article.header.attributes.plain("author").fold("")(n => s"\\author{${latexencode(n)}}")
     ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\scitzenmaketitle{}")
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",
-    val secs = settings.named.get("sectioning")
+    val secs = settings.plain("sectioning")
       .getOrElse("chapter,section,subsection,paragraph").split(',').map(_.trim)
     val sec = secs.lift(nesting).getOrElse("paragraph")
     sec
@@ -71,7 +71,7 @@ class SastToTexConverter(
     val ilc                          = convertInlineSeq(ctx, title.inl).map(inlineResToBlock)
 
     val pushed = ilc.push(section)
-    val numbered = if attr.named.get("style").contains("unnumbered") then "*"
+    val numbered = if attr.plain("style").contains("unnumbered") then "*"
     else ""
     val header =
       val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
@@ -81,7 +81,7 @@ class SastToTexConverter(
       else ""
       s"\\$sec$numbered$chapterAdd{${ilc.data}}"
 
-    val label = attr.named.get("unique ref").map(l => s"\\label{$l}").toList
+    val label = attr.plain("unique ref").map(l => s"\\label{$l}").toList
     pushed.retc(header) :++ Chain.from(label)
 
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
@@ -94,16 +94,19 @@ class SastToTexConverter(
         else "itemize"
         s"\\begin{$listType}" +:
         ctx.fold[ListItem, String](children) { (ctx, child) =>
-          val inlineCtx  = convertInlinesAsBlock(ctx, child.text.inl).map(s => Chain(s"\\item{$s}"))
-          val contentCtx = child.content.fold(inlineCtx.empty[String])((singleSast: Sast) => convertSast(inlineCtx, singleSast))
+          val inlineCtx = convertInlinesCombined(ctx, child.text.inl).map(s => Chain(s"\\item{$s}"))
+          val contentCtx =
+            child.content.fold(inlineCtx.empty[String])((singleSast: Sast) => convertSast(inlineCtx, singleSast))
           inlineCtx.data ++: contentCtx
         } :+
         s"\\end{$listType}"
 
       case ListItem(_, _, _) :: _ =>
         ctx.fold[ListItem, String](children) { (ctx, child) =>
-          val inlinesCtx = convertInlinesAsBlock(ctx, child.text.inl).map(s => s"\\item[$s]{}")
-          inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])((singleSast: Sast) => convertSast(inlinesCtx, singleSast))
+          val inlinesCtx = convertInlinesCombined(ctx, child.text.inl).map(s => s"\\item[$s]{}")
+          inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])((singleSast: Sast) =>
+            convertSast(inlinesCtx, singleSast)
+          )
         }.map { content =>
           "\\begin{description}" +: content :+ "\\end{description}"
         }
@@ -114,12 +117,12 @@ class SastToTexConverter(
       case Other("aggregate") => handleAggregate(ctx, directive)
 
       case other =>
-        convertDirective(ctx, directive).mapc(inlineResToBlock)
+        convertInlineDirective(ctx, directive).mapc(inlineResToBlock)
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
-    val args      = attributes.legacyPositional
-    val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
-    val label     = attributes.named.get("unique ref").map(s => s"\\label{$s}").getOrElse("")
+    val target    = attributes.target
+    val optionals = if target.isEmpty then "" else s"[$target]"
+    val label     = attributes.plain("unique ref").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
     convertSastSeq(ctx, content) :+
     s"\\end{$name}"
@@ -128,7 +131,7 @@ class SastToTexConverter(
     val innerCtx: CtxCS =
       block.content match
         case Paragraph(content) =>
-          val cctx = convertInlinesAsBlock(ctx, content.inl)
+          val cctx = convertInlinesCombined(ctx, content.inl)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
           if !hardNewlines then cctx.single :+ ""
@@ -144,7 +147,7 @@ class SastToTexConverter(
               val (figContent, caption) =
                 blockContent.lastOption match
                   case Some(Block(_, _, Paragraph(content))) =>
-                    val captionstr = convertInlinesAsBlock(ctx, content.inl)
+                    val captionstr = convertInlinesCombined(ctx, content.inl)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
                     scribe.warn(s"figure has no caption" + doc.reporter(block.prov))
@@ -154,7 +157,7 @@ class SastToTexConverter(
               convertSastSeq(caption, figContent) :++
               Chain(
                 caption.data,
-                block.attributes.named.get("unique ref").fold("")(l => s"\\label{$l}"),
+                block.attributes.plain("unique ref").fold("")(l => s"\\label{$l}"),
                 "\\end{figure}"
               )
 
@@ -167,12 +170,12 @@ class SastToTexConverter(
               convertSastSeq(ctx, blockContent)
 
         case Fenced(text) =>
-          val labeltext = block.attributes.named.get("unique ref") match
+          val labeltext = block.attributes.plain("unique ref") match
             case None => text
             case Some(label) =>
               text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
           val restext =
-            if !block.attributes.legacyPositional.contains("highlight") then labeltext
+            if block.attributes.target == "highlight" then labeltext
             else
               labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
           if block.command == BCommand.Other("text")
@@ -183,29 +186,29 @@ class SastToTexConverter(
 
     if project.config.notes.contains("hide") then innerCtx
     else
-      block.attributes.nestedMap.get("note").fold(innerCtx) { note =>
-        convertInlinesAsBlock(innerCtx, note.targetT.inl).map { (content: String) =>
+      block.attributes.get("note").fold(innerCtx) { note =>
+        convertInlinesCombined(innerCtx, note.text.inl).map { (content: String) =>
           s"\\sidepar{$content}%" +: innerCtx.data
         }.useFeature("sidepar")
       }
 
   def nbrs(attributes: Attributes)(ctx: Cta): Ctx[String] =
-    attributes.argumentsT match
-      case Nil => ctx.ret("")
-      case arg :: _ =>
-        convertInlinesAsBlock(ctx, attributes.argumentsT.head.inl).map { str =>
+    attributes.textOption match
+      case None => ctx.ret("")
+      case Some(arg) =>
+        convertInlinesCombined(ctx, arg.inl).map { str =>
           s"${str}~"
         }
 
-  override def convertText(ctx: Cta, inlineText: InlineText): CtxCF = ctx.retc(latexencode(inlineText.str))
+  override def convertInlineText(ctx: Cta, inlineText: InlineText): CtxCF = ctx.retc(latexencode(inlineText.str))
 
-  override def convertDirective(ctx: Cta, directive: Directive): CtxCF =
+  override def convertInlineDirective(ctx: Cta, directive: Directive): CtxCF =
     val attributes = directive.attributes
     directive.command match
       case Code    => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
       case Comment => ctx.retc("")
       case Def     => ctx.retc("")
-      case Emph    => convertInlinesAsBlock(ctx, attributes.targetT.inl).mapc((str: String) => s"\\emph{$str}")
+      case Emph    => convertInlinesCombined(ctx, attributes.text.inl).mapc((str: String) => s"\\emph{$str}")
       case Math =>
         val math = attributes.target
         if math.isBlank then
@@ -214,29 +217,32 @@ class SastToTexConverter(
         else
           ctx.retc(s"$$${attributes.target}$$")
       case Other("break") => ctx.retc(s"\\clearpage{}")
-      case Other("rule") => convertBlockDirective(ctx, Directive(
-        Ref,
-        Attributes(
-          Seq(
-            Positional(Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov))), ""),
-            Plain("style", "plain"),
-            Positional(s"rule-${attributes.target}")
+      case Other("rule") => convertBlockDirective(
+          ctx,
+          Directive(
+            Ref,
+            Attributes(
+              Seq(
+                Normal("", Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov)))),
+                Attribute("style", "plain"),
+                Attribute("", s"rule-${attributes.target}")
+              )
+            )
+          )(
+            directive.prov
           )
         )
-      )(
-        directive.prov
-      ))
       case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")
-      case Raw                => ctx.retc(attributes.named.getOrElse("tex", ""))
+      case Raw                => ctx.retc(attributes.plain("tex").getOrElse(""))
       case Other("todo") =>
-        convertInlinesAsBlock(ctx, attributes.targetT.inl).mapc(str => s"{\\color{red}TODO:${str}}")
-      case Strong => convertInlinesAsBlock(ctx, attributes.targetT.inl).mapc(str => s"\\textbf{$str}")
+        convertInlinesCombined(ctx, attributes.text.inl).mapc(str => s"{\\color{red}TODO:${str}}")
+      case Strong => convertInlinesCombined(ctx, attributes.text.inl).mapc(str => s"\\textbf{$str}")
       case Other("partition") =>
-        convertInlinesAsBlock(ctx, attributes.targetT.inl).mapc(str => s"\\part{${str}}")
+        convertInlinesCombined(ctx, attributes.text.inl).mapc(str => s"\\part{${str}}")
 
       case BibQuery => convertInline(ctx, anal.bib.convert(directive))
       case Cite =>
-        val cmndCtx = attributes.named.get("style") match
+        val cmndCtx = attributes.plain("style") match
           case Some("author") => ctx.ret("citet")
           case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
           case _              => ctx.ret("cite")
@@ -244,7 +250,7 @@ class SastToTexConverter(
         nbrs(attributes)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attributes.target}}")
 
       case Ref =>
-        if attributes.named.contains("scope") then
+        if attributes.get("scope").isDefined then
           warn(s"scope support unclear", directive)
           ()
         val candidates =
@@ -266,35 +272,39 @@ class SastToTexConverter(
             ctx.empty
           case Some(candidate) =>
             // TODO: existence of line is unchecked
-            val label = References.getLabel(candidate).get + attributes.named.getOrElse("line", "")
-            attributes.named.get("style") match
+            val label = References.getLabel(candidate).get + attributes.plain("line").getOrElse("")
+            attributes.plain("style") match
               case Some("plain") =>
-                convertInlinesAsBlock(ctx, attributes.argumentsT.head.inl).mapc { str =>
+                convertInlinesCombined(ctx, attributes.text.inl).mapc { str =>
                   s"\\hyperref[${label}]{${str}}"
                 }
               case _ => nbrs(attributes)(ctx).mapc { str => s"${str}\\ref{${label}}" }
 
       case Link =>
-        ctx.retc {
-          val target   = attributes.target
-          val plainurl = s"\\url{$target}"
-          if attributes.legacyPositional.size > 1 then
-            val name    = "{" + latexencode(attributes.legacyPositional.head) + "}"
-            val textref = s"\\href{$target}{$name}"
-            if settings.named.get("footnotelinks").contains("disabled") then textref
-            else s"$textref\\footnote{$plainurl}"
-          else plainurl
-        }.useFeature("href")
+        val target   = attributes.target
+        val plainurl = s"\\url{$target}"
+        attributes.textOption match
+          case Some(text) =>
+            convertInlinesCombined(ctx, text.inl).mapc: res =>
+              val name    = "{" + res + "}"
+              val textref = s"\\href{$target}{$name}"
+              if settings.plain("footnotelinks").contains("disabled") then textref
+              else s"$textref\\footnote{$plainurl}"
+            .useFeature("href")
+          case None =>
+            ctx.retc {
+              plainurl
+            }
 
       case Lookup =>
         handleLookup(directive) match
           case Some(res) =>
-            convertInlinesAsBlock(ctx, res.inl).single
+            convertInlinesCombined(ctx, res.inl).single
           case None =>
             ctx.retc(latexencode(attributes.target))
 
       case Other("footnote") =>
-        convertInlinesAsBlock(ctx, attributes.targetT.inl).map(target => s"\\footnote{$target}").single
+        convertInlinesCombined(ctx, attributes.text.inl).map(target => s"\\footnote{$target}").single
 
       case Other("tableofcontents") =>
         ctx.useFeature("tableofcontents").retc(
@@ -310,7 +320,7 @@ class SastToTexConverter(
           if target.absolute.toString.endsWith(".tex") then
             warn("tex image no longer supported", directive)
             ()
-          val mw = java.lang.Double.parseDouble(attributes.named.getOrElse("maxwidth", "1"))
+          val mw = java.lang.Double.parseDouble(attributes.plain("maxwidth").getOrElse("1"))
           ctx.retc(s"\\includegraphics[max width=$mw\\columnwidth]{${target.absolute}}").useFeature(
             "graphics"
           )

@@ -30,7 +30,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
       else
         ctx.ret("")
     val newLabel = s"$ref1 (${document.uid}${counter.data})"
-    val aliases  = ref1 :: newLabel :: attr.named.get("aliases").toList.flatMap(_.split(',').toList)
+    val aliases  = ref1 :: newLabel :: attr.plain("aliases").toList.flatMap(_.split(',').toList)
     counter.ret((aliases, attr.updated("unique ref", newLabel)))
 
   def convertSeq(b: Seq[Sast])(ctx: Cta): CtxCS =
@@ -96,7 +96,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
   }
 
   private def ensureBlockRef(block: Block, ctx: Cta) = {
-    block.attributes.named.get("label") match
+    block.attributes.plain("label") match
       case None => ctx.ret(block)
       case Some(ref) =>
         val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
@@ -124,7 +124,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
       case Cite | BibQuery =>
         // TODO this is a temporary way to rename the parameter, remove at some point
         val res =
-          val style = mcro.attributes.named.get("style")
+          val style = mcro.attributes.plain("style")
           if style.contains("name") then
             mcro.copy(attributes = mcro.attributes.updated("style", "author"))(mcro.prov)
           else

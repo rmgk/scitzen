@@ -14,9 +14,9 @@ case class InlineText(str: String, quoted: Int = 0) extends Inline:
 case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast
 
 case class Text(inl: Seq[Inline]) {
-  lazy val plainString = {
+  def plainString: String = {
     inl.map {
-      case Directive(Strong | Emph, attributes) => attributes.target
+      case Directive(Strong | Emph, attributes) => attributes.text.plainString
       case m: Directive                         => ""
       case InlineText(string, _)                => string
     }.mkString("")
@@ -24,18 +24,19 @@ case class Text(inl: Seq[Inline]) {
 }
 case object Text:
   def of(str: String): Text =
-    if str.isEmpty then Text(Nil)
+    if str.isEmpty then empty
     else Text(List(InlineText(str)))
+  val empty: Text = Text(Nil)
 
 case class Section(titleText: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
-  private def label: Option[String] = attributes.named.get("label")
+  private def label: Option[String] = attributes.plain("label")
   val autolabel: String             = label.getOrElse(title)
-  def ref: String = attributes.named.getOrElse("unique ref", { throw new IllegalStateException(s"has no ref $title") })
-  lazy val language: Option[String] = attributes.named.get("language").map(_.trim)
-  lazy val date: Option[ScitzenDateTime] = attributes.named.get("date").flatMap: s =>
+  def ref: String = attributes.plain("unique ref").getOrElse { throw new IllegalStateException(s"has no ref $title") }
+  lazy val language: Option[String] = attributes.plain("language").map(_.trim)
+  lazy val date: Option[ScitzenDateTime] = attributes.plain("date").flatMap: s =>
     TimeParsers.parseDate(s.trim)
   lazy val title: String            = titleText.plainString
-  lazy val filename: Option[String] = attributes.named.get("filename")
+  lazy val filename: Option[String] = attributes.plain("filename")
   lazy val level: Int = prefix match
     case "="   => -1
     case "=="  => 0

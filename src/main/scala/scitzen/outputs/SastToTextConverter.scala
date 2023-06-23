@@ -28,13 +28,13 @@ case class SastToTextConverter(
       command match
         case BCommand.If =>
           val res =
-            settings.attrMap.get(attr.target) match
-              case Some(_) if !attr.named.contains("equals") =>
+            settings.get(attr.target) match
+              case Some(_) if attr.plain("equals").isEmpty =>
                 true
-              case Some(Attribute.Plain(id, value)) =>
-                attr.named.get("equals").forall(_ == value)
+              case Some(Attribute.Normal(id, value)) =>
+                attr.get("equals").forall(_ == value)
               case other => false
-          if attr.named.contains("not") then !res
+          if attr.get("not").isDefined then !res
           else res
         case _ => true
 
@@ -42,7 +42,7 @@ case class SastToTextConverter(
     else
       blockType match
         case Paragraph(content) =>
-          convertInlinesAsBlock(ctx, content.inl).map(r => Chain(r, ""))
+          convertInlinesCombined(ctx, content.inl).map(r => Chain(r, ""))
         case Parsed(_, blockContent) => convertSastSeq(ctx, blockContent)
         case Fenced(text)            => ctx.retc(text)
         case SpaceComment(str)       => ctx.retc(str)
@@ -65,10 +65,10 @@ case class SastToTextConverter(
     directive.command match
       case Include =>
         handleInclude(ctx, directive)
-      case _ => convertDirective(ctx, directive)
+      case _ => convertInlineDirective(ctx, directive)
 
-  override def convertText(ctx: Cta, inlineText: InlineText): CtxInl = ctx.retc(inlineText.str)
-  override def convertDirective(ctx: Cta, directive: Directive): CtxInl = directive.command match
+  override def convertInlineText(ctx: Cta, inlineText: InlineText): CtxInl = ctx.retc(inlineText.str)
+  override def convertInlineDirective(ctx: Cta, directive: Directive): CtxInl = directive.command match
     case Lookup =>
       handleLookup(directive) match
         case None =>

@@ -4,6 +4,7 @@ import scitzen.cli.ConvertTemplate
 import scitzen.compat.Logging
 import scitzen.compat.Logging.scribe
 import scitzen.generic.{Article, ArticleDirectory, Project}
+import scitzen.sast.Attribute.Nested
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Sast}
 
 import java.lang.ProcessBuilder.Redirect
@@ -24,8 +25,9 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       .toMap
 
   def applyConversions(article: Article, block: Block) =
-    val conversions = block.attributes.nested
-    conversions.foldLeft(List[Sast](block)) { case (current, (name, attrs)) =>
+    val conversions = block.attributes.raw.collect:
+      case n: Nested => n
+    conversions.foldLeft(List[Sast](block)) { case (current, Nested(name, attrs)) =>
       current match
         case Nil => Nil
         case List(block @ Block(_, _, Fenced(content))) =>
