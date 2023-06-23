@@ -75,7 +75,7 @@ class SastToHtmlConverter(
       frag(h1(id := article.header.ref, innerFrags.convert), tMeta(article))
     }
 
-  override def convertSection(section: Section, ctx: Cta): CtxCF =
+  override def convertSection(ctx: Cta, section: Section): CtxCF =
     val Section(title, level, _) = section
     convertInlineSeq(title.inl, ctx).map { innerFrags =>
       val addDepth: Int =

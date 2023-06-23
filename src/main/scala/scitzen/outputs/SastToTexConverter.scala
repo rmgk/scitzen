@@ -66,7 +66,7 @@ class SastToTexConverter(
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("", "", "\n")
 
-  override def convertSection(section: Section, ctx: Cta): CtxCF =
+  override def convertSection(ctx: Cta, section: Section): CtxCF =
     val Section(title, prefix, attr) = section
     val ilc                          = convertInlineSeq(title.inl, ctx).map(inlineResToBlock)
 

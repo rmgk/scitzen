@@ -47,7 +47,7 @@ case class SastToTextConverter(
         case Fenced(text)            => ctx.retc(text)
         case SpaceComment(str)       => ctx.retc(str)
 
-  override def convertSection(section: Section, ctx: Cta): CtxCF =
+  override def convertSection(ctx: Cta, section: Section): CtxCF =
     convertInlineSeq(section.titleText.inl, ctx).mapc(inlinesAsToplevel)
   override def convertSlist(slist: Slist, ctx: Cta): CtxCF =
     val Slist(children) = slist
