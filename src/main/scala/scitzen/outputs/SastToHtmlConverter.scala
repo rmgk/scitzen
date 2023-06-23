@@ -8,7 +8,7 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.scribe
 import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{Document, References, SastRef, TitledArticle}
-import scitzen.sast.*
+import scitzen.sast.{BCommand, *}
 import scitzen.sast.DCommand.*
 import scalatags.Text.all.*
 import scalatags.Text.tags2
@@ -167,15 +167,24 @@ class SastToHtmlConverter(
     case Paragraph(text) => convertInlineSeq(ctx, text.inl).map(cf => Chain(p(cf.convert)))
 
     case Parsed(delimiter, blockContent) =>
-      convertSastSeq(ctx, blockContent).map { blockContent =>
-        if delimiter.isBlank then
-          blockContent
-        else
-          val tag = if block.command == BCommand.Figure then figure
-          else section
-          val fig = tag(blockContent.convert)
-          Chain(block.attributes.plain("label").fold(fig: Tag)(l => fig(id := l)))
-      }
+      val label = block.attributes.plain("label").map(id := _)
+      if block.command == BCommand.Figure
+      then
+        blockContent.splitAt(blockContent.size - 1) match
+          case (content, Seq(Block(_, _, Paragraph(caption)))) =>
+            val contentCtx              = convertSastSeq(ctx, content)
+            val captionCtx              = convertInlinesCombined(contentCtx, caption.inl)
+            captionCtx.retc(figure(label, contentCtx.data, figcaption(captionCtx.data)))
+          case other =>
+            warn(s"figure needs to end with a paragraph as its caption", block)
+            ctx.empty
+      else
+        convertSastSeq(ctx, blockContent).map { blockContent =>
+          if delimiter.isBlank then
+            blockContent
+          else
+            Chain(section(blockContent.convert, label))
+        }
 
     case Fenced(text) => handleCodeListing(ctx, block, text)
 
@@ -239,37 +248,7 @@ class SastToHtmlConverter(
         convertInlineDirective(ctx, anal.bib.convert(directive))
 
       case Cite =>
-        val citations = anal.bib.bibkeys(directive).map(k => k -> anal.bib.entries.get(k))
-        val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
-          case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
-          case (bibid, None) =>
-            scribe.error(s"bib key not found: »${bibid}«" + reportPos(directive))
-            List(code(bibid), stringFrag(" "))
-        }.dropRight(1)
-        val cctx          = ctx.cite(citations.flatMap(_._2))
-        val styledAnchors = span(cls := "citations", "(", anchors, ")")
-        if attrs.raw.sizeIs > 1 then
-          convertInlineSeq(cctx, attrs.text.inl).map { res =>
-            if res.isEmpty then res
-            else
-              val last = res.last
-              val init = res.init
-              val addSpace = last match
-                case StringFrag(s) => stringFrag(s"$s\u2009")
-                case other         => last
-              init ++ Chain(addSpace, styledAnchors)
-          }
-        else if attrs.plain("style").contains("author")
-        then
-          val nameOption =
-            for
-              first  <- citations.headOption
-              bi     <- first._2
-              author <- bi.authors.headOption
-              family <- author.familyName
-            yield stringFrag(s"${family}${if bi.authors.sizeIs > 1 then " et al.\u2009" else "\u2009"}")
-          cctx.ret(nameOption ++: Chain(styledAnchors))
-        else cctx.retc(styledAnchors)
+        handleCite(ctx, directive)
 
       case Link =>
         val target = attrs.target
@@ -277,44 +256,7 @@ class SastToHtmlConverter(
           a(href := target).apply(content.convert)
 
       case Ref =>
-        val scope =
-          attrs.plain("scope").flatMap(doc.resolve).getOrElse(doc.path)
-        val candidates = References.filterCandidates(scope, anal.directory.labels.getOrElse(attrs.target, Nil))
-
-        if candidates.sizeIs > 1 then
-          scribe.error(
-            s"multiple resolutions for ${attrs.target}" +
-            reporter(directive.prov) +
-            s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
-          )
-
-        candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
-          val nameOpt    = attrs.textOption
-          val articleOpt = targetDocument.directArticle
-          val fileRef =
-            articleOpt match
-              case Some(article) =>
-                project.htmlPaths.relativeArticleTarget(article).toString
-              case _ => ""
-
-          targetDocument.sast match
-            case sec @ Section(title, _, _) =>
-              convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
-                Chain(a(href := s"$fileRef#${sec.ref}", titleText.convert))
-            case Block(_, attr, _) =>
-              val label = attr.plain("label").get
-              convertInlineSeq(ctx, nameOpt.map(_.inl).getOrElse(Nil)).mapc: titleText =>
-                if titleText.isEmpty
-                then  a(href := s"$fileRef#$label", label)
-                else a(href := s"$fileRef#$label", titleText.convert, " ", label)
-
-            case other =>
-              scribe.error(s"can not refer to $other")
-              ctx.empty
-        }.getOrElse {
-          scribe.error(s"no resolutions for »${attrs.target}«${reporter(directive)}")
-          ctx.retc(code(SastToScimConverter(anal.bib).macroToScim(directive)))
-        }
+        handleRef(ctx, directive)
 
       case Lookup =>
         handleLookup(directive) match
@@ -341,6 +283,86 @@ class SastToHtmlConverter(
 
       case Image => convertImage(ctx, directive)
   end convertInlineDirective
+
+  private def handleRef(ctx: Cta, directive: Directive) = {
+    val attrs: Attributes = directive.attributes
+    val scope =
+      attrs.plain("scope").flatMap(doc.resolve).getOrElse(doc.path)
+    val candidates = References.filterCandidates(scope, anal.directory.labels.getOrElse(attrs.target, Nil))
+
+    if candidates.sizeIs > 1 then
+      scribe.error(
+        s"multiple resolutions for ${attrs.target}" +
+        reporter(directive.prov) +
+        s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
+      )
+
+    candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
+      val nameOpt    = attrs.textOption
+      val articleOpt = targetDocument.directArticle
+      val fileRef =
+        articleOpt match
+          case Some(article) =>
+            project.htmlPaths.relativeArticleTarget(article).toString
+          case _ => ""
+
+      targetDocument.sast match
+        case sec @ Section(title, _, _) =>
+          convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
+            Chain(a(href := s"$fileRef#${sec.ref}", titleText.convert))
+        case Block(_, attr, _) =>
+          val label = attr.plain("label").get
+          convertInlineSeq(ctx, nameOpt.map(_.inl).getOrElse(Nil)).mapc: titleText =>
+            if titleText.isEmpty
+            then a(href := s"$fileRef#$label", label)
+            else a(href := s"$fileRef#$label", titleText.convert, " ", label)
+
+        case other =>
+          scribe.error(s"can not refer to $other")
+          ctx.empty
+    }.getOrElse {
+      scribe.error(s"no resolutions for »${attrs.target}«${reporter(directive)}")
+      ctx.retc(code(SastToScimConverter(anal.bib).macroToScim(directive)))
+    }
+  }
+
+  private def handleCite(ctx: Cta, directive: Directive) = {
+    val attrs: Attributes = directive.attributes
+    val citations         = anal.bib.bibkeys(directive).map(k => k -> anal.bib.entries.get(k))
+    val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
+      case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
+      case (bibid, None) =>
+        scribe.error(s"bib key not found: »${bibid}«" + reportPos(directive))
+        List(code(bibid), stringFrag(" "))
+    }.dropRight(1)
+    val cctx          = ctx.cite(citations.flatMap(_._2))
+    val styledAnchors = span(cls := "citations", "(", anchors, ")")
+    if attrs.raw.sizeIs > 1 then
+      convertInlineSeq(cctx, attrs.text.inl).map { res =>
+        if res.isEmpty then res
+        else
+          val last = res.last
+          val init = res.init
+          val addSpace = last match
+            case StringFrag(s) => stringFrag(s"$s\u2009")
+            case other         => last
+          init ++ Chain(addSpace, styledAnchors)
+      }
+    else if attrs.plain("style").contains("author")
+    then
+      val nameOption =
+        for
+          first  <- citations.headOption
+          bi     <- first._2
+          author <- bi.authors.headOption
+          family <- author.familyName
+        yield stringFrag(s"${family}${
+            if bi.authors.sizeIs > 1 then " et al.\u2009"
+            else "\u2009"
+          }")
+      cctx.ret(nameOption ++: Chain(styledAnchors))
+    else cctx.retc(styledAnchors)
+  }
 
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
     val attrs  = mcro.attributes

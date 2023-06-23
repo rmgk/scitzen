@@ -97,6 +97,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     val macroStr = SastToScimConverter(anal.bib).macroToScim(im)
     scribe.warn(s"$msg: ⸢$macroStr⸥${doc.reporter(im)}")
     stringToInlineRes(macroStr)
+  def warn(msg: String, im: Block): Unit =
+    scribe.warn(s"$msg: ${im.command}${doc.reporter(im.prov)}")
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val pathpart = doc.path.directory.resolve(directive.attributes.target).normalize()

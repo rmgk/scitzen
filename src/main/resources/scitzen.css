@@ -23,11 +23,8 @@
 	--small-gap: 0.5em;
 	--normal-gap: 1em;
 
-	--color-marker-red: #ea9999;
-	/*--color-marker-yellow: #ffe599; */
-	--color-marker-green: #b6d7a8;
-	/*--color-marker-blue: #a4c2f4; */
-	/*--color-marker-purple: #b4a7d6; */
+	--color-marker-red: #E91E63;
+	--color-marker-green: #60C689;
 
 	/* allow browser to select a color scheme based on user preferences */
 	color-scheme: light dark;
@@ -197,7 +194,7 @@ time {
 
 /* basic text styling */
 
-main :is(p, ol, ul, dl) {
+main :is(p, ol, ul, dl, figcaption) {
 	text-align: justify;
 	/* set line-height to scaled pixels */
 	line-height: calc(28 / 18);
@@ -206,7 +203,7 @@ main :is(p, ol, ul, dl) {
 	max-width: var(--main-content-width);
 }
 
-main.adhoc :is(p, ol, ul, dl) {
+main.adhoc :is(p, ol, ul, dl, figcaption) {
 	/* display linebreaks */
 	white-space: pre-line;
 }
@@ -232,9 +229,12 @@ figure, blockquote, pre {
 :is(figure, blockquote, pre, dd) > :first-child {
 	margin-top: 0;
 }
-
 :is(figure, blockquote, pre, dd) > :last-child {
 	margin-bottom: 0;
+}
+/* add margin to inner elements */
+:is(figure, blockquote, pre, dd) > :not(:first-child) {
+	margin-top: 0.5em;
 }
 
 /* code blocks */
@@ -268,9 +268,10 @@ pre > code {
 /* individual element styles */
 
 .marginnote {
-	grid-column: content-end;
+	grid-column: content-end / image-end;
 	margin-left: 2em;
 	overflow: hidden;
+	text-align: left;
 }
 
 img, video {
