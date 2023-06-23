@@ -135,7 +135,7 @@ class SastToHtmlConverter(
         convertInlineSeq(List(directive), ctx)
   end convertBlockDirective
 
-  def convertBlock(block: Block, ctx: Cta): CtxCF =
+  def convertBlock(ctx: Cta, block: Block): CtxCF =
 
     val innerCtx = block.command match
       case BCommand.Other("quote") =>

@@ -22,7 +22,7 @@ case class SastToTextConverter(
   ): ProtoConverter[String, String] =
     SastToTextConverter(doc, analysis, attr)
 
-  override def convertBlock(block: Block, ctx: Cta): CtxCF =
+  override def convertBlock(ctx: Cta, block: Block): CtxCF =
     val Block(command, attr, blockType) = block
     val keepBlock =
       command match

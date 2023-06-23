@@ -124,7 +124,7 @@ class SastToTexConverter(
     convertSastSeq(ctx, content) :+
     s"\\end{$name}"
 
-  override def convertBlock(block: Block, ctx: Cta): CtxCS =
+  override def convertBlock(ctx: Cta, block: Block): CtxCS =
     val innerCtx: CtxCS =
       block.content match
         case Paragraph(content) =>
