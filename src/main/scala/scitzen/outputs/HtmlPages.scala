@@ -3,18 +3,17 @@ package scitzen.outputs
 import scalatags.Text.{Frag, RawFrag, Tag}
 import scalatags.Text.all.{OptionNode, SeqFrag}
 import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href, id, lang, name, rel}
-import scalatags.Text.implicits.{raw, stringAttr, stringFrag}
+import scalatags.Text.implicits.{raw, stringAttr}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{aside, main, nav, title}
 
 class HtmlPages(cssPath: String):
 
-  def tHead(titled: String): Tag =
+  val tHead: Tag =
     head(
-      title(titled),
-      link(href    := cssPath, rel        := "stylesheet", `type` := "text/css"),
-      meta(name    := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
-      meta(charset := "UTF-8")
+      meta(charset := "UTF-8"),
+      meta(name := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
+      link(href := cssPath, rel        := "stylesheet", `type` := "text/css"),
     )
 
   def htmlDocument(tag: Tag): String =
@@ -40,13 +39,13 @@ class HtmlPages(cssPath: String):
       bodyClass: String,
       mainClass: Option[String],
       sidebar: Option[Frag],
-      titled: String,
+      titled: Frag,
       language: Option[String] = None
   ): String =
     htmlDocument(html(
       // we define a global language as scitzen controls are kinda all english, but also to enable features such as hyphenation even if no language is defined. This will produce incorrect hyphenation, but thats guesswork anyways, so may be OK.
       lang := "en",
-      tHead(titled)
+      tHead(title(titled))
     )(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,

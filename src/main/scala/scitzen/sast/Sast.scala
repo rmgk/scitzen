@@ -1,7 +1,6 @@
 package scitzen.sast
 
 import scitzen.parser.TimeParsers
-import scitzen.sast.DCommand.{Emph, Strong}
 
 sealed trait Sast
 
@@ -16,9 +15,9 @@ case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) 
 case class Text(inl: Seq[Inline]) {
   def plainString: String = {
     inl.map {
-      case Directive(Strong | Emph, attributes) => attributes.text.plainString
-      case m: Directive                         => ""
-      case InlineText(string, _)                => string
+      case InlineText(string, _) => string
+      case m: Directive =>
+        m.attributes.text.plainString
     }.mkString("")
   }
 }
@@ -35,7 +34,7 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
   lazy val language: Option[String] = attributes.plain("language").map(_.trim)
   lazy val date: Option[ScitzenDateTime] = attributes.plain("date").flatMap: s =>
     TimeParsers.parseDate(s.trim)
-  lazy val title: String            = titleText.plainString
+  val title: String                 = titleText.plainString
   lazy val filename: Option[String] = attributes.plain("filename")
   lazy val level: Int = prefix match
     case "="   => -1

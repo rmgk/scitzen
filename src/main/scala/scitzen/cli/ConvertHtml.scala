@@ -82,7 +82,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         "index",
         None,
         HtmlToc.tableOfContents(convertedCtx.sections.reverse, converter),
-        "Index",
+        scalatags.Text.short.stringFrag("Index"),
         None
       )
     Files.writeString(project.outputdirWeb.resolve("index.html"), res)
@@ -147,7 +147,7 @@ class ConvertHtml(anal: ConversionAnalysis):
       converter
     )
 
-    import scalatags.Text.all.{Frag, SeqFrag, a, frag, href, stringAttr, stringFrag}
+    import scalatags.Text.all.{Frag, SeqFrag, a, frag, href, stringAttr}
 
     val res = article.header.attributes.plain("htmlTemplate") match
       case None =>
@@ -155,13 +155,14 @@ class ConvertHtml(anal: ConversionAnalysis):
 
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
-          if article.header.attributes.plain("style").exists(_.contains("plain"))
-          then ""
-          else "numbered-sections",
-          if converter.hardNewlines then Some("adhoc") else None,
-          toc.map(c => frag(a(href := s"#${article.header.ref}", article.title): Frag, c: Frag)),
-          article.title,
-          article.header.language
+          bodyClass =
+            if article.header.attributes.plain("style").exists(_.contains("plain"))
+            then ""
+            else "numbered-sections",
+          mainClass = if converter.hardNewlines then Some("adhoc") else None,
+          sidebar = toc.map(c => frag(a(href := s"#${article.header.ref}"): Frag, c: Frag)),
+          titled = converter.convertInlinesCombined(ConversionContext(()), article.header.titleText.inl).data,
+          language = article.header.language
             .orElse(nlp.language(article.article))
         )
       case Some(templatePath) =>
