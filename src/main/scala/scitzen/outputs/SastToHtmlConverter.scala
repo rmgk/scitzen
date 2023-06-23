@@ -299,13 +299,14 @@ class SastToHtmlConverter(
 
           targetDocument.sast match
             case sec @ Section(title, _, _) =>
-              convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map { titleText =>
+              convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
                 Chain(a(href := s"$fileRef#${sec.ref}", titleText.convert))
-              }
             case Block(_, attr, _) =>
               val label = attr.plain("label").get
-              val name  = nameOpt.fold(label)(n => s"$n $label")
-              ctx.retc(a(href := s"$fileRef#$label", name))
+              convertInlineSeq(ctx, nameOpt.map(_.inl).getOrElse(Nil)).mapc: titleText =>
+                if titleText.isEmpty
+                then  a(href := s"$fileRef#$label", label)
+                else a(href := s"$fileRef#$label", titleText.convert, " ", label)
 
             case other =>
               scribe.error(s"can not refer to $other")

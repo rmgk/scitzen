@@ -12,8 +12,7 @@ case class Attributes(raw: Seq[Attribute]) {
   def target: String = positional.lastOption.fold("")(_.text.plainString)
   def text: Text     = positional.headOption.fold(Text.empty)(_.text)
   def textOption: Option[Text] =
-    val pos = positional
-    if pos.sizeIs > 1 then
+    if positional.sizeIs > 1 then
       Some(text)
     else None
 
