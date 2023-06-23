@@ -48,7 +48,7 @@ class SastToHtmlConverter(
   override def stringToInlineRes(str: String): Text.all.Frag               = stringFrag(str)
 
   def listItemToHtml(child: ListItem)(ctx: Cta): CtxCF =
-    val textCtx = convertInlineSeq(child.text.inl, ctx)
+    val textCtx = convertInlineSeq(ctx, child.text.inl)
     textCtx.data ++: child.content.fold(textCtx.empty[Frag])((singleSast: Sast) => convertSast(textCtx, singleSast))
 
   def categoriesSpan(categories: Seq[String]): Option[Tag] =
@@ -71,13 +71,13 @@ class SastToHtmlConverter(
     if metalist.nonEmpty then div(cls := "metadata")(metalist.toSeq*) else frag()
 
   def articleHeader(article: TitledArticle)(ctx: Cta): Ctx[Frag] =
-    convertInlineSeq(article.header.titleText.inl, ctx).map { innerFrags =>
+    convertInlineSeq(ctx, article.header.titleText.inl).map { innerFrags =>
       frag(h1(id := article.header.ref, innerFrags.convert), tMeta(article))
     }
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     val Section(title, level, _) = section
-    convertInlineSeq(title.inl, ctx).map { innerFrags =>
+    convertInlineSeq(ctx, title.inl).map { innerFrags =>
       val addDepth: Int =
         if level.contains("=") then 0
         else
@@ -88,7 +88,7 @@ class SastToHtmlConverter(
       Chain[Frag](tag(s"h${level.length + addDepth}")(id := section.ref, innerFrags.convert))
     }.push(section)
 
-  override def convertSlist(slist: Slist, ctx: Cta): CtxCF = slist match
+  override def convertSlist(ctx: Cta, slist: Slist): CtxCF = slist match
     case Slist(Nil) => ctx.empty
     case Slist(children) => children.head.content match
         case None | Some(Slist(_)) =>
@@ -99,7 +99,7 @@ class SastToHtmlConverter(
           }.map(i => Chain(listTag(i.convert)))
         case _ =>
           ctx.fold[ListItem, Frag](children) { (ctx, c) =>
-            val inlinesCtx = convertInlineSeq(c.text.inl, ctx)
+            val inlinesCtx = convertInlineSeq(ctx, c.text.inl)
             c.content.fold(inlinesCtx.empty[Frag])((singleSast: Sast) => convertSast(inlinesCtx, singleSast)).map { innerFrags =>
               Chain(dt(inlinesCtx.data.convert), dd(innerFrags.convert))
             }
@@ -132,7 +132,7 @@ class SastToHtmlConverter(
       case Include => handleInclude(ctx, directive)
 
       case other =>
-        convertInlineSeq(List(directive), ctx)
+        convertInlineSeq(ctx, List(directive))
   end convertBlockDirective
 
   def convertBlock(ctx: Cta, block: Block): CtxCF =
@@ -157,14 +157,14 @@ class SastToHtmlConverter(
         convertStandardBlock(block, ctx)
 
     block.attributes.nestedMap.get("note").fold(innerCtx) { note =>
-      convertInlineSeq(note.targetT.inl, innerCtx).map { content =>
+      convertInlineSeq(innerCtx, note.targetT.inl).map { content =>
         innerCtx.data :+ p(`class` := "marginnote", content.convert)
       }
     }
   end convertBlock
 
   def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block.content match
-    case Paragraph(text) => convertInlineSeq(text.inl, ctx).map(cf => Chain(p(cf.convert)))
+    case Paragraph(text) => convertInlineSeq(ctx, text.inl).map(cf => Chain(p(cf.convert)))
 
     case Parsed(delimiter, blockContent) =>
       convertSastSeq(ctx, blockContent).map { blockContent =>
@@ -210,12 +210,12 @@ class SastToHtmlConverter(
     ctx.useFeature("prism").retc(res)
   end handleCodeListing
 
-  override def convertText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(stringFrag(inlineText.str))
-  override def convertDirective(directive: Directive, ctx: Cta): CtxInl =
+  override def convertText(ctx: Cta, inlineText: InlineText): CtxInl = ctx.retc(stringFrag(inlineText.str))
+  override def convertDirective(ctx: Cta, directive: Directive): CtxInl =
     val attrs = directive.attributes
     directive.command match
-      case Strong => convertInlineSeq(attrs.text.inl, ctx).map(c => strong(c.convert)).single
-      case Emph   => convertInlineSeq(attrs.text.inl, ctx).map(c => em(c.convert)).single
+      case Strong => convertInlineSeq(ctx, attrs.text.inl).map(c => strong(c.convert)).single
+      case Emph   => convertInlineSeq(ctx, attrs.text.inl).map(c => em(c.convert)).single
       case Code   => ctx.retc(code(attrs.target))
       case Script =>
         doc.resolve(attrs.target) match
@@ -236,7 +236,7 @@ class SastToHtmlConverter(
         ctx.katex(inner).map(res => Chain(math(raw(res))))
 
       case BibQuery =>
-        convertDirective(anal.bib.convert(directive), ctx)
+        convertDirective(ctx, anal.bib.convert(directive))
 
       case Cite =>
         val citations = anal.bib.bibkeys(directive).map(k => k -> anal.bib.entries.get(k))
@@ -249,7 +249,7 @@ class SastToHtmlConverter(
         val cctx          = ctx.cite(citations.flatMap(_._2))
         val styledAnchors = span(cls := "citations", "(", anchors, ")")
         if attrs.arguments.nonEmpty then
-          convertInlineSeq(attrs.argumentsT.head.inl, cctx).map { res =>
+          convertInlineSeq(cctx, attrs.argumentsT.head.inl).map { res =>
             if res.isEmpty then res
             else
               val last = res.last
@@ -273,7 +273,7 @@ class SastToHtmlConverter(
 
       case Link =>
         val target     = attrs.target
-        val contentCtx = convertInlineSeq(attrs.text.inl, ctx)
+        val contentCtx = convertInlineSeq(ctx, attrs.text.inl)
         contentCtx.mapc(content => a(href := target).apply(content.convert))
 
       case Ref =>
@@ -298,7 +298,7 @@ class SastToHtmlConverter(
               case _ => ""
 
           targetDocument.sast match
-            case sec @ Section(title, _, _) => convertInlineSeq(title.inl, ctx).map { inner =>
+            case sec @ Section(title, _, _) => convertInlineSeq(ctx, title.inl).map { inner =>
                 Chain(a(href := s"$fileRef#${sec.ref}", nameOpt.fold(inner.convert)(n => List(stringFrag(n)))))
               }
             case Block(_, attr, _) =>
@@ -316,7 +316,7 @@ class SastToHtmlConverter(
 
       case Lookup =>
         handleLookup(directive) match
-          case Some(res) => convertInlineSeq(res.inl, ctx)
+          case Some(res) => convertInlineSeq(ctx, res.inl)
           case None =>
             ctx.retc(code(attrs.target))
 
@@ -328,7 +328,7 @@ class SastToHtmlConverter(
                 doc,
                 anal,
                 project.config.rawAttributes,
-              ).convertInlinesAsBlock(attrs.targetT.inl, ctx)
+              ).convertInlinesAsBlock(ctx, attrs.targetT.inl)
             target.mapc: target =>
               a(title := target, "※")
 

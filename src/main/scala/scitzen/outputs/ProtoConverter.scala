@@ -63,30 +63,30 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         else convertBlock(ctx, block)
       case directive: Directive => convertBlockDirective(ctx, directive)
       case section: Section     => convertSection(ctx, section)
-      case slist: Slist         => convertSlist(slist, ctx)
+      case slist: Slist         => convertSlist(ctx, slist)
 
   def convertBlock(ctx: Cta, block: Block): CtxCF
   def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
-    convertDirective(directive, ctx).map(v => Chain(inlinesAsToplevel(v)))
+    convertDirective(ctx, directive).map(v => Chain(inlinesAsToplevel(v)))
   def convertSection(ctx: Cta, section: Section): CtxCF
-  def convertSlist(slist: Slist, ctx: Cta): CtxCF
+  def convertSlist(ctx: Cta, slist: Slist): CtxCF
 
-  def convertInlinesAsBlock(inlines: Iterable[Inline], ctx: Cta): Ctx[BlockRes] =
-    convertInlineSeq(inlines, ctx).map(v => inlineResToBlock(v))
+  def convertInlinesAsBlock(ctx: Cta, inlines: Iterable[Inline]): Ctx[BlockRes] =
+    convertInlineSeq(ctx, inlines).map(v => inlineResToBlock(v))
 
   def inlineResToBlock(inl: Chain[InlineRes]): BlockRes
   def inlinesAsToplevel(inl: Chain[InlineRes]): BlockRes
 
-  def convertInlineSeq(inlines: Iterable[Inline], ctx: Cta): CtxInl =
-    ctx.fold(inlines) { (ctx, inline) => convertInline(inline, ctx) }
+  def convertInlineSeq(ctx: Cta, inlines: Iterable[Inline]): CtxInl =
+    ctx.fold(inlines) { (ctx, inline) => convertInline(ctx, inline) }
 
-  def convertInline(inlineSast: Inline, ctx: Cta): CtxInl =
+  def convertInline(ctx: Cta, inlineSast: Inline): CtxInl =
     inlineSast match
-      case inlineText: InlineText => convertText(inlineText, ctx)
-      case directive: Directive   => convertDirective(directive, ctx)
+      case inlineText: InlineText => convertText(ctx, inlineText)
+      case directive: Directive   => convertDirective(ctx, directive)
 
-  def convertText(inlineText: InlineText, ctx: Cta): CtxInl
-  def convertDirective(directive: Directive, ctx: Cta): CtxInl
+  def convertText(ctx: Cta, inlineText: InlineText): CtxInl
+  def convertDirective(ctx: Cta, directive: Directive): CtxInl
 
   def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: ProjectPath => CtxInl): CtxInl =
     val target = anal.image.lookup(doc.resolve(directive.attributes.target).get, imageTarget)
@@ -117,7 +117,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     attributes.arguments.headOption match
       case Some("code") =>
         doc.resolve(attributes.target) match
-          case None => convertInlineSeq(List(directive), ctx)
+          case None => convertInlineSeq(ctx, List(directive))
           case Some(file) =>
             convertSast(ctx, Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov))
 

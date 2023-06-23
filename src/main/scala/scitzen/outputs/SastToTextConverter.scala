@@ -42,21 +42,21 @@ case class SastToTextConverter(
     else
       blockType match
         case Paragraph(content) =>
-          convertInlinesAsBlock(content.inl, ctx).map(r => Chain(r, ""))
+          convertInlinesAsBlock(ctx, content.inl).map(r => Chain(r, ""))
         case Parsed(_, blockContent) => convertSastSeq(ctx, blockContent)
         case Fenced(text)            => ctx.retc(text)
         case SpaceComment(str)       => ctx.retc(str)
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
-    convertInlineSeq(section.titleText.inl, ctx).mapc(inlinesAsToplevel)
-  override def convertSlist(slist: Slist, ctx: Cta): CtxCF =
+    convertInlineSeq(ctx, section.titleText.inl).mapc(inlinesAsToplevel)
+  override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
     val Slist(children) = slist
     ctx.fold(children): (ctx, child) =>
       child match
         case ListItem(_, Text(inl), None) =>
-          convertInlineSeq(inl, ctx)
+          convertInlineSeq(ctx, inl)
         case ListItem(_, text, Some(inner)) =>
-          val tctx = convertInlineSeq(text.inl, ctx)
+          val tctx = convertInlineSeq(ctx, text.inl)
           tctx.data ++: convertSast(tctx, inner)
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")
@@ -65,16 +65,16 @@ case class SastToTextConverter(
     directive.command match
       case Include =>
         handleInclude(ctx, directive)
-      case _ => convertDirective(directive, ctx)
+      case _ => convertDirective(ctx, directive)
 
-  override def convertText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(inlineText.str)
-  override def convertDirective(directive: Directive, ctx: Cta): CtxInl = directive.command match
+  override def convertText(ctx: Cta, inlineText: InlineText): CtxInl = ctx.retc(inlineText.str)
+  override def convertDirective(ctx: Cta, directive: Directive): CtxInl = directive.command match
     case Lookup =>
       handleLookup(directive) match
         case None =>
           ctx.empty
         case Some(res) =>
-          convertInlineSeq(res.inl, ctx)
+          convertInlineSeq(ctx, res.inl)
 
     case other => ctx.retc("")
 
