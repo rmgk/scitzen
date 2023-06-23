@@ -53,13 +53,13 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       scribe.warn(s"unknown name ${id}" + reporter(directive))
     res
 
-  def convertSastSeq(b: Iterable[Sast], ctx: Cta): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(sast, ctx))
+  def convertSastSeq(ctx: Cta, b: Iterable[Sast]): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(sast, ctx))
 
   def convertSast(singleSast: Sast, ctx: Cta): CtxCF =
     singleSast match
       case block: Block =>
         if block.command == BCommand.Convert then
-          convertSastSeq(anal.block.substitute(block), ctx)
+          convertSastSeq(ctx, anal.block.substitute(block))
         else convertBlock(block, ctx)
       case directive: Directive => convertBlockDirective(directive, ctx)
       case section: Section     => convertSection(section, ctx)
@@ -109,7 +109,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       else Nil
 
     ctx.fold(found): (cc, art) =>
-      subconverter(art.doc, anal, combinedAttributes).convertSastSeq(art.sast, cc)
+      subconverter(art.doc, anal, combinedAttributes).convertSastSeq(cc, art.sast)
   }
 
   def handleInclude(ctx: Cta, directive: Directive) = {
@@ -136,7 +136,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             )
             ctx.empty
           case Some(article) =>
-            subconverter(article.doc, anal, combinedAttributes).convertSastSeq(article.sast, ctx)
+            subconverter(article.doc, anal, combinedAttributes).convertSastSeq(ctx, article.sast)
 
       case Some(other) =>
         scribe.error(s"unknown include type $other" + doc.reporter(directive.prov))

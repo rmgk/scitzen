@@ -43,7 +43,7 @@ case class SastToTextConverter(
       blockType match
         case Paragraph(content) =>
           convertInlinesAsBlock(content.inl, ctx).map(r => Chain(r, ""))
-        case Parsed(_, blockContent) => convertSastSeq(blockContent, ctx)
+        case Parsed(_, blockContent) => convertSastSeq(ctx, blockContent)
         case Fenced(text)            => ctx.retc(text)
         case SpaceComment(str)       => ctx.retc(str)
 

@@ -121,7 +121,7 @@ class SastToTexConverter(
     val optionals = if args.isEmpty then "" else args.mkString("[", "; ", "]")
     val label     = attributes.named.get("unique ref").map(s => s"\\label{$s}").getOrElse("")
     s"\\begin{$name}$optionals$label" +:
-    convertSastSeq(content, ctx) :+
+    convertSastSeq(ctx, content) :+
     s"\\end{$name}"
 
   override def convertBlock(block: Block, ctx: Cta): CtxCS =
@@ -151,7 +151,7 @@ class SastToTexConverter(
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
               "\\centerfloat" +:
-              convertSastSeq(figContent, caption) :++
+              convertSastSeq(caption, figContent) :++
               Chain(
                 caption.data,
                 block.attributes.named.get("unique ref").fold("")(l => s"\\label{$l}"),
@@ -164,7 +164,7 @@ class SastToTexConverter(
             case BCommand.Other(name @ "abstract") => texbox(name, block.attributes, blockContent)(ctx)
 
             case _ =>
-              convertSastSeq(blockContent, ctx)
+              convertSastSeq(ctx, blockContent)
 
         case Fenced(text) =>
           val labeltext = block.attributes.named.get("unique ref") match

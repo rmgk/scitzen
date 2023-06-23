@@ -141,7 +141,7 @@ class SastToHtmlConverter(
       case BCommand.Other("quote") =>
         val inner = block.content match
           case Parsed(_, content) =>
-            convertSastSeq(content, ctx)
+            convertSastSeq(ctx, content)
           case Fenced(content) =>
             ctx.retc(stringFrag(content))
           case _ => ???
@@ -167,7 +167,7 @@ class SastToHtmlConverter(
     case Paragraph(text) => convertInlineSeq(text.inl, ctx).map(cf => Chain(p(cf.convert)))
 
     case Parsed(delimiter, blockContent) =>
-      convertSastSeq(blockContent, ctx).map { blockContent =>
+      convertSastSeq(ctx, blockContent).map { blockContent =>
         if delimiter.isBlank then
           blockContent
         else

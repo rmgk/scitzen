@@ -72,7 +72,7 @@ class ConvertHtml(anal: ConversionAnalysis):
       Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
       anal = anal,
       Attributes.empty
-    ).convertSastSeq(generatedIndex, ConversionContext(()))
+    ).convertSastSeq(ConversionContext(()), generatedIndex)
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
       .wrapContentHtml(
@@ -117,7 +117,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
     val convertedArticleCtx =
-      converter.convertSastSeq(article.body, ConversionContext((), katexConverter = katexConverter))
+      converter.convertSastSeq(ConversionContext((), katexConverter = katexConverter), article.body)
     val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct

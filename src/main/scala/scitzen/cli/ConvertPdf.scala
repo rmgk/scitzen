@@ -28,7 +28,7 @@ object ConvertPdf:
         )
 
         val resultContext =
-          converter.convertSastSeq(article.body, ConversionContext(()))
+          converter.convertSastSeq(ConversionContext(()), article.body)
 
         val headerres = converter.articleHeader(article, resultContext)
 

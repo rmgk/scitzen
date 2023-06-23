@@ -25,5 +25,5 @@ object ConvertTemplate:
           templateArticle.doc,
           ConversionAnalysis(project, directory, BlockConversions(Map.empty), ImageConversions(Map.empty), BibDB.empty),
           templateSettings
-        ).convertSastSeq(templateArticle.sast, ConversionContext(()))
+        ).convertSastSeq(ConversionContext(()), templateArticle.sast)
         documentString.data.mkString("")

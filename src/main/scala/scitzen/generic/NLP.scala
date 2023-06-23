@@ -41,7 +41,7 @@ case class NLP(stopwords: Map[String, Seq[String]], analysis: ConversionAnalysis
 
   def words(article: Article): List[String] =
     SastToTextConverter(article.doc, analysis, Attributes.empty)
-      .convertSastSeq(article.sast, ConversionContext(())).data
+      .convertSastSeq(ConversionContext(()), article.sast).data
       .iterator
       .flatMap(_.split("[^\\p{L}]+")).map(_.toLowerCase).toList
 
