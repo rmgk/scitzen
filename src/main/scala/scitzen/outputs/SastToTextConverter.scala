@@ -75,4 +75,3 @@ case class SastToTextConverter(
     case other => ctx.retc("")
 
   override def stringToInlineRes(str: String): String = str
-  override def addDetail(ctx: CtxCF): CtxCF           = ctx
