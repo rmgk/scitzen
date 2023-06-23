@@ -68,18 +68,20 @@ class ConvertHtml(anal: ConversionAnalysis):
       cssfile: Path,
   ): Unit =
     val generatedIndex = GenIndexPage.makeIndex(preprocessed.fullArticles, project, project.htmlPaths.articleOutputDir)
-    val convertedCtx = new SastToHtmlConverter(
+    val converter = new SastToHtmlConverter(
       Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
       anal = anal,
       Attributes(project.config.settings)
-    ).convertSastSeq(ConversionContext(()), generatedIndex)
+    )
+
+    val convertedCtx = converter.convertSastSeq(ConversionContext(()), generatedIndex)
 
     val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
       .wrapContentHtml(
         convertedCtx.data.toList,
         "index",
         None,
-        HtmlToc.tableOfContents(convertedCtx.sections.reverse),
+        HtmlToc.tableOfContents(convertedCtx.sections.reverse, converter),
         "Index",
         None
       )
@@ -141,7 +143,8 @@ class ConvertHtml(anal: ConversionAnalysis):
         )
 
     val toc = HtmlToc.tableOfContents(
-      convertedArticleCtx.sections.reverse ++ bibsection
+      convertedArticleCtx.sections.reverse ++ bibsection,
+      converter
     )
 
     import scalatags.Text.all.{Frag, SeqFrag, a, frag, href, stringAttr, stringFrag}
