@@ -108,13 +108,13 @@ class SastToTexConverter(
           "\\begin{description}" +: content :+ "\\end{description}"
         }
 
-  override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
+  override def convertBlockDirective(directive: Directive, ctx: Cta): CtxCF =
     directive.command match
       case Include            => handleInclude(ctx, directive)
       case Other("aggregate") => handleAggregate(ctx, directive)
 
       case other =>
-        convertInlineDirective(directive, ctx).mapc(inlineResToBlock)
+        convertDirective(directive, ctx).mapc(inlineResToBlock)
 
   def texbox(name: String, attributes: Attributes, content: Seq[Sast])(ctx: Cta): CtxCS =
     val args      = attributes.legacyPositional
@@ -197,9 +197,9 @@ class SastToTexConverter(
           s"${str}~"
         }
 
-  override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxCF = ctx.retc(latexencode(inlineText.str))
+  override def convertText(inlineText: InlineText, ctx: Cta): CtxCF = ctx.retc(latexencode(inlineText.str))
 
-  override def convertInlineDirective(directive: Directive, ctx: Cta): CtxCF =
+  override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
     val attributes = directive.attributes
     directive.command match
       case Code    => ctx.retc(s"\\texttt{${latexencode(attributes.target)}}")
@@ -214,7 +214,7 @@ class SastToTexConverter(
         else
           ctx.retc(s"$$${attributes.target}$$")
       case Other("break") => ctx.retc(s"\\clearpage{}")
-      case Other("rule") => convertDirective(
+      case Other("rule") => convertBlockDirective(
           Directive(
             Ref,
             Attributes(

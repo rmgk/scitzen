@@ -4,7 +4,10 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.generic.Document
 import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section,
+  Slist, SpaceComment, Text
+}
 
 case class SastToTextConverter(
     doc: Document,
@@ -17,7 +20,8 @@ case class SastToTextConverter(
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTextConverter(doc, analysis, attr)
+    SastToTextConverter(doc, analysis, attr)
+
   override def convertBlock(block: Block, ctx: Cta): CtxCF =
     val Block(command, attr, blockType) = block
     val keepBlock =
@@ -57,14 +61,14 @@ case class SastToTextConverter(
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")
 
-  override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
+  override def convertBlockDirective(directive: Directive, ctx: Cta): CtxCF =
     directive.command match
       case Include =>
         handleInclude(ctx, directive)
+      case _ => convertDirective(directive, ctx)
 
-      case _ => convertInlineDirective(directive, ctx)
-  override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(inlineText.str)
-  override def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl = directive.command match
+  override def convertText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(inlineText.str)
+  override def convertDirective(directive: Directive, ctx: Cta): CtxInl = directive.command match
     case Lookup =>
       handleLookup(directive) match
         case None =>

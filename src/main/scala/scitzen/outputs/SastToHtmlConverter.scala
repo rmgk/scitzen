@@ -105,7 +105,7 @@ class SastToHtmlConverter(
             }
           }.map(i => Chain(dl(i.convert)))
 
-  override def convertDirective(directive: Directive, ctx: Cta): CtxCF =
+  override def convertBlockDirective(directive: Directive, ctx: Cta): CtxCF =
     val attributes = directive.attributes
     directive.command match
       case Other("aggregate") => handleAggregate(ctx, directive)
@@ -133,7 +133,7 @@ class SastToHtmlConverter(
 
       case other =>
         convertInlineSeq(List(directive), ctx)
-  end convertDirective
+  end convertBlockDirective
 
   def convertBlock(block: Block, ctx: Cta): CtxCF =
 
@@ -210,8 +210,8 @@ class SastToHtmlConverter(
     ctx.useFeature("prism").retc(res)
   end handleCodeListing
 
-  override def convertInlineText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(stringFrag(inlineText.str))
-  override def convertInlineDirective(directive: Directive, ctx: Cta): CtxInl =
+  override def convertText(inlineText: InlineText, ctx: Cta): CtxInl = ctx.retc(stringFrag(inlineText.str))
+  override def convertDirective(directive: Directive, ctx: Cta): CtxInl =
     val attrs = directive.attributes
     directive.command match
       case Strong => convertInlineSeq(attrs.text.inl, ctx).map(c => strong(c.convert)).single
@@ -236,7 +236,7 @@ class SastToHtmlConverter(
         ctx.katex(inner).map(res => Chain(math(raw(res))))
 
       case BibQuery =>
-        convertInlineDirective(anal.bib.convert(directive), ctx)
+        convertDirective(anal.bib.convert(directive), ctx)
 
       case Cite =>
         val citations = anal.bib.bibkeys(directive).map(k => k -> anal.bib.entries.get(k))
@@ -343,7 +343,7 @@ class SastToHtmlConverter(
           case _ => ctx.retc(unknownMacroOutput(directive))
 
       case Image => convertImage(ctx, directive)
-  end convertInlineDirective
+  end convertDirective
 
   private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Tag]] = {
     val attrs  = mcro.attributes
