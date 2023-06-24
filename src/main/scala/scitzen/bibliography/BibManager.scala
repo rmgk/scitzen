@@ -4,12 +4,12 @@ import de.rmgk.delay.{Async, Sync}
 import scitzen.bibliography.BibManager.bibIds
 import scitzen.compat.Logging
 import scitzen.generic.{Project, ProjectPath}
-import scitzen.sast.Attribute.Named
+import scitzen.sast.Attribute.Positional
+import scitzen.sast.DCommand.{BibQuery, Cite}
 import scitzen.sast.{Attribute, Attributes, Directive}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, StandardOpenOption}
-import scitzen.sast.DCommand.{BibQuery, Cite}
 
 class BibManager(project: Project) {
 
@@ -65,8 +65,8 @@ case class BibDB(entries: Map[String, BibEntry], queried: Map[String, List[DBLPA
     Directive(
       command = Cite,
       attributes = Attributes(directive.attributes.raw.map {
-        case Named(_, q) if q.plainString.trim == query.trim =>
-          Attribute("", keys.mkString(", "))
+        case Positional(q) if q.plainString.trim == query.trim =>
+          Attribute(keys.mkString(", "))
         case other => other
       } :+ Attribute("query", query))
     )(directive.prov)
