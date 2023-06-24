@@ -28,7 +28,7 @@ For this article, we keep everything except Gnome itself.
 
 The sway package on Ubuntu installs a session file for your login manager (GDM) at :code{/usr/local/share/wayland-sessions/sway.desktop}. This is usually configured to directly launch the sway executable, but it is usually a good idea to instead launch a custom script that sets certain environment variables for better system integration. Here is my sway launch script and I am going to explain each part in order.
 
-``{label=sway-extend.fish}
+```{label=sway-extend.fish}
 	#!/usr/bin/fish
 
 	# fuck GDM and explicitly import the language settings
@@ -53,7 +53,7 @@ The sway package on Ubuntu installs a session file for your login manager (GDM) 
 
 	# start sway!
 	exec sway
-``
+```
 
 
 # Setting environment variables (and locales)
@@ -66,13 +66,13 @@ The second approach (and the one I am currently using) is to use the systemd :li
 
 I also use the following in my fish configuration file to import the variables into fish shells:
 
-``
+```
 	if set -q SSH_CLIENT; or status is-login
 	  # export is a wrapper around set --export and basically parses the output of the systemctl environment with some special handling for correctly importing $PATH variables and similar
 	  # see environment.d for definitions
 	  export (systemctl --user show-environment)
 	end
-``
+```
 
 The code is only executed for non-interactive SSH sessions or for login shells (both SSH and on a TTY) because in all other circumstances the shell should be started by something that already has the correct environment variables.
 
@@ -87,9 +87,9 @@ In the age of Zoom, Teams, and Discord, screen sharing is a quite important feat
 
 The way I do this is to set the relevant environment variable before sway starts in :ref{sway-extend.fish; line=11}. Then during sway startup, that variable along with other information about the current session is passed to DBus (which is also asked to forward the information to systemd). For this I have the following in my sway config file.
 
-``
+```
 	  exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
-``
+```
 
 The two display variables are such that systemd and dbus started services know which output they should be started on, the :code{SWAYSOCK} enables sways IPC mechanism, and the current desktop one is for the screen sharing. A useful effect of exporting these here is that they will also be imported by SSH sessions, allowing them to remotely interact with the currently running graphical session.
 
@@ -108,9 +108,9 @@ The way this works is (surprisingly not DBus based) that there are Unix sockets 
 
 Sometimes graphical applications want to do something to your system and need elevated privileges. This is handled by polkit, which will show you a password prompt. To do so, there must be a polkit agent running in your session. I use the following in my sway configuration file:
 
-``
+```
 	exec lxqt-policykit-agent
-``
+```
 
 This is the agent used by the lxqt desktop environment, and seems to be the only one that survives running outside of its own desktop environment.
 

@@ -3,11 +3,11 @@ date = 2022-04-18 00:35:58
 
 So maybe Scitzen got the ability produce JS from scala and include that on the page now?
 
-``convert{template={templates/scala-embed.scim}; scalaCli={""}}
+```convert{template={templates/scala-embed.scim}; scalaCli={}}
 	val ev = Evt[UIEvent]()
 	val btn = Events.fromCallback[UIEvent] { cb =>
 		button(onclick := cb, "click")
 	}
 	val dyn = btn.event.count().map(c => p(s"count $c"))
 	p("AHAHAHAHAHAHA", btn.value, dyn.asModifier).render
-``
+```
