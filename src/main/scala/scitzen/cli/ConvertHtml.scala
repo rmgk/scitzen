@@ -82,7 +82,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         "index",
         None,
         HtmlToc.tableOfContents(convertedCtx.sections.reverse, converter),
-        scalatags.Text.short.stringFrag("Index"),
+        scalatags.Text.all.stringFrag("Index"),
         None
       )
     Files.writeString(project.outputdirWeb.resolve("index.html"), res)
