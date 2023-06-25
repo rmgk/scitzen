@@ -326,7 +326,7 @@ class SastToHtmlConverter(
     }
   }
 
-  private def handleCite(ctx: Cta, directive: Directive) = {
+  private def handleCite(ctx: Cta, directive: Directive): CtxInl = {
     val attrs: Attributes = directive.attributes
     val citations         = anal.bib.bibkeys(directive).map(k => k -> anal.bib.entries.get(k))
     val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
@@ -338,8 +338,8 @@ class SastToHtmlConverter(
     val cctx          = ctx.cite(citations.flatMap(_._2))
     val styledAnchors = span(cls := "citations", "(", anchors, ")")
     if attrs.raw.sizeIs > 1 then
-      convertInlineSeq(cctx, attrs.text.inl).map { res =>
-        if res.isEmpty then res
+      convertInlineSeq(cctx, attrs.textOption.getOrElse(scitzen.sast.Text.empty).inl).map { res =>
+        if res.isEmpty then Chain(styledAnchors)
         else
           val last = res.last
           val init = res.init
