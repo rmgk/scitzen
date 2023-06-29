@@ -4,7 +4,6 @@ import scitzen.generic.{Project, TitledArticle}
 import scitzen.sast.DCommand.Other
 import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText, Prov, Sast, ScitzenDateTime, Section, Text}
 
-import java.nio.file.Path
 import scala.collection.immutable.ArraySeq
 
 object GenIndexPage:
@@ -35,14 +34,14 @@ object GenIndexPage:
       s"${date.year}-$m " + months(m.toInt - 1)
     }
 
-  def directiveFor(project: Project, indexDir: Path, doc: TitledArticle): Directive =
+  def directiveFor(project: Project, doc: TitledArticle): Directive =
     def categories = doc.attr.plain("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
     Directive(
       Other("article"),
       Attributes(
         List(
           Some(Attribute(doc.header.titleText)),
-          Some(Attribute(indexDir.relativize(project.htmlPaths.articleOutputPath(doc.header)).toString)),
+          Some(Attribute(doc.header.relativePath.toString)),
           doc.date.map(date => Attribute("datetime", date.dayTime))
         ).flatten ++ categories.map(Attribute("category", _))
       )
@@ -51,7 +50,6 @@ object GenIndexPage:
   def makeIndex(
       articles: List[TitledArticle],
       project: Project,
-      indexDir: Path
   ): List[Sast] =
     if articles.isEmpty then return Nil
 
@@ -65,7 +63,7 @@ object GenIndexPage:
         case h :: tail =>
           val current         = sectionTitle(h)
           val (include, rest) = tail.span(v => sectionTitle(v) == current)
-          val content         = (h :: include).map(art => directiveFor(project, indexDir, art))
+          val content         = (h :: include).map(art => directiveFor(project, art))
           rec(
             rest,
             (if current.isBlank

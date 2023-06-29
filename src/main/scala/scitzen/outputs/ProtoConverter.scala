@@ -113,7 +113,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)
-    val sast = GenIndexPage.makeIndex(it.toList, project, doc.path.directory)
+    val sast = GenIndexPage.makeIndex(it.toList, project)
     convertSastSeq(ctx, sast)
   }
 

@@ -2,7 +2,6 @@ package scitzen.generic
 
 import java.nio.file.{Files, Path}
 import scitzen.compat.Logging.cli
-import scitzen.cli.Format
 import scitzen.sast.Section
 
 class HtmlPathManager(project: Project):
@@ -10,9 +9,7 @@ class HtmlPathManager(project: Project):
   val articleOutputDir: Path = project.outputdirWeb
 
   def articleOutputPath(article: Section): Path =
-    def genName = s"${article.date.map(_.full).getOrElse("")} ${article.title}"
-    val name    = article.filename.getOrElse(genName.take(100))
-    articleOutputDir resolve Format.sluggify(s"$name.html")
+    articleOutputDir resolve article.relativePath
 
   def relativizeImage(targetFile: ProjectPath): Path =
     Path.of("resources").resolve(targetFile.relativeToProject)
