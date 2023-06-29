@@ -28,11 +28,9 @@ object ConvertPdf:
         )
 
         val resultContext =
-          converter.convertSastSeq(ConversionContext(()), article.body)
+          converter.convertSastSeq(ConversionContext(()), article.article.sast)
 
-        val headerres = converter.articleHeader(article, resultContext)
-
-        val content = headerres.data ++ resultContext.data
+        val content = resultContext.data
 
         val articlename = Format.canonicalName(article.header)
 

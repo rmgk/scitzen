@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Document, References, SastRef, TitledArticle}
+import scitzen.generic.{Document, References, SastRef}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
@@ -47,13 +47,6 @@ class SastToTexConverter(
 
   override def stringToInlineRes(str: String): String = latexencode(str)
 
-  def articleHeader(article: TitledArticle, cta: Cta): CtxCS =
-    val hasToc = cta.features.contains("tableofcontents")
-    val fm     = if hasToc then Chain("\\frontmatter") else Chain.empty
-
-    val ilc    = convertInlineSeq(cta, article.header.titleText.inl).map(inlineResToBlock)
-    val author = article.header.attributes.plain("author").fold("")(n => s"\\author{${latexencode(n)}}")
-    ilc.ret(fm :+ s"\\title{${ilc.data}}$author\\scitzenmaketitle{}")
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",
@@ -70,19 +63,24 @@ class SastToTexConverter(
     val Section(title, prefix, attr) = section
     val ilc                          = convertInlineSeq(ctx, title.inl).map(inlineResToBlock)
 
-    val pushed = ilc.push(section)
-    val numbered = if attr.plain("style").contains("unnumbered") then "*"
-    else ""
-    val header =
-      val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
-      val sec   = sectioning(section.level - shift)
-      // not entirely sure what the following does
-      val chapterAdd = if section.level == 0 then s"[${ilc.data}]"
+    if prefix == "="
+    then
+      val author = section.attributes.plain("author").fold("")(n => s"\\author{${latexencode(n)}}")
+      ilc.retc(s"\\title{${ilc.data}}$author\\scitzenmaketitle{}")
+    else
+      val pushed = ilc.push(section)
+      val numbered = if attr.plain("style").contains("unnumbered") then "*"
       else ""
-      s"\\$sec$numbered$chapterAdd{${ilc.data}}"
+      val header =
+        val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
+        val sec   = sectioning(section.level - shift)
+        // not entirely sure what the following does
+        val chapterAdd = if section.level == 0 then s"[${ilc.data}]"
+        else ""
+        s"\\$sec$numbered$chapterAdd{${ilc.data}}"
 
-    val label = attr.plain("unique ref").map(l => s"\\label{$l}").toList
-    pushed.retc(header) :++ Chain.from(label)
+      val label = attr.plain("unique ref").map(l => s"\\label{$l}").toList
+      pushed.retc(header) :++ Chain.from(label)
 
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
     val children = slist.children
@@ -307,11 +305,6 @@ class SastToTexConverter(
 
       case Other("footnote") =>
         convertInlinesCombined(ctx, attributes.text.inl).map(target => s"\\footnote{$target}").single
-
-      case Other("tableofcontents") =>
-        ctx.useFeature("tableofcontents").retc(
-          List("\\cleardoublepage", "\\tableofcontents*", "\\mainmatter").mkString("\n")
-        )
 
       case Other(_) =>
         cli.warn(s"unknown macro", directive)

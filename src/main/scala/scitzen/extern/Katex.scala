@@ -70,5 +70,5 @@ object Katex:
       katexRes
 
     def renderToString(string: String): String =
-      cli.info(s"compiling $string")
+      cli.trace(s"katex $string")
       katex.execute(string).asString()
