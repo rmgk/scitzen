@@ -22,10 +22,8 @@ object DirectiveParsers {
   val raw: Scip[InlineText] = Scip {
     directiveStart.orFail.run
     val open = ("\"".all.rep.min(1).str <~ "[".all.orFail).run
-    println(s"raw")
     val len  = open.length
     val str  = untilIS("]".all and "\"".all.rep.min(len)).run
-    println(s"raw len")
     InlineText(str, len)
   }
 
