@@ -3,10 +3,10 @@ package scitzen.cli
 import scitzen.bibliography.BibDB
 
 import java.nio.charset.{Charset, StandardCharsets}
-import scitzen.generic.{ArticleDirectory}
+import scitzen.generic.ArticleDirectory
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 
 import java.nio.file.{Files, Path}
 
@@ -25,11 +25,11 @@ object Format:
         case List(article) =>
           article.titled match
             case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute,  t)
-            case _ => scribe.trace(
+            case _ => cli.trace(
                 s"could not format ${document.absolute}, did not contain a single article with a date"
               )
         case _ =>
-          scribe.trace(
+          cli.trace(
             s"could not format ${document.absolute}, did not contain a single article with a date"
           )
 
@@ -37,7 +37,7 @@ object Format:
     val result      = SastToScimConverter(bibDB).toScimS(sast)
     val resultBytes = result.iterator.mkString("", "\n", "\n").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
-      scribe.info(s"formatting ${file.getFileName}")
+      cli.info(s"formatting ${file.getFileName}")
       Files.write(file, resultBytes)
       ()
 
@@ -45,7 +45,7 @@ object Format:
     val newName: String = canonicalName(sdoc) + ".scim"
 
     if newName != f.getFileName.toString then
-      scribe.info(s"rename ${f.getFileName} to $newName")
+      cli.info(s"rename ${f.getFileName} to $newName")
       Files.move(f, f.resolveSibling(newName))
       ()
 

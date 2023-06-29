@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import scitzen.sast.{Block, Sast, Section}
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 
 import scala.jdk.CollectionConverters.*
 
@@ -31,5 +31,5 @@ object References:
       case sec: Section      => Some(sec.ref)
       case Block(_, attr, _) => attr.plain("unique ref")
       case other =>
-        scribe.error(s"can not refer to $other")
+        cli.warn(s"can not refer to $other")
         None

@@ -8,7 +8,7 @@ import scitzen.generic.{Document, References, SastRef, TitledArticle}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.sast.Attribute.Named
 
 object SastToTexConverter {
@@ -150,7 +150,7 @@ class SastToTexConverter(
                     val captionstr = convertInlinesCombined(ctx, content.inl)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
-                    scribe.warn(s"figure has no caption" + doc.reporter(block.prov))
+                    cli.warn(s"figure has no caption" + doc.reporter(block.prov))
                     (blockContent, ctx.ret(""))
               "\\begin{figure}" +:
               "\\centerfloat" +:
@@ -212,7 +212,7 @@ class SastToTexConverter(
       case Math =>
         val math = attributes.target
         if math.isBlank then
-          warn("empty math", directive)
+          cli.warn("empty math", directive)
           ctx.ret(Chain.empty)
         else
           ctx.retc(s"$$${attributes.target}$$")
@@ -251,7 +251,7 @@ class SastToTexConverter(
 
       case Ref =>
         if attributes.get("scope").isDefined then
-          warn(s"scope support unclear", directive)
+          cli.warn(s"scope support unclear", directive)
           ()
         val candidates =
           References.filterCandidates(
@@ -260,15 +260,17 @@ class SastToTexConverter(
           )
 
         if candidates.sizeIs > 1 then
-          scribe.error(
-            s"multiple resolutions for ${attributes.target}" +
-            doc.reporter(directive) +
-            s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
+          cli.warn(
+            s"multiple resolutions for ${attributes.target}",
+            directive
+          )
+          cli.warn(
+            s"\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
           )
 
         candidates.headOption match
           case None =>
-            scribe.error(s"no resolution found for ${attributes.target}" + doc.reporter(directive))
+            cli.warn(s"no resolution found for ${attributes.target}", directive)
             ctx.empty
           case Some(candidate) =>
             // TODO: existence of line is unchecked
@@ -312,21 +314,20 @@ class SastToTexConverter(
         )
 
       case Other(_) =>
-        val str = warn(s"unknown macro", directive)
-        ctx.retc(str)
+        cli.warn(s"unknown macro", directive)
+        ctx.retc(stringToInlineRes(directiveString(directive)))
 
       case Image =>
         convertImage(ctx, directive, ImageTarget.Tex): target =>
           if target.absolute.toString.endsWith(".tex") then
-            warn("tex image no longer supported", directive)
-            ()
+            cli.warn("tex image no longer supported", directive)
           val mw = java.lang.Double.parseDouble(attributes.plain("maxwidth").getOrElse("1"))
           ctx.retc(s"\\includegraphics[max width=$mw\\columnwidth]{${target.absolute}}").useFeature(
             "graphics"
           )
 
       case Include | Script =>
-        val str: String = warn(s"not supported by tex backend", directive)
-        ctx.retc(str)
+        cli.warn(s"not supported by tex backend", directive)
+        ctx.retc(stringToInlineRes(directiveString(directive)))
 
 end SastToTexConverter

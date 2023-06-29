@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -48,7 +48,7 @@ case class Project private (root: Path, config: ProjectConfig):
     val res =
       if rawPath.isAbsolute then root.resolve(Path.of("/").relativize(rawPath))
       else currentWorkingDirectory resolve rawPath
-    scribe.trace(s"lookup of $rawPath in $currentWorkingDirectory was $res")
+    cli.trace(s"lookup of $rawPath in $currentWorkingDirectory was $res")
     res.normalize()
 
   /** Does a project global file local resolve of the given path.

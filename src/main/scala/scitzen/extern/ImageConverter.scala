@@ -1,6 +1,6 @@
 package scitzen.extern
 
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.generic.{Project, ProjectPath}
 
 import java.nio.file.{Files, Path}
@@ -99,7 +99,7 @@ case class ImageConverter(
     val sourceModified = Files.getLastModifiedTime(file)
     if !Files.exists(targetfile) || Files.getLastModifiedTime(targetfile) != sourceModified then
       Files.createDirectories(targetfile.getParent)
-      scribe.debug(s"converting $file to $targetfile")
+      cli.trace(s"converting $file to $targetfile")
       new ProcessBuilder(command.genCommand(file, targetfile).asJava)
         .inheritIO().start().waitFor()
       Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(file))

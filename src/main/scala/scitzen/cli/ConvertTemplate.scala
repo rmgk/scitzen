@@ -17,7 +17,7 @@ object ConvertTemplate:
   ): String =
     project.resolve(project.root, templatePath) match
       case None =>
-        Logging.scribe.warn(s"could not find template file »$templatePath«")
+        Logging.cli.warn(s"could not find template file »$templatePath«")
         ""
       case Some(templateFile) =>
         val templateArticle = directory.byPath(templateFile).head

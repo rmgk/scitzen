@@ -78,8 +78,8 @@ object ArticleProcessing:
     }.get
 
   def loadDocuments(project: Project): List[Document] =
-    Logging.scribe.debug(s"discovering sources in ${project.root}")
+    Logging.cli.trace(s"discovering sources in ${project.root}")
     val sources: List[Path] = discoverSources(project.root)
-    Logging.scribe.debug(s"parsing ${sources.length} documents")
+    Logging.cli.trace(s"parsing ${sources.length} documents")
     sources.map: source =>
       Document(project.asProjectPath(source))

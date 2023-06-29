@@ -1,7 +1,7 @@
 package scitzen.generic
 
 import java.nio.file.{Files, Path}
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.cli.Format
 import scitzen.sast.Section
 
@@ -25,10 +25,10 @@ class HtmlPathManager(project: Project):
       case (img, path) =>
         val target = articleOutputDir.resolve(path)
         if !Files.exists(img.absolute) then
-          scribe.error(s"source image missing: ${img.absolute}")
+          cli.warn(s"source image missing: ${img.absolute}")
           ()
         else if !Files.exists(target) then
-          scribe.info(s"hardlink $img to $target")
+          cli.trace(s"hardlink $img to $target")
           Files.createDirectories(target.getParent)
           Files.createLink(target, img.absolute)
           ()

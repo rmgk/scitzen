@@ -1,6 +1,6 @@
 package scitzen.extern
 
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 
 import java.nio.file.{Files, Path}
 
@@ -8,7 +8,7 @@ object Latexmk:
 
   def latexmk(outputdir: Path, jobname: String, sourceFile: Path): Option[Path] =
     val start = System.nanoTime()
-    scribe.info(s"compiling $sourceFile")
+    cli.info(s"compiling $sourceFile")
     Files.createDirectories(outputdir)
     val errorFile = outputdir.resolve("latexmk.err")
     val returnCode =
@@ -35,8 +35,8 @@ object Latexmk:
         .redirectError(errorFile.toFile)
         .start().waitFor()
     if returnCode == 0 then
-      scribe.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
+      cli.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
       Some(outputdir.resolve(jobname + ".pdf"))
     else
-      scribe.error(s"error tex compiling »$sourceFile« see »$errorFile«")
+      cli.warn(s"error tex compiling »$sourceFile« see »$errorFile«")
       None

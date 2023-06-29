@@ -2,7 +2,7 @@ package scitzen.extern
 
 import scitzen.cli.ConvertTemplate
 import scitzen.compat.Logging
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.generic.{Article, ArticleDirectory, Project}
 import scitzen.sast.Attribute.Nested
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Sast}
@@ -40,7 +40,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
             case "scalaCli" => convertScalaCli(content, block)
             case "load"     => loadFileAsContent(block, article, attrs)
         case other =>
-          scribe.error(s"can not convert $other")
+          cli.warn(s"can not convert $other")
           Nil
 
     }
@@ -73,13 +73,13 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         .redirectError(errorFile.toFile)
         .start().waitFor()
     if returnCode == 0 then
-      scribe.info(s"scala compilation of »$sourcepath« finished in ${(System.nanoTime() - start) / 1000000}ms")
+      cli.info(s"scala compilation of »$sourcepath« finished in ${(System.nanoTime() - start) / 1000000}ms")
       val pp = project.asProjectPath(outpath)
       List(
         Directive(DCommand.Script, Attributes.target(pp.projectAbsolute.toString))(block.prov)
       )
     else
-      scribe.error(s"error scala compiling »$sourcepath« see »$errorFile«")
+      cli.warn(s"error scala compiling »$sourcepath« see »$errorFile«")
       Nil
 
   def convertJS(sast: List[Sast], attr: Attributes): List[Sast] =
@@ -88,7 +88,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         val res = scitzen.extern.JsRunner().run(content, attr)
         List(Block(BCommand.Code, Attributes.empty, Fenced(res))(block.prov))
       case other =>
-        Logging.scribe.error(s"js conversion not applicable")
+        cli.warn(s"js conversion not applicable")
         sast
 
   def convertTex(article: Article, block: Block, content: String, attr: Attributes): List[Sast] =
@@ -135,7 +135,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         .inheritIO().redirectInput(Redirect.PIPE).start()
       Using.resource(process.getOutputStream) { os => os.write(bytes) }
       process.waitFor()
-      scribe.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+      cli.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString))(block.prov))
 
   def mermaid(content: String, block: Block): List[Sast] =
@@ -158,7 +158,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         target.absolute.toString
       )
         .inheritIO().start().waitFor()
-      scribe.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
+      cli.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString))(block.prov))
 
   def applyTemplate(

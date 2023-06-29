@@ -3,7 +3,7 @@ package scitzen.cli
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.ImageTarget
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 
 import java.nio.file.{Files, Path}
 
@@ -28,7 +28,7 @@ object ImageReferences:
               art.doc.reporter.bytePosToCodepointPos(mcro.prov.end)
             ))
           case None =>
-            scribe.warn(s"could not find $path in $cwd")
+            cli.warn(s"could not find $path in $cwd")
             None
       }
       art.doc.path.absolute.toString -> images

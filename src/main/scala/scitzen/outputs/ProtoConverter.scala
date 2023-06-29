@@ -1,8 +1,9 @@
 package scitzen.outputs
 
 import de.rmgk.Chain
+import de.rmgk.logging.Loggable
 import scitzen.cli.ConversionAnalysis
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, Document, ProjectPath}
@@ -47,7 +48,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       combinedAttributes.get(id).orElse(directive.attributes.get("default")).collect:
         case Named(_, value) => value
     if res.isEmpty then
-      scribe.warn(s"unknown name ${id}" + reporter(directive))
+      cli.warn(s"unknown name ${id}" + reporter(directive))
     res
 
   def convertSastSeq(ctx: Cta, b: Iterable[Sast]): CtxCF = ctx.fold(b)((ctx, sast) => convertSast(ctx, sast))
@@ -88,17 +89,12 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: ProjectPath => CtxInl): CtxInl =
     val target = anal.image.lookup(doc.resolve(directive.attributes.target).get, imageTarget)
     if !Files.exists(target.absolute)
-    then ctx.retc(warn(s"could not find path", directive))
+    then
+      cli.warn(s"could not find path", directive)
+      ctx.retc(stringToInlineRes(directiveString(directive)))
     else cont(target)
 
   def stringToInlineRes(str: String): InlineRes
-
-  def warn(msg: String, im: Directive): InlineRes =
-    val macroStr = SastToScimConverter(anal.bib).macroToScim(im)
-    scribe.warn(s"$msg: ⸢$macroStr⸥${doc.reporter(im)}")
-    stringToInlineRes(macroStr)
-  def warn(msg: String, im: Block): Unit =
-    scribe.warn(s"$msg: ${im.command}${doc.reporter(im.prov)}")
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val pathpart = doc.path.directory.resolve(directive.attributes.target).normalize()
@@ -110,6 +106,17 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     ctx.fold(found): (cc, art) =>
       subconverter(art.doc, anal, combinedAttributes).convertSastSeq(cc, art.sast)
   }
+
+  given Loggable[Prov] with
+    override def normal(prov: Prov): String = doc.reporter.apply(prov)
+  given Loggable[Directive] with
+    override def normal(dir: Directive): String =
+      s"⸢${directiveString(dir)}⸥${doc.reporter(dir)}"
+  given Loggable[Block] with
+    override def normal(block: Block): String =
+      s"${block.command}${doc.reporter(block.prov)}"
+
+  def directiveString(directive: Directive) = SastToScimConverter(anal.bib).macroToScim(directive)
 
   def handleInclude(ctx: Cta, directive: Directive) = {
     val attributes = directive.attributes
@@ -127,8 +134,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
           anal.directory.findByLabel(attributes.target).map(_.article)
         resolution match
           case None =>
-            scribe.error(
-              s"unknown include article ${attributes.target}" + doc.reporter(directive.prov)
+            cli.warn(
+              s"unknown include article ${attributes.target}", directive.prov
             )
             ctx.empty
           case Some(article) =>

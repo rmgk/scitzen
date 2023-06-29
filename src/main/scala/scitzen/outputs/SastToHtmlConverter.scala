@@ -5,7 +5,7 @@ import scalatags.{Text, text}
 import scalatags.Text.StringFrag
 import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{Document, References, SastRef, TitledArticle}
 import scitzen.sast.{BCommand, *}
@@ -176,7 +176,7 @@ class SastToHtmlConverter(
             val captionCtx = convertInlinesCombined(contentCtx, caption.inl)
             captionCtx.retc(figure(label, contentCtx.data, figcaption(captionCtx.data)))
           case other =>
-            warn(s"figure needs to end with a paragraph as its caption", block)
+            cli.warn(s"figure needs to end with a paragraph as its caption", block)
             ctx.empty
       else
         convertSastSeq(ctx, blockContent).map { blockContent =>
@@ -233,10 +233,13 @@ class SastToHtmlConverter(
             ctx.retc(script(`type` := "text/javascript", src := rel.toString))
               .requireInOutput(path, rel)
           case None =>
-            ctx.retc(warn("no script", directive))
+            cli.warn("no script", directive)
+            ctx.retc(stringToInlineRes(directiveString(directive)))
 
       case Def | Comment => ctx.empty
-      case Include       => ctx.retc(unknownMacroOutput(directive))
+      case Include       =>
+        cli.warn("cannot inline include", directive)
+        ctx.retc(code(directiveString(directive)))
 
       case Raw => ctx.retc(div(raw(attrs.plain("html").getOrElse(""))))
 
@@ -279,7 +282,9 @@ class SastToHtmlConverter(
           case "partition"       => ctx.empty
           case "rule"            => ctx.retc(span(attrs.target, `class` := "rule"))
 
-          case _ => ctx.retc(unknownMacroOutput(directive))
+          case _ =>
+            cli.warn("unknown directive", directive)
+            ctx.retc(stringToInlineRes(directiveString(directive)))
 
       case Image => convertImage(ctx, directive)
   end convertInlineDirective
@@ -291,11 +296,11 @@ class SastToHtmlConverter(
     val candidates = References.filterCandidates(scope, anal.directory.labels.getOrElse(attrs.target, Nil))
 
     if candidates.sizeIs > 1 then
-      scribe.error(
-        s"multiple resolutions for ${attrs.target}" +
-        reporter(directive.prov) +
-        s"\n\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}"
+      cli.warn(
+        s"multiple resolutions for ${attrs.target}",
+        reporter(directive.prov)
       )
+      cli.warn(s"\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}")
 
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
       val nameOpt    = attrs.textOption
@@ -318,10 +323,10 @@ class SastToHtmlConverter(
             else a(href := s"$fileRef#$label", titleText.convert, " ", label)
 
         case other =>
-          scribe.error(s"can not refer to $other")
+          cli.warn(s"can not refer to $other")
           ctx.empty
     }.getOrElse {
-      scribe.error(s"no resolutions for »${attrs.target}«${reporter(directive)}")
+      cli.warn(s"no ref resolutions", directive)
       ctx.retc(code(SastToScimConverter(anal.bib).macroToScim(directive)))
     }
   }
@@ -332,7 +337,7 @@ class SastToHtmlConverter(
     val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
       case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
       case (bibid, None) =>
-        scribe.error(s"bib key not found: »${bibid}«" + reportPos(directive))
+        cli.warn(s"bib key not found: »${bibid}«", directive)
         List(code(bibid), stringFrag(" "))
     }.dropRight(1)
     val cctx          = ctx.cite(citations.flatMap(_._2))
@@ -383,15 +388,8 @@ class SastToHtmlConverter(
           img(src := path.toString, sizeclass, myStyle)
       }
     else
-      scribe.warn(s"could not find path ${target}" + reporter(mcro))
+      cli.warn(s"could not find path ${target}" + reporter(mcro))
       ctx.empty
   }
-
-  def reportPos(m: Directive): String = reporter(m)
-
-  def unknownMacroOutput(im: Directive): Tag =
-    val str = SastToScimConverter(anal.bib).macroToScim(im)
-    scribe.warn(s"unknown macro “$str”" + reportPos(im))
-    code(str)
 
 end SastToHtmlConverter

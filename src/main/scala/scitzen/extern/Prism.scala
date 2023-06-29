@@ -35,7 +35,7 @@ object Prism:
 
       prismcontext.eval("js", resstring)
       loadedLanguages = loadedLanguages + lang
-      Logging.scribe.trace(s"loading prism $lang took ${(System.nanoTime() - start) / 1000000}ms")
+      Logging.cli.trace(s"loading prism $lang took ${(System.nanoTime() - start) / 1000000}ms")
 
   def highlight(code: String, lanG: String): String =
     val lang       = lanG.toLowerCase
@@ -44,7 +44,7 @@ object Prism:
 
     val start = System.nanoTime()
     val res = highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$actualLang"), actualLang).asString()
-    Logging.scribe.trace(s"highlighting took ${(System.nanoTime() - start) / 1000000}ms")
+    Logging.cli.trace(s"highlighting took ${(System.nanoTime() - start) / 1000000}ms")
     res
 
   // see https://github.com/PrismJS/prism/blob/master/plugins/autoloader/prism-autoloader.js

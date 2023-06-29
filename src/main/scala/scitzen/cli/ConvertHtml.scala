@@ -57,17 +57,17 @@ class ConvertHtml(anal: ConversionAnalysis):
           )
           procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
 
-    val (katexRes, resources) = procRec(anal.directory.titled, loadKatex(katexmapfile), Map.empty)
+    val (katexRes, resources) = procRec(anal.directory.fullArticles, loadKatex(katexmapfile), Map.empty)
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
 
     makeindex(anal.directory, cssfile)
 
   private def makeindex(
-      preprocessed: ArticleDirectory,
+      directory: ArticleDirectory,
       cssfile: Path,
   ): Unit =
-    val generatedIndex = GenIndexPage.makeIndex(preprocessed.fullArticles, project, project.htmlPaths.articleOutputDir)
+    val generatedIndex = GenIndexPage.makeIndex(directory.fullArticles, project, project.htmlPaths.articleOutputDir)
     val converter = new SastToHtmlConverter(
       Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
       anal = anal,

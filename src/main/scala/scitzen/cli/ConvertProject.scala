@@ -2,7 +2,7 @@ package scitzen.cli
 
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.extern.{BlockConversions, BlockConverter, ImageConversions, ImageConverter, ImageTarget}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project}
 import scitzen.sast.{DCommand, Directive}
@@ -40,13 +40,13 @@ object ConvertProject:
   ): Unit =
     val timediff = makeTimediff()
 
-    scribe.info(s"found project in ${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
+    cli.info(s"found project in ${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
     val documents = ArticleProcessing.loadDocuments(project)
     val directory = ArticleDirectory:
       documents.flatMap: doc =>
         ArticleProcessing.processArticles(doc, project)
 
-    scribe.info(s"parsed ${documents.size} documents ${timediff()}")
+    cli.info(s"parsed ${documents.size} documents ${timediff()}")
 
     Files.createDirectories(project.outputdir)
 
@@ -56,11 +56,11 @@ object ConvertProject:
     val bibres     = BibManager(project).prefetch(directory.articles.flatMap(_.context.citations).toSet)
     val dblpFuture = Future { bibres.runToFuture }.flatten
 
-    scribe.info(s"scheduled bib ${timediff()}")
+    cli.info(s"scheduled bib ${timediff()}")
 
     val blockConversions = BlockConverter(project, directory).run()
 
-    scribe.info(s"block converted ${blockConversions.mapping.size} ${timediff()}")
+    cli.info(s"block converted ${blockConversions.mapping.size} ${timediff()}")
 
 
     val imagePaths =
@@ -73,7 +73,7 @@ object ConvertProject:
 
       bi.flatten.concat(di).toList
 
-    scribe.info(s"image paths collected ${imagePaths.size} ${timediff()}")
+    cli.info(s"image paths collected ${imagePaths.size} ${timediff()}")
 
     val imageConversions = ImageConverter.preprocessImages(
       project,
@@ -85,11 +85,11 @@ object ConvertProject:
       imagePaths
     )
 
-    scribe.info(s"images converted ${imageConversions.mapping.size} ${timediff()}")
+    cli.info(s"images converted ${imageConversions.mapping.size} ${timediff()}")
 
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
 
-    scribe.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
+    cli.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
 
     val anal = ConversionAnalysis(
       project = project,
@@ -99,20 +99,20 @@ object ConvertProject:
       bib = bibdb,
     )
 
-    scribe.info(s"completed conversions ${timediff()}")
+    cli.info(s"completed conversions ${timediff()}")
 
     if project.config.format.contains("content") then
       Format.formatContents(anal)
-      scribe.info(s"formatted contents ${timediff()}")
+      cli.info(s"formatted contents ${timediff()}")
     if project.config.format.contains("filename") then
       Format.formatRename(directory)
-      scribe.info(s"formatted filenames ${timediff()}")
+      cli.info(s"formatted filenames ${timediff()}")
     if toHtml then
       ConvertHtml(anal).convertToHtml(sync)
-      scribe.info(s"generated html ${timediff()}")
+      cli.info(s"generated html ${timediff()}")
     if toPdf then
       ConvertPdf.convertToPdf(anal)
-      scribe.info(s"generated pdfs ${timediff()}")
+      cli.info(s"generated pdfs ${timediff()}")
     if imageFileMap.isDefined then
       ImageReferences.listAll(anal, imageFileMap.get)
-      scribe.info(s"generated imagemap ${timediff()}")
+      cli.info(s"generated imagemap ${timediff()}")

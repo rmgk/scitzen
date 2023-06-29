@@ -4,7 +4,7 @@ import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, writeToString
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import org.graalvm.polyglot.*
 import org.jsoup.Jsoup
-import scitzen.compat.Logging.scribe
+import scitzen.compat.Logging.cli
 import scitzen.generic.ProjectPath
 
 import java.io.ByteArrayOutputStream
@@ -70,5 +70,5 @@ object Katex:
       katexRes
 
     def renderToString(string: String): String =
-      scribe.info(s"compiling $string")
+      cli.info(s"compiling $string")
       katex.execute(string).asString()
