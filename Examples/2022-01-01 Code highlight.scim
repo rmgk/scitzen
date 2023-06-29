@@ -41,4 +41,6 @@ And another example wrapped in a figure
 		// Returns a highlighted HTML string
 		const html = Prism.highlight(code, Prism.languages.haml, 'haml');
 	```
+
+	Figures do need titles!
 ::
