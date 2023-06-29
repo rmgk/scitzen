@@ -3,3 +3,5 @@ date = 2022-01-08 00:48:54
 
 Use like this :{someAlias} and maybe even this :emph{:{note}}.
 
+We may also reference other articles :ref{sway desktop}.
+

@@ -1,5 +1,6 @@
 = A sway based desktop environment
-date = 2021-12-27
+date  = 2021-12-27
+label = sway desktop
 
 :link{Sway; https://swaywm.org/} is a Wayland compositor, that is, the piece of software responsible for arranging and drawing windows on your Linux desktop. See the website for a demo video.
 
