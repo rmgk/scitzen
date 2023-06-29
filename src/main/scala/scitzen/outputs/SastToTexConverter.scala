@@ -326,8 +326,8 @@ class SastToTexConverter(
             "graphics"
           )
 
-      case Include | Script =>
-        cli.warn(s"not supported by tex backend", directive)
+      case Include | Script | Aggregate | Index =>
+        cli.warn(s"not supported as inline tex", directive)
         ctx.retc(stringToInlineRes(directiveString(directive)))
 
 end SastToTexConverter

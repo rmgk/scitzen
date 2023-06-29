@@ -6,7 +6,7 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, Document, ProjectPath}
+import scitzen.generic.{Article, Document, ProjectPath, TitledArticle}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
 
@@ -96,15 +96,25 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def stringToInlineRes(str: String): InlineRes
 
-  def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
-    val pathpart = doc.path.directory.resolve(directive.attributes.target).normalize()
-    val found = anal.directory.byPath.flatMap: (p, arts) =>
-      if p.absolute.startsWith(pathpart)
-      then arts
-      else Nil
 
-    ctx.fold(found): (cc, art) =>
-      subconverter(art.doc, anal, combinedAttributes).convertSastSeq(cc, art.sast)
+  def handleArticleQuery(directive: Directive): Iterable[TitledArticle]=
+    val pathpart = directive.attributes.get("prefix").map(p => doc.path.directory.resolve(p.text.plainString).normalize())
+    var it: Iterable[TitledArticle] = anal.directory.titled.view
+    pathpart match
+      case Some(f) => it = it.filter(_.article.doc.path.absolute.startsWith(f))
+      case None => ()
+    it
+
+  def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
+    val it = handleArticleQuery(directive)
+    ctx.fold(it): (cc, art) =>
+      subconverter(art.article.doc, anal, combinedAttributes).convertSastSeq(cc, art.article.sast)
+  }
+
+  def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
+    val it = handleArticleQuery(directive)
+    val sast = GenIndexPage.makeIndex(it.toList, project, doc.path.directory)
+    convertSastSeq(ctx, sast)
   }
 
   given Loggable[Prov] with

@@ -156,7 +156,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           bodyClass =
-            if article.header.attributes.plain("style").exists(_.contains("plain"))
+            if article.header.attributes.plain("disable").exists(_.contains("section numbers"))
             then ""
             else "numbered-sections",
           mainClass = if converter.hardNewlines then Some("adhoc") else None,

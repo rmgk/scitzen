@@ -109,7 +109,9 @@ class SastToHtmlConverter(
   override def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     val attributes = directive.attributes
     directive.command match
-      case Other("aggregate") => handleAggregate(ctx, directive)
+
+      case Aggregate => handleAggregate(ctx, directive)
+      case Index     => handleIndex(ctx, directive)
       case Other("break") =>
         ctx.ret(Chain(hr))
 
@@ -237,8 +239,8 @@ class SastToHtmlConverter(
             ctx.retc(stringToInlineRes(directiveString(directive)))
 
       case Def | Comment => ctx.empty
-      case Include       =>
-        cli.warn("cannot inline include", directive)
+      case Include | Index | Aggregate =>
+        cli.warn("cannot inline", directive)
         ctx.retc(code(directiveString(directive)))
 
       case Raw => ctx.retc(div(raw(attrs.plain("html").getOrElse(""))))

@@ -1,49 +1,53 @@
 package scitzen.sast
 
 enum DCommand {
-  case Code
-  case Emph
-  case Strong
-  case Math
+  case Aggregate
+  case BibQuery
   case Cite
+  case Code
   case Comment
   case Def
+  case Emph
   case Image
   case Include
+  case Index
   case Link
-  case Ref
   case Lookup
+  case Math
   case Raw
-  case BibQuery
+  case Ref
   case Script
+  case Strong
   case Other(str: String)
 }
 
 object DCommand {
   val (parseMap, printMap) = {
     val standard = List(
-      "bibquery" -> BibQuery,
-      "cite"     -> Cite,
-      "comment"  -> Comment,
-      "def"      -> Def,
-      "image"    -> Image,
-      "include"  -> Include,
-      "link"     -> Link,
-      "ref"      -> Ref,
-      "code"     -> Code,
-      "emph"     -> Emph,
-      "strong"   -> Strong,
-      "math"     -> Math,
-      "raw"      -> Raw,
-      ""         -> Lookup
+      "aggregate" -> Aggregate,
+      "bibquery"  -> BibQuery,
+      "cite"      -> Cite,
+      "code"      -> Code,
+      "comment"   -> Comment,
+      "def"       -> Def,
+      "emph"      -> Emph,
+      "image"     -> Image,
+      "include"   -> Include,
+      "index"     -> Index,
+      "link"      -> Link,
+      "math"      -> Math,
+      "raw"       -> Raw,
+      "ref"       -> Ref,
+      "strong"    -> Strong,
+      ""          -> Lookup
     )
     val aliases = Map(
-      "fence" -> Include,
+      "$"     -> Math,
+      "*"     -> Strong,
       "_"     -> Emph,
       "`"     -> Code,
-      "*"     -> Strong,
-      "$"     -> Math,
-      "n"     -> Lookup
+      "fence" -> Include,
+      "n"     -> Lookup,
     )
 
     (standard.toMap ++ aliases, standard.map(p => p._2 -> p._1).toMap)

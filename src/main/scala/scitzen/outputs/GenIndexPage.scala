@@ -9,10 +9,6 @@ import scala.collection.immutable.ArraySeq
 
 object GenIndexPage:
 
-  /** ```scala
-    * assert(months(1) == "January")
-    * ```
-    */
   val months = ArraySeq(
     "January",
     "February",
@@ -73,7 +69,7 @@ object GenIndexPage:
           rec(
             rest,
             (if current.isBlank
-             then Directive(DCommand.Other("break"), Attributes.empty)(Prov()) :: content
+             then content
              else sectionFor(current) :: content)
               .:::(acc)
           )
