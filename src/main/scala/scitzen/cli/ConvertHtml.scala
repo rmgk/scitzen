@@ -37,11 +37,14 @@ class ConvertHtml(anal: ConversionAnalysis):
     val cssfile = project.outputdirWeb.resolve("scitzen.css")
     Files.write(cssfile, stylesheet)
 
+    val katexLibrary = KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
+
     @tailrec
     def procRec(
         rem: List[TitledArticle],
         katexmap: Map[String, String],
-        resourcemap: Map[ProjectPath, Path]
+        resourcemap: Map[ProjectPath, Path],
+        done: Set[ArticleRef],
     ): (Map[String, String], Map[ProjectPath, Path]) =
       rem match
         case Nil => (katexmap, resourcemap)
@@ -53,16 +56,20 @@ class ConvertHtml(anal: ConversionAnalysis):
             nlp,
             KatexConverter(
               katexmap,
-              KatexLibrary(article.header.attributes.plain("katexMacros").flatMap(project.resolve(project.root, _)))
+              katexLibrary
             ),
           )
-          procRec(rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap)
+          val found = cctx.referenced.toSet -- done
+          val foundArticles = found.iterator.flatMap(anal.directory.byRef.get).toList
+          procRec(foundArticles ::: rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap, found union done)
 
-    val (katexRes, resources) = procRec(anal.directory.fullArticles, loadKatex(katexmapfile), Map.empty)
+    val selected = anal.directory.fullArticles.iterator.filter: art =>
+      anal.selectionPrefixes.exists: sel =>
+        art.article.doc.path.absolute.startsWith(sel)
+    val (katexRes, resources) = procRec(selected.toList, loadKatex(katexmapfile), Map.empty, Set.empty)
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
     ()
-
 
   private def loadKatex(katexmapfile: Path): Map[String, String] =
     Using(Files.newInputStream(katexmapfile)) { is => readFromStream[Map[String, String]](is) }.getOrElse(Map())

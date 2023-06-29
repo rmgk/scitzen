@@ -14,6 +14,7 @@ import scala.concurrent.{Await, Future}
 
 case class ConversionAnalysis(
     project: Project,
+    selectionPrefixes: List[Path],
     directory: ArticleDirectory,
     block: BlockConversions,
     image: ImageConversions,
@@ -93,6 +94,7 @@ object ConvertProject:
 
     val anal = ConversionAnalysis(
       project = project,
+      selectionPrefixes = List(selection),
       directory = directory,
       block = blockConversions,
       image = imageConversions,

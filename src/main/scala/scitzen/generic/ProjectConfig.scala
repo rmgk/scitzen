@@ -13,6 +13,7 @@ class ProjectConfig(attrs: Attributes = Attributes.empty):
   def texTemplate    = attrs.plain("texTemplate")
   def notes          = attrs.plain("notes")
   def bibliography   = attrs.plain("bibliography")
+  def katexMacros    = attrs.plain("katexMacros")
   def settings =
     attrs.raw ++
     attrs.raw.collectFirst:
