@@ -42,7 +42,7 @@ case class SastToTextConverter(
     else
       blockType match
         case Paragraph(content) =>
-          convertInlinesCombined(ctx, content.inl).map(r => Chain(r, ""))
+          convertInlinesCombined(ctx, content.inl).map(r => Chain(r, "\n\n"))
         case Parsed(_, blockContent) => convertSastSeq(ctx, blockContent)
         case Fenced(text)            => ctx.retc(text)
         case SpaceComment(str)       => ctx.retc(str)
@@ -58,6 +58,7 @@ case class SastToTextConverter(
         case ListItem(_, text, Some(inner)) =>
           val tctx = convertInlineSeq(ctx, text.inl)
           tctx.data ++: convertSast(tctx, inner)
+
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")
 
