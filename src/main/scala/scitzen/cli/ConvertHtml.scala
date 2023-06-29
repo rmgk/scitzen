@@ -1,8 +1,11 @@
 package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
+import de.rmgk.logging.{Logger}
 import scalatags.Text.StringFrag
 import scitzen.cli.ScitzenCommandline.ClSync
+import scitzen.compat.Logging
+import scitzen.compat.Logging.given
 import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
 import scitzen.extern.ResourceUtil
@@ -66,6 +69,9 @@ class ConvertHtml(anal: ConversionAnalysis):
     val selected = anal.directory.fullArticles.iterator.filter: art =>
       anal.selectionPrefixes.exists: sel =>
         art.article.doc.path.absolute.startsWith(sel)
+    val sellist = selected.toList
+    if sellist.isEmpty then
+      Logging.cli.warn("selection is empty", anal.selectionPrefixes)
     val (katexRes, resources) = procRec(selected.toList, loadKatex(katexmapfile), Map.empty, Set.empty)
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexRes)

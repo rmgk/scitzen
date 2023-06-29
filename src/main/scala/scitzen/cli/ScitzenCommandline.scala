@@ -1,6 +1,5 @@
 package scitzen.cli
 
-import de.rmgk.logging.Loggable
 import de.rmgk.options.*
 import scitzen.cli.ConvertProject.executeConversions
 import scitzen.compat.Logging.cli
@@ -8,12 +7,10 @@ import scitzen.generic.Project
 import scopt.OParser
 
 import java.nio.file.{Files, Path}
+import scitzen.compat.Logging.given
 
 
 object ScitzenCommandline {
-
-  given Loggable[Path] = Loggable.toStringLoggable
-
   def main(args: Array[String]): Unit = {
     val optInstance = ClOptions()
     OParser.parse(
@@ -27,7 +24,7 @@ object ScitzenCommandline {
       case None =>
       case Some(options) =>
         def run() =
-          val absolute = options.path.value.toAbsolutePath
+          val absolute = options.path.value.toAbsolutePath.normalize
           Project.fromSource(absolute) match
             case None => cli.warn(s"could not find project for", options.path.value)
             case Some(project) =>
