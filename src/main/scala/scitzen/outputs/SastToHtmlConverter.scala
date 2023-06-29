@@ -313,7 +313,7 @@ class SastToHtmlConverter(
             project.htmlPaths.relativeArticleTarget(titled.header).toString
           case _ => ""
 
-      targetDocument.sast match
+      val resctx = targetDocument.sast match
         case sec @ Section(title, _, _) =>
           convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
             Chain(a(href := s"$fileRef#${sec.ref}", titleText.convert))
@@ -327,6 +327,7 @@ class SastToHtmlConverter(
         case other =>
           cli.warn(s"can not refer to $other")
           ctx.empty
+      resctx.reference(titledOpt.map(_.article.ref).toList)
     }.getOrElse {
       cli.warn(s"no ref resolutions", directive)
       ctx.retc(code(SastToScimConverter(anal.bib).macroToScim(directive)))

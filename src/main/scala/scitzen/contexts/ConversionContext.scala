@@ -19,7 +19,7 @@ case class ConversionContext[+T](
     referenced: List[ArticleRef] = List.empty
 ):
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
-  def reference(articleRef: ArticleRef)                     = copy(referenced = articleRef :: referenced)
+  def reference(articleRef: List[ArticleRef])               = copy(referenced = articleRef.reverse_:::(referenced))
 
   def requireInOutput(source: ProjectPath, relative: Path): ConversionContext[T] =
     copy(resourceMap = resourceMap.updated(source, relative))
