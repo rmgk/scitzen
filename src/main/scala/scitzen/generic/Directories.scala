@@ -20,8 +20,8 @@ class ArticleDirectory(val articles: List[Article]):
     }.toMap
 
   val titled: List[TitledArticle]       = articles.flatMap(art => art.titled.map(t => TitledArticle(t, art)))
-  val fullArticles: List[TitledArticle] = titled.filter(_.full)
-  val subArticles: List[TitledArticle]  = titled.filterNot(_.full)
+  val fullArticles: List[TitledArticle] = titled.filter(_.header.prefix == "=")
+  val subArticles: List[TitledArticle]  = titled.filterNot(_.header.prefix == "==")
 
   val byLabel: Map[String, TitledArticle]               = titled.iterator.map(t => t.header.autolabel -> t).toMap
   def findByLabel(label: String): Option[TitledArticle] = byLabel.get(label)

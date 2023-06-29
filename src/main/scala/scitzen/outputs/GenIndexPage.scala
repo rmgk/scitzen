@@ -35,14 +35,14 @@ object GenIndexPage:
     }
 
   def directiveFor(project: Project, doc: TitledArticle): Directive =
-    def categories = doc.attr.plain("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
+    def categories = doc.header.attributes.plain("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
     Directive(
       Other("article"),
       Attributes(
         List(
           Some(Attribute(doc.header.titleText)),
           Some(Attribute(doc.header.relativePath.toString)),
-          doc.date.map(date => Attribute("datetime", date.dayTime))
+          doc.header.date.map(date => Attribute("datetime", date.dayTime))
         ).flatten ++ categories.map(Attribute("category", _))
       )
     )(Prov())
@@ -55,7 +55,7 @@ object GenIndexPage:
 
     given Ordering[Option[ScitzenDateTime]] = Ordering.Option(Ordering.apply[ScitzenDateTime].reverse)
 
-    val ordered = articles.sortBy(f => (f.date, f.title))
+    val ordered = articles.sortBy(f => (f.header.date, f.header.title))
 
     def rec(ordered: List[TitledArticle], acc: List[Sast]): List[Sast] =
       ordered match

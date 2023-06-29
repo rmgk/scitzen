@@ -20,19 +20,19 @@ object ConvertPdf:
 
     anal.directory.fullArticles
       .filter(_.header.attributes.get("texTemplate").isDefined)
-      .asJava.parallelStream().forEach { article =>
+      .asJava.parallelStream().forEach { titled =>
         val converter = new SastToTexConverter(
-          article.article.doc,
+          titled.article.doc,
           anal,
-          Attributes(project.config.settings ++ article.header.attributes.raw)
+          Attributes(project.config.settings ++ titled.header.attributes.raw)
         )
 
         val resultContext =
-          converter.convertSastSeq(ConversionContext(()), article.article.sast)
+          converter.convertSastSeq(ConversionContext(()), titled.article.sast)
 
         val content = resultContext.data
 
-        val articlename = Format.canonicalName(article.header)
+        val articlename = Format.canonicalName(titled.header)
 
         Files.createDirectories(project.outputdirPdf)
 
@@ -61,7 +61,7 @@ object ConvertPdf:
           ()
 
         val templateSettings =
-          Attributes(project.config.settings ++ article.header.attributes.raw ++
+          Attributes(project.config.settings ++ titled.header.attributes.raw ++
             resultContext.features.map(s => Attribute(s"feature $s", "")) ++
             project.bibfile.map(_ => Attribute("bibliography path", "bibliography.bib")).toList :+
             Attribute("template content", content.mkString("\n")))
@@ -70,7 +70,7 @@ object ConvertPdf:
           ConvertTemplate.fillTemplate(
             project,
             anal.directory,
-            article.attr.plain("texTemplate").orElse(project.config.texTemplate).get,
+            titled.header.attributes.plain("texTemplate").orElse(project.config.texTemplate).get,
             templateSettings
           )
 

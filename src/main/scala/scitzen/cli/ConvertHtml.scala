@@ -80,7 +80,7 @@ class ConvertHtml(anal: ConversionAnalysis):
       ()
 
   def convertArticle(
-      article: TitledArticle,
+      titled: TitledArticle,
       cssfile: Path,
       sync: Option[ClSync],
       nlp: NLP,
@@ -88,14 +88,14 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
-      doc = article.article.doc,
+      doc = titled.article.doc,
       anal = anal,
-      Attributes(project.config.settings ++ article.header.attributes.raw)
+      Attributes(project.config.settings ++ titled.header.attributes.raw)
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
     val convertedArticleCtx =
-      converter.convertSastSeq(ConversionContext((), katexConverter = katexConverter), article.article.sast)
+      converter.convertSastSeq(ConversionContext((), katexConverter = katexConverter), titled.article.sast)
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
 
@@ -124,27 +124,27 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     import scalatags.Text.all.{Frag, SeqFrag, a, frag, href, stringAttr}
 
-    val res = article.header.attributes.plain("htmlTemplate") match
+    val res = titled.header.attributes.plain("htmlTemplate") match
       case None =>
         val contentFrag = convertedArticleCtx.data.toList ++: citations
 
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           bodyClass =
-            if article.header.attributes.plain("disable").exists(_.contains("section numbers"))
+            if titled.header.attributes.plain("disable").exists(_.contains("section numbers"))
             then ""
             else "numbered-sections",
           mainClass = if converter.hardNewlines then Some("adhoc") else None,
-          sidebar = toc.map(c => frag(a(href := s"#", StringFrag(article.title)): Frag, c: Frag)),
-          titled = converter.convertInlinesCombined(ConversionContext(()), article.header.titleText.inl).data,
-          language = article.header.language
-            .orElse(nlp.language(article.article))
+          sidebar = toc.map(c => frag(a(href := s"#", StringFrag(titled.header.title)): Frag, c: Frag)),
+          titled = converter.convertInlinesCombined(ConversionContext(()), titled.header.titleText.inl).data,
+          language = titled.header.language
+            .orElse(nlp.language(titled.article))
         )
       case Some(templatePath) =>
         val content = SeqFrag(convertedArticleCtx.data.toList).render
 
         val templateSettings =
-          Attributes(project.config.settings ++ article.header.attributes.raw ++
+          Attributes(project.config.settings ++ titled.header.attributes.raw ++
             convertedArticleCtx.features.map(s => Attribute(s"feature $s", "")) :+
             Attribute("template content", content))
 
@@ -154,6 +154,6 @@ class ConvertHtml(anal: ConversionAnalysis):
           templatePath,
           templateSettings
         )
-    val target = project.htmlPaths.articleOutputPath(article.header)
+    val target = project.htmlPaths.articleOutputPath(titled.header)
     Files.writeString(target, res)
     convertedArticleCtx

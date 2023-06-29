@@ -107,8 +107,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)
-    ctx.fold(it): (cc, art) =>
-      subconverter(art.article.doc, anal, combinedAttributes).convertSastSeq(cc, art.article.sast)
+    ctx.fold(it): (cc, titled) =>
+      subconverter(titled.article.doc, anal, combinedAttributes).convertSastSeq(cc, titled.article.sast)
   }
 
   def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
