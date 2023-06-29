@@ -88,7 +88,7 @@ class ConvertHtml(anal: ConversionAnalysis):
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
-      doc = titled.article.doc,
+      articleRef = titled.article.ref,
       anal = anal,
       Attributes(project.config.settings ++ titled.header.attributes.raw)
     )

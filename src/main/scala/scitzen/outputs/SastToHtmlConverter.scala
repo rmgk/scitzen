@@ -7,7 +7,7 @@ import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.extern.{ImageTarget, Prism}
-import scitzen.generic.{Document, References, SastRef}
+import scitzen.generic.{ArticleRef, Document, References, SastRef}
 import scitzen.sast.{BCommand, *}
 import scitzen.sast.DCommand.*
 import scalatags.Text.all.*
@@ -26,17 +26,17 @@ given [A](using ev: A => Frag): Conversion[Chain[A], Frag] with {
 }
 
 class SastToHtmlConverter(
-    doc: Document,
+    articleRef: ArticleRef,
     anal: ConversionAnalysis,
     combinedAttributes: Attributes,
-) extends ProtoConverter[Frag, Frag](doc, anal, combinedAttributes):
+) extends ProtoConverter[Frag, Frag](articleRef, anal, combinedAttributes):
 
   override def subconverter(
-      doc: Document,
+      articleRef: ArticleRef,
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[Text.all.Frag, Text.all.Frag] =
-    new SastToHtmlConverter(doc, analysis, attr)
+    new SastToHtmlConverter(articleRef, analysis, attr)
 
   val syncPos: Int =
 //    if sync.exists(_.path == pathManager.cwf) then sync.get._2

@@ -11,4 +11,4 @@ case class Article(ref: ArticleRef, sast: List[Sast], doc: Document, context: Sa
 
 case class TitledArticle(header: Section, article: Article)
 
-class ArticleRef()
+class ArticleRef(val document: Document)

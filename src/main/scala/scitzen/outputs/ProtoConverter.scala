@@ -6,18 +6,19 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Article, Document, ProjectPath, TitledArticle}
+import scitzen.generic.{Article, ArticleRef, ProjectPath, TitledArticle}
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
 
 import java.nio.file.Files
 
 abstract class ProtoConverter[BlockRes, InlineRes](
-    doc: Document,
+    articleRef: ArticleRef,
     anal: ConversionAnalysis,
     combinedAttributes: Attributes,
 ):
 
+  def doc = articleRef.document
   val project  = doc.path.project
   val reporter = doc.reporter
 
@@ -31,7 +32,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
   def subconverter(
-      doc: Document,
+      articleRef: ArticleRef,
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[BlockRes, InlineRes]
@@ -103,12 +104,12 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     pathpart match
       case Some(f) => it = it.filter(_.article.doc.path.absolute.startsWith(f))
       case None => ()
-    it
+    it.filter(_.article.ref != articleRef)
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)
     ctx.fold(it): (cc, titled) =>
-      subconverter(titled.article.doc, anal, combinedAttributes).convertSastSeq(cc, titled.article.sast)
+      subconverter(titled.article.ref, anal, combinedAttributes).convertSastSeq(cc, titled.article.sast)
   }
 
   def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
@@ -149,7 +150,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             )
             ctx.empty
           case Some(article) =>
-            subconverter(article.doc, anal, combinedAttributes).convertSastSeq(ctx, article.sast)
+            subconverter(article.ref, anal, combinedAttributes).convertSastSeq(ctx, article.sast)
   }
 
 end ProtoConverter

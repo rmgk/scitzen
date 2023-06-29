@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{Document, References, SastRef}
+import scitzen.generic.{ArticleRef, References, SastRef}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
@@ -29,24 +29,23 @@ object SastToTexConverter {
 }
 
 class SastToTexConverter(
-    doc: Document,
+    articleRef: ArticleRef,
     anal: ConversionAnalysis,
     settings: Attributes
-) extends ProtoConverter[String, String](doc, anal, settings):
+) extends ProtoConverter[String, String](articleRef, anal, settings):
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
   type Cta    = Ctx[?]
 
   override def subconverter(
-      doc: Document,
+      articleRef: ArticleRef,
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTexConverter(doc, analysis, settings)
+    new SastToTexConverter(articleRef, analysis, attr)
 
   override def stringToInlineRes(str: String): String = latexencode(str)
-
 
   val sectioning: Int => String = nesting => {
     // "book", "part", "chapter",

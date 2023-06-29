@@ -41,7 +41,7 @@ case class NLP(stopwords: Map[String, Seq[String]], analysis: ConversionAnalysis
 
   def words(article: Article): List[String] =
     SastToTextConverter(
-      article.doc,
+      article.ref,
       analysis,
       Attributes(analysis.project.config.settings ++ article.titled.map(_.attributes.raw).getOrElse(Nil))
     )

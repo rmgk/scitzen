@@ -32,7 +32,7 @@ object ArticleProcessing:
 
   def processArticles(doc: Document, project: Project): List[Article] =
     items(doc).map: art =>
-      val ref = new ArticleRef
+      val ref = new ArticleRef(doc)
       val ctx = new SastToSastConverter(doc, ref).convertSeq(art)(SastContext(()))
       Article(ref, ctx.data.toList, doc, ctx.ret(()), art)
 
