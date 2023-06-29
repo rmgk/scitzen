@@ -37,6 +37,7 @@ object ConvertProject:
       sync: Option[ClSync],
       imageFileMap: Option[Path],
       project: Project,
+      selection: Path,
   ): Unit =
     val timediff = makeTimediff()
 
@@ -61,7 +62,6 @@ object ConvertProject:
     val blockConversions = BlockConverter(project, directory).run()
 
     cli.info(s"block converted ${blockConversions.mapping.size} ${timediff()}")
-
 
     val imagePaths =
       val bi = blockConversions.mapping.valuesIterator.flatten.collect:

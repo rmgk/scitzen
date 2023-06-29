@@ -27,10 +27,11 @@ object ScitzenCommandline {
       case None =>
       case Some(options) =>
         def run() =
-          Project.fromSource(options.path.value) match
+          val absolute = options.path.value.toAbsolutePath
+          Project.fromSource(absolute) match
             case None => cli.warn(s"could not find project for", options.path.value)
             case Some(project) =>
-              executeConversions(options.sync.value, options.`image-file-map`.value, project)
+              executeConversions(options.sync.value, options.`image-file-map`.value, project, absolute)
 
         if options.benchmark.value > 0
         then (0 to options.benchmark.value).foreach(_ => run())

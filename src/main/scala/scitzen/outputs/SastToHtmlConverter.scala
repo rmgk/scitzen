@@ -306,11 +306,11 @@ class SastToHtmlConverter(
 
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
       val nameOpt    = attrs.textOption
-      val articleOpt = targetDocument.directArticle
+      val titledOpt = anal.directory.byRef.get(targetDocument.articleRef)
       val fileRef =
-        articleOpt match
-          case Some(article) =>
-            project.htmlPaths.relativeArticleTarget(article).toString
+        titledOpt match
+          case Some(titled) =>
+            project.htmlPaths.relativeArticleTarget(titled.header).toString
           case _ => ""
 
       targetDocument.sast match

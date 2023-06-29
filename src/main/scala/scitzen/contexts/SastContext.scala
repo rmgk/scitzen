@@ -12,12 +12,14 @@ case class SastContext[+T](
     imageDirectives: List[Directive] = Nil,
     convertBlocks: List[Block] = Nil,
     sections: List[Section] = Nil,
-    citations: List[Directive] = Nil
+    citations: List[Directive] = Nil,
+    references: List[Directive] = Nil
 ):
   def addImage(image: Directive): SastContext[T]       = copy(imageDirectives = image :: imageDirectives)
   def addConversionBlock(block: Block): SastContext[T] = copy(convertBlocks = block :: convertBlocks)
   def addSection(section: Section): SastContext[T]     = copy(sections = section :: sections)
   def addCitation(cite: Directive): SastContext[T]     = copy(citations = cite :: citations)
+  def addReference(ref: Directive): SastContext[T]     = copy(citations = ref :: citations)
 
   def nextId: SastContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
 

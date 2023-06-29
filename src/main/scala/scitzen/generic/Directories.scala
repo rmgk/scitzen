@@ -1,6 +1,7 @@
 package scitzen.generic
 
 import scitzen.compat.Logging
+import scitzen.contexts.SastContext
 import scitzen.outputs.SastToSastConverter
 import scitzen.parser.Parse
 import scitzen.sast.{Sast, Section}
@@ -23,15 +24,17 @@ class ArticleDirectory(val articles: List[Article]):
   val fullArticles: List[TitledArticle] = titled.filter(_.header.prefix == "=")
   val subArticles: List[TitledArticle]  = titled.filterNot(_.header.prefix == "==")
 
-  val byLabel: Map[String, TitledArticle]               = titled.iterator.map(t => t.header.autolabel -> t).toMap
+  val byLabel: Map[String, TitledArticle]               = titled.iterator.map(t => Tuple2(t.header.autolabel, t)).toMap
+  val byRef: Map[ArticleRef, TitledArticle]                   = titled.iterator.map(a => Tuple2(a.article.ref, a)).toMap
   def findByLabel(label: String): Option[TitledArticle] = byLabel.get(label)
 
 object ArticleProcessing:
 
   def processArticles(doc: Document, project: Project): List[Article] =
     items(doc).map: art =>
-      val ctx = new SastToSastConverter(doc, art).run()
-      Article(ctx.data.toList, doc, ctx.ret(()), art)
+      val ref = new ArticleRef
+      val ctx = new SastToSastConverter(doc, ref).convertSeq(art)(SastContext(()))
+      Article(ref, ctx.data.toList, doc, ctx.ret(()), art)
 
   def headerType(sast: Sast) = sast match
     case Section(_, t @ ("=" | "=="), _) => t.length

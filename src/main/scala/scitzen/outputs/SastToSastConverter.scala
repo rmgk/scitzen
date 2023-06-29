@@ -2,22 +2,15 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
-import scitzen.generic.{Document, SastRef}
+import scitzen.generic.{ArticleRef, Document, SastRef}
 import scitzen.sast.*
-import scitzen.sast.DCommand.{BibQuery, Cite, Image}
+import scitzen.sast.DCommand.{BibQuery, Cite, Image, Index, Ref}
 
-class SastToSastConverter(document: Document, fullSast: List[Sast]):
+class SastToSastConverter(document: Document, articleRef: ArticleRef):
 
   type CtxCS   = SastContext[Chain[Sast]]
   type Ctx[+T] = SastContext[T]
   type Cta     = Ctx[?]
-
-  def run(): CtxCS = convertSeq(fullSast)(SastContext(()))
-
-  def findArticle(ctx: Cta, self: Section): Option[Section] =
-    fullSast.headOption match
-      case Some(sect @ Section(_, "=", _)) => Some(sect)
-      case other                           => None
 
   def ensureUniqueRef[A <: Sast](
       ctx: Cta,
@@ -91,7 +84,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
     val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
     val (aliases, attr) = resctx.data
     val ublock          = sec.copy(attributes = attr)(sec.prov)
-    val target          = SastRef(document.path, ublock, findArticle(ctx, sec))
+    val target          = SastRef(document.path, ublock, articleRef)
     refAliases(resctx, aliases, target).ret(ublock)
   }
 
@@ -102,7 +95,7 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
         val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
         val (aliases, attr) = resctx.data
         val ublock          = block.copy(attributes = attr)(block.prov)
-        val target          = SastRef(document.path, ublock, None)
+        val target          = SastRef(document.path, ublock, articleRef)
         refAliases(resctx, aliases, target).ret(ublock)
   }
 
@@ -118,16 +111,17 @@ class SastToSastConverter(document: Document, fullSast: List[Sast]):
         case m: Directive           => convertMacro(m)(ctx).single
     }
 
-  def convertMacro(mcro: Directive)(ctx: Cta): Ctx[Directive] =
-    mcro.command match
-      case Image           => ctx.addImage(mcro).ret(mcro)
+  def convertMacro(directive: Directive)(ctx: Cta): Ctx[Directive] =
+    directive.command match
+      case Image           => ctx.addImage(directive).ret(directive)
+      case Ref | Index     => ctx.addReference(directive).ret(directive)
       case Cite | BibQuery =>
         // TODO this is a temporary way to rename the parameter, remove at some point
         val res =
-          val style = mcro.attributes.plain("style")
+          val style = directive.attributes.plain("style")
           if style.contains("name") then
-            mcro.copy(attributes = mcro.attributes.updated("style", "author"))(mcro.prov)
+            directive.copy(attributes = directive.attributes.updated("style", "author"))(directive.prov)
           else
-            mcro
+            directive
         ctx.addCitation(res).ret(res)
-      case _ => ctx.ret(mcro)
+      case _ => ctx.ret(directive)
