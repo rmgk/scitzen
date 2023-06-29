@@ -95,8 +95,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
     val convertedArticleCtx =
-      converter.convertSastSeq(ConversionContext((), katexConverter = katexConverter), article.body)
-    val headerCtx = converter.articleHeader(article)(convertedArticleCtx.empty)
+      converter.convertSastSeq(ConversionContext((), katexConverter = katexConverter), article.article.sast)
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
 
@@ -127,7 +126,7 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     val res = article.header.attributes.plain("htmlTemplate") match
       case None =>
-        val contentFrag = headerCtx.data +: convertedArticleCtx.data.toList ++: citations
+        val contentFrag = convertedArticleCtx.data.toList ++: citations
 
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,

@@ -7,7 +7,7 @@ import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.extern.{ImageTarget, Prism}
-import scitzen.generic.{Document, References, SastRef, TitledArticle}
+import scitzen.generic.{Document, References, SastRef}
 import scitzen.sast.{BCommand, *}
 import scitzen.sast.DCommand.*
 import scalatags.Text.all.*
@@ -56,24 +56,19 @@ class SastToHtmlConverter(
       span(cls := "category")(categories.map(c => stringFrag(s" $c "))*)
     )
 
-  def tMeta(article: TitledArticle): Frag =
+  def tMeta(article: Section): Frag =
 
     def timeFull(date: ScitzenDateTime): Tag = time(date.full)
 
-    val categories = List("categories", "people").flatMap(article.attr.plain)
+    val categories = List("categories", "people").flatMap(article.attributes.plain)
       .flatMap(_.split(","))
 
     val metalist =
       article.date.map(timeFull) ++
       categoriesSpan(categories) ++
-      article.attr.plain("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
+      article.attributes.plain("folder").map(f => span(cls := "category")(stringFrag(s" in $f")))
 
     if metalist.nonEmpty then div(cls := "metadata")(metalist.toSeq*) else frag()
-
-  def articleHeader(article: TitledArticle)(ctx: Cta): Ctx[Frag] =
-    convertInlineSeq(ctx, article.header.titleText.inl).map { innerFrags =>
-      frag(h1(id := article.header.ref, innerFrags.convert), tMeta(article))
-    }
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     val Section(title, level, _) = section
@@ -85,7 +80,12 @@ class SastToHtmlConverter(
             .map(_.prefix)
             .find(_.contains("="))
             .fold(1)(s => s.length)
-      Chain[Frag](tag(s"h${level.length + addDepth}")(id := section.ref, innerFrags.convert))
+      Chain[Frag](
+        tag(s"h${level.length + addDepth}")(id := section.ref, innerFrags.convert),
+        if level == "="
+        then tMeta(section)
+        else frag()
+      )
     }.push(section)
 
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF = slist match
