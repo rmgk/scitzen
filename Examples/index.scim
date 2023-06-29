@@ -1,0 +1,4 @@
+= Index example
+disable = section numbers
+
+:index{prefix=./}
