@@ -7,7 +7,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
 import scitzen.extern.ResourceUtil
 import scitzen.generic.*
-import scitzen.outputs.{GenIndexPage, HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -61,33 +61,8 @@ class ConvertHtml(anal: ConversionAnalysis):
     val (katexRes, resources) = procRec(anal.directory.fullArticles, loadKatex(katexmapfile), Map.empty)
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
-
-    makeindex(anal.directory, cssfile)
-
-  private def makeindex(
-      directory: ArticleDirectory,
-      cssfile: Path,
-  ): Unit =
-    val generatedIndex = GenIndexPage.makeIndex(directory.fullArticles, project, project.htmlPaths.articleOutputDir)
-    val converter = new SastToHtmlConverter(
-      Document(project.resolve(project.cacheDir, "gen-index.scim").get, Array.emptyByteArray),
-      anal = anal,
-      Attributes(project.config.settings)
-    )
-
-    val convertedCtx = converter.convertSastSeq(ConversionContext(()), generatedIndex)
-
-    val res = HtmlPages(project.htmlPaths.articleOutputDir.relativize(cssfile).toString)
-      .wrapContentHtml(
-        convertedCtx.data.toList,
-        "index",
-        None,
-        HtmlToc.tableOfContents(convertedCtx.sections.reverse, converter),
-        scalatags.Text.all.stringFrag("Index"),
-        None
-      )
-    Files.writeString(project.outputdirWeb.resolve("index.html"), res)
     ()
+
 
   private def loadKatex(katexmapfile: Path): Map[String, String] =
     Using(Files.newInputStream(katexmapfile)) { is => readFromStream[Map[String, String]](is) }.getOrElse(Map())
