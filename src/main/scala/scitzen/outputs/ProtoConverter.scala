@@ -100,11 +100,11 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleArticleQuery(directive: Directive): Iterable[TitledArticle]=
     val pathpart = directive.attributes.get("prefix").map(p => doc.path.directory.resolve(p.text.plainString).normalize())
-    var it: Iterable[TitledArticle] = anal.directory.titled.view
-    pathpart match
-      case Some(f) => it = it.filter(_.article.doc.path.absolute.startsWith(f))
-      case None => ()
-    it.filter(_.article.ref != articleRef)
+    val it: Iterable[TitledArticle] = anal.directory.titled.view
+    val res = pathpart match
+      case Some(f) => it.filter(_.article.doc.path.absolute.startsWith(f))
+      case None => Nil
+    res.filter(_.article.ref != articleRef)
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)
