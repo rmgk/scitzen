@@ -72,7 +72,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val sellist = selected.toList
     if sellist.isEmpty then
       Logging.cli.warn("selection is empty", anal.selectionPrefixes)
-    val (katexRes, resources) = procRec(sellist, loadKatex(katexmapfile), Map.empty, Set.empty)
+    val (katexRes, resources) = procRec(sellist, loadKatex(katexmapfile), Map.empty, sellist.iterator.map(_.article.ref).toSet)
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexRes)
     ()
