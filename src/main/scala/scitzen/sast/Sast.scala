@@ -29,12 +29,12 @@ case object Text:
 
 case class Section(titleText: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
   private def label: Option[String] = attributes.plain("label")
+  val title: String                 = titleText.plainString
   val autolabel: String             = label.getOrElse(title)
   def ref: String = attributes.plain("unique ref").getOrElse { throw new IllegalStateException(s"has no ref $title") }
   lazy val language: Option[String] = attributes.plain("language").map(_.trim)
   lazy val date: Option[ScitzenDateTime] = attributes.plain("date").flatMap: s =>
     TimeParsers.parseDate(s.trim)
-  val title: String                 = titleText.plainString
   lazy val filename: Option[String] = attributes.plain("filename")
   lazy val level: Int = prefix match
     case "="   => -1
