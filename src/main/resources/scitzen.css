@@ -206,6 +206,8 @@ main :is(p, ol, ul, dl, figcaption) {
 main.adhoc :is(p, ol, ul, dl, figcaption) {
 	/* display linebreaks */
 	white-space: pre-line;
+	/* don’t bother aligning ad-hoc entries */
+	text-align: revert;
 }
 
 a {
