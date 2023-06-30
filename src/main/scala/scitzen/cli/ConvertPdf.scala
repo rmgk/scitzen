@@ -70,7 +70,9 @@ object ConvertPdf:
           ConvertTemplate.fillTemplate(
             project,
             anal.directory,
-            titled.header.attributes.plain("texTemplate").orElse(project.config.texTemplate).get,
+            titled.header.attributes.plain("texTemplate").orElse(project.config.texTemplate).flatMap(
+              titled.article.doc.resolve
+            ),
             templateSettings
           )
 

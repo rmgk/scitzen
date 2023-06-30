@@ -166,7 +166,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         ConvertTemplate.fillTemplate(
           project,
           anal.directory,
-          templatePath,
+          titled.article.doc.resolve(templatePath),
           templateSettings
         )
     val target = project.htmlPaths.articleOutputPath(titled.header)

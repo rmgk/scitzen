@@ -4,7 +4,7 @@ import scitzen.bibliography.BibDB
 import scitzen.compat.Logging
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{BlockConversions, ImageConversions}
-import scitzen.generic.{ArticleDirectory, Project}
+import scitzen.generic.{ArticleDirectory, Project, ProjectPath}
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Attributes
 
@@ -12,10 +12,10 @@ object ConvertTemplate:
   def fillTemplate(
       project: Project,
       directory: ArticleDirectory,
-      templatePath: String,
+      templatePath: Option[ProjectPath],
       templateSettings: Attributes
   ): String =
-    project.resolve(project.root, templatePath) match
+    templatePath match
       case None =>
         Logging.cli.warn(s"could not find template file »$templatePath«")
         ""
