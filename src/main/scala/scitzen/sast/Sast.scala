@@ -48,6 +48,7 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
     def genName = s"${date.map(_.full).getOrElse("")} ${title}"
     val name = filename.getOrElse(genName.take(100))
     Path.of(scitzen.cli.Format.sluggify(s"$name.html"))
+  lazy val tags = attributes.plain("tags").getOrElse("").split(',').map(_.trim).filter(_.nonEmpty).toList
 
 object Section:
   given ordering: Ordering[Section] =

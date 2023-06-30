@@ -18,7 +18,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     combinedAttributes: Attributes,
 ):
 
-  def doc = articleRef.document
+  def doc      = articleRef.document
   val project  = doc.path.project
   val reporter = doc.reporter
 
@@ -97,14 +97,22 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def stringToInlineRes(str: String): InlineRes
 
-
-  def handleArticleQuery(directive: Directive): Iterable[TitledArticle]=
-    val pathpart = directive.attributes.get("prefix").map(p => doc.path.directory.resolve(p.text.plainString).normalize())
+  def handleArticleQuery(directive: Directive): Iterable[TitledArticle] =
+    val pathpart =
+      directive.attributes.get("prefix").map(p => doc.path.directory.resolve(p.text.plainString).normalize())
+    val tags =
+      directive.attributes.plain("tags").getOrElse("").split(',').map(_.trim).filter(_.nonEmpty)
     val it: Iterable[TitledArticle] = anal.directory.titled.view
-    val res = pathpart match
+    val it2 = pathpart match
       case Some(f) => it.filter(_.article.doc.path.absolute.startsWith(f))
-      case None => Nil
-    res.filter(_.article.ref != articleRef)
+      case None    => it
+    val it3 =
+      if tags.nonEmpty
+      then
+        it2.filter: titled =>
+          tags.exists(titled.header.tags.contains)
+      else it2
+    it3.filter(_.article.ref != articleRef)
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)
@@ -113,10 +121,10 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   }
 
   def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
-    val it = handleArticleQuery(directive)
+    val it       = handleArticleQuery(directive)
     val articles = it.toList
-    val refctx = ctx.reference(articles.map(_.article.ref))
-    val sast = GenIndexPage.makeIndex(it.toList, project)
+    val refctx   = ctx.reference(articles.map(_.article.ref))
+    val sast     = GenIndexPage.makeIndex(it.toList, project)
     convertSastSeq(refctx, sast)
   }
 
@@ -148,7 +156,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         resolution match
           case None =>
             cli.warn(
-              s"unknown include article ${attributes.target}", directive.prov
+              s"unknown include article ${attributes.target}",
+              directive.prov
             )
             ctx.empty
           case Some(article) =>
