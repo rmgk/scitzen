@@ -68,7 +68,9 @@ object ArticleProcessing:
     Files.isRegularFile(c) &&
     c.getFileName.toString.endsWith(".scim")
 
-  /** returs a list of .scim files starting at `source`. Does not follow symlinks and ignores files and folders starting with a . */
+  /** returns a list of .scim files starting at `source`.
+   * Does follow symlinks.
+   * Ignores files and folders starting with a . */
   def discoverSources(source: Path): Vector[Path] =
     import scala.jdk.CollectionConverters.*
     def hasDotComponent(c: Path): Boolean =
