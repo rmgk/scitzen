@@ -39,12 +39,10 @@ jobs:
         with:
           apps: sbt
       - name: generate native image
+        shell: bash
+        working-directory: ./
         run: |
-          sbt stageJars
-          rm target/jars/graal-sdk-*.jar
-          rm target/jars/truffle-api-*.jar
-          rm target/jars/js-*.jar
-          native-image --class-path "target/jars/*" scitzen.cli.ScitzenCommandline
+          ./contrib/make-native-image.sh
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
