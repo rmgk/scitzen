@@ -1,5 +1,6 @@
 package scitzen.extern
 
+import de.rmgk.logging.Loggable
 import scitzen.cli.ConvertTemplate
 import scitzen.compat.Logging
 import scitzen.compat.Logging.cli
@@ -7,10 +8,19 @@ import scitzen.generic.{Article, ArticleDirectory, Project}
 import scitzen.sast.Attribute.Nested
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Sast}
 
+import java.io.{ByteArrayOutputStream, PrintStream}
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.util.Using
+import scala.util.control.NonFatal
+
+given Loggable[Throwable] with
+  override def normal(v: Throwable): String = s"${v.getClass.getSimpleName}: »${v.getMessage}«"
+  override def verbose(v: Throwable): String =
+    val baos = new ByteArrayOutputStream()
+    v.printStackTrace(new PrintStream(baos))
+    baos.toString(StandardCharsets.UTF_8)
 
 case class BlockConversions(mapping: Map[Block, List[Sast]]):
   def substitute(block: Block): List[Sast] = mapping.getOrElse(block, Nil)
@@ -31,14 +41,18 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       current match
         case Nil => Nil
         case List(block @ Block(_, _, Fenced(content))) =>
-          name match
-            case "template" => applyTemplate(attrs, block, content, article)
-            case "js"       => convertJS(current, attrs)
-            case "tex"      => convertTex(article, block, content, attrs)
-            case "graphviz" => graphviz(content, block)
-            case "mermaid"  => mermaid(content, block)
-            case "scalaCli" => convertScalaCli(content, block)
-            case "load"     => loadFileAsContent(block, article, attrs)
+          try
+            name match
+              case "template" => applyTemplate(attrs, block, content, article)
+              case "js"       => convertJS(current, attrs)
+              case "tex"      => convertTex(article, block, content, attrs)
+              case "graphviz" => graphviz(content, block, attrs)
+              case "mermaid"  => mermaid(content, block)
+              case "scalaCli" => convertScalaCli(content, block)
+              case "load"     => loadFileAsContent(block, article, attrs)
+          catch case NonFatal(ex) =>
+            cli.warn(s"could not convert $name", ex)
+            Nil
         case other =>
           cli.warn(s"can not convert $other")
           Nil
@@ -118,7 +132,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       case None =>
         Nil
 
-  def graphviz(content: String, block: Block): List[Sast] =
+  def graphviz(content: String, block: Block, attributes: Attributes): List[Sast] =
     val bytes  = content.getBytes(StandardCharsets.UTF_8)
     val name   = Hashes.sha1hex(bytes)
     val format = "pdf"
@@ -126,11 +140,17 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     if !Files.exists(target.absolute) then
       Files.createDirectories(target.directory)
 
+      val layoutEngine =
+        val lay = attributes.target.trim
+        if lay.isEmpty then "dot" else lay
+
+
       val start = System.nanoTime()
       val process = new ProcessBuilder(
         "dot",
+        s"-K${layoutEngine}",
         s"-T$format",
-        s"-o${target.absolute.toString}"
+        s"-o${target.absolute.toString}",
       )
         .inheritIO().redirectInput(Redirect.PIPE).start()
       Using.resource(process.getOutputStream) { os => os.write(bytes) }
@@ -151,7 +171,8 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       Files.write(mermaidSource.absolute, bytes)
 
       new ProcessBuilder(
-        "mmdc",
+        "npx",
+        "@mermaid-js/mermaid-cli",
         "--input",
         mermaidSource.absolute.toString,
         "--output",
