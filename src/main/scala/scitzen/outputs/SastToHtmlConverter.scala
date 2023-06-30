@@ -80,8 +80,11 @@ class SastToHtmlConverter(
             .map(_.prefix)
             .find(_.contains("="))
             .fold(1)(s => s.length)
+      val link = section.attributes.plain("link").map: url =>
+        a(href := url, "\u2009", HtmlPages.iconExternalLink)
+
       Chain[Frag](
-        tag(s"h${level.length + addDepth}")(id := section.ref, innerFrags.convert),
+        tag(s"h${level.length + addDepth}")(id := section.ref, innerFrags.convert, link),
         if level == "="
         then tMeta(section)
         else frag()

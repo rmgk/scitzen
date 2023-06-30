@@ -7,30 +7,41 @@ import scalatags.Text.implicits.{raw, stringAttr}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{aside, main, nav, title}
 
+object HtmlPages:
+
+  def featherIcon(cls: String, path: String): RawFrag =
+    raw(
+      s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls">$path</svg>"""
+    )
+
+  val iconMenu = featherIcon("menu", """<path d="M3 12 H21 M3 6 H21 M3 18 H21" />""")
+
+  val iconClose = featherIcon("close", """<path d="M18 6 L6 18 M6 6 L18 18" />""")
+  val iconExternalLink = featherIcon(
+    "external-link",
+    """<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>"""
+  )
+
 class HtmlPages(cssPath: String):
 
   val tHead: Tag =
     head(
       meta(charset := "UTF-8"),
-      meta(name := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
-      link(href := cssPath, rel        := "stylesheet", `type` := "text/css"),
+      meta(name    := "viewport", content := "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
+      link(href    := cssPath, rel        := "stylesheet", `type` := "text/css"),
     )
 
   def htmlDocument(tag: Tag): String =
     "<!DOCTYPE html>\n" + tag.render
 
-  def featherIcon(cls: String, path: String): RawFrag =
-    raw(
-      s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls"><path d="$path" /></svg>"""
-    )
   val sidebarContainer: Tag =
     aside(
       input(`type` := "checkbox", id := "sidebar-switch", hidden),
       label(
         `for` := "sidebar-switch",
         hidden,
-        featherIcon("menu", "M3 12 H21 M3 6 H21 M3 18 H21"),
-        featherIcon("close", "M18 6 L6 18 M6 6 L18 18")
+        HtmlPages.iconMenu,
+        HtmlPages.iconClose,
       )
     )
 

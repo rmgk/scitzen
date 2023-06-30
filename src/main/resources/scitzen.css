@@ -168,6 +168,13 @@ h4 {
 	content: counter(section) "." counter(subsection) ". ";
 }
 
+svg.external-link {
+	vertical-align: bottom;
+	width: 0.85em;
+	height: 0.85em;
+	padding-bottom: 0.15em;
+}
+
 
 .metadata {
 	display: flex;
@@ -231,9 +238,11 @@ figure, blockquote, pre {
 :is(figure, blockquote, pre, dd) > :first-child {
 	margin-top: 0;
 }
+
 :is(figure, blockquote, pre, dd) > :last-child {
 	margin-bottom: 0;
 }
+
 /* add margin to inner elements */
 :is(figure, blockquote, pre, dd) > :not(:first-child) {
 	margin-top: 0.5em;
