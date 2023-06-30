@@ -14,7 +14,7 @@ object References:
       case Nil     => candidates
       case Seq(_) => candidates
       case multiple =>
-        val searchScope = scope.absolute.iterator().asScala.toList
+        val searchScope = scope.relativeToProject.iterator().asScala.toList
         val sorted = multiple.map { c =>
           c ->
           c.scope.relativeToProject.iterator().asScala.toList.zip(searchScope).takeWhile {
