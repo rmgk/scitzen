@@ -48,7 +48,6 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     def procRec(
         rem: List[TitledArticle],
-        resourcemap: Map[ProjectPath, Path],
         done: Set[ArticleRef],
     ): Future[Map[ProjectPath, Path]] =
       val futures = rem.map: titled =>
@@ -64,9 +63,8 @@ class ConvertHtml(anal: ConversionAnalysis):
           val foundArticles = found.iterator.flatMap(anal.directory.byRef.get).toList
           procRec(
             foundArticles,
-            resourcemap ++ cctx.resourceMap,
             found union done
-          )
+          ).map(_ ++ cctx.resourceMap)
         .flatten
       Future.foldLeft(futures)(Map.empty)(_ ++ _)
 
@@ -76,7 +74,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val sellist = selected.toList
     if sellist.isEmpty then
       Logging.cli.warn("selection is empty", anal.selectionPrefixes)
-    val resources = Await.result(procRec(sellist, Map.empty, sellist.iterator.map(_.article.ref).toSet), Duration.Inf)
+    val resources = Await.result(procRec(sellist, sellist.iterator.map(_.article.ref).toSet), Duration.Inf)
     project.htmlPaths.copyResources(resources)
     writeKatex(katexmapfile, katexConverter.cache.get())
     ()
