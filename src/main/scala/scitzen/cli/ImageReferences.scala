@@ -23,7 +23,7 @@ object ImageReferences:
           case Some(target) =>
             // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
             Some(Reference(
-              target.toString,
+              target.absolute.toString,
               art.doc.reporter.bytePosToCodepointPos(mcro.prov.start),
               art.doc.reporter.bytePosToCodepointPos(mcro.prov.end)
             ))
