@@ -3,10 +3,6 @@
   "name":"[Ljava.lang.String;"
 },
 {
-  "name":"de.rmgk.logging$Logger$",
-  "fields":[{"name":"0bitmap$1"}]
-},
-{
   "name":"de.rmgk.scip$Scx",
   "fields":[{"name":"0bitmap$1"}]
 },
