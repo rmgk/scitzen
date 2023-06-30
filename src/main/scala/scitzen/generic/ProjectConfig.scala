@@ -9,7 +9,6 @@ class ProjectConfig(attrs: Attributes = Attributes.empty):
   def cache          = attrs.plain("cache")
   def format         = attrs.plain("format").getOrElse("").split(',').toList.map(_.trim)
   def outputType     = attrs.plain("outputType").getOrElse("").split(',').toList.map(_.trim)
-  def revealTemplate = attrs.plain("revealTemplate")
   def texTemplate    = attrs.plain("texTemplate")
   def notes          = attrs.plain("notes")
   def bibliography   = attrs.plain("bibliography")
