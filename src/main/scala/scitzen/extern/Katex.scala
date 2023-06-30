@@ -26,7 +26,6 @@ object Katex:
       bo.toString
     }
 
-
   class KatexConverter(initialCache: Map[String, String], katex: KatexLibrary):
 
     val cache: AtomicReference[Map[String, String]] = new AtomicReference(initialCache)
@@ -77,4 +76,6 @@ object Katex:
 
     def renderToString(string: String): String =
       cli.trace(s"katex $string")
-      katex.execute(string).asString()
+      polyglot.synchronized {
+        katex.execute(string).asString()
+      }

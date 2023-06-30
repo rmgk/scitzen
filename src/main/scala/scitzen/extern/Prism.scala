@@ -9,19 +9,18 @@ import scala.util.Using
 
 object Prism:
 
-  val prismcontext =
+  private val prismcontext =
     val engine: Engine = Engine.newBuilder().build()
     Context.newBuilder("js").engine(engine).build()
 
-  lazy val highlightVal = {
+  lazy val highlightVal = prismcontext.synchronized:
     prismcontext.eval("js", "Prism.highlight")
-  }
 
   val resolvePath: String = "META-INF/resources/webjars/prism/components"
 
   var loadedLanguages = Set.empty[String]
 
-  def ensureLoaded(lang: String): Unit =
+  def ensureLoaded(lang: String): Unit = prismcontext.synchronized:
     if !loadedLanguages.contains(lang) then
       if (lang != "core") ensureLoaded("core")
       dependencies.getOrElse(lang, Nil).foreach(ensureLoaded)
@@ -43,7 +42,8 @@ object Prism:
     ensureLoaded(actualLang)
 
     val start = System.nanoTime()
-    val res = highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$actualLang"), actualLang).asString()
+    val res = prismcontext.synchronized:
+      highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$actualLang"), actualLang).asString()
     Logging.cli.trace(s"highlighting took ${(System.nanoTime() - start) / 1000000}ms")
     res
 

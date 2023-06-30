@@ -15,9 +15,9 @@ import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
-import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.math.Ordering.Implicits.seqOrdering
 import scala.util.Using
 
