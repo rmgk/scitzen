@@ -71,6 +71,7 @@ class SastToHtmlConverter(
     if metalist.nonEmpty then div(cls := "metadata")(metalist.toSeq*) else frag()
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
+    if section.attributes.plain("disable").exists(_.contains("display")) then return ctx.ret(Chain.empty)
     val Section(title, level, _) = section
     convertInlineSeq(ctx, title.inl).map { innerFrags =>
       val addDepth: Int =
