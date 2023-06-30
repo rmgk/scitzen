@@ -34,7 +34,7 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
   val title: String                 = titleText.plainString
   val autolabel: String             = label.getOrElse(title)
   def ref: String = attributes.plain("unique ref").getOrElse { throw new IllegalStateException(s"has no ref $title") }
-  lazy val language: Option[String] = attributes.plain("language").map(_.trim)
+  lazy val language: Option[String] = attributes.plain("language").orElse(attributes.plain("lang")).map(_.trim)
   lazy val date: Option[ScitzenDateTime] = attributes.plain("date").flatMap: s =>
     TimeParsers.parseDate(s.trim)
   lazy val filename: Option[String] = attributes.plain("filename")
@@ -46,7 +46,7 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
     case "###" => 3
   lazy val relativePath: Path =
     def genName = s"${date.map(_.full).getOrElse("")} ${title}"
-    val name = filename.getOrElse(genName.take(100))
+    val name    = filename.getOrElse(genName.take(100))
     Path.of(scitzen.cli.Format.sluggify(s"$name.html"))
   lazy val tags = attributes.plain("tags").getOrElse("").split(',').map(_.trim).filter(_.nonEmpty).toList
 
