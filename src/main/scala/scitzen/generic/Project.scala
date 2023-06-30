@@ -2,7 +2,6 @@ package scitzen.generic
 
 import scitzen.compat.Logging.cli
 
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 class ProjectPath private (val project: Project, val relativeToProject: Path):
@@ -78,7 +77,7 @@ object Project:
     findRoot(file.toAbsolutePath) match
       case None =>
         val adHocRoot = if Files.isDirectory(file) then file else file.getParent
-        Some(Project(adHocRoot, ProjectConfig.parse("a=b".getBytes(StandardCharsets.UTF_8))))
+        Some(Project(adHocRoot, ProjectConfig()))
       case Some(file) => fromConfig(file)
 
   def fromConfig(file: Path): Option[Project] =
