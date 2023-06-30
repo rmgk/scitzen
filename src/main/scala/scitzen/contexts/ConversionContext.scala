@@ -54,5 +54,5 @@ case class ConversionContext[+T](
     }
 
   def katex(key: String): ConversionContext[String] =
-    val (res, kconv) = katexConverter.convert(key)
-    kconv.fold(this)(kc => copy(katexConverter = kc)).ret(res)
+    val res = katexConverter.convert(key)
+    ret(res)

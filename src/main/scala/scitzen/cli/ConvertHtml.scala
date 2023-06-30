@@ -1,7 +1,7 @@
 package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
-import de.rmgk.logging.{Logger}
+import de.rmgk.logging.Logger
 import scalatags.Text.StringFrag
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging
@@ -40,31 +40,35 @@ class ConvertHtml(anal: ConversionAnalysis):
     val cssfile = project.outputdirWeb.resolve("scitzen.css")
     Files.write(cssfile, stylesheet)
 
-    val katexLibrary = KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
+    val katexConverter =
+      val katexLibrary = KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
+      KatexConverter(loadKatex(katexmapfile), katexLibrary)
+
+    // val ec = scala.concurrent.ExecutionContext.global
 
     @tailrec
     def procRec(
         rem: List[TitledArticle],
-        katexmap: Map[String, String],
         resourcemap: Map[ProjectPath, Path],
         done: Set[ArticleRef],
-    ): (Map[String, String], Map[ProjectPath, Path]) =
+    ): Map[ProjectPath, Path] =
       rem match
-        case Nil => (katexmap, resourcemap)
+        case Nil => (resourcemap)
         case article :: rest =>
           val cctx = convertArticle(
             article,
             cssfile,
             sync,
             nlp,
-            KatexConverter(
-              katexmap,
-              katexLibrary
-            ),
+            katexConverter
           )
-          val found = cctx.referenced.toSet -- done
+          val found         = cctx.referenced.toSet -- done
           val foundArticles = found.iterator.flatMap(anal.directory.byRef.get).toList
-          procRec(foundArticles ::: rest, katexmap ++ cctx.katexConverter.cache, resourcemap ++ cctx.resourceMap, found union done)
+          procRec(
+            foundArticles ::: rest,
+            resourcemap ++ cctx.resourceMap,
+            found union done
+          )
 
     val selected = anal.directory.fullArticles.iterator.filter: art =>
       anal.selectionPrefixes.exists: sel =>
@@ -72,9 +76,9 @@ class ConvertHtml(anal: ConversionAnalysis):
     val sellist = selected.toList
     if sellist.isEmpty then
       Logging.cli.warn("selection is empty", anal.selectionPrefixes)
-    val (katexRes, resources) = procRec(sellist, loadKatex(katexmapfile), Map.empty, sellist.iterator.map(_.article.ref).toSet)
+    val resources = procRec(sellist, Map.empty, sellist.iterator.map(_.article.ref).toSet)
     project.htmlPaths.copyResources(resources)
-    writeKatex(katexmapfile, katexRes)
+    writeKatex(katexmapfile, katexConverter.cache.get())
     ()
 
   private def loadKatex(katexmapfile: Path): Map[String, String] =

@@ -9,6 +9,7 @@ import scitzen.generic.ProjectPath
 
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
@@ -25,17 +26,22 @@ object Katex:
       bo.toString
     }
 
-  case class KatexConverter(cache: Map[String, String], katex: KatexLibrary):
 
-    def convert(str: String): (String, Option[KatexConverter]) =
-      cache.get(str) match
-        case Some(res) => (res, None)
+  class KatexConverter(initialCache: Map[String, String], katex: KatexLibrary):
+
+    val cache: AtomicReference[Map[String, String]] = new AtomicReference(initialCache)
+
+    def convert(str: String): String =
+      val cached = cache.get()
+      cached.get(str) match
+        case Some(res) => res
         case None =>
           val katexBlob = katex.renderToString(str)
           val doc       = Jsoup.parse(katexBlob)
           doc.outputSettings().prettyPrint(false)
           val res = doc.selectFirst("math").html()
-          (res, Some(copy(cache = cache.updated(str, res))))
+          cache.updateAndGet(cur => cur.updated(str, res))
+          res
 
   end KatexConverter
 
