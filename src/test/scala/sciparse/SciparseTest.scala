@@ -16,12 +16,12 @@ class SciparseTest extends munit.FunSuite {
     try
       val res =
         DirectiveParsers.full.runInContext(
-          Scx(""":emph{some plaintext; key= value ; key= [value];[[1, 10, 20, 30, 80]]  }""").copy(tracing = true)
+          Scx(""":emph{some plaintext; key= value ; key= "[value]";"[[1, 10, 20, 30, 80]]"  }""").copy(tracing = true)
         )
       println(res)
       val result    = SastToScimConverter.toScimS(List(res))
       val resultStr = result.iterator.mkString("", "\n", "\n")
-      assertEquals(resultStr, ":emph{some plaintext; key=value ; key=value; [[1, 10, 20, 30, 80]]}\n")
+      assertEquals(resultStr, ":emph{some plaintext; key=value ; key=value; [1, 10, 20, 30, 80]}\n")
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
   }
 
@@ -77,9 +77,9 @@ Immer
     try
       val input = raw"""
 ::figure
-	``execute
+	```execute
 		stuff
-	``
+	```
 	Just your ordinary Tex in JS in Scim.
 ::
 """
@@ -100,18 +100,18 @@ date = 12
 
 huh
 
-``code{lang=scala}
+```code{lang=scala}
 	object Prism:
-``
+```
 
 # head
 
 hah
 
 ::figure
-	``code{lang=javascript}
+	```code{lang=javascript}
 		const Prism = require('prismjs');
-	``
+	```
 ::
 """
       val res =
@@ -126,11 +126,11 @@ hah
   test("block content") {
     try
       val input = s"""
-``
+```
 	a
 	}
 	b
-``
+```
 """
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = true))
