@@ -34,14 +34,20 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
           block -> applyConversions(art, block)
       .toMap
 
-  def applyConversions(article: Article, block: Block) =
+  def applyConversions(article: Article, block: Block): List[Sast] =
+    cli.trace("converting block")
     val conversions = block.attributes.raw.collect:
       case n: Nested => n
+    if conversions.isEmpty then
+      cli.warn(s"conversion block has no converters", article.doc.reporter.apply(block))
+      return Nil
+
     conversions.foldLeft(List[Sast](block)) { case (current, Nested(name, attrs)) =>
       current match
         case Nil => Nil
         case List(block @ Block(_, _, Fenced(content))) =>
           try
+            cli.trace("applying conversion", name)
             name match
               case "template" => applyTemplate(attrs, block, content, article)
               case "js"       => convertJS(current, attrs)
