@@ -9,10 +9,10 @@ case class SastRef(scope: ProjectPath, sast: Sast, articleRef: ArticleRef)
 
 object References:
 
-  def filterCandidates(scope: ProjectPath, candidates: List[SastRef]): List[SastRef] =
+  def filterCandidates(scope: ProjectPath, candidates: Seq[SastRef]): Seq[SastRef] =
     candidates match
       case Nil     => candidates
-      case List(_) => candidates
+      case Seq(_) => candidates
       case multiple =>
         val searchScope = scope.absolute.iterator().asScala.toList
         val sorted = multiple.map { c =>

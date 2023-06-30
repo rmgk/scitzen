@@ -18,7 +18,7 @@ case class NLP(stopwords: Map[String, Seq[String]], analysis: ConversionAnalysis
 
     val totalDocuments = articleDirectory.articles.size.toDouble
 
-    extension (list: List[String])
+    extension (list: Seq[String])
       def wordcount: Map[String, Int] = list.foldLeft(Map.empty[String, Int]) {
         case (curr, s) => curr.updatedWith(s) { _.map(_ + 1).orElse(Some(1)) }
       }

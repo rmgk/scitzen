@@ -11,6 +11,7 @@ import java.nio.file.{Files, Path}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.jdk.StreamConverters.*
 
 case class ConversionAnalysis(
     project: Project,
@@ -44,9 +45,11 @@ object ConvertProject:
 
     cli.info(s"found project in ${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
     val documents = ArticleProcessing.loadDocuments(project)
+
     val directory = ArticleDirectory:
+      // note: tried to parallelize this, does not seem to be worth it in most cases
       documents.flatMap: doc =>
-        ArticleProcessing.processArticles(doc, project)
+        ArticleProcessing.processArticles(doc)
 
     cli.info(s"parsed ${documents.size} documents ${timediff()}")
 
@@ -56,7 +59,7 @@ object ConvertProject:
     val toPdf  = project.config.outputType.contains("pdf")
 
     val bibres     = BibManager(project).prefetch(directory.articles.flatMap(_.context.citations).toSet)
-    val dblpFuture = Future { bibres.runToFuture }.flatten
+    val dblpFuture = Future { bibres.runToFuture(using ()) }.flatten
 
     cli.info(s"scheduled bib ${timediff()}")
 

@@ -9,20 +9,20 @@ import scitzen.sast.{Sast, Section}
 import java.nio.file.{Files, Path}
 import scala.util.Using
 
-class ArticleDirectory(val articles: List[Article]):
-  val byPath: Map[ProjectPath, List[Article]] =
+class ArticleDirectory(val articles: Seq[Article]):
+  val byPath: Map[ProjectPath, Seq[Article]] =
     articles.groupBy(fd => fd.doc.path)
 
-  val labels: Map[String, List[SastRef]] =
+  val labels: Map[String, Seq[SastRef]] =
     val all     = articles.map(_.context.labelledThings)
     val allKeys = all.iterator.flatMap(_.keysIterator).toSet
     allKeys.iterator.map { key =>
       key -> all.flatMap(_.getOrElse(key, Nil))
     }.toMap
 
-  val titled: List[TitledArticle]       = articles.flatMap(art => art.titled.map(t => TitledArticle(t, art)))
-  val fullArticles: List[TitledArticle] = titled.filter(_.header.prefix == "=")
-  val subArticles: List[TitledArticle]  = titled.filterNot(_.header.prefix == "==")
+  val titled: Seq[TitledArticle]       = articles.flatMap(art => art.titled.map(t => TitledArticle(t, art)))
+  val fullArticles: Seq[TitledArticle] = titled.filter(_.header.prefix == "=")
+  val subArticles: Seq[TitledArticle]  = titled.filterNot(_.header.prefix == "==")
 
   val byLabel: Map[String, TitledArticle]               = titled.iterator.map(t => Tuple2(t.header.autolabel, t)).toMap
   val byRef: Map[ArticleRef, TitledArticle]             = titled.iterator.map(a => Tuple2(a.article.ref, a)).toMap
@@ -30,7 +30,7 @@ class ArticleDirectory(val articles: List[Article]):
 
 object ArticleProcessing:
 
-  def processArticles(doc: Document, project: Project): List[Article] =
+  def processArticles(doc: Document): List[Article] =
     items(doc).map: art =>
       val ref = new ArticleRef(doc)
       val ctx = new SastToSastConverter(doc, ref).convertSeq(art)(SastContext(()))
@@ -69,7 +69,7 @@ object ArticleProcessing:
     c.getFileName.toString.endsWith(".scim")
 
   /** returs a list of .scim files starting at `source`. Does not follow symlinks and ignores files and folders starting with a . */
-  def discoverSources(source: Path): List[Path] =
+  def discoverSources(source: Path): Vector[Path] =
     import scala.jdk.CollectionConverters.*
     def hasDotComponent(c: Path): Boolean =
       source.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
@@ -77,12 +77,12 @@ object ArticleProcessing:
     Using(Files.walk(source)) { stream =>
       stream.iterator().asScala.filter { c =>
         isScim(c) && !hasDotComponent(c)
-      }.toList
+      }.toVector
     }.get
 
-  def loadDocuments(project: Project): List[Document] =
+  def loadDocuments(project: Project): Vector[Document] =
     Logging.cli.trace(s"discovering sources in ${project.root}")
-    val sources: List[Path] = discoverSources(project.root)
+    val sources = discoverSources(project.root)
     Logging.cli.trace(s"parsing ${sources.length} documents")
     sources.map: source =>
       Document(project.asProjectPath(source))

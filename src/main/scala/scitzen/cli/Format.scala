@@ -22,7 +22,7 @@ object Format:
   def formatRename(documentDirectory: ArticleDirectory): Unit =
     documentDirectory.byPath.foreach: (document, articles) =>
       articles match
-        case List(article) =>
+        case Seq(article) =>
           article.titled match
             case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute,  t)
             case _ => cli.trace(
