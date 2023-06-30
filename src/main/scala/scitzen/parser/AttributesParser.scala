@@ -97,7 +97,7 @@ object AttributesParser {
   val noBraces: Scip[Seq[Attribute]] = Scip {
     val res = listOf(namedAttribute, min = 1).run
     spaceLineF.run
-    spaceLineF.run
+    spaceLineB.run
     res
   }.trace("no braces")
 
