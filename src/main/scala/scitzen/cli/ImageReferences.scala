@@ -3,7 +3,6 @@ package scitzen.cli
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.extern.ImageTarget
-import scitzen.compat.Logging.cli
 
 import java.nio.file.{Files, Path}
 
@@ -15,21 +14,15 @@ object ImageReferences:
   def listAll(anal: ConversionAnalysis, output: Path): Unit =
     val fileImageMap: Map[String, List[Reference]] = anal.directory.articles.map { art =>
 
-      val cwd = art.doc.path.directory
+      val images = art.context.imageDirectives.flatMap { directive =>
 
-      val images = art.context.imageDirectives.flatMap { mcro =>
-        val path = mcro.attributes.plain(ImageTarget.Raster.name).getOrElse(mcro.attributes.target)
-        anal.project.resolve(cwd, path) match
-          case Some(target) =>
-            // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
-            Some(Reference(
-              target.absolute.toString,
-              art.doc.reporter.bytePosToCodepointPos(mcro.prov.start),
-              art.doc.reporter.bytePosToCodepointPos(mcro.prov.end)
-            ))
-          case None =>
-            cli.warn(s"could not find $path in $cwd")
-            None
+        val path = anal.image.lookup(art.doc.resolve(directive.attributes.target).get, ImageTarget.Raster)
+        // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
+        Some(Reference(
+          path.absolute.toString,
+          art.doc.reporter.bytePosToCodepointPos(directive.prov.start),
+          art.doc.reporter.bytePosToCodepointPos(directive.prov.end)
+        ))
       }
       art.doc.path.absolute.toString -> images
     }.filter(_._2.nonEmpty).toMap
