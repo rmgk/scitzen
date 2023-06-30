@@ -6,7 +6,7 @@ import scitzen.outputs.SastToSastConverter
 import scitzen.parser.Parse
 import scitzen.sast.{Sast, Section}
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{FileVisitOption, Files, Path}
 import scala.util.Using
 
 class ArticleDirectory(val articles: Seq[Article]):
@@ -74,11 +74,11 @@ object ArticleProcessing:
     def hasDotComponent(c: Path): Boolean =
       source.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
 
-    Using(Files.walk(source)) { stream =>
-      stream.iterator().asScala.filter { c =>
+    Using(Files.walk(source, FileVisitOption.FOLLOW_LINKS)): stream =>
+      stream.iterator().asScala.filter: c =>
         isScim(c) && !hasDotComponent(c)
-      }.toVector
-    }.get
+      .toVector
+    .get
 
   def loadDocuments(project: Project): Vector[Document] =
     Logging.cli.trace(s"discovering sources in ${project.root}")
