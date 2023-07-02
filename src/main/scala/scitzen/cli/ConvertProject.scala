@@ -43,7 +43,7 @@ object ConvertProject:
   ): Unit =
     val timediff = makeTimediff()
 
-    cli.info(s"found project in ${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
+    cli.info(s"found project in ./${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
     val documents = ArticleProcessing.loadDocuments(project)
 
     val directory = ArticleDirectory:
