@@ -10,7 +10,7 @@ object Dependencies {
   object Versions {
     val directories   = "26"
     val jol           = "0.17"
-    val jsoniterScala = "2.23.1"
+    val jsoniterScala = "2.23.2"
     val jsoup         = "1.16.1"
     val munit         = "1.0.0-M8"
     val okHttp        = "4.10.0"
