@@ -12,7 +12,7 @@ import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
 import scitzen.extern.ResourceUtil
 import scitzen.generic.*
 import scitzen.html.sag.{Recipe, Sag, SagContext}
-import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
+import scitzen.outputs.{HtmlPages, SastToHtmlConverter}
 import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -132,7 +132,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           Sag.h2(bibname, id = bibid).run
           Sag.ul(`class` = "bibliography", bibEntries.map { be => Sag.li(id = be.id, be.formatHtmlCitation) }).run
 
-    val toc = HtmlToc.tableOfContents(
+    val toc = HtmlPages.tableOfContents(
       convertedArticleCtx.sections.reverse ++ bibsection,
       converter
     )

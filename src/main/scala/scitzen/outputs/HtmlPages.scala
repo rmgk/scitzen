@@ -1,11 +1,15 @@
 package scitzen.outputs
 
+import scalatags.Text.all.*
+import scalatags.Text.implicits.raw
 import scalatags.Text.{Frag, RawFrag}
-import scalatags.Text.implicits.{raw}
-import scitzen.html.sag.{Recipe, Sag, SagContext, SagContentWriter}
+import scitzen.contexts.ConversionContext
+import scitzen.html.sag.{Recipe, Sag, SagContentWriter, SagContext}
 import scitzen.outputs.HtmlPages.svgContainer
+import scitzen.sast.Section
 
 import java.nio.charset.StandardCharsets
+import scala.math.Ordering.Implicits.infixOrderingOps
 
 object HtmlPages:
 
@@ -27,6 +31,25 @@ object HtmlPages:
 
   val iconClose        = featherIcon("close", """<path d="M18 6 L6 18 M6 6 L18 18" />""")
   val iconExternalLink = raw(s"""<svg class="icon"><use href="#external-link"></use></svg>""")
+
+  val maxdepth     = 2
+  val startsection = List("==", "#")
+
+  def tableOfContents(docsections: List[Section], converter: SastToHtmlConverter): Option[Frag] =
+
+    def recurse(remaining: List[Section], depth: Int): Option[Frag] =
+      remaining match
+        case Nil => None
+        case (head @ Section(title, _, _)) :: rest =>
+          val (sub, other) = rest.span(e => e > head)
+          val subtags = if depth < maxdepth then recurse(sub, depth + 1)
+          else None
+          val res     = converter.convertInlineSeq(ConversionContext(()), title.inl)
+          val thistag = li(a(href := s"#${head.ref}", res.data), subtags.map(ol(_)))
+          val nexttag = recurse(other, depth)
+          Some(SeqFrag(thistag :: nexttag.toList))
+
+    recurse(docsections.dropWhile(s => !startsection.contains(s.prefix)), 1).map(ol(_))
 
 class HtmlPages(cssPath: String):
 
