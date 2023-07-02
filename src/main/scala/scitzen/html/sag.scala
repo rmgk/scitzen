@@ -2,32 +2,69 @@ package scitzen.html
 
 import de.rmgk.delay
 import de.rmgk.delay.Sync
+import scalatags.Text.Frag
 
-import java.io.{ByteArrayOutputStream, OutputStreamWriter, StringWriter}
+import java.io.{ByteArrayOutputStream, OutputStreamWriter}
 import java.nio.charset.StandardCharsets
+import scala.annotation.implicitNotFound
 import scala.quoted.*
 import scala.language.dynamics
 import scala.compiletime.summonInline
+import scala.compiletime.*
 
 object sag {
 
-  class SagContext(val baos: ByteArrayOutputStream) {
+  class SagContext(val baos: ByteArrayOutputStream = new ByteArrayOutputStream(8096)) {
     inline def append(inline bytes: Array[Byte]): Unit = baos.writeBytes(bytes)
+    def resultString: String                           = baos.toString(StandardCharsets.UTF_8)
   }
 
-  trait SagWriter[-T] {
+  @implicitNotFound("Do not know how to use $T as content")
+  trait SagContentWriter[-T] {
     def convert(value: T): Recipe
   }
 
-  object SagWriter {
-    given SagWriter[Recipe] with {
+  object SagContentWriter {
+    given SagContentWriter[Recipe] with {
       override inline def convert(value: Recipe): Recipe = value
     }
-    given SagWriter[String] with {
+    given SagContentWriter[String] with {
       override inline def convert(value: String): Recipe = Sync:
         val baos = new ByteArrayOutputStream()
         scalatags.Escaping.escape(value, new OutputStreamWriter(baos))
         write(baos.toByteArray)
+    }
+
+    given seqSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Seq[T]] = values =>
+      Sync:
+        values.foreach(v => sw.convert(v).run)
+
+    given fraqSagWriter: SagContentWriter[Frag] = frag =>
+      Sync:
+        write(frag.render.getBytes(StandardCharsets.UTF_8))
+  }
+
+  @implicitNotFound("Do not know how to use ${T} as an attribute value")
+  trait SagAttributeValueWriter[-T] {
+    def convert(value: T): Recipe
+    def skip(value: T): Boolean = false
+  }
+  object SagAttributeValueWriter {
+    given SagAttributeValueWriter[String] with {
+      override inline def convert(value: String): Recipe = Sync:
+        inline constValueOpt[value.type] match
+          case Some(v) =>
+            write(v)
+          case None =>
+            write(value.getBytes())
+    }
+
+    given [T](using sw: SagAttributeValueWriter[T]): SagAttributeValueWriter[Option[T]] with {
+      override inline def convert(value: Option[T]): Recipe = Sync:
+        value match
+          case Some(v) => sw.convert(v).run
+          case None    => ()
+      override def skip(value: Option[T]): Boolean = value.isEmpty || sw.skip(value.get)
     }
   }
 
@@ -43,6 +80,11 @@ object sag {
     inline def applyDynamic(inline name: String)(inline args: Any*): Recipe =
       ${ applyDynamicImpl('{ name }, '{ args }) }
 
+    inline def Raw(content: String): Recipe = Sync:
+      write(content.getBytes(StandardCharsets.UTF_8))
+
+    inline def Concat(inline others: Recipe*): Recipe = Sync:
+      others.foreach(_.run)
   }
 
   extension (inline str: String) {
@@ -58,7 +100,7 @@ object sag {
 
     val tagname = name.valueOrAbort
 
-    if !validHtml5Tags.contains(tagname) then report.errorAndAbort("not html5", name)
+    if !validHtml5Tags.contains(tagname) then report.errorAndAbort("not a html5 tag", name)
 
     val attributes = args match
       case Varargs(args) =>
@@ -71,19 +113,12 @@ object sag {
       case other =>
         report.errorAndAbort(s"not varargs ${other.show}", other)
 
-    println(args)
-
-    def writeAnyVal(attr: Expr[Any]): Expr[Recipe] =
-      attr match
-        case '{ $v: τ } =>
-          '{
-            summonInline[SagWriter[τ]].convert($v)
-          }
-
     '{
       Sync {
         write("<")
         write(${ Expr(tagname.getBytes(StandardCharsets.UTF_8)) })
+
+        // write attributes
         ${
           Expr.ofSeq(
             attributes.filter(_._1.nonEmpty).map: a =>
@@ -92,53 +127,62 @@ object sag {
                 !(list.isEmpty || list.contains(tagname))
               then
                 report.errorAndAbort(s"not a valid attribute <$tagname ${a._1}>")
-              '{
-                write(" ")
-                write(${ Expr(a._1) })
-                write("=\"")
 
-                val sw = new StringWriter()
-                scalatags.Escaping.escape(${ a._2 }.toString, sw)
-                write(sw.toString.getBytes(StandardCharsets.UTF_8))
-                write("\"")
-              }
+              a._2 match
+                case '{ $v: τ } =>
+                  '{
+                    val wr = summonInline[SagAttributeValueWriter[τ]]
+                    if !wr.skip(${ v })
+                    then
+                      write(" ")
+                      write(${ Expr(a._1) })
+                      write("=\"")
+                      wr.convert(${ v }).run
+                      write("\"")
+                  }
           )
         }
+        write(">")
 
+        // write children
         ${
           tagname match
-            case "area" | "base" | "br" | "col" | "embed" | "hr" | "img" | "input" | "link" | "meta" | "source" | "track" | "wbr" =>
-              // void tag
-              '{ write(">") }
-            case "!DOCTYPE" =>
-              '{ write("html>") }
+            // void tag
+            case "!DOCTYPE html" | "area" | "base" | "br" | "col" | "embed" | "hr" | "img" | "input" | "link" | "meta" | "source" | "track" | "wbr" =>
+              if attributes.filter(_._1 == "").nonEmpty then
+                report.errorAndAbort(s"may not have children $tagname", args)
+              '{ () }
             case other =>
               '{
-                write(">")
                 ${
                   Expr.ofSeq(attributes.filter(_._1 == "").map: attr =>
-                    '{ ${ writeAnyVal(attr._2) }.run })
+                    attr._2 match
+                      case '{ $v: τ } =>
+                        '{
+                          summonInline[SagContentWriter[τ]].convert($v).run
+                        }
+                  )
                 }
                 write("</")
                 write(${ Expr(tagname.getBytes(StandardCharsets.UTF_8)) })
                 write(">")
               }
         }
-
       }
+
     }
 
   val validHtml5Tags = List(
-    "!DOCTYPE",   // Defines the document type
-    "a",          // Defines a hyperlink
-    "abbr",       // Defines an abbreviation or an acronym
-    "address",    // Defines contact information for the author/owner of a document
-    "area",       // Defines an area inside an image map
-    "article",    // Defines an article
-    "aside",      // Defines content aside from the page content
-    "audio",      // Defines embedded sound content
-    "b",          // Defines bold text
-    "base",       // Specifies the base URL/target for all relative URLs in a document
+    "!DOCTYPE html", // Defines the document type
+    "a",             // Defines a hyperlink
+    "abbr",          // Defines an abbreviation or an acronym
+    "address",       // Defines contact information for the author/owner of a document
+    "area",          // Defines an area inside an image map
+    "article",       // Defines an article
+    "aside",         // Defines content aside from the page content
+    "audio",         // Defines embedded sound content
+    "b",             // Defines bold text
+    "base",          // Specifies the base URL/target for all relative URLs in a document
     "bdi",        // Isolates a part of text that might be formatted in a different direction from other text outside it
     "bdo",        // Overrides the current text direction
     "blockquote", // Defines a section that is quoted from another source
