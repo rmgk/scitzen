@@ -21,47 +21,6 @@
   "name":"org.graalvm.polyglot.management.Management"
 },
 {
-  "name":"scalatags.Text$all$",
-  "fields":[
-    {"name":"0bitmap$8"}, 
-    {"name":"10bitmap$1"}, 
-    {"name":"1bitmap$8"}, 
-    {"name":"2bitmap$6"}, 
-    {"name":"3bitmap$4"}, 
-    {"name":"4bitmap$3"}, 
-    {"name":"5bitmap$2"}, 
-    {"name":"6bitmap$1"}, 
-    {"name":"7bitmap$1"}, 
-    {"name":"8bitmap$1"}, 
-    {"name":"9bitmap$1"}
-  ]
-},
-{
-  "name":"scalatags.Text$attrs$",
-  "fields":[
-    {"name":"0bitmap$1"}, 
-    {"name":"1bitmap$1"}, 
-    {"name":"2bitmap$1"}, 
-    {"name":"3bitmap$1"}, 
-    {"name":"4bitmap$1"}
-  ]
-},
-{
-  "name":"scalatags.Text$tags$",
-  "fields":[
-    {"name":"0bitmap$2"}, 
-    {"name":"1bitmap$2"}, 
-    {"name":"2bitmap$2"}
-  ]
-},
-{
-  "name":"scalatags.Text$tags2$",
-  "fields":[
-    {"name":"0bitmap$3"}, 
-    {"name":"1bitmap$3"}
-  ]
-},
-{
   "name":"scopt.OParser$",
   "fields":[{"name":"0bitmap$1"}]
 },
