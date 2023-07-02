@@ -3,7 +3,6 @@ package scitzen.cli
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import de.rmgk.delay
 import de.rmgk.logging.Logger
-import scalatags.Text.StringFrag
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging
 import scitzen.compat.Logging.given
@@ -137,7 +136,7 @@ class ConvertHtml(anal: ConversionAnalysis):
       converter
     )
 
-    import scalatags.Text.all.{Frag, SeqFrag, a, frag, href, stringAttr}
+    import scalatags.Text.all.{Frag, SeqFrag}
 
     val res = titled.header.attributes.plain("htmlTemplate") match
       case None =>
@@ -151,7 +150,7 @@ class ConvertHtml(anal: ConversionAnalysis):
             then ""
             else "numbered-sections",
           mainClass = if converter.hardNewlines then Some("adhoc") else None,
-          sidebar = toc.map(c => frag(a(href := s"#", StringFrag(titled.header.title)): Frag, c: Frag)),
+          sidebar = toc.map(c => Sag.Concat(Sag.a(href = s"#", titled.header.title), c)),
           titled = converter.convertInlinesCombined(ConversionContext(()), titled.header.titleText.inl).data,
           language = titled.header.language
             .orElse(nlp.language(titled.article))

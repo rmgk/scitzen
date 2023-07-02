@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scalatags.Text.all.*
+import de.rmgk.delay.Sync
 import scalatags.Text.implicits.raw
 import scalatags.Text.{Frag, RawFrag}
 import scitzen.contexts.ConversionContext
@@ -35,9 +35,9 @@ object HtmlPages:
   val maxdepth     = 2
   val startsection = List("==", "#")
 
-  def tableOfContents(docsections: List[Section], converter: SastToHtmlConverter): Option[Frag] =
+  def tableOfContents(docsections: List[Section], converter: SastToHtmlConverter): Option[Recipe] =
 
-    def recurse(remaining: List[Section], depth: Int): Option[Frag] =
+    def recurse(remaining: List[Section], depth: Int): Option[Recipe] =
       remaining match
         case Nil => None
         case (head @ Section(title, _, _)) :: rest =>
@@ -45,11 +45,14 @@ object HtmlPages:
           val subtags = if depth < maxdepth then recurse(sub, depth + 1)
           else None
           val res     = converter.convertInlineSeq(ConversionContext(()), title.inl)
-          val thistag = li(a(href := s"#${head.ref}", res.data), subtags.map(ol(_)))
+          val thistag = Sag.li(Sag.a(href = s"#${head.ref}", res.data), subtags.map(Sag.ol(_)).toList)
           val nexttag = recurse(other, depth)
-          Some(SeqFrag(thistag :: nexttag.toList))
+          Some:
+            Sync[SagContext]:
+              thistag.run
+              Sag.Use(nexttag.toList).run
 
-    recurse(docsections.dropWhile(s => !startsection.contains(s.prefix)), 1).map(ol(_))
+    recurse(docsections.dropWhile(s => !startsection.contains(s.prefix)), 1).map(Sag.ol(_))
 
 class HtmlPages(cssPath: String):
 
@@ -77,7 +80,7 @@ class HtmlPages(cssPath: String):
       content: Recipe,
       bodyClass: String,
       mainClass: Option[String],
-      sidebar: Option[Frag],
+      sidebar: Option[Recipe],
       titled: Frag,
       language: Option[String] = None
   ): String =

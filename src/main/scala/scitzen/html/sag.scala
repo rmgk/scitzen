@@ -1,6 +1,6 @@
 package scitzen.html
 
-import de.rmgk.delay
+import de.rmgk.{Chain, delay}
 import de.rmgk.delay.Sync
 import scalatags.Text.Frag
 
@@ -37,6 +37,10 @@ object sag {
     }
 
     given seqSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Seq[T]] = values =>
+      Sync:
+        values.foreach(v => sw.convert(v).run)
+
+    given chainSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Chain[T]] = values =>
       Sync:
         values.foreach(v => sw.convert(v).run)
 
