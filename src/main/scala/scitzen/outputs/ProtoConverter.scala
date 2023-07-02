@@ -139,7 +139,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def directiveString(directive: Directive) = SastToScimConverter(anal.bib).macroToScim(directive)
 
-  def handleInclude(ctx: Cta, directive: Directive) = {
+  def handleInclude(ctx: Cta, directive: Directive): Ctx[Chain[BlockRes | InlineRes]] = {
     val attributes = directive.attributes
     attributes.text.plainString match
       case "code" =>
@@ -149,19 +149,22 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             convertSast(ctx, Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov))
 
       case other =>
-        val resolution: Option[Article] = if attributes.target.endsWith(".scim") then
-          doc.resolve(attributes.target).flatMap(anal.directory.byPath.get).flatMap(_.headOption)
+        val resolution: Seq[Article] = if attributes.target.endsWith(".scim") then
+          doc.resolve(attributes.target).flatMap(anal.directory.byPath.get).getOrElse(Nil)
         else
-          anal.directory.findByLabel(attributes.target).map(_.article)
-        resolution match
-          case None =>
-            cli.warn(
-              s"unknown include article ${attributes.target}",
-              directive.prov
-            )
-            ctx.empty
-          case Some(article) =>
-            subconverter(article.ref, anal, combinedAttributes).convertSastSeq(ctx, article.sast)
+          anal.directory.findByLabel(attributes.target).map(_.article).toList
+        if resolution.nonEmpty
+        then
+          (ctx.fold(resolution): (ctx, article) =>
+            subconverter(article.ref, anal, combinedAttributes).convertSastSeq(ctx, article.sast).map: res =>
+              ctx.data ++ res): CtxCF
+        else
+          cli.warn(
+            s"unknown include article ${attributes.target}",
+            directive.prov
+          )
+          ctx.empty: CtxCF
+
   }
 
 end ProtoConverter
