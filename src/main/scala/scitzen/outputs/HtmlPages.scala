@@ -1,10 +1,7 @@
 package scitzen.outputs
 
-import scalatags.Text.{Frag, RawFrag, Tag}
-import scalatags.Text.attrs.{`for`, `type`, hidden, id}
-import scalatags.Text.implicits.{raw, stringAttr}
-import scalatags.Text.tags.{input, label}
-import scalatags.Text.tags2.{aside, nav}
+import scalatags.Text.{Frag, RawFrag}
+import scalatags.Text.implicits.{raw}
 import scitzen.html.sag.{Recipe, Sag, SagContext, SagContentWriter}
 import scitzen.outputs.HtmlPages.svgContainer
 
@@ -41,15 +38,16 @@ class HtmlPages(cssPath: String):
       title
     )
 
-  val sidebarContainer: Tag =
-    aside(
-      input(`type` := "checkbox", id := "sidebar-switch", hidden),
-      label(
-        `for` := "sidebar-switch",
-        hidden,
+  def sidebarContainer(child: Recipe): Recipe =
+    Sag.aside(
+      Sag.input(`type` = "checkbox", id = "sidebar-switch", hidden = true),
+      Sag.label(
+        `for` = "sidebar-switch",
+        hidden = true,
         HtmlPages.iconMenu,
         HtmlPages.iconClose,
-      )
+      ),
+      child
     )
 
   def wrapContentHtml(
@@ -61,9 +59,6 @@ class HtmlPages(cssPath: String):
       language: Option[String] = None
   ): String =
     val sctx = new SagContext()
-
-    given SagContentWriter[Seq[Frag]] = SagContentWriter.seqSagWriter(using SagContentWriter.fraqSagWriter)
-
     Sag.Concat(
       Sag.`!DOCTYPE html`(),
       Sag.html(
@@ -72,7 +67,7 @@ class HtmlPages(cssPath: String):
         tHead(Sag.title(Sag.Raw(titled.render))),
         Sag.body(
           `class` = bodyClass,
-          sidebar.map(s => sidebarContainer(nav(s))).toSeq,
+          sidebar.map(s => sidebarContainer(Sag.nav(s))).toSeq,
           Sag.main(content, `class` = mainClass, lang = language),
           Sag.Raw(svgContainer),
         )

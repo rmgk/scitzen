@@ -19,7 +19,7 @@ object sag {
     def resultString: String                           = baos.toString(StandardCharsets.UTF_8)
   }
 
-  @implicitNotFound("Do not know how to use $T as content")
+  @implicitNotFound("Do not know how to use ${T} as content")
   trait SagContentWriter[-T] {
     def convert(value: T): Recipe
   }
@@ -46,25 +46,39 @@ object sag {
 
   @implicitNotFound("Do not know how to use ${T} as an attribute value")
   trait SagAttributeValueWriter[-T] {
-    def convert(value: T): Recipe
-    def skip(value: T): Boolean = false
+    def convert(attr: Array[Byte], value: T): Recipe
   }
+
   object SagAttributeValueWriter {
+
+    given abavw: SagAttributeValueWriter[Array[Byte]] with
+      override def convert(attr: Array[Byte], value: Array[Byte]): Recipe = Sync:
+        write(" ".getBytes(StandardCharsets.UTF_8))
+        write(attr)
+        write("=\"".getBytes(StandardCharsets.UTF_8))
+        write(value)
+        write("\"".getBytes(StandardCharsets.UTF_8))
+
     given SagAttributeValueWriter[String] with {
-      override inline def convert(value: String): Recipe = Sync:
-        inline constValueOpt[value.type] match
-          case Some(v) =>
-            write(v)
-          case None =>
-            write(value.getBytes())
+      override inline def convert(attr: Array[Byte], value: String): Recipe = Sync:
+        val bytes = inline constValueOpt[value.type] match
+          case Some(v) => v.gB
+          case None    => value.getBytes()
+        abavw.convert(attr, bytes).run
     }
 
     given [T](using sw: SagAttributeValueWriter[T]): SagAttributeValueWriter[Option[T]] with {
-      override inline def convert(value: Option[T]): Recipe = Sync:
+      override inline def convert(name: Array[Byte], value: Option[T]): Recipe = Sync:
         value match
-          case Some(v) => sw.convert(v).run
+          case Some(v) => sw.convert(name, v).run
           case None    => ()
-      override def skip(value: Option[T]): Boolean = value.isEmpty || sw.skip(value.get)
+    }
+
+    given SagAttributeValueWriter[Boolean] with {
+      override inline def convert(name: Array[Byte], value: Boolean): Recipe = Sync:
+        inline constValueOpt[value.type] match
+          case Some(v) => inline if v then write(name)
+          case other   => if value then write(name)
     }
   }
 
@@ -131,14 +145,10 @@ object sag {
               a._2 match
                 case '{ $v: τ } =>
                   '{
-                    val wr = summonInline[SagAttributeValueWriter[τ]]
-                    if !wr.skip(${ v })
-                    then
-                      write(" ")
-                      write(${ Expr(a._1) })
-                      write("=\"")
-                      wr.convert(${ v }).run
-                      write("\"")
+                    summonInline[SagAttributeValueWriter[τ]].convert(
+                      ${ Expr(a._1.getBytes(StandardCharsets.UTF_8)) },
+                      ${ v }
+                    ).run
                   }
           )
         }
