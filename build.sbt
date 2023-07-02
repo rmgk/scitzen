@@ -20,6 +20,7 @@ lazy val scitzen = project.in(file("."))
       scopt.value,
       jsoniterScala.value,
       munit.value,
+      "com.github.fomkin"             %%% "levsha-core"   % "1.3.0",
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.29.0",
       "org.webjars.npm"                 % "katex"         % "0.16.4",
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
