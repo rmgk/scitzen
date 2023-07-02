@@ -1,6 +1,7 @@
 package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
+import de.rmgk.delay
 import de.rmgk.logging.Logger
 import scalatags.Text.StringFrag
 import scitzen.cli.ScitzenCommandline.ClSync
@@ -10,6 +11,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
 import scitzen.extern.ResourceUtil
 import scitzen.generic.*
+import scitzen.html.sag.{Recipe, Sag, SagContext}
 import scitzen.outputs.{HtmlPages, HtmlToc, SastToHtmlConverter}
 import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
@@ -123,14 +125,12 @@ class ConvertHtml(anal: ConversionAnalysis):
         Attributes(Seq(scitzen.sast.Attribute("unique ref", bibid)))
       )(Prov())
     ).toList
-    val citations =
-      if bibEntries.isEmpty then Nil
+    val citations: Recipe =
+      if bibEntries.isEmpty then de.rmgk.delay.Sync(())
       else
-        import scalatags.Text.all.{SeqFrag, cls, h2, id, li, stringAttr, stringFrag, ul}
-        List(
-          h2(bibname, id := bibid),
-          ul(cls         := "bibliography", bibEntries.map { be => li(id := be.id, be.formatHtmlCitation) })
-        )
+        delay.Sync:
+          Sag.h2(bibname, id = bibid).run
+          Sag.ul(`class` = "bibliography", bibEntries.map { be => Sag.li(id = be.id, be.formatHtmlCitation) }).run
 
     val toc = HtmlToc.tableOfContents(
       convertedArticleCtx.sections.reverse ++ bibsection,
@@ -141,7 +141,8 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     val res = titled.header.attributes.plain("htmlTemplate") match
       case None =>
-        val contentFrag = convertedArticleCtx.data.toList ++: citations
+        val contentFrag =
+          Sag.Concat(Sag.Use(convertedArticleCtx.data.toList), citations)
 
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,

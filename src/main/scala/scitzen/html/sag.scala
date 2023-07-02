@@ -15,8 +15,9 @@ import scala.compiletime.*
 object sag {
 
   class SagContext(val baos: ByteArrayOutputStream = new ByteArrayOutputStream(8096)) {
-    inline def append(inline bytes: Array[Byte]): Unit = baos.writeBytes(bytes)
-    def resultString: String                           = baos.toString(StandardCharsets.UTF_8)
+    def append(bytes: Array[Byte]): Unit =
+      baos.writeBytes(bytes)
+    def resultString: String = baos.toString(StandardCharsets.UTF_8)
   }
 
   @implicitNotFound("Do not know how to use ${T} as content")
@@ -99,6 +100,8 @@ object sag {
 
     inline def Concat(inline others: Recipe*): Recipe = Sync:
       others.foreach(_.run)
+
+    inline def Use[T](inline other: T)(using sw: SagContentWriter[T]): Recipe = sw.convert(other)
   }
 
   extension (inline str: String) {
@@ -106,7 +109,9 @@ object sag {
   }
   def getBytesMacro(str: Expr[String])(using quotes: Quotes) =
     import quotes.*
-    Expr(str.valueOrAbort.getBytes(StandardCharsets.UTF_8))
+    str.value match
+      case Some(v) => Expr(v.getBytes(StandardCharsets.UTF_8))
+      case None    => '{ ${ str }.getBytes(StandardCharsets.UTF_8) }
 
   def applyDynamicImpl(name: Expr[String], args: Expr[Seq[Any]])(using quotes: Quotes): Expr[Recipe] =
     import quotes.*
@@ -114,7 +119,7 @@ object sag {
 
     val tagname = name.valueOrAbort
 
-    if !validHtml5Tags.contains(tagname) then report.errorAndAbort("not a html5 tag", name)
+    if !validHtml5Tags.contains(tagname) then report.errorAndAbort(s"not a html5 tag $tagname", name)
 
     val attributes = args match
       case Varargs(args) =>
@@ -222,20 +227,25 @@ object sag {
     "figure",     // Specifies self-contained content
     "footer",     // Defines a footer for a document or section
     "form",       // Defines an HTML form for user input
-    "h1> to <h6", // Defines HTML headings
-    "head",       // Contains metadata/information for the document
-    "header",     // Defines a header for a document or section
-    "hr",         // Defines a thematic change in the content
-    "html",       // Defines the root of an HTML document
-    "i",          // Defines a part of text in an alternate voice or mood
-    "iframe",     // Defines an inline frame
-    "img",        // Defines an image
-    "input",      // Defines an input control
-    "ins",        // Defines a text that has been inserted into a document
-    "kbd",        // Defines keyboard input
-    "label",      // Defines a label for an <input> element
-    "legend",     // Defines a caption for a <fieldset> element
-    "li",         // Defines a list item
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",     // Defines HTML headings
+    "head",   // Contains metadata/information for the document
+    "header", // Defines a header for a document or section
+    "hr",     // Defines a thematic change in the content
+    "html",   // Defines the root of an HTML document
+    "i",      // Defines a part of text in an alternate voice or mood
+    "iframe", // Defines an inline frame
+    "img",    // Defines an image
+    "input",  // Defines an input control
+    "ins",    // Defines a text that has been inserted into a document
+    "kbd",    // Defines keyboard input
+    "label",  // Defines a label for an <input> element
+    "legend", // Defines a caption for a <fieldset> element
+    "li",     // Defines a list item
     "link",  // Defines the relationship between a document and an external resource (most used to link to style sheets)
     "main",  // Specifies the main content of a document
     "map",   // Defines an image map

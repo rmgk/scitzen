@@ -1,6 +1,8 @@
 package scitzen.bibliography
 
-import scalatags.Text.all.{Frag, a, cls, frag, href, p, stringFrag, given}
+import de.rmgk.delay.Sync
+import scitzen.html.sag
+import scitzen.html.sag.{Recipe, Sag, SagContentWriter}
 
 case class Author(givenName: Option[String], familyName: Option[String]) {
   def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")
@@ -20,19 +22,29 @@ case class BibEntry(
   def formatAuthors: Option[String] =
     val res = authors.map(_.full).mkString(", ")
     if res.nonEmpty then Some(res) else None
-  def formatHtmlCitation: Frag =
-    def line(name: String, elems: Option[String | Frag]*): Option[Frag] =
-      val terminator = stringFrag(". ")
-      val inside: Seq[Frag] = elems.flatten.flatMap {
-        case s: String => List(stringFrag(s.stripSuffix(".")), terminator)
-        case f: Frag   => List(f, terminator)
-      }
-      if inside.isEmpty then None else Some(p(cls := name, inside))
-    frag(
-      line("authors", formatAuthors, year.map(_.toString)),
-      line("title", title.map(t => url.fold(t)(u => a(href := u, t.stripSuffix("."))))),
-      line("container", container, issue)
-    )
+  def formatHtmlCitation: Recipe =
+    def line(name: String, elems: Option[String | Recipe]*): Recipe = Sync:
+      elems.flatten match
+        case Nil => ()
+        case insides =>
+          val terminator = ". "
+          Sag.p(
+            `class` = name,
+            Sync:
+              insides.foreach {
+                case s: String =>
+                  sag.write(s.stripSuffix("."))
+                  sag.write(terminator)
+                case f: Recipe   =>
+                  f.run
+                  sag.write(terminator)
+              }
+          ).run
+    Sync:
+      line("authors", formatAuthors, year.map(_.toString)).run
+      line("title", title.map(t => url.fold(t)(u => Sag.a(href = u, t.stripSuffix("."))))).run
+      line("container", container, issue).run
+
   def authorYear: Option[String] =
     for
       author <- authors.headOption
