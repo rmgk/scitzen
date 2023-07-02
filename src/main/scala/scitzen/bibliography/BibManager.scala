@@ -32,7 +32,7 @@ class BibManager(project: Project) {
 
     val queries = queriesDirectives.map(cit => cit.attributes.target -> DBLP.search(cit.attributes.target)).toMap
     queries.foreach: (k, v) =>
-      println(s"$k resolved to $v")
+      Logging.cli.info(s"$k resolved to $v")
 
     val citeKeys     = citeDirectives.flatMap(BibManager.bibIds)
     val allCitations = citeKeys.toSet ++ queries.valuesIterator.flatten.map(info => s"DBLP:${info.key}")
