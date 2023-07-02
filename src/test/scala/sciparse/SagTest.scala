@@ -6,7 +6,7 @@ import munit.Location
 import scitzen.bibliography.BibDB
 import scitzen.outputs.SastToScimConverter
 import scitzen.html.sag
-import scitzen.html.sag.{Recipe, XmlTags}
+import scitzen.html.sag.{Recipe, Sag}
 
 import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
@@ -17,7 +17,7 @@ class SagTest extends munit.FunSuite {
 
   test("basic directive") {
 
-    val xt = new sag.XmlTags()
+    val xt = sag.Sag
 
     val ctx = new sag.SagContext(new ByteArrayOutputStream())
     xt.body(style = "some", xt.p("this is a pragraph with weird symbols \" attribute > value")).runInContext(ctx)

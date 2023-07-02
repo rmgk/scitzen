@@ -12,8 +12,7 @@ import scala.compiletime.summonInline
 object sag {
 
   class SagContext(val baos: ByteArrayOutputStream) {
-    def append(bytes: Array[Byte]): Unit = baos.writeBytes(bytes)
-
+    inline def append(inline bytes: Array[Byte]): Unit = baos.writeBytes(bytes)
   }
 
   trait SagWriter[-T] {
@@ -32,12 +31,12 @@ object sag {
     }
   }
 
-  inline def write(using sc: SagContext)(bytes: Array[Byte]) = sc.append(bytes)
-  inline def write(using sc: SagContext)(str: String)        = sc.append(str.gB)
+  inline def write(using sc: SagContext)(inline bytes: Array[Byte]) = sc.append(bytes)
+  inline def write(using sc: SagContext)(inline str: String)        = sc.append(str.gB)
 
   type Recipe = de.rmgk.delay.Sync[SagContext, Unit]
 
-  class XmlTags extends Dynamic {
+  object Sag extends Dynamic {
     inline def applyDynamicNamed(inline name: String)(inline args: (String, Any)*): Recipe =
       ${ applyDynamicImpl('{ name }, '{ args }) }
 
