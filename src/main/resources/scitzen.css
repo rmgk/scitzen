@@ -168,7 +168,7 @@ h4 {
 	content: counter(section) "." counter(subsection) ". ";
 }
 
-svg.external-link {
+svg.icon {
 	vertical-align: bottom;
 	width: 0.85em;
 	height: 0.85em;

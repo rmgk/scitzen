@@ -6,8 +6,18 @@ import scalatags.Text.attrs.{`for`, `type`, charset, cls, content, hidden, href,
 import scalatags.Text.implicits.{raw, stringAttr}
 import scalatags.Text.tags.{body, head, html, input, label, link, meta}
 import scalatags.Text.tags2.{aside, main, nav, title}
+import scitzen.outputs.HtmlPages.svgContainer
 
 object HtmlPages:
+
+  val svgContainer =
+    raw(s"""<svg display="none">${featherSymbol(
+        "external-link",
+        """<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>"""
+      )}</svg>""")
+
+  def featherSymbol(id: String, path: String) =
+    s"""<symbol id="$id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">$path</symbol>"""
 
   def featherIcon(cls: String, path: String): RawFrag =
     raw(
@@ -17,10 +27,7 @@ object HtmlPages:
   val iconMenu = featherIcon("menu", """<path d="M3 12 H21 M3 6 H21 M3 18 H21" />""")
 
   val iconClose = featherIcon("close", """<path d="M18 6 L6 18 M6 6 L18 18" />""")
-  val iconExternalLink = featherIcon(
-    "external-link",
-    """<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>"""
-  )
+  val iconExternalLink = raw(s"""<svg class="icon"><use href="#external-link"></use></svg>""")
 
 class HtmlPages(cssPath: String):
 
@@ -56,9 +63,10 @@ class HtmlPages(cssPath: String):
     htmlDocument(html(
       // we define a global language as scitzen controls are kinda all english, but also to enable features such as hyphenation even if no language is defined. This will produce incorrect hyphenation, but thats guesswork anyways, so may be OK.
       lang := "en",
-      tHead(title(titled))
+      tHead(title(titled)),
     )(body(
       cls := bodyClass,
       sidebar.map(s => sidebarContainer(nav(s))).toSeq,
-      main(content, mainClass.map(cls := _), language.map(lang := _))
+      main(content, mainClass.map(cls := _), language.map(lang := _)),
+      svgContainer,
     )))
