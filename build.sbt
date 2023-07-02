@@ -12,7 +12,6 @@ lazy val scitzen = project.in(file("."))
       jsoup.value,
       directories.value,
       upickle.value,
-      scalatags.value,
       slips.chain.value,
       slips.logging.value,
       slips.scip.value,

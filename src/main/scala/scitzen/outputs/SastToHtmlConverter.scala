@@ -2,7 +2,6 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import de.rmgk.delay.Sync
-import scalatags.{Text, text}
 import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
@@ -10,21 +9,12 @@ import scitzen.extern.{ImageTarget, Prism}
 import scitzen.generic.{ArticleRef, Document, References, SastRef}
 import scitzen.sast.{BCommand, *}
 import scitzen.sast.DCommand.*
-import scalatags.Text.all.*
-import scalatags.text.Builder
 import scitzen.contexts.ConversionContext
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 import scitzen.sast.Attribute.Named
 
 import java.nio.file.Files
-
-given [A](using ev: A => Frag): Conversion[Chain[A], Frag] with {
-  override def apply(xs: Chain[A]): Frag = new Frag {
-    def render                   = xs.map(elem => ev(elem).render).mkString
-    def applyTo(t: text.Builder) = xs.foreach(elem => ev(elem).applyTo(t))
-  }
-}
 
 class SastToHtmlConverter(
     articleRef: ArticleRef,
@@ -166,7 +156,7 @@ class SastToHtmlConverter(
         val js = block.content match
           case Fenced(js) => Some(js)
           case _          => None
-        ctx.retc(Sag.script(`type` = "text/javascript", js.map(raw(_))))
+        ctx.retc(Sag.script(`type` = "text/javascript", js.map(Sag.Raw(_))))
 
       case other =>
         convertStandardBlock(block, ctx)
@@ -220,7 +210,7 @@ class SastToHtmlConverter(
       if block.attributes.text.plainString != "highlight" then
         block.attributes.plain("lang") match
           case None       => Sag.code(`class` = language, labeltext)
-          case Some(lang) => Sag.code(`class` = language, raw(Prism.highlight(labeltext, lang)))
+          case Some(lang) => Sag.code(`class` = language, Sag.Raw(Prism.highlight(labeltext, lang)))
       else
         val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) =>
           s.contains(":hl§")
@@ -256,11 +246,11 @@ class SastToHtmlConverter(
         cli.warn("cannot inline", directive)
         ctx.retc(Sag.code(directiveString(directive)))
 
-      case Raw => ctx.retc(Sag.div(raw(attrs.plain("html").getOrElse(""))))
+      case Raw => ctx.retc(Sag.div(Sag.Raw(attrs.plain("html").getOrElse(""))))
 
       case Math =>
         val inner = attrs.target
-        ctx.katex(inner).map(res => Chain(Sag.math(raw(res))))
+        ctx.katex(inner).map(res => Chain(Sag.math(Sag.Raw(res))))
 
       case BibQuery =>
         convertInlineDirective(ctx, anal.bib.convert(directive))
@@ -354,10 +344,10 @@ class SastToHtmlConverter(
     val attrs: Attributes = directive.attributes
     val citations         = anal.bib.bibkeys(directive).map(k => k -> anal.bib.entries.get(k))
     val anchors = citations.sortBy(_._2.map(_.citekey)).flatMap {
-      case (bibid, Some(bib)) => List(a(href := s"#$bibid", bib.citekey), stringFrag(",\u2009"))
+      case (bibid, Some(bib)) => List(Sag.a(href = s"#$bibid", bib.citekey), Sag.String(",\u2009"))
       case (bibid, None) =>
         cli.warn(s"bib key not found: »${bibid}«", directive)
-        List(code(bibid), stringFrag(" "))
+        List(Sag.code(bibid), Sag.String(" "))
     }.dropRight(1)
     val cctx          = ctx.cite(citations.flatMap(_._2))
     val styledAnchors = Sag.span(`class` = "citations", "(", anchors, ")")

@@ -2,7 +2,6 @@ package scitzen.html
 
 import de.rmgk.{Chain, delay}
 import de.rmgk.delay.Sync
-import scalatags.Text.Frag
 
 import java.io.{ByteArrayOutputStream, OutputStreamWriter}
 import java.nio.charset.StandardCharsets
@@ -33,7 +32,7 @@ object sag {
       override def convert(value: String): Recipe = Sync:
         val baos = new ByteArrayOutputStream()
         val osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8)
-        scalatags.Escaping.escape(value, osw)
+        Escaping.escape(value, osw)
         osw.close()
         write(baos.toByteArray)
     }
@@ -50,9 +49,6 @@ object sag {
       Sync:
         values.foreach(v => sw.convert(v).run)
 
-    given fraqSagWriter: SagContentWriter[Frag] = frag =>
-      Sync:
-        write(frag.render.getBytes(StandardCharsets.UTF_8))
   }
 
   @implicitNotFound("Do not know how to use ${T} as an attribute value")
