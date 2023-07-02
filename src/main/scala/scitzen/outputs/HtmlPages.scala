@@ -1,8 +1,6 @@
 package scitzen.outputs
 
 import de.rmgk.delay.Sync
-import scalatags.Text.implicits.raw
-import scalatags.Text.{Frag, RawFrag}
 import scitzen.contexts.ConversionContext
 import scitzen.html.sag.{Recipe, Sag, SagContentWriter, SagContext}
 import scitzen.outputs.HtmlPages.svgContainer
@@ -22,15 +20,13 @@ object HtmlPages:
   def featherSymbol(id: String, path: String) =
     s"""<symbol id="$id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">$path</symbol>"""
 
-  def featherIcon(cls: String, path: String): RawFrag =
-    raw(
+  def featherIcon(cls: String, path: String): String =
       s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls">$path</svg>"""
-    )
 
   val iconMenu = featherIcon("menu", """<path d="M3 12 H21 M3 6 H21 M3 18 H21" />""")
 
   val iconClose        = featherIcon("close", """<path d="M18 6 L6 18 M6 6 L18 18" />""")
-  val iconExternalLink = raw(s"""<svg class="icon"><use href="#external-link"></use></svg>""")
+  val iconExternalLink = s"""<svg class="icon"><use href="#external-link"></use></svg>"""
 
   val maxdepth     = 2
   val startsection = List("==", "#")
@@ -81,7 +77,7 @@ class HtmlPages(cssPath: String):
       bodyClass: String,
       mainClass: Option[String],
       sidebar: Option[Recipe],
-      titled: Frag,
+      titled: Recipe,
       language: Option[String] = None
   ): String =
     val sctx = new SagContext()
@@ -90,7 +86,7 @@ class HtmlPages(cssPath: String):
       Sag.html(
         // we define a global language as scitzen controls are kinda all english, but also to enable features such as hyphenation even if no language is defined. This will produce incorrect hyphenation, but thats guesswork anyways, so may be OK.
         lang = "en",
-        tHead(Sag.title(Sag.Raw(titled.render))),
+        tHead(Sag.title(titled)),
         Sag.body(
           `class` = bodyClass,
           sidebar.map(s => sidebarContainer(Sag.nav(s))).toSeq,
