@@ -32,7 +32,9 @@ object sag {
     given SagContentWriter[String] with {
       override inline def convert(value: String): Recipe = Sync:
         val baos = new ByteArrayOutputStream()
-        scalatags.Escaping.escape(value, new OutputStreamWriter(baos))
+        val osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8)
+        scalatags.Escaping.escape(value, osw)
+        osw.close()
         write(baos.toByteArray)
     }
 

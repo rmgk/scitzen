@@ -136,7 +136,6 @@ class ConvertHtml(anal: ConversionAnalysis):
       converter
     )
 
-    import scalatags.Text.all.{Frag, SeqFrag}
 
     val res = titled.header.attributes.plain("htmlTemplate") match
       case None =>
@@ -156,7 +155,10 @@ class ConvertHtml(anal: ConversionAnalysis):
             .orElse(nlp.language(titled.article))
         )
       case Some(templatePath) =>
-        val content = SeqFrag(convertedArticleCtx.data.toList).render
+        val content =
+            val sagctx = new SagContext()
+            Sag.Concat(convertedArticleCtx.data.view.map(Sag.Use(_)).toSeq: _*).runInContext(sagctx)
+            sagctx.resultString
 
         val templateSettings =
           Attributes(project.config.settings ++ titled.header.attributes.raw ++
