@@ -12,16 +12,16 @@ import scala.math.Ordering.Implicits.infixOrderingOps
 object HtmlPages:
 
   val svgContainer =
-    s"""<svg display="none">${featherSymbol(
+    Sag.Raw(s"""<svg display="none">${featherSymbol(
         "external-link",
         """<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>"""
-      )}</svg>"""
+      )}</svg>""")
 
   def featherSymbol(id: String, path: String) =
     s"""<symbol id="$id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">$path</symbol>"""
 
-  def featherIcon(cls: String, path: String): String =
-      s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls">$path</svg>"""
+  def featherIcon(cls: String, path: String): Recipe =
+      Sag.Raw(s"""<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="$cls">$path</svg>""")
 
   val iconMenu = featherIcon("menu", """<path d="M3 12 H21 M3 6 H21 M3 18 H21" />""")
 
@@ -91,7 +91,7 @@ class HtmlPages(cssPath: String):
           `class` = bodyClass,
           sidebar.map(s => sidebarContainer(Sag.nav(s))).toSeq,
           Sag.main(content, `class` = mainClass, lang = language),
-          Sag.Raw(svgContainer),
+          svgContainer,
         )
       )
     ).runInContext(sctx)

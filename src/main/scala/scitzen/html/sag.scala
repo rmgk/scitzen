@@ -30,7 +30,7 @@ object sag {
       override inline def convert(value: Recipe): Recipe = value
     }
     given SagContentWriter[String] with {
-      override inline def convert(value: String): Recipe = Sync:
+      override def convert(value: String): Recipe = Sync:
         val baos = new ByteArrayOutputStream()
         val osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8)
         scalatags.Escaping.escape(value, osw)
@@ -43,6 +43,10 @@ object sag {
         values.foreach(v => sw.convert(v).run)
 
     given chainSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Chain[T]] = values =>
+      Sync:
+        values.foreach(v => sw.convert(v).run)
+
+    given optionSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Option[T]] = values =>
       Sync:
         values.foreach(v => sw.convert(v).run)
 
@@ -104,10 +108,17 @@ object sag {
     inline def Raw(content: String): Recipe = Sync:
       write(content.getBytes(StandardCharsets.UTF_8))
 
+    inline def Nothing: Recipe = Sync{()}
+
     inline def Concat(inline others: Recipe*): Recipe = Sync:
       others.foreach(_.run)
 
+    inline def Chain(inline others: Chain[Recipe]): Recipe = Sync:
+      others.foreach(_.run)
+
     inline def Use[T](inline other: T)(using sw: SagContentWriter[T]): Recipe = sw.convert(other)
+
+    inline def String(inline other: String): Recipe = summon[SagContentWriter[String]].convert(other)
   }
 
   extension (inline str: String) {
@@ -149,7 +160,7 @@ object sag {
             attributes.filter(_._1.nonEmpty).map: a =>
               if
                 val list = attributeScopes.getOrElse(a._1, List("+ Nothing"))
-                !(list.isEmpty || list.contains(tagname))
+                !(list.isEmpty || list.contains(tagname) || a._1.startsWith("data-"))
               then
                 report.errorAndAbort(s"not a valid attribute <$tagname ${a._1}>")
 
@@ -254,6 +265,7 @@ object sag {
     "li",     // Defines a list item
     "link",  // Defines the relationship between a document and an external resource (most used to link to style sheets)
     "main",  // Specifies the main content of a document
+    "math",  // technically not html5, but allowed
     "map",   // Defines an image map
     "mark",  // Defines marked/highlighted text
     "meta",  // Defines metadata about an HTML document

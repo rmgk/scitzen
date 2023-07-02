@@ -150,7 +150,7 @@ class ConvertHtml(anal: ConversionAnalysis):
             else "numbered-sections",
           mainClass = if converter.hardNewlines then Some("adhoc") else None,
           sidebar = toc.map(c => Sag.Concat(Sag.a(href = s"#", titled.header.title), c)),
-          titled = Sag.Raw(converter.convertInlinesCombined(ConversionContext(()), titled.header.titleText.inl).data.render),
+          titled = converter.convertInlinesCombined(ConversionContext(()), titled.header.titleText.inl).data,
           language = titled.header.language
             .orElse(nlp.language(titled.article))
         )
