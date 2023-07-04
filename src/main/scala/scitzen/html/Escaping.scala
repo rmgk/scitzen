@@ -35,7 +35,6 @@ object Escaping {
   def escape(text: Array[Byte]) = {
     // Implemented per XML spec:
     // http://www.w3.org/International/questions/qa-controls
-    // Highly imperative code, ~2-3x faster than the previous implementation (2020-06-11)
     val charsArray          = text
     val inputSize           = charsArray.size
     var inputLastCopy       = 0
@@ -47,29 +46,24 @@ object Escaping {
       if output == null then output = new Array[Byte](inputSize * 2)
       val len = inputCheckPos - inputLastCopy
       if len + escape.size + outputWritePos > output.size then
-        output = java.util.Arrays.copyOf(output, output.size*2)
+        output = java.util.Arrays.copyOf(output, output.size * 2)
       System.arraycopy(charsArray, inputLastCopy, output, outputWritePos, len)
       outputWritePos += len
       System.arraycopy(escape, 0, output, outputWritePos, escape.size)
+      outputWritePos += escape.size
       inputLastCopy = inputCheckPos + 1
-
 
     while (inputCheckPos < inputSize) {
       charsArray(inputCheckPos) match {
-        case '<' =>
-          write("&lt;".getBytesCT)
-        case '>' =>
-          write("&gt;".getBytesCT)
-        case '&' =>
-          write("&amp;".getBytesCT)
-        case '"' =>
-          write("&quot;".getBytesCT)
-        case '\n' =>
-        case '\r' =>
-        case '\t' =>
-        case c if c < ' ' =>
-          write("".getBytesCT)
-        case _ =>
+        case '<'                    => write("&lt;".getBytesCT)
+        case '>'                    => write("&gt;".getBytesCT)
+        case '&'                    => write("&amp;".getBytesCT)
+        case '"'                    => write("&quot;".getBytesCT)
+        case '\n'                   =>
+        case '\r'                   =>
+        case '\t'                   =>
+        case c if c < ' ' && c >= 0 => write("".getBytesCT)
+        case other                  =>
       }
       inputCheckPos += 1
     }
