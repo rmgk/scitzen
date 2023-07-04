@@ -13,6 +13,7 @@ class ProjectConfig(attrs: Attributes = Attributes.empty):
   def notes        = attrs.plain("notes")
   def bibliography = attrs.plain("bibliography")
   def katexMacros  = attrs.plain("katexMacros")
+  def defaultLanguage  = attrs.plain("language")
   def settings =
     attrs.raw ++
     attrs.raw.collectFirst:

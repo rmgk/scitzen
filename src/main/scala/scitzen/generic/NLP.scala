@@ -1,6 +1,7 @@
 package scitzen.generic
 
 import scitzen.cli.ConversionAnalysis
+import scitzen.compat.Logging
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ResourceUtil
 import scitzen.outputs.SastToTextConverter
@@ -32,12 +33,15 @@ case class NLP(stopwords: Map[String, Seq[String]], analysis: ConversionAnalysis
       .map { case (w, c) => (w, c / size * idf.getOrElse(w, 1d)) }.toSeq.sortBy(-_._2)
 
   def language(article: Article): Option[String] =
+    val start = System.nanoTime()
     val counts = wordcount(article)
     val candidates =
       stopwords.view.mapValues {
         _.iterator.map(counts.getOrElse(_, 0)).sum
       }.iterator
-    candidates.maxByOption(_._2).map(_._1)
+    val res = candidates.maxByOption(_._2).map(_._1)
+    Logging.cli.info(s"language guessed in ${(System.nanoTime() - start)/1000000}ms")
+    res
 
   def words(article: Article): List[String] =
     SastToTextConverter(

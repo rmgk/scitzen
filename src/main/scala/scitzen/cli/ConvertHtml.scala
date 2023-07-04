@@ -136,7 +136,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           ,
           titled = converter.convertInlinesCombined(ConversionContext(()), titled.header.titleText.inl).data,
           language = titled.header.language
-            .orElse(nlp.language(titled.article))
+            .orElse(project.config.defaultLanguage)
         )
       case Some(templatePath) =>
         val content =
