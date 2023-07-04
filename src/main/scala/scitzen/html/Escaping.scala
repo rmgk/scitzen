@@ -68,6 +68,10 @@ object Escaping {
     // it doesn't cause any exception to occur in the JVM.
     // The problem is that it isn't documented anywhere so I left this if here
     // to make the error clear.
+    //
+    // Note when importing this pice of code from scalatags: The above worry is kinda funny,
+    // given that directly above, there are 5 other place where i - pos will be 0 every time
+    // there are two characters to escape directly next to each other.
     if (pos < len) {
       s.write(charsArray, pos, len - pos)
     }
