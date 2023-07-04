@@ -87,12 +87,12 @@ class HtmlPages(cssPath: String):
       Sag.`!DOCTYPE html`(),
       Sag.html(
         // we define a global language as scitzen controls are kinda all english, but also to enable features such as hyphenation even if no language is defined. This will produce incorrect hyphenation, but thats guesswork anyways, so may be OK.
-        lang = "en",
+        lang = language,
         tHead(Sag.title(titled)),
         Sag.body(
           `class` = bodyClass,
           sidebar.map(s => sidebarContainer(Sag.nav(s))).toSeq,
-          Sag.main(content, `class` = mainClass, lang = language),
+          Sag.main(content, `class` = mainClass),
           svgContainer,
         )
       )
