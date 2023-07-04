@@ -29,11 +29,6 @@ class SastToHtmlConverter(
   ): ProtoConverter[Recipe, Recipe] =
     new SastToHtmlConverter(articleRef, analysis, attr)
 
-  val syncPos: Int =
-//    if sync.exists(_.path == pathManager.cwf) then sync.get._2
-//    else
-    Int.MaxValue
-
   override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Sag.Chain(inl)
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
   override def stringToInlineRes(str: String): Recipe        = Sag.String(str)
