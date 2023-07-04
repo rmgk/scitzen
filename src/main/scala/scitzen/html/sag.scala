@@ -14,6 +14,9 @@ import scala.compiletime.*
 object sag {
 
   class SagContext(val baos: ByteArrayOutputStream = new ByteArrayOutputStream(8096)) {
+    def append(bytes: Array[Byte], offset: Int, length: Int) =
+      baos.write(bytes, offset, length)
+
     def append(bytes: Array[Byte]): Unit =
       baos.writeBytes(bytes)
     def resultString: String = baos.toString(StandardCharsets.UTF_8)
@@ -31,7 +34,7 @@ object sag {
     given SagContentWriter[String] with {
       override def convert(value: String): Recipe = Sync:
         val (out, len) = Escaping.escape(value.getBytes(StandardCharsets.UTF_8))
-        summon[SagContext].baos.write(out, 0, len)
+        summon[SagContext].append(out, 0, len)
     }
 
     given seqSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Seq[T]] = values =>
