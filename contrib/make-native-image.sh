@@ -4,4 +4,4 @@ sbt --client stageJars
 rm target/jars/graal-sdk-*.jar
 rm target/jars/truffle-api-*.jar
 rm target/jars/js-*.jar
-native-image --class-path "target/jars/*" --gc=G1 scitzen.cli.ScitzenCommandline
+native-image --class-path "target/jars/*" scitzen.cli.ScitzenCommandline
