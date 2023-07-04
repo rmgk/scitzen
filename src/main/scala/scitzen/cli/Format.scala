@@ -8,16 +8,38 @@ import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
 import scitzen.compat.Logging.cli
 
-import java.nio.file.{Files, Path}
+import scala.jdk.CollectionConverters.*
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 object Format:
 
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
   def formatContents(ca: ConversionAnalysis): Unit =
-    ca.directory.byPath.foreach { (path, articles) =>
-      formatContent(path.absolute, articles.head.doc.content, articles.flatMap(_.sast), ca.bib)
-    }
+    val cachefile = ca.project.cacheDir.resolve("formatted")
+    var formattedHashes =
+      if !Files.exists(cachefile)
+      then Map.empty
+      else
+        Files.lines(cachefile, StandardCharsets.UTF_8).iterator().asScala.map: v =>
+          val Array(date, file) = v.split("\t", 2)
+          (file, date)
+        .toMap
+    ca.directory.byPath.foreach: (path, articles) =>
+      val content = articles.head.doc.content
+      val modified = Files.getLastModifiedTime(path.absolute)
+      if !formattedHashes.get(path.relativeToProject.toString).contains(modified.toString)
+      then
+        formatContent(path.absolute, content, articles.flatMap(_.sast), ca.bib)
+        formattedHashes = formattedHashes.updated(path.relativeToProject.toString, Files.getLastModifiedTime(path.absolute).toString)
+    Files.createDirectories(cachefile.getParent)
+    Files.write(
+      cachefile,
+      formattedHashes.iterator.map((p, t) => s"$t\t$p").mkString("\n").getBytes(StandardCharsets.UTF_8),
+      StandardOpenOption.TRUNCATE_EXISTING,
+      StandardOpenOption.CREATE
+    )
+    ()
 
   def formatRename(documentDirectory: ArticleDirectory): Unit =
     documentDirectory.byPath.foreach: (document, articles) =>
