@@ -22,58 +22,63 @@ SOFTWARE.
 
 package scitzen.html
 
+import scitzen.html.sag.getBytesCT
+
 /** Utility methods related to validating and escaping XML; used internally but
   * potentially useful outside of Scalatags.
   */
 object Escaping {
-  /** Code to escape text HTML nodes. Based on code from scala.xml */
-  def escape(text: String, s: java.io.Writer) = {
+
+  /** Code to escape text HTML nodes. Based on code from scala.xml
+    * Adapted to work with byte arrays of UTF8 for less copying.
+    */
+  def escape(text: Array[Byte]) = {
     // Implemented per XML spec:
     // http://www.w3.org/International/questions/qa-controls
     // Highly imperative code, ~2-3x faster than the previous implementation (2020-06-11)
-    val charsArray = text.toCharArray
-    val len        = charsArray.size
-    var pos        = 0
-    var i          = 0
-    while (i < len) {
-      val c = charsArray(i)
-      c match {
+    val charsArray          = text
+    val inputSize           = charsArray.size
+    var inputLastCopy       = 0
+    var inputCheckPos       = 0
+    var outputWritePos      = 0
+    var output: Array[Byte] = null
+
+    def write(escape: Array[Byte]) =
+      if output == null then output = new Array[Byte](inputSize * 2)
+      val len = inputCheckPos - inputLastCopy
+      if len + escape.size + outputWritePos > output.size then
+        output = java.util.Arrays.copyOf(output, output.size*2)
+      System.arraycopy(charsArray, inputLastCopy, output, outputWritePos, len)
+      outputWritePos += len
+      System.arraycopy(escape, 0, output, outputWritePos, escape.size)
+      inputLastCopy = inputCheckPos + 1
+
+
+    while (inputCheckPos < inputSize) {
+      charsArray(inputCheckPos) match {
         case '<' =>
-          s.write(charsArray, pos, i - pos)
-          s.write("&lt;")
-          pos = i + 1
+          write("&lt;".getBytesCT)
         case '>' =>
-          s.write(charsArray, pos, i - pos)
-          s.write("&gt;")
-          pos = i + 1
+          write("&gt;".getBytesCT)
         case '&' =>
-          s.write(charsArray, pos, i - pos)
-          s.write("&amp;")
-          pos = i + 1
+          write("&amp;".getBytesCT)
         case '"' =>
-          s.write(charsArray, pos, i - pos)
-          s.write("&quot;")
-          pos = i + 1
+          write("&quot;".getBytesCT)
         case '\n' =>
         case '\r' =>
         case '\t' =>
         case c if c < ' ' =>
-          s.write(charsArray, pos, i - pos)
-          pos = i + 1
+          write("".getBytesCT)
         case _ =>
       }
-      i += 1
+      inputCheckPos += 1
     }
-    // Apparently this isn't technically necessary if (len - pos) == 0 as
-    // it doesn't cause any exception to occur in the JVM.
-    // The problem is that it isn't documented anywhere so I left this if here
-    // to make the error clear.
-    //
-    // Note when importing this pice of code from scalatags: The above worry is kinda funny,
-    // given that directly above, there are 5 other place where i - pos will be 0 every time
-    // there are two characters to escape directly next to each other.
-    if (pos < len) {
-      s.write(charsArray, pos, len - pos)
-    }
+
+    if outputWritePos > 0 then
+      write("".getBytesCT)
+      (output, outputWritePos)
+    else
+      (charsArray, charsArray.size)
+
   }
 }

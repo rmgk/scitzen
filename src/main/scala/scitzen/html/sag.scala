@@ -3,7 +3,7 @@ package scitzen.html
 import de.rmgk.{Chain, delay}
 import de.rmgk.delay.Sync
 
-import java.io.{ByteArrayOutputStream, OutputStreamWriter}
+import java.io.{ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import scala.annotation.implicitNotFound
 import scala.quoted.*
@@ -30,11 +30,8 @@ object sag {
     }
     given SagContentWriter[String] with {
       override def convert(value: String): Recipe = Sync:
-        val baos = new ByteArrayOutputStream()
-        val osw  = new OutputStreamWriter(baos, StandardCharsets.UTF_8)
-        Escaping.escape(value, osw)
-        osw.close()
-        write(baos.toByteArray)
+        val (out, len) = Escaping.escape(value.getBytes(StandardCharsets.UTF_8))
+        summon[SagContext].baos.write(out, 0, len)
     }
 
     given seqSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Seq[T]] = values =>
@@ -69,7 +66,7 @@ object sag {
     given SagAttributeValueWriter[String] with {
       override inline def convert(attr: Array[Byte], value: String): Recipe = Sync:
         val bytes = inline constValueOpt[value.type] match
-          case Some(v) => v.gB
+          case Some(v) => v.getBytesCT
           case None    => value.getBytes()
         abavw.convert(attr, bytes).run
     }
@@ -90,7 +87,7 @@ object sag {
   }
 
   inline def write(using sc: SagContext)(inline bytes: Array[Byte]) = sc.append(bytes)
-  inline def write(using sc: SagContext)(inline str: String)        = sc.append(str.gB)
+  inline def write(using sc: SagContext)(inline str: String)        = sc.append(str.getBytesCT)
 
   type Recipe = de.rmgk.delay.Sync[SagContext, Unit]
 
@@ -118,7 +115,7 @@ object sag {
   }
 
   extension (inline str: String) {
-    inline def gB: Array[Byte] = ${ getBytesMacro('{ str }) }
+    inline def getBytesCT: Array[Byte] = ${ getBytesMacro('{ str }) }
   }
   def getBytesMacro(str: Expr[String])(using quotes: Quotes) =
     import quotes.*
