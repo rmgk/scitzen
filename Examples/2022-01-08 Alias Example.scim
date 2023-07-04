@@ -5,3 +5,5 @@ Use like this :{someAlias} and maybe even this :emph{:{note}}.
 
 We may also reference other articles :ref{sway desktop}.
 
+Escaping of "&<>" works just fine.
+
