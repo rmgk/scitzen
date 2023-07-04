@@ -24,7 +24,7 @@ object Format:
       articles match
         case Seq(article) =>
           article.titled match
-            case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute,  t)
+            case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute, t)
             case _ => cli.trace(
                 s"could not format ${document.absolute}, did not contain a single article with a date"
               )

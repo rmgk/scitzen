@@ -9,7 +9,6 @@ import scopt.OParser
 import java.nio.file.{Files, Path}
 import scitzen.compat.Logging.given
 
-
 object ScitzenCommandline {
   def main(args: Array[String]): Unit = {
     val optInstance = ClOptions()

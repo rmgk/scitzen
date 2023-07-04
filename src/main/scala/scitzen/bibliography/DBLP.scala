@@ -62,7 +62,7 @@ object DBLP:
       query(s"https://dblp.org/search/publ/api", Map("format" -> "json", "q" -> q)),
       BodyHandlers.ofString()
     )
-    //println(s"json: ${res.body()}")
+    // println(s"json: ${res.body()}")
     upickle.default.read[DBLPApi.Outer](res.body()).result.hits.hit.map(_.info)
 
   def downloadPDFAndFormat(q: String) =

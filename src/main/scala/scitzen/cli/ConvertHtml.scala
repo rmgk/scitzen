@@ -136,7 +136,6 @@ class ConvertHtml(anal: ConversionAnalysis):
       converter
     )
 
-
     val res = titled.header.attributes.plain("htmlTemplate") match
       case None =>
         val contentFrag =
@@ -156,9 +155,9 @@ class ConvertHtml(anal: ConversionAnalysis):
         )
       case Some(templatePath) =>
         val content =
-            val sagctx = new SagContext()
-            Sag.Concat(convertedArticleCtx.data.view.map(Sag.Use(_)).toSeq: _*).runInContext(sagctx)
-            sagctx.resultString
+          val sagctx = new SagContext()
+          Sag.Concat(convertedArticleCtx.data.view.map(Sag.Use(_)).toSeq: _*).runInContext(sagctx)
+          sagctx.resultString
 
         val templateSettings =
           Attributes(project.config.settings ++ titled.header.attributes.raw ++

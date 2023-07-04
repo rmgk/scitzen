@@ -35,7 +35,7 @@ case class BibEntry(
                 case s: String =>
                   sag.write(s.stripSuffix("."))
                   sag.write(terminator)
-                case f: Recipe   =>
+                case f: Recipe =>
                   f.run
                   sag.write(terminator)
               }

@@ -14,11 +14,11 @@ object BCommand {
   val (parseMap, printMap) = {
     val standard = List(
       "convert" -> Convert,
-      "code" -> Code,
-      "figure" -> Figure,
-      "embed" -> Embed,
-      "if" -> If,
-      "" -> Empty
+      "code"    -> Code,
+      "figure"  -> Figure,
+      "embed"   -> Embed,
+      "if"      -> If,
+      ""        -> Empty
     )
     val aliases = Map()
 

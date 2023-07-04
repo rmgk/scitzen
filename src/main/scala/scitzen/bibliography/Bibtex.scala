@@ -35,6 +35,8 @@ object Bibtex:
   }
 
   def makeBib(bibpath: ProjectPath): Map[String, BibEntry] =
-    Using(Files.newInputStream(bibpath.absolute))(Bibtex.parse).get.sortBy(be => be.authors.map(_.familyName)).zipWithIndex.map {
+    Using(Files.newInputStream(bibpath.absolute))(Bibtex.parse).get.sortBy(be =>
+      be.authors.map(_.familyName)
+    ).zipWithIndex.map {
       case (be, i) => be.id -> be.copy(citekey = Some(be.authorYear.getOrElse((i + 1).toString)))
     }.toMap

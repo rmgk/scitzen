@@ -8,7 +8,6 @@ case class Article(ref: ArticleRef, sast: List[Sast], doc: Document, context: Sa
     case (h @ Section(_, _ @("=" | "=="), _)) :: rest => Some(h)
     case other                                        => None
 
-
 case class TitledArticle(header: Section, article: Article)
 
 class ArticleRef(val document: Document)

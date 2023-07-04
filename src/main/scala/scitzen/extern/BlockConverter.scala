@@ -56,9 +56,10 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
               case "mermaid"  => mermaid(content, block)
               case "scalaCli" => convertScalaCli(content, block)
               case "load"     => loadFileAsContent(block, article, attrs)
-          catch case NonFatal(ex) =>
-            cli.warn(s"could not convert $name", ex)
-            Nil
+          catch
+            case NonFatal(ex) =>
+              cli.warn(s"could not convert $name", ex)
+              Nil
         case other =>
           cli.warn(s"can not convert $other")
           Nil
@@ -149,7 +150,6 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       val layoutEngine =
         val lay = attributes.target.trim
         if lay.isEmpty then "dot" else lay
-
 
       val start = System.nanoTime()
       val process = new ProcessBuilder(

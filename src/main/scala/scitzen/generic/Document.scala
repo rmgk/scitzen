@@ -7,8 +7,8 @@ import scala.collection.immutable.ArraySeq
 
 /** A document represents a single, on disk, text file */
 case class Document(path: ProjectPath, content: Array[Byte]):
-  val uid: String                 = Integer.toHexString(path.hashCode())
-  lazy val reporter: FileReporter = new FileReporter(path, content)
+  val uid: String                             = Integer.toHexString(path.hashCode())
+  lazy val reporter: FileReporter             = new FileReporter(path, content)
   def resolve(p: String): Option[ProjectPath] = path.project.resolve(path.directory, p)
 
 object Document:
@@ -18,7 +18,7 @@ object Document:
 
 trait Reporter:
   def apply(im: Directive): String = apply(im.prov)
-  def apply(im: Block): String = apply(im.prov)
+  def apply(im: Block): String     = apply(im.prov)
   def apply(prov: Prov): String
 
 final class FileReporter(file: ProjectPath, content: Array[Byte]) extends Reporter:
@@ -39,7 +39,6 @@ final class FileReporter(file: ProjectPath, content: Array[Byte]) extends Report
     val pos = indexToPosition(prov.start)
     s" at »${Path.of("").toAbsolutePath.relativize(file.absolute)}:" +
     s"${pos._1}:${pos._2}«"
-
 
   // macro offsets are in bytes, but sublime expects them to be in codepoints, so we adapt
   lazy val byteOffsets: Array[Int] = content.iterator.zipWithIndex.collect {

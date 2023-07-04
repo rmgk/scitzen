@@ -31,7 +31,7 @@ object sag {
     given SagContentWriter[String] with {
       override def convert(value: String): Recipe = Sync:
         val baos = new ByteArrayOutputStream()
-        val osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8)
+        val osw  = new OutputStreamWriter(baos, StandardCharsets.UTF_8)
         Escaping.escape(value, osw)
         osw.close()
         write(baos.toByteArray)
@@ -104,7 +104,7 @@ object sag {
     inline def Raw(content: String): Recipe = Sync:
       write(content.getBytes(StandardCharsets.UTF_8))
 
-    inline def Nothing: Recipe = Sync{()}
+    inline def Nothing: Recipe = Sync { () }
 
     inline def Concat(inline others: Recipe*): Recipe = Sync:
       others.foreach(_.run)

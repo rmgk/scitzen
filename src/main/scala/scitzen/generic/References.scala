@@ -11,7 +11,7 @@ object References:
 
   def filterCandidates(scope: ProjectPath, candidates: Seq[SastRef]): Seq[SastRef] =
     candidates match
-      case Nil     => candidates
+      case Nil    => candidates
       case Seq(_) => candidates
       case multiple =>
         val searchScope = scope.relativeToProject.iterator().asScala.toList

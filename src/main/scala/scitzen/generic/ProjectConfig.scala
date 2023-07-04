@@ -5,14 +5,14 @@ import scitzen.sast.Attribute.Nested
 import scitzen.sast.{Attributes, Prov}
 
 class ProjectConfig(attrs: Attributes = Attributes.empty):
-  def output         = attrs.plain("output").getOrElse("output")
-  def cache          = attrs.plain("cache")
-  def format         = attrs.plain("format").getOrElse("").split(',').toList.map(_.trim)
-  def outputType     = attrs.plain("outputType").getOrElse("").split(',').toList.map(_.trim)
-  def texTemplate    = attrs.plain("texTemplate")
-  def notes          = attrs.plain("notes")
-  def bibliography   = attrs.plain("bibliography")
-  def katexMacros    = attrs.plain("katexMacros")
+  def output       = attrs.plain("output").getOrElse("output")
+  def cache        = attrs.plain("cache")
+  def format       = attrs.plain("format").getOrElse("").split(',').toList.map(_.trim)
+  def outputType   = attrs.plain("outputType").getOrElse("").split(',').toList.map(_.trim)
+  def texTemplate  = attrs.plain("texTemplate")
+  def notes        = attrs.plain("notes")
+  def bibliography = attrs.plain("bibliography")
+  def katexMacros  = attrs.plain("katexMacros")
   def settings =
     attrs.raw ++
     attrs.raw.collectFirst:

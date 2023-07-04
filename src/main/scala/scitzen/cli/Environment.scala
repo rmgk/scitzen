@@ -6,7 +6,11 @@ import scitzen.generic.ProjectConfig
 import java.nio.file.{Files, Path}
 import scala.annotation.unused
 
-class Environment(@unused globalConfigDir: Path, @unused globalCacheDir: Path, @unused globalConfig: Option[ProjectConfig]) {}
+class Environment(
+    @unused globalConfigDir: Path,
+    @unused globalCacheDir: Path,
+    @unused globalConfig: Option[ProjectConfig]
+) {}
 
 object Environment {
   def apply(): Environment =
