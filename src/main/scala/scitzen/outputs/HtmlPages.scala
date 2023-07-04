@@ -48,13 +48,13 @@ object HtmlPages:
           Some:
             Sync[SagContext]:
               thistag.run
-              Sag.Use(nexttag.toList).run
+              nexttag.foreach(_.run)
 
     recurse(docsections.dropWhile(s => !startsection.contains(s.prefix)), 1).map(Sag.ol(_))
 
 class HtmlPages(cssPath: String):
 
-  def tHead(title: Recipe): Recipe =
+  inline def tHead(title: Recipe): Recipe =
     Sag.head(
       Sag.meta(charset = "UTF-8"),
       Sag.meta(name = "viewport", content = "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),

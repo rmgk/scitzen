@@ -22,14 +22,18 @@ SOFTWARE.
 
 package scitzen.html
 
-import scitzen.html.sag.getBytesCT
-
 import java.io.OutputStream
+import java.nio.charset.StandardCharsets
 
 /** Utility methods related to validating and escaping XML; used internally but
   * potentially useful outside of Scalatags.
   */
 object Escaping {
+
+  val `&lt;` = "&lt;".getBytes(StandardCharsets.UTF_8)
+  val `&gt;` = "&gt;".getBytes(StandardCharsets.UTF_8)
+  val `&amp;` = "&amp;".getBytes(StandardCharsets.UTF_8)
+  val `&quot;` = "&lt;".getBytes(StandardCharsets.UTF_8)
 
   /** Code to escape text HTML nodes. Based on code from scala.xml
     * Adapted to work with byte arrays of UTF8 for less copying.
@@ -49,20 +53,20 @@ object Escaping {
 
     while (inputCheckPos < inputSize) {
       text(inputCheckPos) match {
-        case '<'                    => write("&lt;".getBytesCT)
-        case '>'                    => write("&gt;".getBytesCT)
-        case '&'                    => write("&amp;".getBytesCT)
-        case '"'                    => write("&quot;".getBytesCT)
+        case '<'                    => write(`&lt;`)
+        case '>'                    => write(`&gt;`)
+        case '&'                    => write(`&amp;`)
+        case '"'                    => write(`&quot;`)
         case '\n'                   =>
         case '\r'                   =>
         case '\t'                   =>
-        case c if c < ' ' && c >= 0 => write("".getBytesCT)
+        case c if c < ' ' && c >= 0 => write(Array.emptyByteArray)
         case other                  =>
       }
       inputCheckPos += 1
     }
 
-    write("".getBytes())
+    write(Array.emptyByteArray)
 
   }
 }

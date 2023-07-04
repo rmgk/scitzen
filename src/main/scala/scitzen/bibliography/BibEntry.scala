@@ -4,6 +4,8 @@ import de.rmgk.delay.Sync
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag, SagContentWriter}
 
+import java.nio.charset.StandardCharsets
+
 case class Author(givenName: Option[String], familyName: Option[String]) {
   def full: String = givenName.fold("")(_ + " ") + familyName.getOrElse("")
 }
@@ -27,18 +29,19 @@ case class BibEntry(
       elems.flatten match
         case Nil => ()
         case insides =>
-          val terminator = ". "
+          val term = Sync:
+            def writeTerminator() =  sag.write('.': Byte); sag.write(' ': Byte)
+            insides.foreach {
+              case s: String =>
+                sag.write(s.stripSuffix("."))
+                writeTerminator()
+              case f: Recipe =>
+                f.run
+                writeTerminator()
+            }
           Sag.p(
             `class` = name,
-            Sync:
-              insides.foreach {
-                case s: String =>
-                  sag.write(s.stripSuffix("."))
-                  sag.write(terminator)
-                case f: Recipe =>
-                  f.run
-                  sag.write(terminator)
-              }
+            term
           ).run
     Sync:
       line("authors", formatAuthors, year.map(_.toString)).run

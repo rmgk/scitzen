@@ -125,9 +125,9 @@ class ConvertHtml(anal: ConversionAnalysis):
       )(Prov())
     ).toList
     val citations: Recipe =
-      if bibEntries.isEmpty then de.rmgk.delay.Sync(())
+      if bibEntries.isEmpty then Recipe(())
       else
-        delay.Sync:
+        Recipe:
           Sag.h2(bibname, id = bibid).run
           Sag.ul(`class` = "bibliography", bibEntries.map { be => Sag.li(id = be.id, be.formatHtmlCitation) }).run
 
@@ -138,8 +138,9 @@ class ConvertHtml(anal: ConversionAnalysis):
 
     val res = titled.header.attributes.plain("htmlTemplate") match
       case None =>
-        val contentFrag =
-          Sag.Concat(Sag.Use(convertedArticleCtx.data.toList), citations)
+        val contentFrag = Recipe:
+          convertedArticleCtx.data.foreach(_.run)
+          citations.run
 
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
@@ -148,7 +149,10 @@ class ConvertHtml(anal: ConversionAnalysis):
             then ""
             else "numbered-sections",
           mainClass = if converter.hardNewlines then Some("adhoc") else None,
-          sidebar = toc.map(c => Sag.Concat(Sag.a(href = s"#", titled.header.title), c)),
+          sidebar = toc.map: c =>
+            Recipe:
+              Sag.a(href = s"#", titled.header.title).run
+              c.run,
           titled = converter.convertInlinesCombined(ConversionContext(()), titled.header.titleText.inl).data,
           language = titled.header.language
             .orElse(nlp.language(titled.article))
@@ -156,7 +160,7 @@ class ConvertHtml(anal: ConversionAnalysis):
       case Some(templatePath) =>
         val content =
           val sagctx = new SagContext()
-          Sag.Concat(convertedArticleCtx.data.view.map(Sag.Use(_)).toSeq: _*).runInContext(sagctx)
+          convertedArticleCtx.data.view.foreach(_.runInContext(sagctx))
           sagctx.resultString
 
         val templateSettings =

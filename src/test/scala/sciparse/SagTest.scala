@@ -1,10 +1,11 @@
 package sciparse
 
+import de.rmgk.delay
 import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DirectiveParsers, Parse}
 import de.rmgk.scip.*
 import munit.Location
 import scitzen.bibliography.BibDB
-import scitzen.outputs.SastToScimConverter
+import scitzen.outputs.{HtmlPages, SastToScimConverter}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 
@@ -23,5 +24,9 @@ class SagTest extends munit.FunSuite {
     xt.body(style = "some", xt.p("this is a pragraph with weird symbols \" attribute > value")).runInContext(ctx)
     println(ctx.baos.toString(StandardCharsets.UTF_8))
 
+  }
+
+  test("code") {
+    println(printCode(HtmlPages("").tHead(delay.Sync{()})))
   }
 }
