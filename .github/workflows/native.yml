@@ -42,7 +42,8 @@ jobs:
         shell: bash
         working-directory: ./
         run: |
-          ./contrib/make-native-image.sh
+          sbt writeClasspath
+          native-image @target/classpath.txt scitzen.cli.ScitzenCommandline
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
