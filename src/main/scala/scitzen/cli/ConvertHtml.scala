@@ -14,9 +14,6 @@ import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
 import scala.math.Ordering.Implicits.seqOrdering
 
 class ConvertHtml(anal: ConversionAnalysis):
@@ -37,32 +34,28 @@ class ConvertHtml(anal: ConversionAnalysis):
     val cssfile = project.outputdirWeb.resolve("scitzen.css")
     Files.write(cssfile, stylesheet)
 
-
-    @volatile var started = Set.empty[ArticleRef]
-
     def procRec(
         rem: List[TitledArticle],
-    ): Future[Map[ProjectPath, Path]] =
-      val futures = rem.map: titled =>
-        Future:
+        done: Set[ArticleRef],
+        acc: Map[ProjectPath, Path]
+    ): Map[ProjectPath, Path] =
+      rem match
+        case Nil => acc
+        case titled :: rest =>
           val cctx = convertArticle(
             titled,
             cssfile,
             sync,
             nlp,
           )
-          val found = synchronized:
-            val all   = cctx.referenced.toSet
-            val added = all -- started
-            started = started ++ added
-            added
+          val found = cctx.referenced.toSet -- done
 
           val foundArticles = found.iterator.flatMap(anal.directory.byRef.get).toList
           procRec(
-            foundArticles,
-          ).map(_ ++ cctx.resourceMap)
-        .flatten
-      Future.foldLeft(futures)(Map.empty)(_ ++ _)
+            foundArticles reverse_::: rest,
+            done ++ found,
+            acc ++ cctx.resourceMap
+          )
 
     val selected = anal.directory.fullArticles.iterator.filter: art =>
       anal.selectionPrefixes.exists: sel =>
@@ -71,8 +64,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     if sellist.isEmpty then
       Logging.cli.warn("selection is empty", anal.selectionPrefixes)
 
-    started = sellist.iterator.map(_.article.ref).toSet
-    val resources = Await.result(procRec(sellist), Duration.Inf)
+    val resources = procRec(sellist, sellist.map(_.article.ref).toSet, Map.empty)
     project.htmlPaths.copyResources(resources)
     ()
 
