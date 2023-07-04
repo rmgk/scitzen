@@ -141,9 +141,10 @@ object sag {
         report.errorAndAbort(s"not varargs ${other.show}", other)
 
     '{
+      val tag = ${ Expr(tagname) }.getBytes(StandardCharsets.UTF_8)
       Sync {
         write('<')
-        write(${ Expr(tagname) })
+        write(tag)
 
         // write attributes
         ${
@@ -190,7 +191,7 @@ object sag {
                 }
                 write('<')
                 write('/')
-                write(${ Expr(tagname) })
+                write(tag)
                 write('>')
               }
         }
