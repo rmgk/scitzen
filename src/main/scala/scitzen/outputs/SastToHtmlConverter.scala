@@ -347,18 +347,10 @@ class SastToHtmlConverter(
     val cctx          = ctx.cite(citations.flatMap(_._2))
     val styledAnchors = Sag.span(`class` = "citations", "(", anchors, ")")
     if attrs.raw.sizeIs > 1 then
-      convertInlineSeq(cctx, attrs.textOption.getOrElse(scitzen.sast.Text.empty).inl).map { res =>
-        if res.isEmpty then Chain(styledAnchors)
-        else
-          res :+ styledAnchors
-        // TODO handle additional space …
-//          val last = res.last
-//          val init = res.init
-//          val addSpace = last match
-//            case StringFrag(s) => stringFrag(s"$s\u2009")
-//            case other         => last
-//          init ++ Chain(addSpace, styledAnchors)
-      }
+      attrs.textOption match
+        case None => cctx.retc(styledAnchors)
+        case Some(text) =>
+          convertInlineSeq(cctx, text.inl) :++ Chain(Sag.String("\u2009"),  styledAnchors)
     else if attrs.plain("style").contains("author")
     then
       val nameOption =
