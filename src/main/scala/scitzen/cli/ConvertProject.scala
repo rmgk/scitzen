@@ -3,7 +3,10 @@ package scitzen.cli
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
-import scitzen.extern.{BlockConversions, BlockConverter, ImageConversions, ImageConverter, ImageTarget}
+import scitzen.extern.Katex.KatexLibrary
+import scitzen.extern.{
+  BlockConversions, BlockConverter, CachedConverterRouter, ImageConversions, ImageConverter, ImageTarget
+}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project}
 import scitzen.sast.{DCommand, Directive}
 
@@ -20,6 +23,7 @@ case class ConversionAnalysis(
     block: BlockConversions,
     image: ImageConversions,
     bib: BibDB,
+    converter: Option[CachedConverterRouter],
 )
 
 object ConvertProject:
@@ -95,6 +99,11 @@ object ConvertProject:
 
     cli.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
 
+    val cachedConverter = new CachedConverterRouter(
+      project.cacheDir.resolve("inlineConverter.json"),
+      KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
+    )
+
     val anal = ConversionAnalysis(
       project = project,
       selectionPrefixes = List(selection),
@@ -102,6 +111,7 @@ object ConvertProject:
       block = blockConversions,
       image = imageConversions,
       bib = bibdb,
+      converter = Some(cachedConverter)
     )
 
     cli.info(s"completed conversions ${timediff()}")
@@ -121,3 +131,5 @@ object ConvertProject:
     if imageFileMap.isDefined then
       ImageReferences.listAll(anal, imageFileMap.get)
       cli.info(s"generated imagemap ${timediff()}")
+
+    cachedConverter.writeCache()

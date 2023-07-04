@@ -29,7 +29,8 @@ object ConvertTemplate:
             directory,
             BlockConversions(Map.empty),
             ImageConversions(Map.empty),
-            BibDB.empty
+            BibDB.empty,
+            None,
           ),
           templateSettings
         ).convertSastSeq(ConversionContext(()), templateArticle.sast)

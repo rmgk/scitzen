@@ -5,14 +5,14 @@ import de.rmgk.delay.Sync
 import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
-import scitzen.extern.{ImageTarget, Prism}
-import scitzen.generic.{ArticleRef, Document, References, SastRef}
-import scitzen.sast.{BCommand, *}
-import scitzen.sast.DCommand.*
 import scitzen.contexts.ConversionContext
+import scitzen.extern.ImageTarget
+import scitzen.generic.{ArticleRef, Document, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 import scitzen.sast.Attribute.Named
+import scitzen.sast.DCommand.*
+import scitzen.sast.*
 
 import java.nio.file.Files
 
@@ -205,7 +205,7 @@ class SastToHtmlConverter(
       if block.attributes.text.plainString != "highlight" then
         block.attributes.plain("lang") match
           case None       => Sag.code(`class` = language, labeltext)
-          case Some(lang) => Sag.code(`class` = language, Sag.Raw(Prism.highlight(labeltext, lang)))
+          case Some(lang) => Sag.code(`class` = language, Sag.Raw(anal.converter.get.convert(lang, labeltext)))
       else
         val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) =>
           s.contains(":hl§")
@@ -245,7 +245,7 @@ class SastToHtmlConverter(
 
       case Math =>
         val inner = attrs.target
-        ctx.katex(inner).map(res => Chain(Sag.math(Sag.Raw(res))))
+        ctx.retc(Sag.math(Sag.Raw(anal.converter.get.convert("katex", inner))))
 
       case BibQuery =>
         convertInlineDirective(ctx, anal.bib.convert(directive))

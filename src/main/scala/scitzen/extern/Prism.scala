@@ -44,7 +44,7 @@ object Prism:
     val start = System.nanoTime()
     val res = prismcontext.synchronized:
       highlightVal.execute(code, prismcontext.eval("js", s"Prism.languages.$actualLang"), actualLang).asString()
-    Logging.cli.trace(s"highlighting took ${(System.nanoTime() - start) / 1000000}ms")
+    Logging.cli.info(s"highlighting took ${(System.nanoTime() - start) / 1000000}ms")
     res
 
   // see https://github.com/PrismJS/prism/blob/master/plugins/autoloader/prism-autoloader.js

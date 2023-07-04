@@ -1,14 +1,12 @@
 package scitzen.cli
 
-import com.github.plokhotnyuk.jsoniter_scala.core.*
 import de.rmgk.delay
 import de.rmgk.logging.Logger
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging
 import scitzen.compat.Logging.given
 import scitzen.contexts.ConversionContext
-import scitzen.extern.Katex.{KatexConverter, KatexLibrary, mapCodec}
-import scitzen.extern.ResourceUtil
+import scitzen.extern.{ResourceUtil}
 import scitzen.generic.*
 import scitzen.html.sag.{Recipe, Sag, SagContext}
 import scitzen.outputs.{HtmlPages, SastToHtmlConverter}
@@ -20,7 +18,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.math.Ordering.Implicits.seqOrdering
-import scala.util.Using
 
 class ConvertHtml(anal: ConversionAnalysis):
 
@@ -33,9 +30,6 @@ class ConvertHtml(anal: ConversionAnalysis):
   def convertToHtml(
       sync: Option[ClSync],
   ): Unit =
-
-    val katexmapfile = project.cacheDir.resolve("katexmap.json")
-
     val nlp: NLP = NLP.loadFromResources(anal)
 
     Files.createDirectories(project.outputdirWeb)
@@ -43,9 +37,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val cssfile = project.outputdirWeb.resolve("scitzen.css")
     Files.write(cssfile, stylesheet)
 
-    val katexConverter =
-      val katexLibrary = KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
-      KatexConverter(loadKatex(katexmapfile), katexLibrary)
+
 
     def procRec(
         rem: List[TitledArticle],
@@ -58,7 +50,6 @@ class ConvertHtml(anal: ConversionAnalysis):
             cssfile,
             sync,
             nlp,
-            katexConverter
           )
           val found         = cctx.referenced.toSet -- done
           val foundArticles = found.iterator.flatMap(anal.directory.byRef.get).toList
@@ -77,30 +68,13 @@ class ConvertHtml(anal: ConversionAnalysis):
       Logging.cli.warn("selection is empty", anal.selectionPrefixes)
     val resources = Await.result(procRec(sellist, sellist.iterator.map(_.article.ref).toSet), Duration.Inf)
     project.htmlPaths.copyResources(resources)
-    writeKatex(katexmapfile, katexConverter.cache.get())
     ()
-
-  private def loadKatex(katexmapfile: Path): Map[String, String] =
-    Using(Files.newInputStream(katexmapfile)) { is => readFromStream[Map[String, String]](is) }.getOrElse(Map())
-
-  private def writeKatex(katexmapfile: Path, katexMap: Map[String, String]): Any =
-    if katexMap.nonEmpty then
-      Files.createDirectories(katexmapfile.getParent)
-      Files.write(
-        katexmapfile,
-        writeToArray[Map[String, String]](
-          katexMap,
-          WriterConfig.withIndentionStep(2)
-        )(mapCodec)
-      )
-      ()
 
   def convertArticle(
       titled: TitledArticle,
       cssfile: Path,
       sync: Option[ClSync],
       nlp: NLP,
-      katexConverter: KatexConverter,
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
@@ -111,7 +85,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
     val convertedArticleCtx =
-      converter.convertSastSeq(ConversionContext((), katexConverter = katexConverter), titled.article.sast)
+      converter.convertSastSeq(ConversionContext(()), titled.article.sast)
 
     val bibEntries = convertedArticleCtx.usedCitations.sortBy(_.authors.map(_.familyName)).distinct
 

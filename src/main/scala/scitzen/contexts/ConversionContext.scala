@@ -2,7 +2,6 @@ package scitzen.contexts
 
 import de.rmgk.Chain
 import scitzen.bibliography.BibEntry
-import scitzen.extern.Katex.{KatexConverter, KatexLibrary}
 import scitzen.generic.{ArticleRef, ProjectPath}
 import scitzen.sast.Section
 
@@ -11,7 +10,6 @@ import java.nio.file.Path
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[+T](
     data: T,
-    katexConverter: KatexConverter = KatexConverter(Map.empty, new KatexLibrary(None)),
     resourceMap: Map[ProjectPath, Path] = Map.empty,
     usedCitations: List[BibEntry] = Nil,
     sections: List[Section] = Nil,
@@ -52,7 +50,3 @@ case class ConversionContext[+T](
       val nctx = f(ctx, elem)
       nctx.map(data => ctx.data ++ data)
     }
-
-  def katex(key: String): ConversionContext[String] =
-    val res = katexConverter.convert(key)
-    ret(res)
