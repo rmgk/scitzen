@@ -6,7 +6,7 @@ import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging
 import scitzen.compat.Logging.given
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{ResourceUtil}
+import scitzen.extern.ResourceUtil
 import scitzen.generic.*
 import scitzen.html.sag.{Recipe, Sag, SagContext}
 import scitzen.outputs.{HtmlPages, SastToHtmlConverter}
@@ -38,10 +38,10 @@ class ConvertHtml(anal: ConversionAnalysis):
     Files.write(cssfile, stylesheet)
 
 
+    @volatile var started = Set.empty[ArticleRef]
 
     def procRec(
         rem: List[TitledArticle],
-        done: Set[ArticleRef],
     ): Future[Map[ProjectPath, Path]] =
       val futures = rem.map: titled =>
         Future:
@@ -51,11 +51,15 @@ class ConvertHtml(anal: ConversionAnalysis):
             sync,
             nlp,
           )
-          val found         = cctx.referenced.toSet -- done
+          val found = synchronized:
+            val all   = cctx.referenced.toSet
+            val added = all -- started
+            started = started ++ added
+            added
+
           val foundArticles = found.iterator.flatMap(anal.directory.byRef.get).toList
           procRec(
             foundArticles,
-            found union done
           ).map(_ ++ cctx.resourceMap)
         .flatten
       Future.foldLeft(futures)(Map.empty)(_ ++ _)
@@ -66,7 +70,9 @@ class ConvertHtml(anal: ConversionAnalysis):
     val sellist = selected.toList
     if sellist.isEmpty then
       Logging.cli.warn("selection is empty", anal.selectionPrefixes)
-    val resources = Await.result(procRec(sellist, sellist.iterator.map(_.article.ref).toSet), Duration.Inf)
+
+    started = sellist.iterator.map(_.article.ref).toSet
+    val resources = Await.result(procRec(sellist), Duration.Inf)
     project.htmlPaths.copyResources(resources)
     ()
 
@@ -126,7 +132,8 @@ class ConvertHtml(anal: ConversionAnalysis):
           sidebar = toc.map: c =>
             Recipe:
               Sag.a(href = s"#", titled.header.title).run
-              c.run,
+              c.run
+          ,
           titled = converter.convertInlinesCombined(ConversionContext(()), titled.header.titleText.inl).data,
           language = titled.header.language
             .orElse(nlp.language(titled.article))
