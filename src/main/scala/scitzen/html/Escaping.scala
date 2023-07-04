@@ -24,6 +24,8 @@ package scitzen.html
 
 import scitzen.html.sag.getBytesCT
 
+import java.io.OutputStream
+
 /** Utility methods related to validating and escaping XML; used internally but
   * potentially useful outside of Scalatags.
   */
@@ -32,29 +34,21 @@ object Escaping {
   /** Code to escape text HTML nodes. Based on code from scala.xml
     * Adapted to work with byte arrays of UTF8 for less copying.
     */
-  def escape(text: Array[Byte]) = {
+  def escape(text: Array[Byte], outputStream: OutputStream) = {
     // Implemented per XML spec:
     // http://www.w3.org/International/questions/qa-controls
-    val charsArray          = text
-    val inputSize           = charsArray.size
+    val inputSize           = text.size
     var inputLastCopy       = 0
     var inputCheckPos       = 0
-    var outputWritePos      = 0
-    var output: Array[Byte] = null
 
     def write(escape: Array[Byte]) =
-      if output == null then output = new Array[Byte](inputSize * 2)
       val len = inputCheckPos - inputLastCopy
-      if len + escape.size + outputWritePos > output.size then
-        output = java.util.Arrays.copyOf(output, output.size * 2)
-      System.arraycopy(charsArray, inputLastCopy, output, outputWritePos, len)
-      outputWritePos += len
-      System.arraycopy(escape, 0, output, outputWritePos, escape.size)
-      outputWritePos += escape.size
+      outputStream.write(text, inputLastCopy, len)
+      outputStream.write(escape)
       inputLastCopy = inputCheckPos + 1
 
     while (inputCheckPos < inputSize) {
-      charsArray(inputCheckPos) match {
+      text(inputCheckPos) match {
         case '<'                    => write("&lt;".getBytesCT)
         case '>'                    => write("&gt;".getBytesCT)
         case '&'                    => write("&amp;".getBytesCT)
@@ -68,11 +62,7 @@ object Escaping {
       inputCheckPos += 1
     }
 
-    if outputWritePos > 0 then
-      write("".getBytesCT)
-      (output, outputWritePos)
-    else
-      (charsArray, charsArray.size)
+    write("".getBytes())
 
   }
 }

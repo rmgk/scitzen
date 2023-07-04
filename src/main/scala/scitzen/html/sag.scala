@@ -33,8 +33,7 @@ object sag {
     }
     given SagContentWriter[String] with {
       override def convert(value: String): Recipe = Sync:
-        val (out, len) = Escaping.escape(value.getBytes(StandardCharsets.UTF_8))
-        summon[SagContext].append(out, 0, len)
+        Escaping.escape(value.getBytes(StandardCharsets.UTF_8), summon[SagContext].baos)
     }
 
     given seqSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Seq[T]] = values =>
