@@ -122,10 +122,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it       = handleArticleQuery(directive)
-    val articles = it.toList
-    val refctx   = ctx.reference(articles.map(_.article.ref))
     val sast     = GenIndexPage.makeIndex(it.toList, project)
-    convertSastSeq(refctx, sast)
+    convertSastSeq(ctx, sast)
   }
 
   given Loggable[Prov] with

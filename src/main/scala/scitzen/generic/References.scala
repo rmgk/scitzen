@@ -17,10 +17,12 @@ object References:
       case multiple =>
         val searchScope = scope.relativeToProject.iterator().asScala.toList
         val sorted = multiple.map { c =>
-          c ->
-          c.scope.relativeToProject.iterator().asScala.toList.zip(searchScope).takeWhile {
-            case (l, r) => l == r
-          }.size
+          Tuple2(
+            c,
+            c.scope.relativeToProject.iterator().asScala.zip(searchScope).takeWhile {
+              case (l, r) => l == r
+            }.size
+          )
         }.sortBy(_._2).reverse
 
         val best     = sorted.head._2

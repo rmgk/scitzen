@@ -298,12 +298,8 @@ class SastToHtmlConverter(
 
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
       val nameOpt   = attrs.textOption
-      val titledOpt = anal.directory.byRef.get(targetDocument.articleRef)
-      val fileRef =
-        titledOpt match
-          case Some(titled) =>
-            project.htmlPaths.relativeArticleTarget(titled.header).toString
-          case _ => ""
+      val titled = anal.directory.byRef(targetDocument.articleRef)
+      val fileRef = project.htmlPaths.relativeArticleTarget(titled.header).toString
 
       val resctx = targetDocument.sast match
         case sec @ Section(title, _, _) =>
@@ -335,7 +331,7 @@ class SastToHtmlConverter(
         case other =>
           cli.warn(s"can not refer to $other")
           ctx.empty
-      resctx.reference(titledOpt.map(_.article.ref).toList)
+      resctx.reference(titled.article.ref)
     }.getOrElse {
       cli.warn(s"no ref resolutions", directive)
       ctx.retc(Sag.code(SastToScimConverter(anal.bib).macroToScim(directive)))
