@@ -34,9 +34,11 @@ object sag {
       override inline def convert(value: Recipe): Recipe = value
     }
 
+    inline def writeEncodedString(inline value: String): Recipe = Sync: ctx ?=>
+      Escaping.escape(value.getBytes(StandardCharsets.UTF_8), ctx.baos)
+
     given stringWriter: SagContentWriter[String] with {
-      override inline def convert(value: String): Recipe = Sync: ctx ?=>
-        Escaping.escape(value.getBytes(StandardCharsets.UTF_8), ctx.baos)
+      override inline def convert(value: String): Recipe = writeEncodedString(value)
     }
 
     inline given seqSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Seq[T]] with
@@ -60,21 +62,20 @@ object sag {
 
   object SagAttributeValueWriter {
 
-    def writeAttr(name: Array[Byte], value: Array[Byte]): Recipe = Sync:
+    inline def writeAttr(inline name: Array[Byte], inline value: Recipe): Recipe = Sync:
       write(' ')
       write(name)
       write('=')
       write('"')
-      write(value)
+      value.run
       write('"')
 
-    given arrayByteAw: SagAttributeValueWriter[Array[Byte]] with
-      inline override def convert(attr: Array[Byte], value: Array[Byte]): Recipe =
-        writeAttr(attr, value)
+    inline def writeStringAttr(inline name: Array[Byte], inline value: String): Recipe =
+      writeAttr(name, Sag.String(value))
 
     given stringAw: SagAttributeValueWriter[String] with {
-      override inline def convert(attr: Array[Byte], value: String): Recipe = Sync:
-        writeAttr(attr, value.getBytes()).run
+      override def convert(attr: Array[Byte], value: String): Recipe = Sync:
+        writeAttr(attr, Sag.String(value)).run
     }
 
     given optAw[T](using sw: SagAttributeValueWriter[T]): SagAttributeValueWriter[Option[T]] with {
@@ -92,9 +93,9 @@ object sag {
     }
   }
 
-  inline def write(using sc: SagContext)(inline bytes: Array[Byte]) = sc.baos.write(bytes)
-  inline def write(using sc: SagContext)(inline str: String) = sc.baos.write(str.getBytes(StandardCharsets.UTF_8))
-  inline def write(using sc: SagContext)(inline byte: Int)   = sc.baos.write(byte)
+  inline def write(using inline sc: SagContext)(inline bytes: Array[Byte]) = sc.baos.write(bytes)
+  inline def write(using inline sc: SagContext)(inline str: String) = sc.baos.write(str.getBytes(StandardCharsets.UTF_8))
+  inline def write(using inline sc: SagContext)(inline byte: Int)   = sc.baos.write(byte)
 
   type Recipe = de.rmgk.delay.Sync[SagContext, Unit]
 
@@ -105,17 +106,12 @@ object sag {
     inline def applyDynamic(inline name: String)(inline args: Any*): Recipe =
       ${ applyDynamicImpl('{ name }, '{ args }) }
 
-    inline def Raw(content: String): Recipe = Sync:
+    inline def Raw(inline content: String): Recipe = Sync:
       write(content)
 
     inline def Nothing: Recipe = Sync { () }
 
-    inline def Chain(inline others: Chain[Recipe]): Recipe = Sync:
-      others.foreach(_.run)
-
-    // inline def Use[T](inline other: T)(using sw: SagContentWriter[T]): Recipe = sw.convert(other)
-
-    def String(other: String): Recipe = SagContentWriter.stringWriter.convert(other)
+    inline def String(inline other: String): Recipe = SagContentWriter.writeEncodedString(other)
   }
 
   def applyDynamicImpl(name: Expr[String], args: Expr[Seq[Any]])(using quotes: Quotes): Expr[Recipe] =
@@ -155,6 +151,13 @@ object sag {
               val attrName = '{ ${ Expr(a._1) }.getBytes(StandardCharsets.UTF_8) }
 
               a._2 match
+                case '{ $v: String } =>
+                  '{
+                    SagAttributeValueWriter.writeStringAttr(
+                      $attrName,
+                      ${ v }
+                    ).run
+                  }
                 case '{ $v: τ } =>
                   '{
                     summonInline[scitzen.html.sag.SagAttributeValueWriter[τ]].convert(
@@ -179,6 +182,14 @@ object sag {
                 ${
                   Expr.ofSeq(attributes.filter(_._1 == "").map: attr =>
                     attr._2 match
+                      case '{ $v: String } =>
+                        '{
+                          SagContentWriter.writeEncodedString($v).run
+                        }
+                      case '{ $v: Recipe } =>
+                        '{
+                          ${v}.run
+                        }
                       case '{ $v: τ } =>
                         '{
                           summonInline[SagContentWriter[τ]].convert($v).run

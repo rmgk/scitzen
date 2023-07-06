@@ -29,7 +29,7 @@ class SastToHtmlConverter(
   ): ProtoConverter[Recipe, Recipe] =
     new SastToHtmlConverter(articleRef, analysis, attr)
 
-  override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Sag.Chain(inl)
+  override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Recipe(inl.foreach(_.run))
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
   override def stringToInlineRes(str: String): Recipe        = Sag.String(str)
 

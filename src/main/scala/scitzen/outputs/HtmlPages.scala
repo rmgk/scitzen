@@ -55,7 +55,7 @@ object HtmlPages:
 
 class HtmlPages(cssPath: String):
 
-  inline def tHead(title: Recipe): Recipe =
+  inline def tHead(inline title: Recipe): Recipe =
     Sag.head(
       Sag.meta(charset = "UTF-8"),
       Sag.meta(name = "viewport", content = "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),

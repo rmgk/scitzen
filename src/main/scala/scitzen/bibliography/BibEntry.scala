@@ -2,7 +2,7 @@ package scitzen.bibliography
 
 import de.rmgk.delay.Sync
 import scitzen.html.sag
-import scitzen.html.sag.{Recipe, Sag, SagContentWriter}
+import scitzen.html.sag.{Recipe, Sag}
 
 import java.nio.charset.StandardCharsets
 
