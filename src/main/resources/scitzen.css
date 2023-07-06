@@ -184,7 +184,7 @@ svg.icon {
 }
 
 
-time, .category, .metadata {
+time, .tags, .metadata {
 	color: var(--color-subdued);
 }
 
@@ -356,7 +356,7 @@ article {
 }
 
 @media screen and (min-width: 600px) {
-	article > .category {
+	article > .tags {
 		text-align: right;
 	}
 }

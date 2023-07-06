@@ -41,7 +41,7 @@ class SastToHtmlConverter(
 
   def categoriesSpan(categories: Seq[String]): Option[Recipe] =
     Option.when(categories.nonEmpty)(
-      Sag.span(`class` = "category", categories.map(c => Sag.String(s" $c ")))
+      Sag.span(`class` = "tags", categories.map(c => Sag.String(s" $c ")))
     )
 
   private val excludedFromMeta = Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language")
