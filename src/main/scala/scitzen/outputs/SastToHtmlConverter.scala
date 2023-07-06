@@ -60,11 +60,9 @@ class SastToHtmlConverter(
     val metalist =
       section.date.map(date => Sag.time(date.full)) ++
       categoriesSpan(categories) ++
-        (if extraAttributes.data.nonEmpty
-        then Chain(Sag.table(extraAttributes.data))
-        else Chain.empty)
-
-
+      (if extraAttributes.data.nonEmpty
+       then Chain(Sag.table(extraAttributes.data))
+       else Chain.empty)
 
     if metalist.isEmpty then extraAttributes.empty
     else extraAttributes.retc(Sag.div(`class` = "metadata", metalist.toList))
@@ -113,7 +111,6 @@ class SastToHtmlConverter(
           }.map(i => Chain(Sag.dl(i)))
 
   override def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
-    val attributes = directive.attributes
     directive.command match
 
       case Aggregate => handleAggregate(ctx, directive)
@@ -121,21 +118,7 @@ class SastToHtmlConverter(
       case Other("break") =>
         ctx.ret(Chain(Sag.hr()))
 
-      case Other("article") =>
-        def timeShort(date: Option[String]) = Sag.time(f"${date.getOrElse("")}%-8s")
-
-        convertInlineSeq(ctx, attributes.text.inl).mapc: text =>
-          Sag.article(
-            timeShort(attributes.plain("datetime")),
-            " ", // whitespace prevents elements from hugging without stylesheet
-            Sag.a(
-              `class` = "title",
-              href = attributes.target,
-              text
-            ),
-            " ",
-            categoriesSpan(attributes.raw.collect { case Named("category", value) => value.plainString })
-          )
+      case Ref => handleRef(ctx, directive, produceBlock = true)
 
       case Include => handleInclude(ctx, directive)
 
@@ -267,7 +250,7 @@ class SastToHtmlConverter(
           Sag.a(href = target, content)
 
       case Ref =>
-        handleRef(ctx, directive)
+        handleRef(ctx, directive, produceBlock = false)
 
       case Lookup =>
         handleLookup(directive) match
@@ -300,7 +283,7 @@ class SastToHtmlConverter(
       case Image => convertImage(ctx, directive)
   end convertInlineDirective
 
-  private def handleRef(ctx: Cta, directive: Directive): ConversionContext[Chain[Recipe]] = {
+  private def handleRef(ctx: Cta, directive: Directive, produceBlock: Boolean): ConversionContext[Chain[Recipe]] = {
     val attrs: Attributes = directive.attributes
     val scope =
       attrs.plain("scope").flatMap(doc.resolve).getOrElse(doc.path)
@@ -325,7 +308,23 @@ class SastToHtmlConverter(
       val resctx = targetDocument.sast match
         case sec @ Section(title, _, _) =>
           convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
-            Chain(Sag.a(href = s"$fileRef#${sec.ref}", titleText))
+            val link = Sag.a(href = s"$fileRef#${sec.ref}", titleText)
+            if !produceBlock
+            then Chain(link)
+            else {
+              def categories =
+                sec.attributes.plain("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
+
+              def timeShort(date: Option[String]) = Sag.time(f"${date.getOrElse("")}%-10s")
+
+              Chain(Sag.article(
+                timeShort(attrs.plain("datetime").orElse(sec.date.map(_.date.full))),
+                " ", // whitespace prevents elements from hugging without stylesheet
+                link,
+                " ",
+                categoriesSpan(categories)
+              ))
+            }
         case Block(_, attr, _) =>
           val label = attr.plain("label").get
           convertInlineSeq(ctx, nameOpt.map(_.inl).getOrElse(Nil)).mapc: titleText =>

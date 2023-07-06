@@ -1,7 +1,6 @@
 package scitzen.outputs
 
 import scitzen.generic.{Project, TitledArticle}
-import scitzen.sast.DCommand.Other
 import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText, Prov, Sast, ScitzenDateTime, Section, Text}
 
 import scala.collection.immutable.ArraySeq
@@ -35,17 +34,12 @@ object GenIndexPage:
     }
 
   def directiveFor(project: Project, doc: TitledArticle): Directive =
-    def categories =
-      doc.header.attributes.plain("tags").iterator.flatMap(_.split(",")).map(_.trim).filter(!_.isBlank).toList
     Directive(
-      Other("article"),
-      Attributes(
-        List(
-          Some(Attribute(doc.header.titleText)),
-          Some(Attribute(doc.header.relativePath.toString)),
-          doc.header.date.map(date => Attribute("datetime", date.dayTime))
-        ).flatten ++ categories.map(Attribute("category", _))
-      )
+      DCommand.Ref,
+      Attributes(List(
+        Attribute(doc.header.autolabel),
+        Attribute("scope", doc.article.doc.path.projectAbsolute.toString)
+      ))
     )(Prov())
 
   def makeIndex(
