@@ -21,7 +21,8 @@ object sag {
 
   object write:
     inline def apply(using inline sc: SagContext)(inline bytes: Array[Byte]) = sc.baos.write(bytes)
-    inline def apply(using inline sc: SagContext)(inline str: String) = sc.baos.write(str.getBytes(StandardCharsets.UTF_8))
+    inline def apply(using inline sc: SagContext)(inline str: String) =
+      sc.baos.write(str.getBytes(StandardCharsets.UTF_8))
     inline def apply(using inline sc: SagContext)(inline byte: Int) = sc.baos.write(byte)
     inline def encodedString(using inline sc: SagContext)(inline value: String): Unit =
       Escaping.escape(value.getBytes(StandardCharsets.UTF_8), sc.baos)
@@ -45,8 +46,6 @@ object sag {
       write(tag)
       write('>')
 
-
-
   @implicitNotFound("Do not know how to use ${T} as content")
   trait SagContentWriter[-T] {
     def convert(value: T): Recipe
@@ -56,8 +55,6 @@ object sag {
     given recipeWriter: SagContentWriter[Recipe] with {
       override inline def convert(value: Recipe): Recipe = value
     }
-
-
 
     given stringWriter: SagContentWriter[String] with {
       override inline def convert(value: String): Recipe = Recipe(write.encodedString(value))
@@ -84,8 +81,6 @@ object sag {
 
   object SagAttributeValueWriter {
 
-
-
     given stringAw: SagAttributeValueWriter[String] with {
       override def convert(attr: Array[Byte], value: String): Recipe = Recipe(write.stringAttribute(attr, value))
     }
@@ -104,8 +99,6 @@ object sag {
           case other   => if value then write(name)
     }
   }
-
-
 
   type Recipe = de.rmgk.delay.Sync[SagContext, Unit]
 
@@ -174,7 +167,8 @@ object sag {
                       ${ v }
                     ).run
                   }
-          , '{}
+            ,
+            '{}
           )
         }
         write.closeTag()
@@ -190,21 +184,22 @@ object sag {
             case other =>
               '{
                 ${
-                  Expr.block(attributes.filter(_._1 == "").toList.map: attr =>
-                    attr._2 match
-                      case '{ $v: String } =>
-                        '{
-                          write.encodedString($v)
-                        }
-                      case '{ $v: Recipe } =>
-                        '{
-                          ${v}.run
-                        }
-                      case '{ $v: τ } =>
-                        '{
-                          summonInline[SagContentWriter[τ]].convert($v).run
-                        }
-                  ,
+                  Expr.block(
+                    attributes.filter(_._1 == "").toList.map: attr =>
+                      attr._2 match
+                        case '{ $v: String } =>
+                          '{
+                            write.encodedString($v)
+                          }
+                        case '{ $v: Recipe } =>
+                          '{
+                            ${ v }.run
+                          }
+                        case '{ $v: τ } =>
+                          '{
+                            summonInline[SagContentWriter[τ]].convert($v).run
+                          }
+                    ,
                     '{}
                   )
                 }
