@@ -178,19 +178,14 @@ svg.icon {
 
 .metadata {
 	display: flex;
-	/* safe causes the metadata to always be visible, */
-	/* even if things become so small that they need to be scrolled */
-	justify-content: safe center;
+	flex-direction: column;
+	align-items: center;
+	word-wrap: anywhere;
 }
 
-.metadata > * {
-	margin-right: var(--small-gap);
-}
 
-@media screen {
-	time, .category {
-		color: var(--color-subdued);
-	}
+time, .category, .metadata {
+	color: var(--color-subdued);
 }
 
 time {

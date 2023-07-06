@@ -14,7 +14,9 @@ import scitzen.sast.Attribute.Named
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import scala.annotation.unused
 
 class SastToHtmlConverter(
     articleRef: ArticleRef,
@@ -42,48 +44,54 @@ class SastToHtmlConverter(
       Sag.span(`class` = "category", categories.map(c => Sag.String(s" $c ")))
     )
 
-  def tMeta(article: Section): Recipe =
+  private val excluded = Set("label", "disable", "categories", "people", "tags", "folder", "date")
+  def tMeta(ctx: Cta, section: Section): CtxCF =
 
-    def timeFull(date: ScitzenDateTime): Recipe = Sag.time(date.full)
-
-    val categories = List("categories", "people").flatMap(article.attributes.plain)
+    @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
       .flatMap(_.split(","))
 
-    val metalist =
-      article.date.map(timeFull) ++
-      categoriesSpan(categories) ++
-      article.attributes.plain("folder").map(f => Sag.span(`class` = "category", s" in $f"))
+    val extraAttributes = ctx.fold[(String, Text), Recipe](section.attributes.raw.collect:
+      case Named(id, text) if !id.contains(' ') && !excluded.contains(id) => (id, text)
+    ):
+      case (ctx, (id, text)) =>
+        convertInlineSeq(ctx, text.inl).mapc: inner =>
+          Sag.span(s"$id = ", inner)
 
-    if metalist.nonEmpty then Sag.div(`class` = "metadata", metalist.toList) else Sag.Nothing
+    val metalist =
+      section.date.map(date => Sag.time(date.full)) ++
+      categoriesSpan(categories) ++
+        (if extraAttributes.data.nonEmpty
+        then Chain(Sag.table(extraAttributes.data))
+        else Chain.empty)
+
+
+
+    if metalist.isEmpty then extraAttributes.empty
+    else extraAttributes.retc(Sag.div(`class` = "metadata", metalist.toList))
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     if section.attributes.plain("disable").exists(_.contains("display")) then return ctx.ret(Chain.empty)
     val Section(title, level, _) = section
-    convertInlineSeq(ctx, title.inl).map { innerFrags =>
-      val addDepth: Int =
-        if level.contains("=") then 0
-        else
-          ctx.sections.iterator
-            .map(_.prefix)
-            .find(_.contains("="))
-            .fold(1)(s => s.length)
-      val link = section.attributes.plain("link").map: url =>
-        Sag.a(href = url, "\u2009", Sag.Raw(HtmlPages.iconExternalLink))
+    val inlineCtx                = convertInlineSeq(ctx, title.inl)
+    val innerFrags               = inlineCtx.data
+    val addDepth: Int =
+      if level.contains("=") then 0
+      else
+        ctx.sections.iterator
+          .map(_.prefix)
+          .find(_.contains("="))
+          .fold(1)(s => s.length)
+    val link = section.attributes.plain("link").map: url =>
+      Sag.a(href = url, "\u2009", Sag.Raw(HtmlPages.iconExternalLink))
 
-      Chain[Recipe](
-        Sync:
-          sag.write(s"<h${level.length + addDepth} id=\"")
-          Sag.String(section.ref).run
-          sag.write("\">")
-          innerFrags.foreach(_.run)
-          link.foreach(_.run)
-          sag.write(s"</h${level.length + addDepth}>")
-        ,
-        if level == "="
-        then tMeta(section)
-        else Sag.Nothing
-      )
-    }.push(section)
+    val header = (level.length + addDepth) match
+      case 1 => Sag.h1(id = section.ref, innerFrags, link)
+      case 2 => Sag.h2(id = section.ref, innerFrags, link)
+      case 3 => Sag.h3(id = section.ref, innerFrags, link)
+      case 4 => Sag.h4(id = section.ref, innerFrags, link)
+      case 5 => Sag.h5(id = section.ref, innerFrags, link)
+      case 6 => Sag.h6(id = section.ref, innerFrags, link)
+    (header +: tMeta(inlineCtx, section)).push(section)
 
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF = slist match
     case Slist(Nil) => ctx.empty
@@ -350,7 +358,7 @@ class SastToHtmlConverter(
       attrs.textOption match
         case None => cctx.retc(styledAnchors)
         case Some(text) =>
-          convertInlineSeq(cctx, text.inl) :++ Chain(Sag.String("\u2009"),  styledAnchors)
+          convertInlineSeq(cctx, text.inl) :++ Chain(Sag.String("\u2009"), styledAnchors)
     else if attrs.plain("style").contains("author")
     then
       val nameOption =
