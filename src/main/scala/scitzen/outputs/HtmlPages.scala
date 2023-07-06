@@ -2,6 +2,7 @@ package scitzen.outputs
 
 import de.rmgk.delay.Sync
 import scitzen.contexts.ConversionContext
+import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag, SagContentWriter, SagContext}
 import scitzen.outputs.HtmlPages.svgContainer
 import scitzen.sast.Section
@@ -83,18 +84,16 @@ class HtmlPages(cssPath: String):
       language: Option[String] = None
   ): String =
     val sctx = new SagContext()
-    Sag.Concat(
-      Sag.`!DOCTYPE html`(),
-      Sag.html(
-        // we define a global language as scitzen controls are kinda all english, but also to enable features such as hyphenation even if no language is defined. This will produce incorrect hyphenation, but thats guesswork anyways, so may be OK.
-        lang = language,
-        tHead(Sag.title(titled)),
-        Sag.body(
-          `class` = bodyClass,
-          sidebar.map(s => sidebarContainer(Sag.nav(s))).toSeq,
-          Sag.main(content, `class` = mainClass),
-          svgContainer,
-        )
+    Sag.`!DOCTYPE html`().runInContext(sctx)
+    Sag.html(
+      // we define a global language as scitzen controls are kinda all english, but also to enable features such as hyphenation even if no language is defined. This will produce incorrect hyphenation, but thats guesswork anyways, so may be OK.
+      lang = language,
+      tHead(Sag.title(titled)),
+      Sag.body(
+        `class` = bodyClass,
+        sidebar.map(s => sidebarContainer(Sag.nav(s))).toSeq,
+        Sag.main(content, `class` = mainClass),
+        svgContainer,
       )
     ).runInContext(sctx)
     sctx.resultString

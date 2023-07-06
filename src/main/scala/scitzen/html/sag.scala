@@ -110,9 +110,6 @@ object sag {
 
     inline def Nothing: Recipe = Sync { () }
 
-    inline def Concat(inline others: Recipe*): Recipe = Sync:
-      others.foreach(_.run)
-
     inline def Chain(inline others: Chain[Recipe]): Recipe = Sync:
       others.foreach(_.run)
 

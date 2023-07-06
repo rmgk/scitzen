@@ -39,7 +39,7 @@ class SastToHtmlConverter(
 
   def categoriesSpan(categories: Seq[String]): Option[Recipe] =
     Option.when(categories.nonEmpty)(
-      Sag.span(`class` = "category", Sag.Concat(categories.map(c => Sag.String(s" $c "))*))
+      Sag.span(`class` = "category", categories.map(c => Sag.String(s" $c ")))
     )
 
   def tMeta(article: Section): Recipe =
@@ -54,7 +54,7 @@ class SastToHtmlConverter(
       categoriesSpan(categories) ++
       article.attributes.plain("folder").map(f => Sag.span(`class` = "category", s" in $f"))
 
-    if metalist.nonEmpty then Sag.div(`class` = "metadata", Sag.Concat(metalist.toSeq*)) else Sag.Nothing
+    if metalist.nonEmpty then Sag.div(`class` = "metadata", metalist.toList) else Sag.Nothing
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     if section.attributes.plain("disable").exists(_.contains("display")) then return ctx.ret(Chain.empty)
