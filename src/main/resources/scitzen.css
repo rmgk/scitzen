@@ -1,10 +1,4 @@
 :root {
-	/*--theme-hue: 220;*/
-	/*--theme-saturation: 50%;*/
-	/*--theme-lightness: 40%;*/
-
-	/*--theme-color: hsl(var(--theme-hue), var(--theme-saturation), var(--theme-lightness));*/
-	/*--light-theme-color: hsla(var(--theme-hue), var(--theme-saturation), var(--theme-lightness), 0.4);*/
 	--theme-color: #9C27B0FF;
 	--light-theme-color: #9C27B066;
 	--color-subdued: GrayText;
@@ -15,7 +9,6 @@
 	--theme-plate-color: hsla(0, 0%, 50%, 0.1);
 
 	/* a4 paper has 21cm, subtract 1.5 inch for print margins gives 171.9mm */
-	/* but use flexible width for font differences */
 	--main-content-width: 17cm;
 	--header-oversize: 5cm;
 	--sidebar-max-width: 20em;
