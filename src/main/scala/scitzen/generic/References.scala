@@ -5,7 +5,8 @@ import scitzen.compat.Logging.cli
 
 import scala.jdk.CollectionConverters.*
 
-case class SastRef(scope: ProjectPath, sast: Sast, articleRef: ArticleRef)
+case class SastRef(sast: Sast, articleRef: ArticleRef):
+  def scope = articleRef.document.path
 
 object References:
 

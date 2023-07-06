@@ -2,11 +2,13 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
-import scitzen.generic.{ArticleRef, Document, SastRef}
+import scitzen.generic.{ArticleRef, SastRef}
 import scitzen.sast.*
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Index, Ref}
 
-class SastToSastConverter(document: Document, articleRef: ArticleRef):
+class SastToSastConverter(articleRef: ArticleRef):
+
+  def document = articleRef.document
 
   type CtxCS   = SastContext[Chain[Sast]]
   type Ctx[+T] = SastContext[T]
@@ -84,7 +86,7 @@ class SastToSastConverter(document: Document, articleRef: ArticleRef):
     val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
     val (aliases, attr) = resctx.data
     val ublock          = sec.copy(attributes = attr)(sec.prov)
-    val target          = SastRef(document.path, ublock, articleRef)
+    val target          = SastRef(ublock, articleRef)
     refAliases(resctx, aliases, target).ret(ublock)
   }
 
@@ -95,7 +97,7 @@ class SastToSastConverter(document: Document, articleRef: ArticleRef):
         val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
         val (aliases, attr) = resctx.data
         val ublock          = block.copy(attributes = attr)(block.prov)
-        val target          = SastRef(document.path, ublock, articleRef)
+        val target          = SastRef(ublock, articleRef)
         refAliases(resctx, aliases, target).ret(ublock)
   }
 

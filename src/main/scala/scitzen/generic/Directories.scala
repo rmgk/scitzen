@@ -33,7 +33,7 @@ object ArticleProcessing:
   def processArticles(doc: Document): List[Article] =
     items(doc).map: art =>
       val ref = new ArticleRef(doc)
-      val ctx = new SastToSastConverter(doc, ref).convertSeq(art)(SastContext(()))
+      val ctx = new SastToSastConverter(ref).convertSeq(art)(SastContext(()))
       Article(ref, ctx.data.toList, doc, ctx.ret(()), art)
 
   def headerType(sast: Sast) = sast match
