@@ -116,8 +116,10 @@ class ConvertHtml(anal: ConversionAnalysis):
 
         val mainClass =
           val hardwrap = if converter.hardNewlines then Some("hardwrap") else None
-          val noJustify = if converter.combinedAttributes.plainList("flags").contains("-justify")
-            then Some("no-justify") else None
+          val noJustify =
+            if converter.combinedAttributes.plainList("flags").contains("-justify")
+            then Some("no-justify")
+            else None
           val parts = List(hardwrap, noJustify).flatten
           Option.when(parts.nonEmpty):
             parts.mkString(" ")

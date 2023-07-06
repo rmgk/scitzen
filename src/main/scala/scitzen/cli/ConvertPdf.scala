@@ -19,7 +19,6 @@ object ConvertPdf:
     def project = anal.project
 
     anal.directory.fullArticles
-      .filter(_.header.attributes.get("texTemplate").isDefined)
       .asJava.parallelStream().forEach { titled =>
         val converter = new SastToTexConverter(
           titled.article.ref,
@@ -70,9 +69,9 @@ object ConvertPdf:
           ConvertTemplate.fillTemplate(
             project,
             anal.directory,
-            titled.header.attributes.plain("texTemplate").orElse(project.config.texTemplate).flatMap(
+            templateSettings.plain("texTemplate").flatMap(
               titled.article.doc.resolve
-            ),
+            ).orElse(Some(project.pdfTemplatePath)),
             templateSettings
           )
 

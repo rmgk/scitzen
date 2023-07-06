@@ -1,0 +1,187 @@
+::if{sectionstyle}
+	\documentclass[a4paper, 11pt, :{pagestyle; default=oneside}, :{sectionstyle}]{memoir}
+::
+::if{not=exists; sectionstyle}
+	\documentclass[a4paper, 11pt, :{pagestyle; default=oneside}]{memoir}
+::
+
+% scitzen styling definitions
+\newcommand\scitzenmaketitle{\maketitle{}}
+
+% Language settings
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\setotherlanguage{german}
+
+% Memoir style
+\nouppercaseheads
+:% \counterwithin{figure}{chapter}
+:% \counterwithin{figure}{section}
+\tightlists :% available \tightlists \defaultlists \firmlists \firmlists*
+
+% hyphenate in URL
+\PassOptionsToPackage{hyphens}{url}
+% microtype does more fancy font rendering
+\usepackage{microtype}
+
+% hyperref does all sorts of PDF goodies
+\usepackage[colorlinks]{hyperref}
+:% the following makes magic pdfs where link color vanishes when printed
+:% however, that does not seem to work with linux pdf viewers, and generally seeems like a gigantic hack
+:% \usepackage[ocgcolorlinks]{ocgx2}[2017/03/30]
+
+% adapt colors of hyperref
+\usepackage{xcolor}
+
+::if{overflowIndicator}
+	% adds a visual indicator for overfull lines
+	\overfullrule=5pt
+::
+
+::if{pagestyle}
+	\hypersetup{
+	    colorlinks,
+	    linkcolor={black},
+	    citecolor={white!20!black},
+	    urlcolor={white!20!black}
+	}
+::
+::if{not=exists; pagestyle}
+	\hypersetup{
+	    colorlinks,
+	    linkcolor={red!50!black},
+	    citecolor={blue!50!black},
+	    urlcolor={blue!80!black}
+	}
+::
+
+
+::if{feature sidepar}
+	% size of side paragraphs (notes) and placement (left is actually the default)
+	\renewcommand{\sideparfont}{\footnotesize\normalfont}
+	\sideparmargin{left}
+::
+
+::if{bibliography path}
+	% required for author name citations
+	\usepackage[square,numbers,sort]{natbib}
+	% the following redefines the space between author and citation to not break
+	\makeatletter
+	\renewcommand*{\NAT@spacechar}{~}
+	\makeatother
+::
+
+
+
+::if{feature graphics}
+	% adjustbox loads graphicx, but allows includes with max width
+	\usepackage[export]{adjustbox}
+	% \usepackage{graphicx}
+	% for some reason, graphics does not embed graphics in draft mode …
+	% \setkeys{Gin}{draft=false}
+::
+
+::if{feature bibentry}
+	% enables bibentry macro for inline bib items
+	\usepackage{bibentry}
+	% uses standard bibliography?
+	\nobibliography*
+::
+
+::if{settingsSloppy}
+	% sloppyStuff
+	% set \clubpenalty, etc. to distinctive values for use
+	% in tracing page breaks. These values are chosen so that
+	% no single penalty will absolutely prohibit a page break, but
+	% certain combinations of two or more will.
+	\clubpenalty=9996
+	\widowpenalty=9999
+	\brokenpenalty=4991
+	% Reiterate the default value of \redisplaypenalty, for
+	% completeness.
+	% Set postdisplaypenalty to a fairly high value to discourage a
+	% page break between a display and a widow line at the end of a
+	% paragraph.
+	\predisplaypenalty=10000
+	\postdisplaypenalty=1549
+	% And then \displaywidowpenalty should be at least as high as
+	% \postdisplaypenalty, otherwise in a situation where two displays
+	% are separated by two lines, TeX will prefer to break between the
+	% two lines, rather than before the first line.
+	\displaywidowpenalty=1602
+	\setlength{\topskip}{1.6\topskip}
+	\checkandfixthelayout
+	\sloppybottom
+	% allows more spaces in paragarphs to prevent overfull hboxes
+	\sloppy
+::
+
+::if{feature listings}
+	% colors and definition for scalastyle
+	\usepackage{listings}
+	% need final option when in draft mode …
+	% \usepackage[final]{listings}
+	\usepackage{xcolor}
+	\definecolor{gray}{rgb}{0.5,0.5,0.5}
+	\lstdefinestyle{scitzenCodestyle}{
+	  frame=none,
+	  showstringspaces=false,
+	  basicstyle={\ttfamily},
+	  numbers=left,
+	  xleftmargin=2.3em,
+	  numberstyle=\fontsize{7}{9}\selectfont\color{gray}\bfseries,
+	  breaklines=true,
+	  breakatwhitespace=true,
+	  tabsize=2,
+	  escapeinside={(*@}{@*)},
+	  numberblanklines=true,
+	  firstnumber=last,
+	  % fix quotation marks
+	  literate={"}{\textquotedbl}1,
+	}
+	\lstset{style=scitzenCodestyle}
+::
+
+
+::if{feature framed}
+	\usepackage[framemethod=tikz]{mdframed}
+
+	% theorem environments
+	\newmdenv [ %
+	%innertopmargin = -1,%
+	%skipabove = 5,%
+	%skipbelow = 2,%
+	]{proofbox}
+	\usepackage{amsthm}
+	\theoremstyle{definition}
+	\newcounter{scithm}
+	\counterwithin{scithm}{chapter}
+	\newtheorem{theorem}[scithm]{Theorem}
+	\newtheorem{conjecture}[scithm]{Conjecture}
+	\newtheorem{proposition}[scithm]{Proposition}
+	\newtheorem{lemma}[scithm]{Lemma}
+	\newtheorem{corollary}[scithm]{Corollary}
+	\newtheorem{example}[scithm]{Example}
+	\newtheorem{definition}[scithm]{Definition}
+::
+
+% double brackets (llbracket rrbracket)
+\usepackage{ stmaryrd }
+
+
+
+:{texIncludes; default=}
+
+\begin{document}
+
+:{texPreamble; default=}
+
+:{template content}
+
+::if{bibliography path}
+	\bibliographystyle{plainnat}
+	\bibliography{:{bibliography path}}
+::
+
+\end{document}
+

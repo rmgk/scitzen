@@ -4,9 +4,7 @@ import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.extern.Katex.KatexLibrary
-import scitzen.extern.{
-  BlockConversions, BlockConverter, CachedConverterRouter, ImageConversions, ImageConverter, ImageTarget
-}
+import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ImageConversions, ImageConverter, ImageTarget, ResourceUtil}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project}
 import scitzen.sast.{DCommand, Directive}
 
@@ -48,6 +46,16 @@ object ConvertProject:
     val timediff = makeTimediff()
 
     cli.info(s"found project in ./${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
+
+    val toHtml = project.config.outputType.contains("html")
+    val toPdf = project.config.outputType.contains("pdf")
+
+    if toPdf then
+      Files.createDirectories(project.pdfTemplatePath.absolute.getParent)
+      val bytes = ResourceUtil.load("default-template.tex.scim")
+      Files.write(project.pdfTemplatePath.absolute, bytes)
+      ()
+
     val documents = ArticleProcessing.loadDocuments(project)
 
     val directory = ArticleDirectory:
@@ -59,8 +67,7 @@ object ConvertProject:
 
     Files.createDirectories(project.outputdir)
 
-    val toHtml = project.config.outputType.contains("html")
-    val toPdf  = project.config.outputType.contains("pdf")
+
 
     val bibres     = BibManager(project).prefetch(directory.articles.flatMap(_.context.citations).toSet)
     val dblpFuture = Future { bibres.runToFuture(using ()) }.flatten

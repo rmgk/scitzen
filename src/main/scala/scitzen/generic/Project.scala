@@ -37,6 +37,9 @@ case class Project private (root: Path, config: ProjectConfig):
 
   val htmlPaths: HtmlPathManager = HtmlPathManager(this)
 
+  val pdfTemplatePath: ProjectPath =
+    ProjectPath(this, outputdir.resolve("templates").resolve("default-template.tex.scim"))
+
   lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
   lazy val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
 

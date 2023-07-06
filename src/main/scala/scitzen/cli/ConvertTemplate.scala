@@ -17,8 +17,8 @@ object ConvertTemplate:
   ): String =
     templatePath match
       case None =>
-        Logging.cli.warn(s"could not find template file »$templatePath«")
-        ""
+        Logging.cli.warn(s"could not find template file")
+        templateSettings.plain("template content").getOrElse("")
       case Some(templateFile) =>
         val templateArticle = directory.byPath(templateFile).head
         val documentString = SastToTextConverter(
