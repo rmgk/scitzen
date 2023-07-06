@@ -305,7 +305,7 @@ class SastToHtmlConverter(
       val resctx = targetDocument.sast match
         case sec @ Section(title, _, _) =>
           convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
-            val link = Sag.a(href = s"$fileRef#${sec.ref}", titleText)
+            val link = Sag.a(href = s"$fileRef#${References.getLabel(targetDocument).get}", titleText)
             if !produceBlock
             then Chain(link)
             else {
@@ -323,7 +323,7 @@ class SastToHtmlConverter(
               ))
             }
         case Block(_, attr, _) =>
-          val label = attr.plain("label").get
+          val label = References.getLabel(targetDocument).get
           convertInlineSeq(ctx, nameOpt.map(_.inl).getOrElse(Nil)).mapc: titleText =>
             if titleText.isEmpty
             then Sag.a(href = s"$fileRef#$label", label)
