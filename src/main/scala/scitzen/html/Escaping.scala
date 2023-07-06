@@ -33,7 +33,7 @@ object Escaping {
   val `&lt;` = "&lt;".getBytes(StandardCharsets.UTF_8)
   val `&gt;` = "&gt;".getBytes(StandardCharsets.UTF_8)
   val `&amp;` = "&amp;".getBytes(StandardCharsets.UTF_8)
-  val `&quot;` = "&lt;".getBytes(StandardCharsets.UTF_8)
+  val `&quot;` = "&quot;".getBytes(StandardCharsets.UTF_8)
 
   /** Code to escape text HTML nodes. Based on code from scala.xml
     * Adapted to work with byte arrays of UTF8 for less copying.
