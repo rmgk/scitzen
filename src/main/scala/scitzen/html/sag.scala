@@ -16,11 +16,6 @@ object sag {
   inline def Recipe: SyncCompanion[SagContext] = new SyncCompanion[SagContext] {}
 
   class SagContext(val baos: ByteArrayOutputStream = new ByteArrayOutputStream(8096)) {
-    def append(bytes: Array[Byte], offset: Int, length: Int) =
-      baos.write(bytes, offset, length)
-
-    def append(bytes: Array[Byte]): Unit =
-      baos.writeBytes(bytes)
     def resultString: String = baos.toString(StandardCharsets.UTF_8)
   }
 
