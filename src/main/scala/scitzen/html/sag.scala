@@ -74,8 +74,7 @@ object sag {
       writeAttr(name, Sag.String(value))
 
     given stringAw: SagAttributeValueWriter[String] with {
-      override def convert(attr: Array[Byte], value: String): Recipe = Sync:
-        writeAttr(attr, Sag.String(value)).run
+      override def convert(attr: Array[Byte], value: String): Recipe = writeStringAttr(attr, value)
     }
 
     given optAw[T](using sw: SagAttributeValueWriter[T]): SagAttributeValueWriter[Option[T]] with {
