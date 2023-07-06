@@ -16,6 +16,7 @@ lazy val scitzen = project.in(file("."))
       slips.logging.value,
       slips.scip.value,
       slips.options.value,
+      slips.script.value,
       scopt.value,
       jsoniterScala.value,
       munit.value,
