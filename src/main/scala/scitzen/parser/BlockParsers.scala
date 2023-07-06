@@ -15,12 +15,12 @@ object BlockParsers {
     Block(BCommand.Empty, scitzen.sast.Attributes(attrOpt.getOrElse(Nil)), Paragraph(Text(inlines)))(prov)
   }
 
-  def sectionStart: Scip[String] = "=#".any.rep.min(1).str <~ " ".all
+  def sectionStart: Scip[String] = choice("= ", "== ", "# ", "## ", "### ").str
   def sectionTitle: Scip[Section] = Scip {
     val prefix          = sectionStart.run
     val (inlines, prov) = withProv(sectionInlines).run
     val attrl           = ((AttributesParser.braces <~ spaceLineF) | AttributesParser.noBraces).opt.run
-    Section(scitzen.sast.Text(inlines), prefix, Attributes(attrl.getOrElse(Nil)))(prov)
+    Section(scitzen.sast.Text(inlines), prefix.substring(0, prefix.length - 1), Attributes(attrl.getOrElse(Nil)))(prov)
   }
 
   val extendedWhitespace: Scip[Block] = Scip {
