@@ -368,7 +368,7 @@ article > * {
 
 /* make the title get most of the space, */
 /* to cause the tags to be right aligned */
-article > .title {
+article > a {
 	flex: 1;
 }
 
