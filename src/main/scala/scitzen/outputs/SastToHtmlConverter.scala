@@ -332,7 +332,9 @@ class SastToHtmlConverter(
         case other =>
           cli.warn(s"can not refer to $other")
           ctx.empty
-      resctx.reference(titled.article.ref)
+      if fileRef.nonEmpty
+      then resctx.reference(titled.article.ref)
+      else resctx
     }.getOrElse {
       cli.warn(s"no ref resolutions", directive)
       ctx.retc(Sag.code(SastToScimConverter(anal.bib).macroToScim(directive)))
