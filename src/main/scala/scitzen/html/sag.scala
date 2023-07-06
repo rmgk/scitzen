@@ -19,6 +19,34 @@ object sag {
     def resultString: String = baos.toString(StandardCharsets.UTF_8)
   }
 
+  object write:
+    inline def apply(using inline sc: SagContext)(inline bytes: Array[Byte]) = sc.baos.write(bytes)
+    inline def apply(using inline sc: SagContext)(inline str: String) = sc.baos.write(str.getBytes(StandardCharsets.UTF_8))
+    inline def apply(using inline sc: SagContext)(inline byte: Int) = sc.baos.write(byte)
+    inline def encodedString(using inline sc: SagContext)(inline value: String): Unit =
+      Escaping.escape(value.getBytes(StandardCharsets.UTF_8), sc.baos)
+    inline def attribute(using inline sc: SagContext)(inline name: Array[Byte], inline value: Recipe): Unit =
+      write(' ')
+      write(name)
+      write('=')
+      write('"')
+      value.run
+      write('"')
+    inline def stringAttribute(using inline sc: SagContext)(inline name: Array[Byte], inline value: String): Unit =
+      attribute(using sc)(name, Sag.String(value))
+    inline def openTag(using inline sc: SagContext)(tag: Array[Byte]) =
+      write('<')
+      write(tag)
+    inline def closeTag(using inline sc: SagContext)() =
+      write('>')
+    inline def closingTag(using inline sc: SagContext)(tag: Array[Byte]) =
+      write('<')
+      write('/')
+      write(tag)
+      write('>')
+
+
+
   @implicitNotFound("Do not know how to use ${T} as content")
   trait SagContentWriter[-T] {
     def convert(value: T): Recipe
@@ -29,11 +57,10 @@ object sag {
       override inline def convert(value: Recipe): Recipe = value
     }
 
-    inline def writeEncodedString(inline value: String): Recipe = Sync: ctx ?=>
-      Escaping.escape(value.getBytes(StandardCharsets.UTF_8), ctx.baos)
+
 
     given stringWriter: SagContentWriter[String] with {
-      override inline def convert(value: String): Recipe = writeEncodedString(value)
+      override inline def convert(value: String): Recipe = Recipe(write.encodedString(value))
     }
 
     inline given seqSagWriter[T](using sw: SagContentWriter[T]): SagContentWriter[Seq[T]] with
@@ -57,19 +84,10 @@ object sag {
 
   object SagAttributeValueWriter {
 
-    inline def writeAttr(inline name: Array[Byte], inline value: Recipe): Recipe = Sync:
-      write(' ')
-      write(name)
-      write('=')
-      write('"')
-      value.run
-      write('"')
 
-    inline def writeStringAttr(inline name: Array[Byte], inline value: String): Recipe =
-      writeAttr(name, Sag.String(value))
 
     given stringAw: SagAttributeValueWriter[String] with {
-      override def convert(attr: Array[Byte], value: String): Recipe = writeStringAttr(attr, value)
+      override def convert(attr: Array[Byte], value: String): Recipe = Recipe(write.stringAttribute(attr, value))
     }
 
     given optAw[T](using sw: SagAttributeValueWriter[T]): SagAttributeValueWriter[Option[T]] with {
@@ -87,9 +105,7 @@ object sag {
     }
   }
 
-  inline def write(using inline sc: SagContext)(inline bytes: Array[Byte]) = sc.baos.write(bytes)
-  inline def write(using inline sc: SagContext)(inline str: String) = sc.baos.write(str.getBytes(StandardCharsets.UTF_8))
-  inline def write(using inline sc: SagContext)(inline byte: Int)   = sc.baos.write(byte)
+
 
   type Recipe = de.rmgk.delay.Sync[SagContext, Unit]
 
@@ -105,7 +121,7 @@ object sag {
 
     inline def Nothing: Recipe = Sync { () }
 
-    inline def String(inline other: String): Recipe = SagContentWriter.writeEncodedString(other)
+    inline def String(inline other: String): Recipe = Recipe(write.encodedString(other))
   }
 
   def applyDynamicImpl(name: Expr[String], args: Expr[Seq[Any]])(using quotes: Quotes): Expr[Recipe] =
@@ -128,9 +144,8 @@ object sag {
 
     '{
       val tag = ${ Expr(tagname) }.getBytes(StandardCharsets.UTF_8)
-      Sync {
-        write('<')
-        write(tag)
+      Sync { ctx ?=>
+        write.openTag(tag)
 
         // write attributes
         ${
@@ -147,10 +162,10 @@ object sag {
               a._2 match
                 case '{ $v: String } =>
                   '{
-                    SagAttributeValueWriter.writeStringAttr(
+                    write.stringAttribute(
                       $attrName,
                       ${ v }
-                    ).run
+                    )
                   }
                 case '{ $v: τ } =>
                   '{
@@ -162,7 +177,7 @@ object sag {
           , '{}
           )
         }
-        write('>')
+        write.closeTag()
 
         // write children
         ${
@@ -179,7 +194,7 @@ object sag {
                     attr._2 match
                       case '{ $v: String } =>
                         '{
-                          SagContentWriter.writeEncodedString($v).run
+                          write.encodedString($v)
                         }
                       case '{ $v: Recipe } =>
                         '{
@@ -193,10 +208,7 @@ object sag {
                     '{}
                   )
                 }
-                write('<')
-                write('/')
-                write(tag)
-                write('>')
+                write.closingTag(tag)
               }
         }
       }
