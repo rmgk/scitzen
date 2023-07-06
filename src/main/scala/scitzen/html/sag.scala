@@ -116,7 +116,7 @@ object sag {
     inline def Chain(inline others: Chain[Recipe]): Recipe = Sync:
       others.foreach(_.run)
 
-    //inline def Use[T](inline other: T)(using sw: SagContentWriter[T]): Recipe = sw.convert(other)
+    // inline def Use[T](inline other: T)(using sw: SagContentWriter[T]): Recipe = sw.convert(other)
 
     def String(other: String): Recipe = SagContentWriter.stringWriter.convert(other)
   }
@@ -131,12 +131,11 @@ object sag {
 
     val attributes = args match
       case Varargs(args) =>
-        args.map: arg =>
-          arg match
-            case '{ new Tuple2[String, Any](${ Expr(y1) }, ${ y2 }: τ) } => y1 -> y2
-            case '{ Tuple2[String, Any](${ Expr(y1) }, $y2) }            => y1 -> y2
-            case '{ (${ Expr(y1) }: String) -> $y2 }                     => y1 -> y2
-            case other                                                   => "" -> other
+        args.map:
+          case '{ new Tuple2[String, Any](${ Expr(y1) }, ${ y2 }: τ) } => y1 -> y2
+          case '{ Tuple2[String, Any](${ Expr(y1) }, $y2) }            => y1 -> y2
+          case '{ (${ Expr(y1) }: String) -> $y2 }                     => y1 -> y2
+          case other                                                   => "" -> other
       case other =>
         report.errorAndAbort(s"not varargs ${other.show}", other)
 
