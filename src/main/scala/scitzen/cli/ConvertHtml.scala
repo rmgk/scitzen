@@ -114,13 +114,21 @@ class ConvertHtml(anal: ConversionAnalysis):
           convertedArticleCtx.data.foreach(_.run)
           citations.run
 
+        val mainClass =
+          val hardwrap = if converter.hardNewlines then Some("hardwrap") else None
+          val noJustify = if converter.combinedAttributes.plainList("flags").contains("-justify")
+            then Some("no-justify") else None
+          val parts = List(hardwrap, noJustify).flatten
+          Option.when(parts.nonEmpty):
+            parts.mkString(" ")
+
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           bodyClass =
-            if titled.header.attributes.plain("disable").exists(_.contains("section numbers"))
-            then ""
-            else "numbered-sections",
-          mainClass = if converter.hardNewlines then Some("adhoc") else None,
+            if titled.header.attributes.plainList("flags").contains("-section numbers")
+            then None
+            else Some("numbered-sections"),
+          mainClass = mainClass,
           sidebar = toc.map: c =>
             Recipe:
               Sag.a(href = s"#", titled.header.title).run

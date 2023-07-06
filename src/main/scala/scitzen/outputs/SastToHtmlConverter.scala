@@ -21,7 +21,7 @@ import scala.annotation.unused
 class SastToHtmlConverter(
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
-    combinedAttributes: Attributes,
+  val combinedAttributes: Attributes,
 ) extends ProtoConverter[Recipe, Recipe](articleRef, anal, combinedAttributes):
 
   override def subconverter(
@@ -44,7 +44,7 @@ class SastToHtmlConverter(
       Sag.span(`class` = "category", categories.map(c => Sag.String(s" $c ")))
     )
 
-  private val excluded = Set("label", "disable", "categories", "people", "tags", "folder", "date")
+  private val excluded = Set("label", "categories", "people", "tags", "folder", "date", "flags")
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
     @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
@@ -68,7 +68,7 @@ class SastToHtmlConverter(
     else extraAttributes.retc(Sag.div(`class` = "metadata", metalist.toList))
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
-    if section.attributes.plain("disable").exists(_.contains("display")) then return ctx.ret(Chain.empty)
+    if section.attributes.plainList("flags").contains("hide header") then return ctx.ret(Chain.empty)
     val Section(title, level, _) = section
     val inlineCtx                = convertInlineSeq(ctx, title.inl)
     val innerFrags               = inlineCtx.data

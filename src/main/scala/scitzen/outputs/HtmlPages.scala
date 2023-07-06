@@ -77,7 +77,7 @@ class HtmlPages(cssPath: String):
 
   def wrapContentHtml(
       content: Recipe,
-      bodyClass: String,
+      bodyClass: Option[String],
       mainClass: Option[String],
       sidebar: Option[Recipe],
       titled: Recipe,

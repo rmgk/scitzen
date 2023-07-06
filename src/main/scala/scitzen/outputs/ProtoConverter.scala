@@ -22,7 +22,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   val project  = doc.path.project
   val reporter = doc.reporter
 
-  val hardNewlines = !combinedAttributes.plain("style").exists(_.contains("article"))
+  val hardNewlines = combinedAttributes.plainList("flags").contains("+hardwrap")
 
   type CtxCF  = ConversionContext[Chain[BlockRes]]
   type CtxInl = ConversionContext[Chain[InlineRes]]

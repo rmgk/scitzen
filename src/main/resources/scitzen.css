@@ -197,7 +197,6 @@ time {
 /* basic text styling */
 
 main :is(p, ol, ul, dl, figcaption) {
-	text-align: justify;
 	/* set line-height to scaled pixels */
 	line-height: calc(28 / 18);
 	/* text based things always are limited to content width, */
@@ -205,11 +204,13 @@ main :is(p, ol, ul, dl, figcaption) {
 	max-width: var(--main-content-width);
 }
 
-main.adhoc :is(p, ol, ul, dl, figcaption) {
+main.hardwrap :is(p, ol, ul, dl, figcaption) {
 	/* display linebreaks */
 	white-space: pre-line;
-	/* don’t bother aligning ad-hoc entries */
-	text-align: revert;
+}
+
+main:not(.no-justify) :is(p, ol, ul, dl, figcaption) {
+	text-align: justify;
 }
 
 a {

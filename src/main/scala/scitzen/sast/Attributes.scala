@@ -19,6 +19,8 @@ case class Attributes(raw: Seq[Attribute]) {
   def get(id: String): Option[Attribute] = raw.findLast(_.id == id)
   def plain(id: String): Option[String]  = get(id).map(_.text.plainString)
 
+  def plainList(id: String) = raw.filter(_.id == id).iterator.flatMap(_.text.plainString.split(',')).map(_.trim).filter(_.nonEmpty)
+
   private def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other)
 
   private def remove(key: String): Attributes = Attributes(raw.filterNot(_.id == key))
