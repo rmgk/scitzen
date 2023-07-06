@@ -280,7 +280,7 @@ class SastToTexConverter(
               case _ => nbrs(attributes)(ctx).mapc { str => s"${str}\\ref{${label}}" }
 
       case Link =>
-        val target   = attributes.target
+        val target   = latexencode(attributes.target)
         val plainurl = s"\\url{$target}"
         attributes.textOption match
           case Some(text) =>
