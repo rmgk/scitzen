@@ -44,14 +44,14 @@ class SastToHtmlConverter(
       Sag.span(`class` = "category", categories.map(c => Sag.String(s" $c ")))
     )
 
-  private val excluded = Set("label", "categories", "people", "tags", "folder", "date", "flags")
+  private val excludedFromMeta = Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename")
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
     @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
       .flatMap(_.split(","))
 
     val extraAttributes = ctx.fold[(String, Text), Recipe](section.attributes.raw.collect:
-      case Named(id, text) if !id.contains(' ') && !excluded.contains(id) => (id, text)
+      case Named(id, text) if !id.contains(' ') && !excludedFromMeta.contains(id) => (id, text)
     ):
       case (ctx, (id, text)) =>
         convertInlineSeq(ctx, text.inl).mapc: inner =>
