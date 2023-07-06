@@ -7,6 +7,7 @@ import scitzen.parser.Parse
 import scitzen.sast.{Sast, Section}
 
 import java.nio.file.{FileVisitOption, Files, Path}
+import scala.annotation.tailrec
 import scala.util.Using
 
 class ArticleDirectory(val articles: Seq[Article]):
@@ -27,6 +28,27 @@ class ArticleDirectory(val articles: Seq[Article]):
   val byLabel: Map[String, TitledArticle]               = titled.iterator.map(t => Tuple2(t.header.autolabel, t)).toMap
   val byRef: Map[ArticleRef, TitledArticle]             = titled.iterator.map(a => Tuple2(a.article.ref, a)).toMap
   def findByLabel(label: String): Option[TitledArticle] = byLabel.get(label)
+
+  lazy val includedIn: Map[ArticleRef, Set[ArticleRef]] =
+    articles.flatMap: article =>
+      article.context.includes.flatMap: directive =>
+        References.resolve(directive, article.doc, this).map: target =>
+          (target.articleRef, article.ref)
+    .groupBy(_._1).view.mapValues(_.iterator.map(_._2).toSet).toMap
+
+  lazy val includedInFixpoint: Map[ArticleRef, Set[ArticleRef]] =
+    @tailrec
+    def fixpointStep(current: Map[ArticleRef, Set[ArticleRef]]): Map[ArticleRef, Set[ArticleRef]] =
+      val next = current.view.mapValues: includes =>
+        includes.flatMap(current.get).flatten
+      val combined = current.map: (k, v) =>
+        (k, v ++ next.getOrElse(k, Set.empty))
+      if combined == current then current
+      else fixpointStep(combined)
+    val start = System.nanoTime()
+    val res = fixpointStep(includedIn)
+    Logging.cli.trace(s"fix took ${(System.nanoTime() - start)/1000000}ms")
+    res
 
 object ArticleProcessing:
 

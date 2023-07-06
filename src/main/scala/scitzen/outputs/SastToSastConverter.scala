@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.contexts.SastContext
 import scitzen.generic.{ArticleRef, SastRef}
 import scitzen.sast.*
-import scitzen.sast.DCommand.{BibQuery, Cite, Image, Index, Ref}
+import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include, Index, Ref}
 
 class SastToSastConverter(articleRef: ArticleRef):
 
@@ -116,6 +116,7 @@ class SastToSastConverter(articleRef: ArticleRef):
   def convertMacro(directive: Directive)(ctx: Cta): Ctx[Directive] =
     directive.command match
       case Image           => ctx.addImage(directive).ret(directive)
+      case Include         => ctx.addInclude(directive).ret(directive)
       case Ref | Index     => ctx.addReference(directive).ret(directive)
       case Cite | BibQuery =>
         // TODO this is a temporary way to rename the parameter, remove at some point

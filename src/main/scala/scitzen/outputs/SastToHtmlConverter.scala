@@ -7,7 +7,7 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ImageTarget
-import scitzen.generic.{ArticleRef, Document, References, SastRef}
+import scitzen.generic.{ArticleRef, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 import scitzen.sast.Attribute.Named
@@ -44,7 +44,7 @@ class SastToHtmlConverter(
       Sag.span(`class` = "category", categories.map(c => Sag.String(s" $c ")))
     )
 
-  private val excludedFromMeta = Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename")
+  private val excludedFromMeta = Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language")
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
     @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
@@ -285,9 +285,7 @@ class SastToHtmlConverter(
 
   private def handleRef(ctx: Cta, directive: Directive, produceBlock: Boolean): ConversionContext[Chain[Recipe]] = {
     val attrs: Attributes = directive.attributes
-    val scope =
-      attrs.plain("scope").flatMap(doc.resolve).getOrElse(doc.path)
-    val candidates = References.filterCandidates(scope, anal.directory.labels.getOrElse(attrs.target, Nil))
+    val candidates = References.resolve(directive, doc, anal.directory)
 
     if candidates.sizeIs > 1 then
       cli.warn(
@@ -299,7 +297,10 @@ class SastToHtmlConverter(
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
       val nameOpt   = attrs.textOption
       val titled = anal.directory.byRef(targetDocument.articleRef)
-      val fileRef = project.htmlPaths.relativeArticleTarget(titled.header).toString
+      val fileRef =
+        if anal.directory.includedInFixpoint.getOrElse(targetDocument.articleRef, Set.empty).contains(articleRef)
+        then ""
+        else project.htmlPaths.relativeArticleTarget(titled.header).toString
 
       val resctx = targetDocument.sast match
         case sec @ Section(title, _, _) =>

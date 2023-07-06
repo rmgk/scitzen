@@ -1,6 +1,6 @@
 package scitzen.generic
 
-import scitzen.sast.{Block, Sast, Section}
+import scitzen.sast.{Block, Directive, Sast, Section}
 import scitzen.compat.Logging.cli
 
 import scala.jdk.CollectionConverters.*
@@ -9,6 +9,17 @@ case class SastRef(sast: Sast, articleRef: ArticleRef):
   def scope = articleRef.document.path
 
 object References:
+
+//  def containingDocument(articleRef: ArticleRef, directory: ArticleDirectory) =
+//    val titled: List[TitledArticle] = directory.byRef(articleRef).article.context.includes.flatMap: inc =>
+//      References.resolve(inc, doc, anal.directory).map: ref =>
+//        anal.directory.byRef(ref.articleRef)
+//    titled.map(_.article.ref).contains(targetDocument.articleRef)
+
+  def resolve(directive: Directive, document: Document, directory: ArticleDirectory): Seq[SastRef] =
+    val scope =
+      directive.attributes.plain("scope").flatMap(document.resolve).getOrElse(document.path)
+    References.filterCandidates(scope, directory.labels.getOrElse(directive.attributes.target, Nil))
 
   def filterCandidates(scope: ProjectPath, candidates: Seq[SastRef]): Seq[SastRef] =
     candidates match
