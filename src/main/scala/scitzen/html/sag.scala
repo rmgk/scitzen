@@ -139,8 +139,8 @@ object sag {
 
         // write attributes
         ${
-          Expr.ofSeq(
-            attributes.filter(_._1.nonEmpty).map: a =>
+          Expr.block(
+            attributes.filter(_._1.nonEmpty).toList.map: a =>
               if
                 val list = attributeScopes.getOrElse(a._1, List("+ Nothing"))
                 !(list.isEmpty || list.contains(tagname) || a._1.startsWith("data-"))
@@ -164,6 +164,7 @@ object sag {
                       ${ v }
                     ).run
                   }
+          , '{}
           )
         }
         write('>')
@@ -175,11 +176,11 @@ object sag {
             case "!DOCTYPE html" | "area" | "base" | "br" | "col" | "embed" | "hr" | "img" | "input" | "link" | "meta" | "source" | "track" | "wbr" =>
               if attributes.filter(_._1 == "").nonEmpty then
                 report.errorAndAbort(s"may not have children $tagname", args)
-              '{ () }
+              '{}
             case other =>
               '{
                 ${
-                  Expr.ofSeq(attributes.filter(_._1 == "").map: attr =>
+                  Expr.block(attributes.filter(_._1 == "").toList.map: attr =>
                     attr._2 match
                       case '{ $v: String } =>
                         '{
@@ -193,6 +194,8 @@ object sag {
                         '{
                           summonInline[SagContentWriter[τ]].convert($v).run
                         }
+                  ,
+                    '{}
                   )
                 }
                 write('<')
