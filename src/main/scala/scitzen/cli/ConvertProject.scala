@@ -43,7 +43,7 @@ object ConvertProject:
       sync: Option[ClSync],
       imageFileMap: Option[Path],
       project: Project,
-      selection: Path,
+      selection: List[Path],
   ): Unit =
     val timediff = makeTimediff()
 
@@ -106,7 +106,7 @@ object ConvertProject:
 
     val anal = ConversionAnalysis(
       project = project,
-      selectionPrefixes = List(selection),
+      selectionPrefixes = selection,
       directory = directory,
       block = blockConversions,
       image = imageConversions,

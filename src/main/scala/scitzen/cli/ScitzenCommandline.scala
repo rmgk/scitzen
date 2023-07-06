@@ -3,7 +3,7 @@ package scitzen.cli
 import de.rmgk.options.*
 import scitzen.cli.ConvertProject.executeConversions
 import scitzen.compat.Logging.cli
-import scitzen.generic.Project
+import scitzen.generic.{Project}
 import scopt.OParser
 
 import java.nio.file.{Files, Path}
@@ -23,8 +23,8 @@ object ScitzenCommandline {
       case None =>
       case Some(options) =>
         def run() =
-          val absolute = options.path.value.toAbsolutePath.normalize
-          Project.fromSource(absolute) match
+          val absolute = options.path.value.map(_.toAbsolutePath.normalize)
+          Project.fromSource(absolute.head) match
             case None => cli.warn(s"could not find project for", options.path.value)
             case Some(project) =>
               executeConversions(options.sync.value, options.`image-file-map`.value, project, absolute)
@@ -38,12 +38,12 @@ object ScitzenCommandline {
   case class ClSync(path: Path = null, position: Int = -1)
   given scopt.Read[ClSync] = summon[scopt.Read[(Path, Int)]].map(ClSync.apply)
   case class ClOptions(
-      path: Argument[Path, Single, Style.Positional] =
+      path: Argument[Path, List, Style.Positional] =
         Argument(
           _.text("path to project, file, or scope to compile").validate { p =>
             if Files.exists(p) then Right(()) else Left(s"»$p« does not exist")
           },
-          Some(Path.of("").toAbsolutePath)
+          Some(List(Path.of("").toAbsolutePath))
         ),
       `image-file-map`: Argument[Path, Option, Style.Named] =
         Argument(_.valueName("path").text("produce json description of generated images")),
