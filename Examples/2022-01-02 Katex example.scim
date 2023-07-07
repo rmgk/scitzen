@@ -1,5 +1,7 @@
 = Katex example
 date = 2022-01-02 01:28:19
 
+:raw{tex="\newcommand\KaTeX{KaTeX}"}
+
 Can use :math{\KaTeX} for fun things :math{\Sigma_x^y \delta}
 
