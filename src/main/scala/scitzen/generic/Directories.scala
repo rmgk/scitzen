@@ -4,7 +4,7 @@ import scitzen.compat.Logging
 import scitzen.contexts.SastContext
 import scitzen.outputs.SastToSastConverter
 import scitzen.parser.Parse
-import scitzen.sast.{Sast, Section}
+import scitzen.sast.{Attributes, Sast, Section}
 
 import java.nio.file.{FileVisitOption, Files, Path}
 import scala.annotation.tailrec
@@ -21,7 +21,17 @@ class ArticleDirectory(val articles: Seq[Article]):
       key -> all.flatMap(_.getOrElse(key, Nil))
     }.toMap
 
-  val titled: Seq[TitledArticle]       = articles.flatMap(art => art.titled.map(t => TitledArticle(t, art)))
+  val titled: Seq[TitledArticle] = articles.flatMap(art =>
+    art.titled.map(t =>
+      TitledArticle(
+        t,
+        art,
+        Attributes(
+          art.doc.path.project.config.settings ++ t.attributes.raw
+        )
+      )
+    )
+  )
   val fullArticles: Seq[TitledArticle] = titled.filter(_.header.prefix == "=")
   val subArticles: Seq[TitledArticle]  = titled.filterNot(_.header.prefix == "==")
 
@@ -46,8 +56,8 @@ class ArticleDirectory(val articles: Seq[Article]):
       if combined == current then current
       else fixpointStep(combined)
     val start = System.nanoTime()
-    val res = fixpointStep(includedIn)
-    Logging.cli.trace(s"fix took ${(System.nanoTime() - start)/1000000}ms")
+    val res   = fixpointStep(includedIn)
+    Logging.cli.trace(s"fix took ${(System.nanoTime() - start) / 1000000}ms")
     res
 
 object ArticleProcessing:

@@ -14,7 +14,7 @@ class ProjectConfig(attrs: Attributes = Attributes.empty):
   def bibliography = attrs.plain("bibliography")
   def katexMacros  = attrs.plain("katexMacros")
   def defaultLanguage  = attrs.plain("language")
-  def settings =
+  val settings =
     attrs.raw ++
     attrs.raw.collectFirst:
       case Nested("definitions", inner) => inner.raw

@@ -18,7 +18,7 @@ object ConvertPdf:
 
     def project = anal.project
 
-    anal.directory.fullArticles
+    anal.selected.filter(_.settings.flags.tex)
       .asJava.parallelStream().forEach { titled =>
         val converter = new SastToTexConverter(
           titled.article.ref,

@@ -5,7 +5,7 @@ import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ImageConversions, ImageConverter, ImageTarget, ResourceUtil}
-import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project}
+import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, TitledArticle}
 import scitzen.sast.{DCommand, Directive}
 
 import java.nio.file.{Files, Path}
@@ -16,13 +16,14 @@ import scala.jdk.StreamConverters.*
 
 case class ConversionAnalysis(
     project: Project,
-    selectionPrefixes: List[Path],
+    selected: List[TitledArticle],
     directory: ArticleDirectory,
     block: BlockConversions,
     image: ImageConversions,
     bib: BibDB,
     converter: Option[CachedConverterRouter],
 )
+
 
 object ConvertProject:
 
@@ -47,10 +48,8 @@ object ConvertProject:
 
     cli.info(s"found project in ./${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
 
-    val toHtml = project.config.outputType.contains("html")
-    val toPdf = project.config.outputType.contains("pdf")
-
-    if toPdf then
+    Files.createDirectories(project.outputdir)
+    if !Files.exists(project.pdfTemplatePath.absolute) then
       Files.createDirectories(project.pdfTemplatePath.absolute.getParent)
       val bytes = ResourceUtil.load("default-template.tex.scim")
       Files.write(project.pdfTemplatePath.absolute, bytes)
@@ -65,12 +64,10 @@ object ConvertProject:
 
     cli.info(s"parsed ${documents.size} documents ${timediff()}")
 
-    Files.createDirectories(project.outputdir)
-
-
-
-    val bibres     = BibManager(project).prefetch(directory.articles.flatMap(_.context.citations).toSet)
-    val dblpFuture = Future { bibres.runToFuture(using ()) }.flatten
+    val dblpFuture = Future {
+      val bibres = BibManager(project).prefetch(directory.articles.flatMap(_.context.citations).toSet)
+      bibres.runToFuture(using ())
+    }.flatten
 
     cli.info(s"scheduled bib ${timediff()}")
 
@@ -88,13 +85,13 @@ object ConvertProject:
 
       bi.flatten.concat(di).toList
 
-    cli.info(s"image paths collected ${imagePaths.size} ${timediff()}")
+    cli.trace(s"image paths collected ${imagePaths.size} ${timediff()}")
 
     val imageConversions = ImageConverter.preprocessImages(
       project,
       List(
-        Option.when(toHtml)(ImageTarget.Html),
-        Option.when(toPdf)(ImageTarget.Tex),
+        Some(ImageTarget.Html),
+        Some(ImageTarget.Tex),
         imageFileMap.map(_ => ImageTarget.Raster)
       ).flatten,
       imagePaths
@@ -111,9 +108,16 @@ object ConvertProject:
       KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
     )
 
+
+    val selected: List[TitledArticle] =
+      directory.fullArticles.iterator.filter: art =>
+        selection.exists: sel =>
+          art.article.doc.path.absolute.startsWith(sel)
+      .toList
+
     val anal = ConversionAnalysis(
       project = project,
-      selectionPrefixes = selection,
+      selected = selected,
       directory = directory,
       block = blockConversions,
       image = imageConversions,
@@ -129,12 +133,10 @@ object ConvertProject:
     if project.config.format.contains("filename") then
       Format.formatRename(directory)
       cli.info(s"formatted filenames ${timediff()}")
-    if toHtml then
-      ConvertHtml(anal).convertToHtml(sync)
-      cli.info(s"generated html ${timediff()}")
-    if toPdf then
-      ConvertPdf.convertToPdf(anal)
-      cli.info(s"generated pdfs ${timediff()}")
+    ConvertHtml(anal).convertToHtml(sync)
+    cli.info(s"generated html ${timediff()}")
+    ConvertPdf.convertToPdf(anal)
+    cli.info(s"generated pdfs ${timediff()}")
     if imageFileMap.isDefined then
       ImageReferences.listAll(anal, imageFileMap.get)
       cli.info(s"generated imagemap ${timediff()}")

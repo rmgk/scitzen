@@ -1,10 +1,7 @@
 package scitzen.cli
 
 import de.rmgk.delay
-import de.rmgk.logging.Logger
 import scitzen.cli.ScitzenCommandline.ClSync
-import scitzen.compat.Logging
-import scitzen.compat.Logging.given
 import scitzen.contexts.ConversionContext
 import scitzen.extern.ResourceUtil
 import scitzen.generic.*
@@ -57,14 +54,8 @@ class ConvertHtml(anal: ConversionAnalysis):
             acc ++ cctx.resourceMap
           )
 
-    val selected = anal.directory.fullArticles.iterator.filter: art =>
-      anal.selectionPrefixes.exists: sel =>
-        art.article.doc.path.absolute.startsWith(sel)
-    val sellist = selected.toList
-    if sellist.isEmpty then
-      Logging.cli.warn("selection is empty", anal.selectionPrefixes)
-
-    val resources = procRec(sellist, sellist.map(_.article.ref).toSet, Map.empty)
+    val htmlSelected = anal.selected.filter(ta => ta.settings.flags.html)
+    val resources = procRec(htmlSelected, htmlSelected.map(_.article.ref).toSet, Map.empty)
     project.htmlPaths.copyResources(resources)
     ()
 
