@@ -1,9 +1,4 @@
-::if{sectionstyle}
-	\documentclass[a4paper, 11pt, :{pagestyle; default=oneside}, :{sectionstyle}]{memoir}
-::
-::if{not=exists; sectionstyle}
-	\documentclass[a4paper, 11pt, :{pagestyle; default=oneside}]{memoir}
-::
+\documentclass[a4paper, 11pt, :{pagestyle; default=oneside}, article]{memoir}
 
 % scitzen styling definitions
 \newcommand\scitzenmaketitle{\maketitle{}}
@@ -38,22 +33,18 @@
 	\overfullrule=5pt
 ::
 
-::if{pagestyle}
-	\hypersetup{
-	    colorlinks,
-	    linkcolor={black},
-	    citecolor={white!20!black},
-	    urlcolor={white!20!black}
-	}
-::
-::if{not=exists; pagestyle}
-	\hypersetup{
-	    colorlinks,
-	    linkcolor={red!50!black},
-	    citecolor={blue!50!black},
-	    urlcolor={blue!80!black}
-	}
-::
+%	\hypersetup{
+%	    colorlinks,
+%	    linkcolor={black},
+%	    citecolor={white!20!black},
+%	    urlcolor={white!20!black}
+%	}
+\hypersetup{
+	colorlinks,
+	linkcolor={red!50!black},
+	citecolor={blue!50!black},
+	urlcolor={blue!80!black}
+}
 
 
 ::if{feature sidepar}
@@ -88,33 +79,32 @@
 	\nobibliography*
 ::
 
-::if{settingsSloppy}
-	% sloppyStuff
-	% set \clubpenalty, etc. to distinctive values for use
-	% in tracing page breaks. These values are chosen so that
-	% no single penalty will absolutely prohibit a page break, but
-	% certain combinations of two or more will.
-	\clubpenalty=9996
-	\widowpenalty=9999
-	\brokenpenalty=4991
-	% Reiterate the default value of \redisplaypenalty, for
-	% completeness.
-	% Set postdisplaypenalty to a fairly high value to discourage a
-	% page break between a display and a widow line at the end of a
-	% paragraph.
-	\predisplaypenalty=10000
-	\postdisplaypenalty=1549
-	% And then \displaywidowpenalty should be at least as high as
-	% \postdisplaypenalty, otherwise in a situation where two displays
-	% are separated by two lines, TeX will prefer to break between the
-	% two lines, rather than before the first line.
-	\displaywidowpenalty=1602
-	\setlength{\topskip}{1.6\topskip}
-	\checkandfixthelayout
-	\sloppybottom
-	% allows more spaces in paragarphs to prevent overfull hboxes
-	\sloppy
-::
+
+% sloppyStuff
+% set \clubpenalty, etc. to distinctive values for use
+% in tracing page breaks. These values are chosen so that
+% no single penalty will absolutely prohibit a page break, but
+% certain combinations of two or more will.
+\clubpenalty=9996
+\widowpenalty=9999
+\brokenpenalty=4991
+% Reiterate the default value of \redisplaypenalty, for
+% completeness.
+% Set postdisplaypenalty to a fairly high value to discourage a
+% page break between a display and a widow line at the end of a
+% paragraph.
+\predisplaypenalty=10000
+\postdisplaypenalty=1549
+% And then \displaywidowpenalty should be at least as high as
+% \postdisplaypenalty, otherwise in a situation where two displays
+% are separated by two lines, TeX will prefer to break between the
+% two lines, rather than before the first line.
+\displaywidowpenalty=1602
+\setlength{\topskip}{1.6\topskip}
+\checkandfixthelayout
+\sloppybottom
+% allows more spaces in paragarphs to prevent overfull hboxes
+\sloppy
 
 ::if{feature listings}
 	% colors and definition for scalastyle
@@ -130,8 +120,10 @@
 	  numbers=left,
 	  xleftmargin=2.3em,
 	  numberstyle=\fontsize{7}{9}\selectfont\color{gray}\bfseries,
+	  % break, btu show indicator
 	  breaklines=true,
 	  breakatwhitespace=true,
+	  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
 	  tabsize=2,
 	  escapeinside={(*@}{@*)},
 	  numberblanklines=true,
