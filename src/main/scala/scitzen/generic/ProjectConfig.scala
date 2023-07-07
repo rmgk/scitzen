@@ -8,7 +8,6 @@ class ProjectConfig(attrs: Attributes = Attributes.empty):
   def output       = attrs.plain("output").getOrElse("output")
   def cache        = attrs.plain("cache")
   def format       = attrs.plain("format").getOrElse("").split(',').toList.map(_.trim)
-  def outputType   = attrs.plain("outputType").getOrElse("").split(',').toList.map(_.trim)
   def texTemplate  = attrs.plain("texTemplate")
   def notes        = attrs.plain("notes")
   def bibliography = attrs.plain("bibliography")
@@ -19,6 +18,8 @@ class ProjectConfig(attrs: Attributes = Attributes.empty):
     attrs.raw.collectFirst:
       case Nested("definitions", inner) => inner.raw
     .getOrElse(Nil)
+  val flags: Flags = Flags.default.apply(attrs.plainList("flags"))
+
 
 object ProjectConfig {
   // TODO: generalize this for all directives

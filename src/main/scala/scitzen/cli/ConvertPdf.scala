@@ -18,12 +18,13 @@ object ConvertPdf:
 
     def project = anal.project
 
-    anal.selected.filter(ta => ta.settings.flags.tex || ta.settings.plain("texTemplate").isDefined)
+    anal.selected.filter(ta => ta.flags.tex || ta.header.attributes.plain("texTemplate").isDefined)
       .asJava.parallelStream().forEach { titled =>
         val converter = new SastToTexConverter(
           titled.article.ref,
           anal,
-          Attributes(project.config.settings ++ titled.header.attributes.raw)
+          Attributes(project.config.settings ++ titled.header.attributes.raw),
+          hardwraps = titled.flags.hardwrap
         )
 
         val resultContext =

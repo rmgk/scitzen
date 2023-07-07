@@ -4,7 +4,7 @@ import scitzen.compat.Logging
 import scitzen.contexts.SastContext
 import scitzen.outputs.SastToSastConverter
 import scitzen.parser.Parse
-import scitzen.sast.{Attributes, Sast, Section}
+import scitzen.sast.{Sast, Section}
 
 import java.nio.file.{FileVisitOption, Files, Path}
 import scala.annotation.tailrec
@@ -26,9 +26,7 @@ class ArticleDirectory(val articles: Seq[Article]):
       TitledArticle(
         t,
         art,
-        Attributes(
-          art.doc.path.project.config.settings ++ t.attributes.raw
-        )
+        art.doc.path.project.config.flags.apply(t.attributes.plainList("flags"))
       )
     )
   )

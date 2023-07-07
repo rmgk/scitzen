@@ -69,7 +69,7 @@ class SastToHtmlConverter(
     else extraAttributes.retc(Sag.div(`class` = "metadata", metalist.toList))
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
-    if section.attributes.flags.hidden then return ctx.ret(Chain.empty)
+    if section.attributes.plain("hide").isDefined then return ctx.ret(Chain.empty)
     val Section(title, level, _) = section
     val inlineCtx                = convertInlineSeq(ctx, title.inl)
     val innerFrags               = inlineCtx.data

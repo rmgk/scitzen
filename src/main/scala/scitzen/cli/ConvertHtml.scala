@@ -54,7 +54,7 @@ class ConvertHtml(anal: ConversionAnalysis):
             acc ++ cctx.resourceMap
           )
 
-    val htmlSelected = anal.selected.filter(ta => ta.settings.flags.html)
+    val htmlSelected = anal.selected.filter(ta => ta.flags.html)
     val resources = procRec(htmlSelected, htmlSelected.map(_.article.ref).toSet, Map.empty)
     project.htmlPaths.copyResources(resources)
     ()
@@ -106,9 +106,9 @@ class ConvertHtml(anal: ConversionAnalysis):
           citations.run
 
         val mainClass =
-          val hardwrap = if converter.settings.flags.hardwrap then Some("hardwrap") else None
+          val hardwrap = if titled.flags.hardwrap then Some("hardwrap") else None
           val noJustify =
-            if converter.settings.flags.justify
+            if titled.flags.justify
             then None
             else Some("no-justify")
           val parts = List(hardwrap, noJustify).flatten
@@ -118,7 +118,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           bodyClass =
-            if converter.settings.flags.`section numbers`
+            if titled.flags.`section numbers`
             then Some("numbered-sections")
             else None,
           mainClass = mainClass,
