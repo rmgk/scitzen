@@ -24,6 +24,7 @@ enum DCommand {
 object DCommand {
   val (parseMap, printMap) = {
     val standard = List(
+      ""          -> Lookup,
       "aggregate" -> Aggregate,
       "bibquery"  -> BibQuery,
       "cite"      -> Cite,
@@ -38,8 +39,8 @@ object DCommand {
       "math"      -> Math,
       "raw"       -> Raw,
       "ref"       -> Ref,
+      "script"    -> Script,
       "strong"    -> Strong,
-      ""          -> Lookup
     )
     val aliases = Map(
       "$"     -> Math,
