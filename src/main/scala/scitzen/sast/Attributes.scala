@@ -24,7 +24,7 @@ case class Attributes(raw: Seq[Attribute]) {
 
   def plainList(id: String) = raw.iterator.filter(_.id == id).flatMap(splitlist)
 
-  val flags: Flags =
+  lazy val flags: Flags =
     plainList("flags").foldLeft(Flags.default): (curr, flag) =>
       curr.update(flag)
 
