@@ -21,8 +21,8 @@ import scala.annotation.unused
 class SastToHtmlConverter(
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
-  val combinedAttributes: Attributes,
-) extends ProtoConverter[Recipe, Recipe](articleRef, anal, combinedAttributes):
+    settings: Attributes,
+) extends ProtoConverter[Recipe, Recipe](articleRef, anal, settings):
 
   override def subconverter(
       articleRef: ArticleRef,
@@ -44,7 +44,8 @@ class SastToHtmlConverter(
       Sag.span(`class` = "tags", categories.map(c => Sag.String(s" $c ")))
     )
 
-  private val excludedFromMeta = Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language")
+  private val excludedFromMeta =
+    Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language")
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
     @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
@@ -68,7 +69,7 @@ class SastToHtmlConverter(
     else extraAttributes.retc(Sag.div(`class` = "metadata", metalist.toList))
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
-    if section.attributes.plainList("flags").contains("hide header") then return ctx.ret(Chain.empty)
+    if section.attributes.flags.hidden then return ctx.ret(Chain.empty)
     val Section(title, level, _) = section
     val inlineCtx                = convertInlineSeq(ctx, title.inl)
     val innerFrags               = inlineCtx.data
@@ -285,7 +286,7 @@ class SastToHtmlConverter(
 
   private def handleRef(ctx: Cta, directive: Directive, produceBlock: Boolean): ConversionContext[Chain[Recipe]] = {
     val attrs: Attributes = directive.attributes
-    val candidates = References.resolve(directive, doc, anal.directory)
+    val candidates        = References.resolve(directive, doc, anal.directory)
 
     if candidates.sizeIs > 1 then
       cli.warn(
@@ -295,8 +296,8 @@ class SastToHtmlConverter(
       cli.warn(s"\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}")
 
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
-      val nameOpt   = attrs.textOption
-      val titled = anal.directory.byRef(targetDocument.articleRef)
+      val nameOpt = attrs.textOption
+      val titled  = anal.directory.byRef(targetDocument.articleRef)
       val fileRef =
         if anal.directory.includedInFixpoint.getOrElse(targetDocument.articleRef, Set.empty).contains(articleRef)
         then ""

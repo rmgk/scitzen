@@ -115,11 +115,11 @@ class ConvertHtml(anal: ConversionAnalysis):
           citations.run
 
         val mainClass =
-          val hardwrap = if converter.hardNewlines then Some("hardwrap") else None
+          val hardwrap = if converter.settings.flags.hardwrap then Some("hardwrap") else None
           val noJustify =
-            if converter.combinedAttributes.plainList("flags").contains("-justify")
-            then Some("no-justify")
-            else None
+            if converter.settings.flags.justify
+            then None
+            else Some("no-justify")
           val parts = List(hardwrap, noJustify).flatten
           Option.when(parts.nonEmpty):
             parts.mkString(" ")
@@ -127,9 +127,9 @@ class ConvertHtml(anal: ConversionAnalysis):
         HtmlPages(cssrelpath).wrapContentHtml(
           contentFrag,
           bodyClass =
-            if titled.header.attributes.plainList("flags").contains("-section numbers")
-            then None
-            else Some("numbered-sections"),
+            if converter.settings.flags.`section numbers`
+            then Some("numbered-sections")
+            else None,
           mainClass = mainClass,
           sidebar = toc.map: c =>
             Recipe:

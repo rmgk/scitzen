@@ -9,7 +9,7 @@ import scitzen.sast.{
   Slist, SpaceComment, Text
 }
 
-case class SastToTextConverter(
+class SastToTextConverter(
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
     settings: Attributes,

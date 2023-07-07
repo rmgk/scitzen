@@ -15,14 +15,12 @@ import java.nio.file.Files
 abstract class ProtoConverter[BlockRes, InlineRes](
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
-    combinedAttributes: Attributes,
+    val settings: Attributes,
 ):
 
   def doc      = articleRef.document
   val project  = doc.path.project
   val reporter = doc.reporter
-
-  val hardNewlines = combinedAttributes.plainList("flags").contains("+hardwrap")
 
   type CtxCF  = ConversionContext[Chain[BlockRes]]
   type CtxInl = ConversionContext[Chain[InlineRes]]
@@ -46,7 +44,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def handleLookup(directive: Directive): Option[Text] =
     val id = directive.attributes.target
     val res =
-      combinedAttributes.get(id).orElse(directive.attributes.get("default")).collect:
+      settings.get(id).orElse(directive.attributes.get("default")).collect:
         case Named(_, value) => value
     if res.isEmpty then
       cli.warn(s"unknown name ${id}" + reporter(directive))
@@ -117,12 +115,12 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)
     ctx.fold(it): (cc, titled) =>
-      subconverter(titled.article.ref, anal, combinedAttributes).convertSastSeq(cc, titled.article.sast)
+      subconverter(titled.article.ref, anal, settings).convertSastSeq(cc, titled.article.sast)
   }
 
   def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
-    val it       = handleArticleQuery(directive)
-    val sast     = GenIndexPage.makeIndex(it.toList, project)
+    val it   = handleArticleQuery(directive)
+    val sast = GenIndexPage.makeIndex(it.toList, project)
     convertSastSeq(ctx, sast)
   }
 
@@ -154,7 +152,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         if resolution.nonEmpty
         then
           (ctx.fold(resolution): (ctx, article) =>
-            subconverter(article.ref, anal, combinedAttributes).convertSastSeq(ctx, article.sast).map: res =>
+            subconverter(article.ref, anal, settings).convertSastSeq(ctx, article.sast).map: res =>
               ctx.data ++ res): CtxCF
         else
           cli.warn(

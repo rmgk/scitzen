@@ -1,6 +1,9 @@
 package scitzen.sast
 
+import de.rmgk.logging.Logger
+import scitzen.compat.Logging
 import scitzen.sast.Attribute.Positional
+import scitzen.sast.Attributes.{Flags, splitlist}
 
 import scala.collection.View
 
@@ -19,7 +22,11 @@ case class Attributes(raw: Seq[Attribute]) {
   def get(id: String): Option[Attribute] = raw.findLast(_.id == id)
   def plain(id: String): Option[String]  = get(id).map(_.text.plainString)
 
-  def plainList(id: String) = raw.filter(_.id == id).iterator.flatMap(_.text.plainString.split(',')).map(_.trim).filter(_.nonEmpty)
+  def plainList(id: String) = raw.iterator.filter(_.id == id).flatMap(splitlist)
+
+  val flags: Flags =
+    plainList("flags").foldLeft(Flags.default): (curr, flag) =>
+      curr.update(flag)
 
   private def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other)
 
@@ -30,6 +37,37 @@ case class Attributes(raw: Seq[Attribute]) {
 }
 
 object Attributes {
+
+  def splitlist(attribute: Attribute) = attribute.text.plainString.split(',').map(_.trim).filter(_.nonEmpty)
+
+  case class Flags(
+      html: Boolean,
+      tex: Boolean,
+      hardwrap: Boolean,
+      justify: Boolean,
+      `section numbers`: Boolean,
+      hidden: Boolean
+  ):
+    def update: String => Flags =
+      case "+html"            => copy(html = true)
+      case "-html"            => copy(html = false)
+      case "+tex"             => copy(tex = true)
+      case "-tex"             => copy(tex = false)
+      case "+justify"         => copy(justify = true)
+      case "-justify"         => copy(justify = false)
+      case "+hardwrap"        => copy(justify = true)
+      case "-hardwrap"        => copy(justify = false)
+      case "+section numbers" => copy(`section numbers` = true)
+      case "-section numbers" => copy(`section numbers` = false)
+      case "+hidden"          => copy(hidden = true)
+      case "-hidden"          => copy(hidden = false)
+      case other: String =>
+        Logging.cli.warn(s"unknown flag", other)
+        this
+  object Flags:
+    def default: Flags =
+      Flags(html = true, tex = false, hardwrap = false, justify = true, `section numbers` = true, hidden = false)
+
   def target(string: String): Attributes = Attribute("", string).toAttributes
   val empty                              = Attributes(Nil)
 }

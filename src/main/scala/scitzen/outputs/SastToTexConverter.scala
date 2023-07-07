@@ -131,7 +131,7 @@ class SastToTexConverter(
           val cctx = convertInlinesCombined(ctx, content.inl)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if !hardNewlines then cctx.single :+ ""
+          if !settings.flags.hardwrap then cctx.single :+ ""
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")
