@@ -19,7 +19,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 ):
 
   def doc      = articleRef.document
-  val project  = doc.path.project
+  val project  = anal.project
   val reporter = doc.reporter
 
   type CtxCF  = ConversionContext[Chain[BlockRes]]
