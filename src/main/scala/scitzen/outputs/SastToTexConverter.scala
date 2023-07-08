@@ -32,7 +32,7 @@ class SastToTexConverter(
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
     settings: Attributes,
-    hardwraps: Boolean,
+    hardwrap: Boolean,
 ) extends ProtoConverter[String, String](articleRef, anal, settings):
 
   type CtxCS  = ConversionContext[Chain[String]]
@@ -44,7 +44,7 @@ class SastToTexConverter(
       analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTexConverter(articleRef, analysis, attr, hardwraps)
+    new SastToTexConverter(articleRef, analysis, attr, hardwrap)
 
   override def stringToInlineRes(str: String): String = latexencode(str)
 
@@ -132,7 +132,7 @@ class SastToTexConverter(
           val cctx = convertInlinesCombined(ctx, content.inl)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if !hardwraps then cctx.single :+ ""
+          if !hardwrap then cctx.single :+ ""
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")

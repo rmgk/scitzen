@@ -106,11 +106,8 @@ class ConvertHtml(anal: ConversionAnalysis):
           citations.run
 
         val mainClass =
-          val hardwrap = if titled.flags.hardwrap then Some("hardwrap") else None
-          val noJustify =
-            if titled.flags.justify
-            then None
-            else Some("no-justify")
+          val hardwrap = Option.when(titled.flags.hardwrap)("hardwrap")
+          val noJustify = Option.when(!titled.flags.justify)("no-justify")
           val parts = List(hardwrap, noJustify).flatten
           Option.when(parts.nonEmpty):
             parts.mkString(" ")

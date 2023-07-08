@@ -24,7 +24,7 @@ object ConvertPdf:
           titled.article.ref,
           anal,
           Attributes(project.config.settings ++ titled.header.attributes.raw),
-          hardwraps = titled.flags.hardwrap
+          hardwrap = titled.flags.hardwrap
         )
 
         val resultContext =

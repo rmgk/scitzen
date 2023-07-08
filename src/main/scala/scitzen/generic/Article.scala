@@ -23,20 +23,20 @@ case class Flags(
 ):
 
   def apply(updates: Iterator[String]) =
-    updates.foldLeft(Flags.default): (curr, flag) =>
+    updates.foldLeft(this): (curr, flag) =>
       flag match
-        case "+html"            => copy(html = true)
-        case "-html"            => copy(html = false)
-        case "+tex"             => copy(tex = true)
-        case "-tex"             => copy(tex = false)
-        case "+justify"         => copy(justify = true)
-        case "-justify"         => copy(justify = false)
-        case "+hardwrap"        => copy(justify = true)
-        case "-hardwrap"        => copy(justify = false)
-        case "+section numbers" => copy(`section numbers` = true)
-        case "-section numbers" => copy(`section numbers` = false)
-        case "+hidden"          => copy(hidden = true)
-        case "-hidden"          => copy(hidden = false)
+        case "+html"            => curr.copy(html = true)
+        case "-html"            => curr.copy(html = false)
+        case "+tex"             => curr.copy(tex = true)
+        case "-tex"             => curr.copy(tex = false)
+        case "+justify"         => curr.copy(justify = true)
+        case "-justify"         => curr.copy(justify = false)
+        case "+hardwrap"        => curr.copy(hardwrap = true)
+        case "-hardwrap"        => curr.copy(hardwrap = false)
+        case "+section numbers" => curr.copy(`section numbers` = true)
+        case "-section numbers" => curr.copy(`section numbers` = false)
+        case "+hidden"          => curr.copy(hidden = true)
+        case "-hidden"          => curr.copy(hidden = false)
         case other: String =>
           Logging.cli.warn(s"unknown flag", other)
           this
