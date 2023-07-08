@@ -11,7 +11,7 @@ import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
-import scala.annotation.unused
+import scala.annotation.{tailrec}
 import scala.math.Ordering.Implicits.seqOrdering
 
 class ConvertHtml(anal: ConversionAnalysis):
@@ -24,13 +24,14 @@ class ConvertHtml(anal: ConversionAnalysis):
 
   def convertToHtml(
       sync: Option[ClSync],
-  ): Unit =
+  ): List[FileDependency] =
 
     Files.createDirectories(project.outputdirWeb)
 
     val cssfile = project.outputdirWeb.resolve("scitzen.css")
     Files.write(cssfile, stylesheet)
 
+    @tailrec
     def procRec(
         rem: List[TitledArticle],
         done: Set[ArticleRef],
@@ -54,8 +55,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           )
 
     val htmlSelected = anal.selected.filter(ta => ta.flags.html)
-    @unused val resources = procRec(htmlSelected, htmlSelected.map(_.article.ref).toSet, Nil)
-    ()
+    procRec(htmlSelected, htmlSelected.map(_.article.ref).toSet, Nil)
 
   def convertArticle(
       titled: TitledArticle,
@@ -63,10 +63,13 @@ class ConvertHtml(anal: ConversionAnalysis):
       sync: Option[ClSync],
   ): ConversionContext[?] =
 
+    val targetPath = project.htmlPaths.articleOutputPath(titled.header)
+
     val converter = new SastToHtmlConverter(
       articleRef = titled.article.ref,
       anal = anal,
-      Attributes(project.config.attrs.raw ++ titled.header.attributes.raw)
+      Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
+      ProjectPath(project, targetPath.getParent)
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
@@ -142,6 +145,5 @@ class ConvertHtml(anal: ConversionAnalysis):
           titled.article.doc.resolve(templatePath),
           templateSettings
         )
-    val target = project.htmlPaths.articleOutputPath(titled.header)
-    Files.writeString(target, res)
+    Files.writeString(targetPath, res)
     convertedArticleCtx

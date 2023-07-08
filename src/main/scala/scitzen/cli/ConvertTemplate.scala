@@ -31,6 +31,7 @@ object ConvertTemplate:
             BibDB.empty,
             None,
           ),
-          templateSettings
+          templateSettings,
+          ProjectPath(project, project.cacheDir.resolve("templates"))
         ).convertSastSeq(ConversionContext(()), templateArticle.sast)
         documentString.data.mkString("")

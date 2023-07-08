@@ -15,7 +15,8 @@ import java.nio.file.Files
 abstract class ProtoConverter[BlockRes, InlineRes](
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
-    val settings: Attributes,
+    settings: Attributes,
+    outputDirectory: ProjectPath,
 ):
 
   def doc      = articleRef.document
@@ -31,7 +32,6 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def subconverter(
       articleRef: ArticleRef,
-      analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[BlockRes, InlineRes]
 
@@ -90,7 +90,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       case Some(path) if Files.exists(path.absolute) =>
         if !imageTarget.requiresConversion(path)
         then
-          val dep = FileDependency(path, path, project.htmlPaths.relativizeImage(path))
+          val dep = FileDependency(path, path, project.htmlPaths.relativizeImage(path), outputDirectory)
           cont(ctx.ret(dep).requireInOutput(dep))
         else
           anal.project.imagePaths.lookup(imageTarget).predictTarget(path) match
@@ -98,7 +98,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
               cli.warn(s"cannot convert to ${imageTarget.preferredFormat} (or ${imageTarget.alternative.mkString(", ")})", directive)
               ctx.retc(stringToInlineRes(directiveString(directive)))
             case Some(target) =>
-              val dep = FileDependency(target, path, project.htmlPaths.relativizeImage(target))
+              val dep = FileDependency(target, path, project.htmlPaths.relativizeImage(target), outputDirectory)
               cont(ctx.ret(dep).requireInOutput(dep))
       case other =>
         cli.warn(s"could not find path", directive)
@@ -126,7 +126,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)
     ctx.fold(it): (cc, titled) =>
-      subconverter(titled.article.ref, anal, settings).convertSastSeq(cc, titled.article.sast)
+      subconverter(titled.article.ref, settings).convertSastSeq(cc, titled.article.sast)
   }
 
   def handleIndex(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
@@ -163,7 +163,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         if resolution.nonEmpty
         then
           (ctx.fold(resolution): (ctx, article) =>
-            subconverter(article.ref, anal, settings).convertSastSeq(ctx, article.sast).map: res =>
+            subconverter(article.ref, settings).convertSastSeq(ctx, article.sast).map: res =>
               ctx.data ++ res): CtxCF
         else
           cli.warn(

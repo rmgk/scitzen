@@ -7,7 +7,7 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.ImageTarget
-import scitzen.generic.{ArticleRef, References, SastRef}
+import scitzen.generic.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 import scitzen.sast.Attribute.Named
@@ -21,14 +21,14 @@ class SastToHtmlConverter(
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
     settings: Attributes,
-) extends ProtoConverter[Recipe, Recipe](articleRef, anal, settings):
+    outputDirectory: ProjectPath
+) extends ProtoConverter[Recipe, Recipe](articleRef, anal, settings, outputDirectory):
 
   override def subconverter(
       articleRef: ArticleRef,
-      analysis: ConversionAnalysis,
       attr: Attributes
   ): ProtoConverter[Recipe, Recipe] =
-    new SastToHtmlConverter(articleRef, analysis, attr)
+    new SastToHtmlConverter(articleRef, anal, attr, outputDirectory)
 
   override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Recipe(inl.foreach(_.run))
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
@@ -222,7 +222,7 @@ class SastToHtmlConverter(
           case Some(path) =>
             val rel = project.htmlPaths.relativizeImage(path)
             ctx.retc(Sag.script(`type` = "text/javascript", src = rel.toString))
-              .requireInOutput(FileDependency(path, path, rel))
+              .requireInOutput(FileDependency(path, path, rel, outputDirectory))
           case None =>
             cli.warn("no script", directive)
             ctx.retc(stringToInlineRes(directiveString(directive)))

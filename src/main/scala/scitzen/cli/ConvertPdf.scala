@@ -2,6 +2,7 @@ package scitzen.cli
 
 import scitzen.contexts.ConversionContext
 import scitzen.extern.{Filetype, Hashes, Latexmk}
+import scitzen.generic.ProjectPath
 import scitzen.outputs.SastToTexConverter
 import scitzen.sast.{Attribute, Attributes}
 
@@ -20,17 +21,6 @@ object ConvertPdf:
 
     anal.selected.filter(ta => ta.flags.tex || ta.header.attributes.plain("texTemplate").isDefined)
       .asJava.parallelStream().forEach { titled =>
-        val converter = new SastToTexConverter(
-          titled.article.ref,
-          anal,
-          Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
-          flags = titled.flags
-        )
-
-        val resultContext =
-          converter.convertSastSeq(ConversionContext(()), titled.article.sast)
-
-        val content = resultContext.data
 
         val articlename = Format.canonicalName(titled.header)
 
@@ -42,6 +32,19 @@ object ConvertPdf:
         val temptexdir = project.cacheDir.resolve(s"$articlename.outdir")
         Files.createDirectories(temptexdir)
         val temptexfile = temptexdir.resolve(jobname + ".tex")
+
+        val converter = new SastToTexConverter(
+          titled.article.ref,
+          anal,
+          Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
+          ProjectPath(project, temptexdir),
+          flags = titled.flags,
+        )
+
+        val resultContext =
+          converter.convertSastSeq(ConversionContext(()), titled.article.sast)
+
+        val content = resultContext.data
 
         project.bibfile.foreach { bf =>
           Files.copy(

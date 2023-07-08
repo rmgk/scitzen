@@ -7,7 +7,7 @@ import scitzen.sast.Section
 
 import java.nio.file.Path
 
-case class FileDependency(file: ProjectPath, original: ProjectPath, relativeFinalization: Path)
+case class FileDependency(file: ProjectPath, original: ProjectPath, relativeFinalization: Path, outputDirectory: ProjectPath)
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[+T](
