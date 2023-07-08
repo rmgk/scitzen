@@ -1,5 +1,6 @@
 package scitzen.cli
 
+import de.rmgk.delay.Async
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.{Filetype, Hashes, Latexmk}
 import scitzen.generic.ProjectPath
@@ -13,9 +14,7 @@ import scala.jdk.CollectionConverters.*
 object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  trait PdfTask(val dependencies: List[FileDependency]):
-    def run(): Unit
-
+  case class PdfTask(dependencies: List[FileDependency], task: Async[Any, Unit])
 
   def convertToPdf(
       anal: ConversionAnalysis
@@ -83,18 +82,19 @@ object ConvertPdf:
             templateSettings
           )
 
-        new PdfTask(resultContext.fileDependencies) {
-          override def run(): Unit =
-            val scripthash = Hashes.sha1hex(documentString)
+        PdfTask(
+          resultContext.fileDependencies, {
+            val scripthash  = Hashes.sha1hex(documentString)
             val successfile = temptexdir.resolve("lastsuccess.sha1")
-            if Files.exists(successfile) && Files.readString(successfile) == scripthash then ()
+            if Files.exists(successfile) && Files.readString(successfile) == scripthash then Async(())
             else
-              Files.writeString(temptexfile, documentString)
-              val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
-              Files.deleteIfExists(targetfile)
-              res.foreach(r => Files.createLink(targetfile, r))
-              if res.isDefined then
-                Files.writeString(successfile, scripthash)
-                ()
-        }
-
+              Async:
+                Files.writeString(temptexfile, documentString)
+                val res = Latexmk.latexmk(temptexdir, jobname, temptexfile).bind
+                Files.deleteIfExists(targetfile)
+                res.foreach(r => Files.createLink(targetfile, r))
+                if res.isDefined then
+                  Files.writeString(successfile, scripthash)
+                  ()
+          }
+        )

@@ -12,8 +12,11 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.util.Using
 import scala.util.control.NonFatal
+import de.rmgk.delay.extensions.runToFuture
 
 given Loggable[Throwable] with
   override def normal(v: Throwable): String = s"${v.getClass.getSimpleName}: »${v.getMessage}«"
@@ -78,8 +81,8 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     val sourcepath = project.cachePath(Path.of("scala-cli").resolve(hash + ".scala")).absolute
     Files.createDirectories(sourcepath.getParent)
     Files.writeString(sourcepath, text)
-    val outpath   = sourcepath resolveSibling  s"$hash.js"
-    val errorFile = sourcepath resolveSibling  s"log-$hash.txt"
+    val outpath   = sourcepath resolveSibling s"$hash.js"
+    val errorFile = sourcepath resolveSibling s"log-$hash.txt"
     val returnCode =
       new ProcessBuilder(
         "scala-cli",
@@ -124,7 +127,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         Files.createDirectories(dir)
         val texfile = dir.resolve(contentHash + ".tex")
         Files.write(texfile, texbytes)
-        Latexmk.latexmk(dir, contentHash, texfile)
+        Await.result(Latexmk.latexmk(dir, contentHash, texfile).runToFuture(using ()), Duration.Inf)
     res match
       case Some(res) =>
         List(

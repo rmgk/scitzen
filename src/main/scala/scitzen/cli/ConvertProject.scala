@@ -10,7 +10,7 @@ import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, TitledArti
 import de.rmgk.delay.extensions.run
 
 import java.nio.file.{Files, Path}
-import java.util.concurrent.{CountDownLatch, ForkJoinPool, Semaphore}
+import java.util.concurrent.{CountDownLatch, Semaphore}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -126,36 +126,33 @@ object ConvertProject:
         dep.original != dep.file
       .toArray
 
-
     val okParallelism = math.max(Runtime.getRuntime.availableProcessors(), 4)
 
-    val cdl       = new CountDownLatch(convertees.size)
-    val semaphore = new Semaphore(okParallelism)
+    {
+      val cdl       = new CountDownLatch(convertees.size)
+      val semaphore = new Semaphore(okParallelism)
 
-    convertees.foreach: (dep, imageTarget) =>
-      Async[Unit].resource(semaphore.acquire(), _ => { semaphore.release() }): _ =>
-        project.imagePaths.lookup(imageTarget).convert(dep.original).bind
-        val targetpath = dep.outputDirectory.absolute.resolve(dep.relativeFinalization)
-        Files.createDirectories(targetpath.getParent)
-        Files.deleteIfExists(targetpath)
-        Files.createLink(targetpath, dep.file.absolute)
-      .run(using ())(_ => cdl.countDown())
-    cdl.await()
-    cli.info(s"converted ${convertees.size} images ${timediff()}")
+      convertees.foreach: (dep, imageTarget) =>
+        Async[Unit].resource(semaphore.acquire(), _ => { semaphore.release() }): _ =>
+          project.imagePaths.lookup(imageTarget).convert(dep.original).bind
+          val targetpath = dep.outputDirectory.absolute.resolve(dep.relativeFinalization)
+          Files.createDirectories(targetpath.getParent)
+          Files.deleteIfExists(targetpath)
+          Files.createLink(targetpath, dep.file.absolute)
+        .run(using ())(_ => cdl.countDown())
+      cdl.await()
+      cli.info(s"converted ${convertees.size} images ${timediff()}")
+    }
 
-
-    val cdl2 = new CountDownLatch(pdfresult.size)
-    // the forEach inherits the outer forkjoinpool
-    val fjp = new ForkJoinPool(okParallelism)
-    fjp.submit({ () =>
-      pdfresult.asJavaParStream.forEach: pdftask =>
-        pdftask.run()
-        cdl2.countDown()
-    }: Runnable)
-    cdl2.await()
-    fjp.shutdown()
-
-
-    cli.info(s"converted ${pdfresult.size} pdfs ${timediff()}")
+    {
+      val cdl       = new CountDownLatch(pdfresult.size)
+      val semaphore = new Semaphore(okParallelism)
+      pdfresult.foreach: pdftask =>
+        Async.resource(semaphore.acquire(), _ => { semaphore.release() }): _ =>
+          pdftask.task.bind
+        .run(using())(_ => cdl.countDown())
+      cdl.await()
+      cli.info(s"converted ${pdfresult.size} pdfs ${timediff()}")
+    }
 
     cachedConverter.writeCache()
