@@ -153,23 +153,3 @@ enum ImageTarget(
   case Tex    extends ImageTarget("tex target", "pdf", List("jpg"), List("svg", "tex", "webp"))
   case Raster extends ImageTarget("raster target", "png", Nil, List("svg", "pdf", "tex"))
 
-case class ImageConversions(mapping: Map[ProjectPath, Map[ImageTarget, ProjectPath]]):
-  def lookup(path: ProjectPath, target: ImageTarget): ProjectPath =
-    mapping.get(path).flatMap(_.get(target)).getOrElse(path)
-
-//object ImageConverter {
-//
-//  def preprocessImages(
-//      project: Project,
-//      targets: List[ImageTarget],
-//      paths: Iterable[ProjectPath]
-//  ): ImageConversions =
-//    val converters = targets.map(t => ImageConverter.apply(project, t))
-//    ImageConversions:
-//      paths.map: path =>
-//        path -> converters.flatMap: conv =>
-//          conv.applyConversion(path).map: res =>
-//            conv.imageTarget -> project.asProjectPath(res)
-//        .toMap
-//      .toMap
-//}
