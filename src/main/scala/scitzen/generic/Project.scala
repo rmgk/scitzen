@@ -4,16 +4,11 @@ import scitzen.compat.Logging.cli
 
 import java.nio.file.{Files, Path}
 
-class ProjectPath private (val project: Project, val relativeToProject: Path):
-  val absolute: Path        = project.root.resolve(relativeToProject)
-  val directory: Path       = absolute.getParent
-  val projectAbsolute: Path = Path.of("/").resolve(relativeToProject)
-
-  override def hashCode(): Int = relativeToProject.hashCode()
-  override def equals(obj: Any): Boolean = obj match
-    case other: ProjectPath => relativeToProject == other.relativeToProject
-    case _                  => false
-  override def toString: String = s"Path(${relativeToProject.toString})"
+/* Note, currently guaranteed to point to either a file, or nothing */
+case class ProjectPath private (absolute: Path)(project: Project):
+  private def relativeToProject     = project.root.relativize(absolute)
+  def directory: Path       = absolute.getParent
+  def projectAbsolute: Path = Path.of("/").resolve(relativeToProject)
 
 object ProjectPath:
   def apply(project: Project, target: Path) =
@@ -23,7 +18,7 @@ object ProjectPath:
       Files.isRegularFile(normalized) || Files.notExists(normalized),
       s"only regular files may be documents: $normalized"
     )
-    new ProjectPath(project, project.root.relativize(normalized))
+    new ProjectPath(normalized)(project)
 
 case class Project private (root: Path, config: ProjectConfig):
 

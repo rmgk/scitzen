@@ -23,15 +23,15 @@ object Format:
       else
         Files.lines(cachefile, StandardCharsets.UTF_8).iterator().asScala.map: v =>
           val Array(date, file) = v.split("\t", 2)
-          (file, date)
+          (Path.of(file), date)
         .toMap
     ca.directory.byPath.foreach: (path, articles) =>
       val content = articles.head.doc.content
       val modified = Files.getLastModifiedTime(path.absolute)
-      if !formattedHashes.get(path.relativeToProject.toString).contains(modified.toString)
+      if !formattedHashes.get(path.absolute).contains(modified.toString)
       then
         formatContent(path.absolute, content, articles.flatMap(_.sast), ca.bib)
-        formattedHashes = formattedHashes.updated(path.relativeToProject.toString, Files.getLastModifiedTime(path.absolute).toString)
+        formattedHashes = formattedHashes.updated(path.absolute, Files.getLastModifiedTime(path.absolute).toString)
     Files.createDirectories(cachefile.getParent)
     Files.write(
       cachefile,

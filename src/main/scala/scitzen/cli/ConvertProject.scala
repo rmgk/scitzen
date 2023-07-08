@@ -4,7 +4,9 @@ import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.extern.Katex.KatexLibrary
-import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ImageConversions, ImageConverter, ImageTarget, ResourceUtil}
+import scitzen.extern.{
+  BlockConversions, BlockConverter, CachedConverterRouter, ImageConversions, ImageConverter, ImageTarget, ResourceUtil
+}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, TitledArticle}
 import scitzen.sast.{DCommand, Directive}
 
@@ -23,7 +25,6 @@ case class ConversionAnalysis(
     bib: BibDB,
     converter: Option[CachedConverterRouter],
 )
-
 
 object ConvertProject:
 
@@ -57,10 +58,12 @@ object ConvertProject:
 
     val documents = ArticleProcessing.loadDocuments(project)
 
-    val directory = ArticleDirectory:
+    val directory = ArticleDirectory(
+      project,
       // note: tried to parallelize this, does not seem to be worth it in most cases
       documents.flatMap: doc =>
         ArticleProcessing.processArticles(doc)
+    )
 
     cli.info(s"parsed ${documents.size} documents ${timediff()}")
 
@@ -107,7 +110,6 @@ object ConvertProject:
       project.cacheDir.resolve("inlineConverter.json"),
       KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
     )
-
 
     val selected: List[TitledArticle] =
       directory.fullArticles.iterator.filter: art =>

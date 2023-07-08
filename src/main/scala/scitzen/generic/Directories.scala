@@ -10,7 +10,7 @@ import java.nio.file.{FileVisitOption, Files, Path}
 import scala.annotation.tailrec
 import scala.util.Using
 
-class ArticleDirectory(val articles: Seq[Article]):
+class ArticleDirectory(project: Project, val articles: Seq[Article]):
   val byPath: Map[ProjectPath, Seq[Article]] =
     articles.groupBy(fd => fd.doc.path)
 
@@ -26,7 +26,7 @@ class ArticleDirectory(val articles: Seq[Article]):
       TitledArticle(
         t,
         art,
-        art.doc.path.project.config.flags.apply(t.attributes.plainList("flags"))
+        project.config.flags.apply(t.attributes.plainList("flags"))
       )
     )
   )
@@ -118,4 +118,4 @@ object ArticleProcessing:
     val sources = discoverSources(project.root)
     Logging.cli.trace(s"parsing ${sources.length} documents")
     sources.map: source =>
-      Document(project.asProjectPath(source))
+      Document(project, project.asProjectPath(source))

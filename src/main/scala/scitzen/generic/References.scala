@@ -26,11 +26,11 @@ object References:
       case Nil    => candidates
       case Seq(_) => candidates
       case multiple =>
-        val searchScope = scope.relativeToProject.iterator().asScala.toList
+        val searchScope = scope.absolute.iterator().asScala.toList
         val sorted = multiple.map { c =>
           Tuple2(
             c,
-            c.scope.relativeToProject.iterator().asScala.zip(searchScope).takeWhile {
+            c.scope.absolute.iterator().asScala.zip(searchScope).takeWhile {
               case (l, r) => l == r
             }.size
           )

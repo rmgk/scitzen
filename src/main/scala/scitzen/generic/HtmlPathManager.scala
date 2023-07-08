@@ -11,8 +11,10 @@ class HtmlPathManager(project: Project):
   def articleOutputPath(article: Section): Path =
     articleOutputDir resolve article.relativePath
 
+  /** Produce relative path that can be included in the output document to refer to the target file */
   def relativizeImage(targetFile: ProjectPath): Path =
-    Path.of("resources").resolve(targetFile.relativeToProject)
+    Path.of("resources").resolve(
+      project.root.relativize(targetFile.absolute))
 
   def relativeArticleTarget(targetPost: Section): Path =
     articleOutputDir.relativize(articleOutputPath(targetPost))
