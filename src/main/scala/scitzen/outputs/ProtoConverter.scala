@@ -93,7 +93,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         else
           anal.project.imagePaths.lookup(imageTarget).predictTarget(path) match
             case None =>
-              cli.warn(s"cannot convert for ${imageTarget.name}", directive)
+              cli.warn(s"cannot convert to ${imageTarget.preferredFormat} (or ${imageTarget.alternative.mkString(", ")})", directive)
               ctx.retc(stringToInlineRes(directiveString(directive)))
             case Some(target) => cont(target)
       case other =>

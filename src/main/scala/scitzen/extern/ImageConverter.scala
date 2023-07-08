@@ -7,35 +7,37 @@ import de.rmgk.script.*
 import de.rmgk.delay.extensions
 import de.rmgk.script.extensions.process
 import scitzen.compat.Logging.{cli, given}
-import scitzen.extern.ImageService.{Cairosvg, enabledConversions}
 
 import scala.util.{Try, boundary}
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters.*
 
 /** like a mime type, but worse */
-enum Filetype(val extension: String):
+enum Filetype(val extension: String, val aliases: String*):
   case svg  extends Filetype("svg")
   case png  extends Filetype("png")
   case pdf  extends Filetype("pdf")
   case webp extends Filetype("webp")
+  case jpg  extends Filetype("jpg", "jpeg")
 
 object Filetype:
-  val all: List[Filetype] = List(svg, png, pdf, webp)
-  val lookup              = all.map(ft => (ft.extension, ft)).toMap
+  val all: List[Filetype]           = List(svg, png, pdf, webp, jpg)
+  val lookup: Map[String, Filetype] = all.flatMap(ft => (ft.extension, ft) +: ft.aliases.map(al => (al, ft))).toMap
+
+  println(lookup)
 
   def nameWithoutExtension(p: Path): String =
     val filename = p.getFileName.toString
-    val ext = filename.lastIndexOf('.')
+    val ext      = filename.lastIndexOf('.')
     if ext >= 0
     then filename.substring(0, ext)
     else filename
 
   def of(p: Path): Option[Filetype] =
     val filename = p.getFileName.toString
-    val ext = filename.lastIndexOf('.')
+    val ext      = filename.lastIndexOf('.')
     if ext >= 0
-    then Filetype.lookup.get(filename.substring(ext, filename.length))
+    then Filetype.lookup.get(filename.substring(ext + 1, filename.length))
     else None
 
 trait ImageService(val produces: Filetype)(val accepts: Filetype*):
@@ -48,22 +50,29 @@ object ImageService:
         process"cairosvg ${input.absolute} -f ${produces.extension} -o ${output.absolute}".start().onExit().toAsync.bind
       res.exitValue() == 0
 
-  class ImageMagick(produces: Filetype) extends ImageService(produces)(Filetype.svg, Filetype.png, Filetype.webp):
+  class ImageMagick(accepts: Filetype*)(produces: Filetype) extends ImageService(produces)(accepts*):
     override def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean] = Async:
       val res: Process =
         process"convert ${input.absolute} ${output.absolute}".start().onExit().toAsync.bind
       res.exitValue() == 0
 
-  class PdftocairoSvg(produces: Filetype) extends ImageService(produces)(Filetype.svg, Filetype.png, Filetype.webp):
+  class Pdftocairo(produces: Filetype) extends ImageService(produces)(Filetype.pdf):
     override def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean] =
       Async:
         val res: Process =
-          process"pdftocairo ${Option.unless(produces == Filetype.svg)("-singlefile")} ${"-" + produces.extension} ${input.absolute} ${output.absolute}".start().onExit().toAsync.bind
+          process"""pdftocairo
+            ${Option.unless(produces == Filetype.svg)("-singlefile")}
+            ${"-" + produces.extension} ${input.absolute} ${output.absolute}""".start().onExit().toAsync.bind
         res.exitValue() == 0
 
-  val enabledConversions = Seq(
-    if !Try(process"commandcoc -q cairosvg".start.waitFor() == 0).getOrElse(false) then Nil
-    else List(Cairosvg(Filetype.pdf), Cairosvg(Filetype.png)),
+  def requiresCommand(command: String)(services: ImageService*): Seq[ImageService] =
+    if Try(process"command -q $command".start.waitFor() == 0).getOrElse(false) then Nil
+    else services
+
+  val enabledConversions: Seq[ImageService] = Seq(
+    requiresCommand("cairosvg")(Cairosvg(Filetype.pdf), Cairosvg(Filetype.png)),
+    requiresCommand("pdftocairo")(Pdftocairo(Filetype.svg), Pdftocairo(Filetype.png)),
+    requiresCommand("convert")(ImageMagick(Filetype.webp)(Filetype.jpg))
   ).flatten
 
 class ConversionDispatch(project: Project, imageTarget: ImageTarget):
@@ -119,12 +128,12 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
         targetfile
 
 class ImagePaths(project: Project):
-  val html = ConversionDispatch(project, ImageTarget.Html)
-  val tex = ConversionDispatch(project, ImageTarget.Tex)
+  val html   = ConversionDispatch(project, ImageTarget.Html)
+  val tex    = ConversionDispatch(project, ImageTarget.Tex)
   val raster = ConversionDispatch(project, ImageTarget.Raster)
   def lookup(imageTarget: ImageTarget): ConversionDispatch = imageTarget match
-    case ImageTarget.Html => html
-    case ImageTarget.Tex => tex
+    case ImageTarget.Html   => html
+    case ImageTarget.Tex    => tex
     case ImageTarget.Raster => raster
 
 enum ImageTarget(
