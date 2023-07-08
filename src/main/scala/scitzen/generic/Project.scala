@@ -18,7 +18,7 @@ object ProjectPath:
       else plain
     require(
       normalized.startsWith(project.root) || normalized.startsWith(project.outputdir) || normalized.startsWith(project.cacheDir) ,
-      s"»$target« is not within »$project.root«")
+      s"»$target« is not within »$project«")
     new ProjectPath(normalized)(project)
 
 case class Project private (root: Path, config: ProjectConfig):
