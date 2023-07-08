@@ -9,6 +9,7 @@ case class ProjectPath private (absolute: Path)(project: Project):
   private def relativeToProject     = project.root.relativize(absolute)
   def directory: Path       = absolute.getParent
   def projectAbsolute: Path = Path.of("/").resolve(relativeToProject)
+  def resolve(p: String): Option[ProjectPath] = project.resolve(directory, p)
 
 object ProjectPath:
   def apply(project: Project, target: Path) =

@@ -118,4 +118,4 @@ object ArticleProcessing:
     val sources = discoverSources(project.root)
     Logging.cli.trace(s"parsing ${sources.length} documents")
     sources.map: source =>
-      Document(project, project.asProjectPath(source))
+      Document(project.asProjectPath(source))

@@ -6,15 +6,15 @@ import java.nio.file.{Files, Path}
 import scala.collection.immutable.ArraySeq
 
 /** A document represents a single, on disk, text file */
-case class Document(project:Project, path: ProjectPath, content: Array[Byte]):
+case class Document(path: ProjectPath, content: Array[Byte]):
   val uid: String                             = Integer.toHexString(path.hashCode())
   lazy val reporter: FileReporter             = new FileReporter(path, content)
-  def resolve(p: String): Option[ProjectPath] = project.resolve(path.directory, p)
+  def resolve(p: String): Option[ProjectPath] = path.resolve(p)
 
 object Document:
-  def apply(project: Project, file: ProjectPath): Document =
+  def apply(file: ProjectPath): Document =
     val content = Files.readAllBytes(file.absolute)
-    Document(project, file, content)
+    Document(file, content)
 
 trait Reporter:
   def apply(im: Directive): String = apply(im.prov)
