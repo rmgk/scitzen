@@ -11,9 +11,9 @@ import scala.util.boundary
 class ConversionDispatch(project: Project, imageTarget: ImageTarget):
 
   /** For each possible input type, finds a converter with the preferred output type */
-  val conversionChoice: Map[Filetype, ImageService] =
+  val conversionChoice: Map[Filetype, ImageConverter] =
     Filetype.all.flatMap: inputType =>
-      val candidates = ImageService.enabledConversions.filter: is =>
+      val candidates = ImageConverter.enabledConversions.filter: is =>
         is.accepts.contains(inputType)
       boundary:
         imageTarget.choices.foreach: accepted =>
@@ -24,7 +24,7 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
     .toMap
   end conversionChoice
 
-  def converterFor(input: ProjectPath): Option[ImageService] =
+  def converterFor(input: ProjectPath): Option[ImageConverter] =
     Filetype.of(input.absolute).flatMap(conversionChoice.get)
 
   def predictTarget(input: ProjectPath): Option[ProjectPath] =
