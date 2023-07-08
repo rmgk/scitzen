@@ -47,7 +47,7 @@ case class NLP(stopwords: Map[String, Seq[String]], analysis: ConversionAnalysis
     SastToTextConverter(
       article.ref,
       analysis,
-      Attributes(analysis.project.config.settings ++ article.titled.map(_.attributes.raw).getOrElse(Nil))
+      Attributes(analysis.project.config.attrs.raw ++ article.titled.map(_.attributes.raw).getOrElse(Nil))
     )
       .convertSastSeq(ConversionContext(()), article.sast).data
       .iterator

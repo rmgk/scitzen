@@ -23,7 +23,7 @@ object ConvertPdf:
         val converter = new SastToTexConverter(
           titled.article.ref,
           anal,
-          Attributes(project.config.settings ++ titled.header.attributes.raw),
+          Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
           hardwrap = titled.flags.hardwrap
         )
 
@@ -61,7 +61,7 @@ object ConvertPdf:
           ()
 
         val templateSettings =
-          Attributes(project.config.settings ++ titled.header.attributes.raw ++
+          Attributes(project.config.attrs.raw ++ titled.header.attributes.raw ++
             resultContext.features.map(s => Attribute(s"feature $s", "")) ++
             project.bibfile.map(_ => Attribute("bibliography path", "bibliography.bib")).toList :+
             Attribute("template content", content.mkString("\n")))

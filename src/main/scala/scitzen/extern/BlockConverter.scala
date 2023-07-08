@@ -200,7 +200,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         project,
         articleDirectory,
         article.doc.resolve(pathString),
-        Attributes(project.config.settings ++ attributes.raw :+ Attribute("template content", origContent))
+        Attributes(project.config.attrs.raw ++ attributes.raw :+ Attribute("template content", origContent))
       )
     List(block.copy(content = Fenced(resolved))(block.prov))
 

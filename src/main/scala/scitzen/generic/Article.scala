@@ -19,7 +19,8 @@ case class Flags(
     hardwrap: Boolean,
     justify: Boolean,
     `section numbers`: Boolean,
-    hidden: Boolean
+    hidden: Boolean,
+    notes: Boolean,
 ):
 
   def apply(updates: Iterator[String]) =
@@ -37,9 +38,19 @@ case class Flags(
         case "-section numbers" => curr.copy(`section numbers` = false)
         case "+hidden"          => curr.copy(hidden = true)
         case "-hidden"          => curr.copy(hidden = false)
+        case "+notes"           => curr.copy(notes = true)
+        case "-notes"           => curr.copy(notes = false)
         case other: String =>
           Logging.cli.warn(s"unknown flag", other)
           this
 object Flags:
   def default: Flags =
-    Flags(html = true, tex = false, hardwrap = false, justify = true, `section numbers` = true, hidden = false)
+    Flags(
+      html = true,
+      tex = false,
+      hardwrap = false,
+      justify = true,
+      `section numbers` = true,
+      hidden = false,
+      notes = true
+    )
