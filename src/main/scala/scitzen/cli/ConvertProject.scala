@@ -8,9 +8,11 @@ import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ImageTarget, ResourceUtil}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, TitledArticle}
 import de.rmgk.delay.extensions.run
+import scitzen.contexts.FileDependency
 
 import java.nio.file.{Files, Path}
 import java.util.concurrent.{CountDownLatch, Semaphore}
+import scala.collection.Iterator.continually
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -118,11 +120,10 @@ object ConvertProject:
       ImageReferences.listAll(anal, imageFileMap.get)
       cli.info(s"generated imagemap ${timediff()}")
 
-    val convertees =
-      (htmlresult.iterator.map((_, ImageTarget.Html)) ++ pdfresult.iterator.flatMap(_.dependencies.iterator).map((
-        _,
-        ImageTarget.Tex
-      ))).filter: (dep, _) =>
+    val convertees: Array[(FileDependency, ImageTarget)] =
+      val htmldeps = htmlresult.iterator.zip(continually(ImageTarget.Tex))
+      val pdfdeps  = pdfresult.iterator.flatMap(_.dependencies).zip(continually(ImageTarget.Tex))
+      (htmldeps ++ pdfdeps).filter: (dep, _) =>
         dep.original != dep.file
       .toArray
 
@@ -150,7 +151,7 @@ object ConvertProject:
       pdfresult.foreach: pdftask =>
         Async.resource(semaphore.acquire(), _ => { semaphore.release() }): _ =>
           pdftask.task.bind
-        .run(using())(_ => cdl.countDown())
+        .run(using ())(_ => cdl.countDown())
       cdl.await()
       cli.info(s"converted ${pdfresult.size} pdfs ${timediff()}")
     }
