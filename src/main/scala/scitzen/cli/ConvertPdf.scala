@@ -1,7 +1,7 @@
 package scitzen.cli
 
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{Hashes, ImageConverter, Latexmk}
+import scitzen.extern.{Filetype, Hashes, Latexmk}
 import scitzen.outputs.SastToTexConverter
 import scitzen.sast.{Attribute, Attributes}
 
@@ -38,7 +38,7 @@ object ConvertPdf:
 
         val targetfile = project.outputdirPdf.resolve(s"$articlename.pdf")
 
-        val jobname    = ImageConverter.nameWithoutExtension(targetfile)
+        val jobname    = Filetype.nameWithoutExtension(targetfile)
         val temptexdir = project.cacheDir.resolve(s"$articlename.outdir")
         Files.createDirectories(temptexdir)
         val temptexfile = temptexdir.resolve(jobname + ".tex")

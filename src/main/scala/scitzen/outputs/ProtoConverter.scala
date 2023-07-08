@@ -86,12 +86,19 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertInlineDirective(ctx: Cta, directive: Directive): CtxInl
 
   def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: ProjectPath => CtxInl): CtxInl =
-    val target = anal.image.lookup(doc.resolve(directive.attributes.target).get, imageTarget)
-    if !Files.exists(target.absolute)
-    then
-      cli.warn(s"could not find path", directive)
-      ctx.retc(stringToInlineRes(directiveString(directive)))
-    else cont(target)
+    doc.resolve(directive.attributes.target) match
+      case Some(path) if Files.exists(path.absolute) =>
+        if !imageTarget.requiresConversion(path)
+        then cont(path)
+        else
+          anal.project.imagePaths.lookup(imageTarget).predictTarget(path) match
+            case None =>
+              cli.warn(s"cannot convert for ${imageTarget.name}", directive)
+              ctx.retc(stringToInlineRes(directiveString(directive)))
+            case Some(target) => cont(target)
+      case other =>
+        cli.warn(s"could not find path", directive)
+        ctx.retc(stringToInlineRes(directiveString(directive)))
 
   def stringToInlineRes(str: String): InlineRes
 

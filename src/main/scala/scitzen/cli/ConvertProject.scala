@@ -4,9 +4,7 @@ import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.extern.Katex.KatexLibrary
-import scitzen.extern.{
-  BlockConversions, BlockConverter, CachedConverterRouter, ImageConversions, ImageConverter, ImageTarget, ResourceUtil
-}
+import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, TitledArticle}
 import scitzen.sast.{DCommand, Directive}
 
@@ -21,7 +19,6 @@ case class ConversionAnalysis(
     selected: List[TitledArticle],
     directory: ArticleDirectory,
     block: BlockConversions,
-    image: ImageConversions,
     bib: BibDB,
     converter: Option[CachedConverterRouter],
 )
@@ -90,17 +87,17 @@ object ConvertProject:
 
     cli.trace(s"image paths collected ${imagePaths.size} ${timediff()}")
 
-    val imageConversions = ImageConverter.preprocessImages(
-      project,
-      List(
-        Some(ImageTarget.Html),
-        Some(ImageTarget.Tex),
-        imageFileMap.map(_ => ImageTarget.Raster)
-      ).flatten,
-      imagePaths
-    )
+//    val imageConversions = ImageConverter.preprocessImages(
+//      project,
+//      List(
+//        Some(ImageTarget.Html),
+//        Some(ImageTarget.Tex),
+//        imageFileMap.map(_ => ImageTarget.Raster)
+//      ).flatten,
+//      imagePaths
+//    )
 
-    cli.info(s"images converted ${imageConversions.mapping.size} ${timediff()}")
+//    cli.info(s"images converted ${imageConversions.mapping.size} ${timediff()}")
 
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
 
@@ -122,7 +119,6 @@ object ConvertProject:
       selected = selected,
       directory = directory,
       block = blockConversions,
-      image = imageConversions,
       bib = bibdb,
       converter = Some(cachedConverter)
     )

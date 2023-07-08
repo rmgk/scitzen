@@ -3,7 +3,7 @@ package scitzen.cli
 import scitzen.bibliography.BibDB
 import scitzen.compat.Logging
 import scitzen.contexts.ConversionContext
-import scitzen.extern.{BlockConversions, ImageConversions}
+import scitzen.extern.{BlockConversions}
 import scitzen.generic.{ArticleDirectory, Project, ProjectPath}
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Attributes
@@ -28,7 +28,6 @@ object ConvertTemplate:
             Nil,
             directory,
             BlockConversions(Map.empty),
-            ImageConversions(Map.empty),
             BibDB.empty,
             None,
           ),

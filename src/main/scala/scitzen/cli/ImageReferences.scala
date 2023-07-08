@@ -2,7 +2,6 @@ package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.extern.ImageTarget
 
 import java.nio.file.{Files, Path}
 
@@ -16,7 +15,7 @@ object ImageReferences:
 
       val images = art.context.imageDirectives.flatMap { directive =>
 
-        val path = anal.image.lookup(art.doc.resolve(directive.attributes.target).get, ImageTarget.Raster)
+        val path = anal.project.imagePaths.raster.predictTarget(art.doc.resolve(directive.attributes.target).get).get
         // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
         Some(Reference(
           path.absolute.toString,

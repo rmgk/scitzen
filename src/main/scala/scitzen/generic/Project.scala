@@ -1,6 +1,7 @@
 package scitzen.generic
 
 import scitzen.compat.Logging.cli
+import scitzen.extern.ImagePaths
 
 import java.nio.file.{Files, Path}
 
@@ -31,13 +32,17 @@ case class Project private (root: Path, config: ProjectConfig):
   val outputdirWeb: Path = outputdir resolve "web"
   val outputdirPdf: Path = outputdir resolve "pdfs"
 
-  val htmlPaths: HtmlPathManager = HtmlPathManager(this)
-
   val pdfTemplatePath: ProjectPath =
     ProjectPath(this, outputdir.resolve("templates").resolve("default-template.tex.scim"))
 
+
   lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
   lazy val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
+
+  // be careful about initialization below, the followng two do leak the (partially uninitialized) this reference
+
+  val htmlPaths: HtmlPathManager = HtmlPathManager(this)
+  val imagePaths = ImagePaths(this)
 
   def cachePath(target: Path): ProjectPath     = ProjectPath(this, cacheDir.resolve(target))
   def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this, target)

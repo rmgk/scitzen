@@ -1,17 +1,141 @@
 package scitzen.extern
 
-import scitzen.compat.Logging.cli
+import de.rmgk.delay.Async
+import scitzen.compat.Logging
 import scitzen.generic.{Project, ProjectPath}
+import de.rmgk.script.*
+import de.rmgk.delay.extensions
+import de.rmgk.script.extensions.process
+import scitzen.compat.Logging.{cli, given}
+import scitzen.extern.ImageService.{Cairosvg, enabledConversions}
 
+import scala.util.{Try, boundary}
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters.*
 
-trait ImageService(val accepts: Set[String], val produces: String):
-  def convert(input: ProjectPath): Path
+/** like a mime type, but worse */
+enum Filetype(val extension: String):
+  case svg  extends Filetype("svg")
+  case png  extends Filetype("png")
+  case pdf  extends Filetype("pdf")
+  case webp extends Filetype("webp")
 
-enum ImageTarget(val name: String, val preferredFormat: String, val alternative: List[String], val unsupportedFormat: List[String]):
+object Filetype:
+  val all: List[Filetype] = List(svg, png, pdf, webp)
+  val lookup              = all.map(ft => (ft.extension, ft)).toMap
+
+  def nameWithoutExtension(p: Path): String =
+    val filename = p.getFileName.toString
+    val ext = filename.lastIndexOf('.')
+    if ext >= 0
+    then filename.substring(0, ext)
+    else filename
+
+  def of(p: Path): Option[Filetype] =
+    val filename = p.getFileName.toString
+    val ext = filename.lastIndexOf('.')
+    if ext >= 0
+    then Filetype.lookup.get(filename.substring(ext, filename.length))
+    else None
+
+trait ImageService(val produces: Filetype)(val accepts: Filetype*):
+  def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean]
+
+object ImageService:
+  class Cairosvg(produces: Filetype) extends ImageService(produces)(Filetype.svg):
+    override def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean] = Async:
+      val res: Process =
+        process"cairosvg ${input.absolute} -f ${produces.extension} -o ${output.absolute}".start().onExit().toAsync.bind
+      res.exitValue() == 0
+
+  class ImageMagick(produces: Filetype) extends ImageService(produces)(Filetype.svg, Filetype.png, Filetype.webp):
+    override def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean] = Async:
+      val res: Process =
+        process"convert ${input.absolute} ${output.absolute}".start().onExit().toAsync.bind
+      res.exitValue() == 0
+
+  class PdftocairoSvg(produces: Filetype) extends ImageService(produces)(Filetype.svg, Filetype.png, Filetype.webp):
+    override def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean] =
+      Async:
+        val res: Process =
+          process"pdftocairo ${Option.unless(produces == Filetype.svg)("-singlefile")} ${"-" + produces.extension} ${input.absolute} ${output.absolute}".start().onExit().toAsync.bind
+        res.exitValue() == 0
+
+  val enabledConversions = Seq(
+    if !Try(process"commandcoc -q cairosvg".start.waitFor() == 0).getOrElse(false) then Nil
+    else List(Cairosvg(Filetype.pdf), Cairosvg(Filetype.png)),
+  ).flatten
+
+class ConversionDispatch(project: Project, imageTarget: ImageTarget):
+
+  /** For each possible input type, finds a converter with the preferred output type */
+  val conversionChoice: Map[Filetype, ImageService] =
+    Filetype.all.flatMap: inputType =>
+      val candidates = ImageService.enabledConversions.filter: is =>
+        is.accepts.contains(inputType)
+      boundary:
+        imageTarget.choices.foreach: accepted =>
+          candidates.collectFirst: can =>
+            if can.produces == accepted
+            then boundary.break(Some(inputType -> can))
+        None
+    .toMap
+  end conversionChoice
+
+  def converterFor(input: ProjectPath): Option[ImageService] =
+    Filetype.of(input.absolute).flatMap(conversionChoice.get)
+
+  def predictTarget(input: ProjectPath): Option[ProjectPath] =
+    converterFor(input).map(c => predictTargetOf(input, c.produces))
+
+  def predictTargetOf(input: ProjectPath, targetType: Filetype): ProjectPath =
+    val targetFilename =
+      s"${input.absolute.getFileName.toString}.${targetType.extension}"
+    val targetPath = if input.absolute.startsWith(project.cacheDir) then
+      input.absolute.resolveSibling(targetFilename)
+    else
+      val relative = project.root.relativize(input.absolute)
+      project.cacheDir.resolve("convertedImages")
+        .resolve(relative)
+        .resolve(targetFilename)
+
+    ProjectPath(project, targetPath)
+
+  def convert(input: ProjectPath) =
+    val absoluteInput = input.absolute
+    converterFor(input) match
+      case None =>
+        Logging.cli.warn(s"unknown file ending", absoluteInput)
+      case Some(converter) =>
+        val targetfile = predictTargetOf(input, converter.produces).absolute
+
+        val sourceModified = Files.getLastModifiedTime(absoluteInput)
+        if !Files.exists(targetfile) || Files.getLastModifiedTime(targetfile) != sourceModified then
+          Files.createDirectories(targetfile.getParent)
+          Logging.cli.trace(s"converting $input to $targetfile")
+
+          Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(absoluteInput))
+          ()
+        targetfile
+
+class ImagePaths(project: Project):
+  val html = ConversionDispatch(project, ImageTarget.Html)
+  val tex = ConversionDispatch(project, ImageTarget.Tex)
+  val raster = ConversionDispatch(project, ImageTarget.Raster)
+  def lookup(imageTarget: ImageTarget): ConversionDispatch = imageTarget match
+    case ImageTarget.Html => html
+    case ImageTarget.Tex => tex
+    case ImageTarget.Raster => raster
+
+enum ImageTarget(
+    val name: String,
+    val preferredFormat: String,
+    val alternative: List[String],
+    val unsupportedFormat: List[String]
+):
   def requiresConversion(filename: ProjectPath): Boolean =
     unsupportedFormat.exists(fmt => filename.absolute.toString.endsWith(fmt))
+  def choices: List[Filetype] = (preferredFormat :: alternative).flatMap(Filetype.lookup.get)
   case Html   extends ImageTarget("html target", "svg", Nil, List("pdf", "tex"))
   case Tex    extends ImageTarget("tex target", "pdf", List("jpg"), List("svg", "tex", "webp"))
   case Raster extends ImageTarget("raster target", "png", Nil, List("svg", "pdf", "tex"))
@@ -20,103 +144,19 @@ case class ImageConversions(mapping: Map[ProjectPath, Map[ImageTarget, ProjectPa
   def lookup(path: ProjectPath, target: ImageTarget): ProjectPath =
     mapping.get(path).flatMap(_.get(target)).getOrElse(path)
 
-object ImageConverter {
-
-  def nameWithoutExtension(p: Path): String =
-    val filename = p.getFileName.toString
-    val ext      = filename.lastIndexOf('.')
-    if ext >= 0
-    then filename.substring(0, ext)
-    else filename
-
-  def preprocessImages(
-      project: Project,
-      targets: List[ImageTarget],
-      paths: Iterable[ProjectPath]
-  ): ImageConversions =
-    val converters = targets.map(t => ImageConverter.apply(project, t))
-    ImageConversions:
-      paths.map: path =>
-        path -> converters.flatMap: conv =>
-          conv.applyConversion(path).map: res =>
-            conv.imageTarget -> project.asProjectPath(res)
-        .toMap
-      .toMap
-}
-
-case class ImageConverter(
-    project: Project,
-    imageTarget: ImageTarget,
-):
-
-  def preferredFormat: String = imageTarget.preferredFormat
-
-  def applyConversion(file: ProjectPath): Option[Path] =
-    val filename = file.absolute.getFileName.toString
-    if imageTarget.requiresConversion(file)
-    then
-      preferredFormat match
-        case "svg" | "png" if (filename.endsWith(".pdf")) => Some(pdfToCairo(file.absolute))
-        case "pdf" | "png" if (filename.endsWith(".svg")) => Some(svgToCairo(file.absolute))
-        case other                                                                  =>
-          if imageTarget.alternative.contains("jpg")
-          then Some(imageMagickToJpg(file.absolute))
-          else None
-
-
-    else None
-
-  def imageMagickToJpg(file: Path): Path =
-    convertExternal(file, "jpg"):
-      (source, target) =>
-        List(
-          "convert",
-          source.toAbsolutePath.toString,
-          target.toAbsolutePath.toString
-        )
-
-  def pdfToCairo(file: Path): Path =
-    convertExternal(
-      file, preferredFormat):
-      (source, target) =>
-        preferredFormat match
-          case "png" | "jpeg" | "tiff" =>
-            List(
-              "pdftocairo",
-              "-singlefile",
-              s"-$preferredFormat",
-              source.toAbsolutePath.toString,
-              target.resolveSibling(ImageConverter.nameWithoutExtension(target)).toAbsolutePath.toString
-            )
-          case "svg" =>
-            List("pdftocairo", s"-$preferredFormat", source.toAbsolutePath.toString, target.toAbsolutePath.toString)
-
-  def svgToCairo(file: Path): Path =
-    convertExternal(
-      file, preferredFormat):
-      (source, target) => {
-        List("cairosvg", source.toAbsolutePath.toString, "-o", target.toAbsolutePath.toString)
-      }
-
-  trait CommandFunction:
-    def genCommand(source: Path, target: Path): List[String]
-
-  private def convertExternal(file: Path, extension: String)(command: CommandFunction): Path =
-    val relative       = project.root.relativize(file)
-    val targetfileName = ImageConverter.nameWithoutExtension(file) + s".$extension"
-    val targetfile =
-      if file.startsWith(project.cacheDir) then
-        file.resolveSibling(targetfileName)
-      else
-        project.cacheDir.resolve("convertedImages")
-          .resolve(relative)
-          .resolve(targetfileName)
-    val sourceModified = Files.getLastModifiedTime(file)
-    if !Files.exists(targetfile) || Files.getLastModifiedTime(targetfile) != sourceModified then
-      Files.createDirectories(targetfile.getParent)
-      cli.trace(s"converting $file to $targetfile")
-      new ProcessBuilder(command.genCommand(file, targetfile).asJava)
-        .inheritIO().start().waitFor()
-      Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(file))
-      ()
-    targetfile
+//object ImageConverter {
+//
+//  def preprocessImages(
+//      project: Project,
+//      targets: List[ImageTarget],
+//      paths: Iterable[ProjectPath]
+//  ): ImageConversions =
+//    val converters = targets.map(t => ImageConverter.apply(project, t))
+//    ImageConversions:
+//      paths.map: path =>
+//        path -> converters.flatMap: conv =>
+//          conv.applyConversion(path).map: res =>
+//            conv.imageTarget -> project.asProjectPath(res)
+//        .toMap
+//      .toMap
+//}
