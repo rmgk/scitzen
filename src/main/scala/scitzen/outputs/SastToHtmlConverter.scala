@@ -374,27 +374,26 @@ class SastToHtmlConverter(
     else cctx.retc(styledAnchors)
   }
 
-  private def convertImage(ctx: Cta, mcro: Directive): Ctx[Chain[Recipe]] = {
-    val attrs  = mcro.attributes
-    val target = anal.image.lookup(doc.resolve(attrs.target).get, ImageTarget.Html)
-    if Files.exists(target.absolute)
-    then
-      val path = project.htmlPaths.relativizeImage(target)
-      ctx.requireInOutput(target, path).retc {
-        val filename  = path.getFileName.toString
-        val sizeclass = mcro.attributes.plain("size").map(s => s"sizing-$s")
-        if videoEndings.exists(filename.endsWith) then
-          Sag.video(src = path.toString, loop = true, autoplay = true, `class` = sizeclass)
-        else
-          val myStyle: Option[String] =
-            if attrs.target.endsWith(".pdf")
-            then Some(s"background-color: white; ${attrs.plain("css_style").getOrElse("")}")
-            else attrs.plain("css_style")
-          Sag.img(src = path.toString, `class` = sizeclass, style = myStyle)
-      }
-    else
-      cli.warn(s"could not find path ${target}" + reporter(mcro))
-      ctx.empty
+  private def convertImage(ctx: Cta, directive: Directive): Ctx[Chain[Recipe]] = {
+    convertImage(ctx, directive, ImageTarget.Html): target =>
+      if Files.exists(target.absolute)
+      then
+        val path = project.htmlPaths.relativizeImage(target)
+        ctx.requireInOutput(target, path).retc {
+          val filename  = path.getFileName.toString
+          val sizeclass = directive.attributes.plain("size").map(s => s"sizing-$s")
+          if videoEndings.exists(filename.endsWith) then
+            Sag.video(src = path.toString, loop = true, autoplay = true, `class` = sizeclass)
+          else
+            val myStyle: Option[String] =
+              if directive.attributes.target.endsWith(".pdf")
+              then Some(s"background-color: white; ${directive.attributes.plain("css_style").getOrElse("")}")
+              else directive.attributes.plain("css_style")
+            Sag.img(src = path.toString, `class` = sizeclass, style = myStyle)
+        }
+      else
+        cli.warn(s"could not find path ${target}" + reporter(directive))
+        ctx.empty
   }
 
 end SastToHtmlConverter
