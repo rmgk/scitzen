@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import de.rmgk.logging.Loggable
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
-import scitzen.contexts.ConversionContext
+import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.ImageTarget
 import scitzen.generic.{Article, ArticleRef, ProjectPath, TitledArticle}
 import scitzen.sast.*
@@ -85,17 +85,21 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertInlineText(ctx: Cta, inlineText: InlineText): CtxInl
   def convertInlineDirective(ctx: Cta, directive: Directive): CtxInl
 
-  def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: ProjectPath => CtxInl): CtxInl =
+  def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: Ctx[FileDependency] => CtxInl): CtxInl =
     doc.resolve(directive.attributes.target) match
       case Some(path) if Files.exists(path.absolute) =>
         if !imageTarget.requiresConversion(path)
-        then cont(path)
+        then
+          val dep = FileDependency(path, path, project.htmlPaths.relativizeImage(path))
+          cont(ctx.ret(dep).requireInOutput(dep))
         else
           anal.project.imagePaths.lookup(imageTarget).predictTarget(path) match
             case None =>
               cli.warn(s"cannot convert to ${imageTarget.preferredFormat} (or ${imageTarget.alternative.mkString(", ")})", directive)
               ctx.retc(stringToInlineRes(directiveString(directive)))
-            case Some(target) => cont(target)
+            case Some(target) =>
+              val dep = FileDependency(target, path, project.htmlPaths.relativizeImage(target))
+              cont(ctx.ret(dep).requireInOutput(dep))
       case other =>
         cli.warn(s"could not find path", directive)
         ctx.retc(stringToInlineRes(directiveString(directive)))

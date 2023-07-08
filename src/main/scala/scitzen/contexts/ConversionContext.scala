@@ -7,20 +7,22 @@ import scitzen.sast.Section
 
 import java.nio.file.Path
 
+case class FileDependency(file: ProjectPath, original: ProjectPath, relativeFinalization: Path)
+
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[+T](
     data: T,
-    resourceMap: Map[ProjectPath, Path] = Map.empty,
     usedCitations: List[BibEntry] = Nil,
     sections: List[Section] = Nil,
     features: Set[String] = Set.empty,
-    referenced: List[ArticleRef] = List.empty
+    referenced: List[ArticleRef] = List.empty,
+  fileDependencies: List[FileDependency] = List.empty
 ):
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
   def reference(articleRef: ArticleRef)               = copy(referenced = articleRef :: referenced)
 
-  def requireInOutput(source: ProjectPath, relative: Path): ConversionContext[T] =
-    copy(resourceMap = resourceMap.updated(source, relative))
+  def requireInOutput(dep: FileDependency): ConversionContext[T] =
+    copy(fileDependencies = dep :: fileDependencies)
 
   def useFeature(name: String): ConversionContext[T] = copy(features = features.incl(name))
 

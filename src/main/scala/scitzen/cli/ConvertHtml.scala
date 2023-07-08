@@ -2,7 +2,7 @@ package scitzen.cli
 
 import de.rmgk.delay
 import scitzen.cli.ScitzenCommandline.ClSync
-import scitzen.contexts.ConversionContext
+import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.ResourceUtil
 import scitzen.generic.*
 import scitzen.html.sag.{Recipe, Sag, SagContext}
@@ -11,6 +11,7 @@ import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
+import scala.annotation.unused
 import scala.math.Ordering.Implicits.seqOrdering
 
 class ConvertHtml(anal: ConversionAnalysis):
@@ -33,8 +34,8 @@ class ConvertHtml(anal: ConversionAnalysis):
     def procRec(
         rem: List[TitledArticle],
         done: Set[ArticleRef],
-        acc: Map[ProjectPath, Path]
-    ): Map[ProjectPath, Path] =
+        acc: List[FileDependency],
+    ): List[FileDependency] =
       rem match
         case Nil => acc
         case titled :: rest =>
@@ -49,12 +50,11 @@ class ConvertHtml(anal: ConversionAnalysis):
           procRec(
             foundArticles reverse_::: rest,
             done ++ found,
-            acc ++ cctx.resourceMap
+            acc ++ cctx.fileDependencies
           )
 
     val htmlSelected = anal.selected.filter(ta => ta.flags.html)
-    val resources = procRec(htmlSelected, htmlSelected.map(_.article.ref).toSet, Map.empty)
-    project.htmlPaths.copyResources(resources)
+    @unused val resources = procRec(htmlSelected, htmlSelected.map(_.article.ref).toSet, Nil)
     ()
 
   def convertArticle(

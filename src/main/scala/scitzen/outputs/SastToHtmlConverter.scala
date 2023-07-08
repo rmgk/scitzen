@@ -5,7 +5,7 @@ import de.rmgk.delay.Sync
 import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
-import scitzen.contexts.ConversionContext
+import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.ImageTarget
 import scitzen.generic.{ArticleRef, References, SastRef}
 import scitzen.html.sag
@@ -15,7 +15,6 @@ import scitzen.sast.DCommand.*
 import scitzen.sast.*
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import scala.annotation.unused
 
 class SastToHtmlConverter(
@@ -223,7 +222,7 @@ class SastToHtmlConverter(
           case Some(path) =>
             val rel = project.htmlPaths.relativizeImage(path)
             ctx.retc(Sag.script(`type` = "text/javascript", src = rel.toString))
-              .requireInOutput(path, rel)
+              .requireInOutput(FileDependency(path, path, rel))
           case None =>
             cli.warn("no script", directive)
             ctx.retc(stringToInlineRes(directiveString(directive)))
@@ -375,25 +374,19 @@ class SastToHtmlConverter(
   }
 
   private def convertImage(ctx: Cta, directive: Directive): Ctx[Chain[Recipe]] = {
-    convertImage(ctx, directive, ImageTarget.Html): target =>
-      if Files.exists(target.absolute)
-      then
-        val path = project.htmlPaths.relativizeImage(target)
-        ctx.requireInOutput(target, path).retc {
-          val filename  = path.getFileName.toString
-          val sizeclass = directive.attributes.plain("size").map(s => s"sizing-$s")
-          if videoEndings.exists(filename.endsWith) then
-            Sag.video(src = path.toString, loop = true, autoplay = true, `class` = sizeclass)
-          else
-            val myStyle: Option[String] =
-              if directive.attributes.target.endsWith(".pdf")
-              then Some(s"background-color: white; ${directive.attributes.plain("css_style").getOrElse("")}")
-              else directive.attributes.plain("css_style")
-            Sag.img(src = path.toString, `class` = sizeclass, style = myStyle)
-        }
-      else
-        cli.warn(s"could not find path ${target}" + reporter(directive))
-        ctx.empty
+    convertImage(ctx, directive, ImageTarget.Html): ctx =>
+      val path = ctx.data.relativeFinalization
+      ctx.retc:
+        val filename  = path.getFileName.toString
+        val sizeclass = directive.attributes.plain("size").map(s => s"sizing-$s")
+        if videoEndings.exists(filename.endsWith) then
+          Sag.video(src = path.toString, loop = true, autoplay = true, `class` = sizeclass)
+        else
+          val myStyle: Option[String] =
+            if directive.attributes.target.endsWith(".pdf")
+            then Some(s"background-color: white; ${directive.attributes.plain("css_style").getOrElse("")}")
+            else directive.attributes.plain("css_style")
+          Sag.img(src = path.toString, `class` = sizeclass, style = myStyle)
   }
 
 end SastToHtmlConverter
