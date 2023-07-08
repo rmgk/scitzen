@@ -5,10 +5,11 @@ import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.extern.Katex.KatexLibrary
-import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ImageTarget, ResourceUtil}
+import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
 import de.rmgk.delay.extensions.run
 import scitzen.contexts.FileDependency
+import scitzen.images.ImageTarget
 
 import java.nio.file.{FileAlreadyExistsException, Files, Path}
 import java.util.concurrent.{ConcurrentHashMap, CountDownLatch, Semaphore}

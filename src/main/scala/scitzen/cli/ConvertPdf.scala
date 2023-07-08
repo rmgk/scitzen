@@ -2,8 +2,9 @@ package scitzen.cli
 
 import de.rmgk.delay.Async
 import scitzen.contexts.{ConversionContext, FileDependency}
-import scitzen.extern.{Filetype, Hashes, Latexmk}
+import scitzen.extern.{Hashes, Latexmk}
 import scitzen.generic.ProjectPath
+import scitzen.images.Filetype
 import scitzen.outputs.SastToTexConverter
 import scitzen.sast.{Attribute, Attributes}
 

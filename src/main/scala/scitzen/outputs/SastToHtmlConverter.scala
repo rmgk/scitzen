@@ -6,10 +6,10 @@ import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
-import scitzen.extern.ImageTarget
 import scitzen.generic.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
+import scitzen.images.ImageTarget
 import scitzen.sast.Attribute.Named
 import scitzen.sast.DCommand.*
 import scitzen.sast.*

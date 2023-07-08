@@ -3,12 +3,12 @@ package scitzen.outputs
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.contexts.ConversionContext
-import scitzen.extern.ImageTarget
 import scitzen.generic.{ArticleRef, Flags, ProjectPath, References, SastRef}
 import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.compat.Logging.cli
+import scitzen.images.ImageTarget
 import scitzen.sast.Attribute.Named
 
 object SastToTexConverter {
