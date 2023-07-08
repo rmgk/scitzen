@@ -5,4 +5,4 @@ target/
 node_modules/
 package-lock.json
 .bsp/
-Examples/output/
+Examples/scitzen.out/
