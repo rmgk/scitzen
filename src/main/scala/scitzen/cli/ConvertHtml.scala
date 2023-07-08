@@ -24,7 +24,6 @@ class ConvertHtml(anal: ConversionAnalysis):
   def convertToHtml(
       sync: Option[ClSync],
   ): Unit =
-    val nlp: NLP = NLP.loadFromResources(anal)
 
     Files.createDirectories(project.outputdirWeb)
 
@@ -43,7 +42,6 @@ class ConvertHtml(anal: ConversionAnalysis):
             titled,
             cssfile,
             sync,
-            nlp,
           )
           val found = cctx.referenced.toSet -- done
 
@@ -63,7 +61,6 @@ class ConvertHtml(anal: ConversionAnalysis):
       titled: TitledArticle,
       cssfile: Path,
       sync: Option[ClSync],
-      nlp: NLP,
   ): ConversionContext[?] =
 
     val converter = new SastToHtmlConverter(
