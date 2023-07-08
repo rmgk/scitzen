@@ -11,7 +11,11 @@ case class ProjectPath private (absolute: Path)(project: Project):
 
 object ProjectPath:
   def apply(project: Project, target: Path) =
-    val normalized = project.root.resolve(target).normalize()
+    // we store directories as having `/.` at the end, to trick `.getParent` into returning the current directory
+    val normalized =
+      val plain = project.root.resolve(target).normalize()
+      if target.endsWith(".") then plain.resolve(".")
+      else plain
     require(normalized.startsWith(project.root), s"»$target« is not within »$project.root«")
     new ProjectPath(normalized)(project)
 
