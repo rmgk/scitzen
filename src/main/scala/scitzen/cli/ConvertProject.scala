@@ -6,12 +6,12 @@ import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ImageTarget, ResourceUtil}
-import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, TitledArticle}
+import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
 import de.rmgk.delay.extensions.run
 import scitzen.contexts.FileDependency
 
-import java.nio.file.{Files, Path}
-import java.util.concurrent.{CountDownLatch, Semaphore}
+import java.nio.file.{FileAlreadyExistsException, Files, Path}
+import java.util.concurrent.{ConcurrentHashMap, CountDownLatch, Semaphore}
 import scala.collection.Iterator.continually
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
@@ -26,6 +26,8 @@ case class ConversionAnalysis(
     bib: BibDB,
     converter: Option[CachedConverterRouter],
 )
+
+inline def bind[Ctx, R](inline a: Async[Ctx, R]): R = a.bind
 
 object ConvertProject:
 
@@ -123,9 +125,7 @@ object ConvertProject:
     val convertees: Array[(FileDependency, ImageTarget)] =
       val htmldeps = htmlresult.iterator.zip(continually(ImageTarget.Tex))
       val pdfdeps  = pdfresult.iterator.flatMap(_.dependencies).zip(continually(ImageTarget.Tex))
-      (htmldeps ++ pdfdeps).filter: (dep, _) =>
-        dep.original != dep.file
-      .toArray
+      (htmldeps ++ pdfdeps).toArray
 
     val okParallelism = math.max(Runtime.getRuntime.availableProcessors(), 4)
 
@@ -133,13 +133,22 @@ object ConvertProject:
       val cdl       = new CountDownLatch(convertees.size)
       val semaphore = new Semaphore(okParallelism)
 
+      val converted = new ConcurrentHashMap[ProjectPath, Any](convertees.size * 2)
+
       convertees.foreach: (dep, imageTarget) =>
         Async[Unit].resource(semaphore.acquire(), _ => { semaphore.release() }): _ =>
-          project.imagePaths.lookup(imageTarget).convert(dep.original).bind
+          val token = new {}
+          bind:
+            if
+              dep.file != dep.original &&
+              converted.computeIfAbsent(dep.file, _ => token) == token
+            then project.imagePaths.lookup(imageTarget).convert(dep.original)
+            else Async(())
           val targetpath = dep.outputDirectory.absolute.resolve(dep.relativeFinalization)
           Files.createDirectories(targetpath.getParent)
           Files.deleteIfExists(targetpath)
-          Files.createLink(targetpath, dep.file.absolute)
+          try Files.createLink(targetpath, dep.file.absolute)
+          catch case f: FileAlreadyExistsException => () // concurrency issue, ignore
         .run(using ())(_ => cdl.countDown())
       cdl.await()
       cli.info(s"converted ${convertees.size} images ${timediff()}")
