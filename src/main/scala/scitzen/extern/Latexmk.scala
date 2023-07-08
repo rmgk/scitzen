@@ -8,7 +8,7 @@ object Latexmk:
 
   def latexmk(outputdir: Path, jobname: String, sourceFile: Path): Option[Path] =
     val start = System.nanoTime()
-    cli.info(s"compiling $sourceFile")
+    cli.trace(s"compiling $sourceFile")
     Files.createDirectories(outputdir)
     val errorFile = outputdir.resolve("latexmk.err")
     val returnCode =
@@ -35,7 +35,7 @@ object Latexmk:
         .redirectError(errorFile.toFile)
         .start().waitFor()
     if returnCode == 0 then
-      cli.info(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
+      cli.trace(s"tex compilation of »$sourceFile« finished in ${(System.nanoTime() - start) / 1000000}ms")
       Some(outputdir.resolve(jobname + ".pdf"))
     else
       cli.warn(s"error tex compiling »$sourceFile« see »$errorFile«")

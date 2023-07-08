@@ -122,7 +122,7 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
         then Async(true)
         else
           Files.createDirectories(targetfile.getParent)
-          Logging.cli.info(s"converting $input to $targetfile")
+          Logging.cli.trace(s"converting $input to $targetfile")
           Async:
             val res = converter.convert(input, ProjectPath(project, targetfile)).bind
             if res
