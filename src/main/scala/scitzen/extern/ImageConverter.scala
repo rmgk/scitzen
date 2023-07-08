@@ -6,6 +6,9 @@ import scitzen.generic.{Project, ProjectPath}
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters.*
 
+trait ImageService(val accepts: Set[String], val produces: String):
+  def convert(input: ProjectPath): Path
+
 enum ImageTarget(val name: String, val preferredFormat: String, val alternative: List[String], val unsupportedFormat: List[String]):
   def requiresConversion(filename: ProjectPath): Boolean =
     unsupportedFormat.exists(fmt => filename.absolute.toString.endsWith(fmt))
