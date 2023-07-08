@@ -108,22 +108,28 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
 
     ProjectPath(project, targetPath)
 
-  def convert(input: ProjectPath) =
+  def convert(input: ProjectPath): Async[Unit, Boolean] =
     val absoluteInput = input.absolute
     converterFor(input) match
       case None =>
         Logging.cli.warn(s"unknown file ending", absoluteInput)
+        Async(false)
       case Some(converter) =>
         val targetfile = predictTargetOf(input, converter.produces).absolute
 
         val sourceModified = Files.getLastModifiedTime(absoluteInput)
-        if !Files.exists(targetfile) || Files.getLastModifiedTime(targetfile) != sourceModified then
+        if Files.exists(targetfile) && Files.getLastModifiedTime(targetfile) == sourceModified
+        then Async(true)
+        else
           Files.createDirectories(targetfile.getParent)
-          Logging.cli.trace(s"converting $input to $targetfile")
-
-          Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(absoluteInput))
-          ()
-        targetfile
+          Logging.cli.info(s"converting $input to $targetfile")
+          Async:
+            val res = converter.convert(input, ProjectPath(project, targetfile)).bind
+            if res
+            then
+              Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(absoluteInput))
+              ()
+            res
 
 class ImagePaths(project: Project):
   val html   = ConversionDispatch(project, ImageTarget.Html)

@@ -1,6 +1,6 @@
 package scitzen.cli
 
-import scitzen.contexts.ConversionContext
+import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.{Filetype, Hashes, Latexmk}
 import scitzen.generic.ProjectPath
 import scitzen.outputs.SastToTexConverter
@@ -13,14 +13,18 @@ import scala.jdk.CollectionConverters.*
 object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8
 
+  trait PdfTask(val dependencies: List[FileDependency]):
+    def run(): Unit
+
+
   def convertToPdf(
       anal: ConversionAnalysis
-  ): Unit =
+  ): List[PdfTask] =
 
     def project = anal.project
 
     anal.selected.filter(ta => ta.flags.tex || ta.header.attributes.plain("texTemplate").isDefined)
-      .asJava.parallelStream().forEach { titled =>
+      .map: titled =>
 
         val articlename = Format.canonicalName(titled.header)
 
@@ -79,15 +83,18 @@ object ConvertPdf:
             templateSettings
           )
 
-        val successfile = temptexdir.resolve("lastsuccess.sha1")
-        val scripthash  = Hashes.sha1hex(documentString)
-        if Files.exists(successfile) && Files.readString(successfile) == scripthash then ()
-        else
-          Files.writeString(temptexfile, documentString)
-          val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
-          Files.deleteIfExists(targetfile)
-          res.foreach(r => Files.createLink(targetfile, r))
-          if res.isDefined then
-            Files.writeString(successfile, scripthash)
-            ()
-      }
+        new PdfTask(resultContext.fileDependencies) {
+          override def run(): Unit =
+            val scripthash = Hashes.sha1hex(documentString)
+            val successfile = temptexdir.resolve("lastsuccess.sha1")
+            if Files.exists(successfile) && Files.readString(successfile) == scripthash then ()
+            else
+              Files.writeString(temptexfile, documentString)
+              val res = Latexmk.latexmk(temptexdir, jobname, temptexfile)
+              Files.deleteIfExists(targetfile)
+              res.foreach(r => Files.createLink(targetfile, r))
+              if res.isDefined then
+                Files.writeString(successfile, scripthash)
+                ()
+        }
+

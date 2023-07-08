@@ -1,14 +1,16 @@
 package scitzen.cli
 
+import de.rmgk.delay.Async
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.extern.Katex.KatexLibrary
-import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
+import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ImageTarget, ResourceUtil}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, TitledArticle}
-import scitzen.sast.{DCommand, Directive}
+import de.rmgk.delay.extensions.run
 
 import java.nio.file.{Files, Path}
+import java.util.concurrent.{CountDownLatch, Semaphore}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -75,30 +77,6 @@ object ConvertProject:
 
     cli.info(s"block converted ${blockConversions.mapping.size} ${timediff()}")
 
-    val imagePaths =
-      val bi = blockConversions.mapping.valuesIterator.flatten.collect:
-        case Directive(DCommand.Image, attributes) => project.resolve(project.root, attributes.target)
-
-      val di = directory.articles.iterator.flatMap: art =>
-        art.context.imageDirectives.iterator.flatMap: d =>
-          art.doc.resolve(d.attributes.target)
-
-      bi.flatten.concat(di).toList
-
-    cli.trace(s"image paths collected ${imagePaths.size} ${timediff()}")
-
-//    val imageConversions = ImageConverter.preprocessImages(
-//      project,
-//      List(
-//        Some(ImageTarget.Html),
-//        Some(ImageTarget.Tex),
-//        imageFileMap.map(_ => ImageTarget.Raster)
-//      ).flatten,
-//      imagePaths
-//    )
-
-//    cli.info(s"images converted ${imageConversions.mapping.size} ${timediff()}")
-
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
 
     cli.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
@@ -131,12 +109,38 @@ object ConvertProject:
     if project.config.format.contains("filename") then
       Format.formatRename(directory)
       cli.info(s"formatted filenames ${timediff()}")
-    ConvertHtml(anal).convertToHtml(sync)
+
+    val htmlresult = ConvertHtml(anal).convertToHtml(sync)
     cli.info(s"generated html ${timediff()}")
-    ConvertPdf.convertToPdf(anal)
-    cli.info(s"generated pdfs ${timediff()}")
+    val pdfresult = ConvertPdf.convertToPdf(anal)
+    cli.info(s"generated tex ${timediff()}")
     if imageFileMap.isDefined then
       ImageReferences.listAll(anal, imageFileMap.get)
       cli.info(s"generated imagemap ${timediff()}")
+
+    val convertees =
+      (htmlresult.iterator.map((_, ImageTarget.Html)) ++ pdfresult.iterator.flatMap(_.dependencies.iterator).map((
+        _,
+        ImageTarget.Tex
+      ))).filter: (dep, _) =>
+        dep.original != dep.file
+      .toList
+
+    val cdl       = new CountDownLatch(convertees.size)
+    val semaphore = new Semaphore(Runtime.getRuntime.availableProcessors())
+    convertees.foreach: (dep, imageTarget) =>
+      Async[Unit].resource(semaphore.acquire(), _ => { semaphore.release() }): _ =>
+        println(semaphore.availablePermits())
+        project.imagePaths.lookup(imageTarget).convert(dep.original).bind
+        val targetpath = dep.outputDirectory.absolute.resolve(dep.relativeFinalization)
+        Files.createDirectories(targetpath.getParent)
+        Files.deleteIfExists(targetpath)
+        Files.createLink(targetpath, dep.file.absolute)
+      .run(using ())(_ => cdl.countDown())
+
+    cdl.await()
+
+    pdfresult.foreach: pdftask =>
+      pdftask.run()
 
     cachedConverter.writeCache()
