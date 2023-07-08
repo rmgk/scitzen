@@ -4,13 +4,12 @@ import scitzen.parser.{AttributesParser, Parse}
 import scitzen.sast.{Attributes, Prov}
 
 class ProjectConfig(val attrs: Attributes = Attributes.empty):
-  def output       = attrs.plain("output").getOrElse("output")
+  def output       = attrs.plain("output").getOrElse("scitzen.out")
   def cache        = attrs.plain("cache")
   def format       = attrs.plain("format").getOrElse("").split(',').toList.map(_.trim)
-  def notes        = attrs.plain("notes")
   def bibliography = attrs.plain("bibliography")
   def katexMacros  = attrs.plain("katexMacros")
-  def defaultLanguage  = attrs.plain("language")
+  def defaultLanguage  = attrs.plain("language").orElse(attrs.plain("lang"))
   val flags: Flags = Flags.default.apply(attrs.plainList("flags"))
 
 

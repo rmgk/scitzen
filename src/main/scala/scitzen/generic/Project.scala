@@ -16,15 +16,17 @@ object ProjectPath:
       val plain = project.root.resolve(target).normalize()
       if target.endsWith(".") then plain.resolve(".")
       else plain
-    require(normalized.startsWith(project.root), s"»$target« is not within »$project.root«")
+    require(
+      normalized.startsWith(project.root) || normalized.startsWith(project.outputdir) || normalized.startsWith(project.cacheDir) ,
+      s"»$target« is not within »$project.root«")
     new ProjectPath(normalized)(project)
 
 case class Project private (root: Path, config: ProjectConfig):
 
-  val cacheDir: Path = config.cache match
-    case None    => root resolve config.output resolve "cache"
-    case Some(p) => root resolve p
   val outputdir: Path = root resolve config.output
+  val cacheDir: Path = config.cache match
+    case None    => outputdir resolve "cache"
+    case Some(p) => root resolve p
 
   val outputdirWeb: Path = outputdir resolve "web"
   val outputdirPdf: Path = outputdir resolve "pdfs"
