@@ -9,7 +9,7 @@ import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, 
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
 import de.rmgk.delay.extensions.run
 import scitzen.contexts.FileDependency
-import scitzen.images.ImageTarget
+import scitzen.resources.ImageTarget
 
 import java.nio.file.{FileAlreadyExistsException, Files, Path}
 import java.util.concurrent.{ConcurrentHashMap, CountDownLatch, Semaphore}

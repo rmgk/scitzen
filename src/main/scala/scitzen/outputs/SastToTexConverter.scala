@@ -8,7 +8,7 @@ import scitzen.sast.DCommand.*
 import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.compat.Logging.cli
-import scitzen.images.ImageTarget
+import scitzen.resources.ImageTarget
 import scitzen.sast.Attribute.Named
 
 object SastToTexConverter {

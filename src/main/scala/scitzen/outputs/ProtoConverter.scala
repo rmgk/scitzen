@@ -6,7 +6,7 @@ import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.generic.{Article, ArticleRef, ProjectPath, TitledArticle}
-import scitzen.images.ImageTarget
+import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
 

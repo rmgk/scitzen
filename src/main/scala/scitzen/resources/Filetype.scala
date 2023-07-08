@@ -1,4 +1,4 @@
-package scitzen.images
+package scitzen.resources
 
 import java.nio.file.Path
 

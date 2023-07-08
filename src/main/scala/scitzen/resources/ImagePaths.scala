@@ -1,4 +1,4 @@
-package scitzen.images
+package scitzen.resources
 
 import scitzen.generic.{Project, ProjectPath}
 import scitzen.sast.Section

@@ -1,4 +1,4 @@
-package scitzen.images
+package scitzen.resources
 
 import de.rmgk.delay.*
 import de.rmgk.script.*
