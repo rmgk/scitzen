@@ -95,7 +95,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         else
           anal.project.imagePaths.lookup(imageTarget).predictTarget(path) match
             case None =>
-              cli.warn(s"cannot convert to ${imageTarget.preferredFormat} (or ${imageTarget.alternative.mkString(", ")})", directive)
+              cli.warn(s"cannot convert to ${imageTarget.choices}", directive)
               ctx.retc(stringToInlineRes(directiveString(directive)))
             case Some(target) =>
               val dep = FileDependency(target, path, project.imagePaths.relativizeImage(target), outputDirectory)

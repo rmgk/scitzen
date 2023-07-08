@@ -3,7 +3,7 @@ package scitzen.resources
 import java.nio.file.Path
 
 object Filetype:
-  val all: List[Filetype]           = List(svg, png, pdf, webp, jpg)
+  val all: Set[Filetype]           = Set(svg, png, pdf, webp, jpg, mp4, gif)
   val lookup: Map[String, Filetype] = all.flatMap(ft => (ft.extension, ft) +: ft.aliases.map(al => (al, ft))).toMap
 
   def nameWithoutExtension(p: Path): String =
@@ -27,3 +27,5 @@ enum Filetype(val extension: String, val aliases: String*):
   case pdf  extends Filetype("pdf")
   case webp extends Filetype("webp")
   case jpg  extends Filetype("jpg", "jpeg")
+  case mp4  extends Filetype("mp4")
+  case gif  extends Filetype("gif")

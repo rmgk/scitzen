@@ -1,16 +1,15 @@
 package scitzen.resources
 
 import scitzen.generic.ProjectPath
+import Filetype.*
 
 enum ImageTarget(
     val name: String,
-    val preferredFormat: String,
-    val alternative: List[String],
-    val unsupportedFormat: List[String]
+    val choices: List[Filetype],
+    val unsupportedFormat: Set[Filetype]
 ):
   def requiresConversion(filename: ProjectPath): Boolean =
-    unsupportedFormat.exists(fmt => filename.absolute.toString.endsWith(fmt))
-  def choices: List[Filetype] = (preferredFormat :: alternative).flatMap(Filetype.lookup.get)
-  case Html   extends ImageTarget("html target", "svg", Nil, List("pdf", "tex"))
-  case Tex    extends ImageTarget("tex target", "pdf", List("jpg"), List("svg", "tex", "webp"))
-  case Raster extends ImageTarget("raster target", "png", Nil, List("svg", "pdf", "tex"))
+    unsupportedFormat.exists(fmt => filename.absolute.toString.endsWith(s".${fmt.extension}"))
+  case Html   extends ImageTarget("html target", List(svg), Set(pdf))
+  case Tex    extends ImageTarget("tex target", List(pdf, jpg), Filetype.all -- List(png, pdf, jpg))
+  case Raster extends ImageTarget("raster target", List(png), Filetype.all -- List(png, jpg))
