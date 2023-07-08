@@ -63,7 +63,7 @@ class ConvertHtml(anal: ConversionAnalysis):
       sync: Option[ClSync],
   ): ConversionContext[?] =
 
-    val targetPath = project.htmlPaths.articleOutputPath(titled.header)
+    val targetPath = project.imagePaths.articleOutputPath(titled.header)
 
     val converter = new SastToHtmlConverter(
       articleRef = titled.article.ref,

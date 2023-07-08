@@ -41,7 +41,6 @@ case class Project private (root: Path, config: ProjectConfig):
 
   // be careful about initialization below, the followng two do leak the (partially uninitialized) this reference
 
-  val htmlPaths: HtmlPathManager = HtmlPathManager(this)
   val imagePaths = ImagePaths(this)
 
   def cachePath(target: Path): ProjectPath     = ProjectPath(this, cacheDir.resolve(target))

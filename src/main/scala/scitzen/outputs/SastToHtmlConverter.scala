@@ -220,7 +220,7 @@ class SastToHtmlConverter(
       case Script =>
         doc.resolve(attrs.target) match
           case Some(path) =>
-            val rel = project.htmlPaths.relativizeImage(path)
+            val rel = project.imagePaths.relativizeImage(path)
             ctx.retc(Sag.script(`type` = "text/javascript", src = rel.toString))
               .requireInOutput(FileDependency(path, path, rel, outputDirectory))
           case None =>
@@ -300,7 +300,7 @@ class SastToHtmlConverter(
       val fileRef =
         if anal.directory.includedInFixpoint.getOrElse(targetDocument.articleRef, Set.empty).contains(articleRef)
         then ""
-        else project.htmlPaths.relativeArticleTarget(titled.header).toString
+        else project.imagePaths.relativeArticleTarget(titled.header).toString
 
       val resctx = targetDocument.sast match
         case sec @ Section(title, _, _) =>

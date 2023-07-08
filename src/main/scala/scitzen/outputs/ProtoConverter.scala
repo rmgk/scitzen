@@ -90,7 +90,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       case Some(path) if Files.exists(path.absolute) =>
         if !imageTarget.requiresConversion(path)
         then
-          val dep = FileDependency(path, path, project.htmlPaths.relativizeImage(path), outputDirectory)
+          val dep = FileDependency(path, path, project.imagePaths.relativizeImage(path), outputDirectory)
           cont(ctx.ret(dep).requireInOutput(dep))
         else
           anal.project.imagePaths.lookup(imageTarget).predictTarget(path) match
@@ -98,7 +98,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
               cli.warn(s"cannot convert to ${imageTarget.preferredFormat} (or ${imageTarget.alternative.mkString(", ")})", directive)
               ctx.retc(stringToInlineRes(directiveString(directive)))
             case Some(target) =>
-              val dep = FileDependency(target, path, project.htmlPaths.relativizeImage(target), outputDirectory)
+              val dep = FileDependency(target, path, project.imagePaths.relativizeImage(target), outputDirectory)
               cont(ctx.ret(dep).requireInOutput(dep))
       case other =>
         cli.warn(s"could not find path", directive)
