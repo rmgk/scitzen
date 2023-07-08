@@ -145,6 +145,7 @@ object ConvertProject:
             then project.imagePaths.lookup(imageTarget).convert(dep.original)
             else Async(())
           val targetpath = dep.outputDirectory.absolute.resolve(dep.relativeFinalization)
+          require(targetpath != dep.file.absolute && targetpath != dep.original, "tried to overwrite file with itself")
           Files.createDirectories(targetpath.getParent)
           Files.deleteIfExists(targetpath)
           try Files.createLink(targetpath, dep.file.absolute)
