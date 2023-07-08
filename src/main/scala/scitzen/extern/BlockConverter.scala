@@ -75,11 +75,11 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
   def convertScalaCli(text: String, block: Block) =
     val start      = System.nanoTime()
     val hash       = Hashes.sha1hex(text)
-    val sourcepath = project.cachePath(Path.of("scala-cli").resolve(hash + ".scala"))
-    Files.createDirectories(sourcepath.directory)
-    Files.writeString(sourcepath.absolute, text)
-    val outpath   = sourcepath.directory resolve s"$hash.js"
-    val errorFile = sourcepath.directory resolve s"log-$hash.txt"
+    val sourcepath = project.cachePath(Path.of("scala-cli").resolve(hash + ".scala")).absolute
+    Files.createDirectories(sourcepath.getParent)
+    Files.writeString(sourcepath, text)
+    val outpath   = sourcepath resolveSibling  s"$hash.js"
+    val errorFile = sourcepath resolveSibling  s"log-$hash.txt"
     val returnCode =
       new ProcessBuilder(
         "scala-cli",
@@ -88,8 +88,8 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         "--force",
         "--output",
         outpath.toString,
-        sourcepath.absolute.toString,
-      ).directory(sourcepath.directory.toFile)
+        sourcepath.toString,
+      ).directory(sourcepath.getParent.toFile)
         .redirectOutput(errorFile.toFile)
         .redirectError(errorFile.toFile)
         .start().waitFor()
@@ -120,7 +120,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       if Files.exists(target.absolute)
       then Some(target.absolute)
       else
-        val dir = target.directory
+        val dir = target.absolute.getParent
         Files.createDirectories(dir)
         val texfile = dir.resolve(contentHash + ".tex")
         Files.write(texfile, texbytes)
@@ -145,7 +145,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     val format = "pdf"
     val target = project.cachePath(Path.of(s"$name/$name.$format"))
     if !Files.exists(target.absolute) then
-      Files.createDirectories(target.directory)
+      Files.createDirectories(target.absolute.getParent)
 
       val layoutEngine =
         val lay = attributes.target.trim
@@ -173,7 +173,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     if !Files.exists(target.absolute) then
       val start = System.nanoTime()
 
-      Files.createDirectories(mermaidSource.directory)
+      Files.createDirectories(mermaidSource.absolute.getParent)
       Files.write(mermaidSource.absolute, bytes)
 
       new ProcessBuilder(

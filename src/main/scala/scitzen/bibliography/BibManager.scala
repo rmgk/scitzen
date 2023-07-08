@@ -40,7 +40,7 @@ class BibManager(project: Project) {
     val dblp         = missing.filter(_.startsWith("DBLP:"))
     if dblp.nonEmpty then
       Logging.cli.info(s"scheduling download of ${dblp.size} missing citations")
-      Files.createDirectories(dblpcachePath.directory)
+      Files.createDirectories(dblpcachePath.absolute.getParent)
       dblp.foreach: key =>
         DBLP.lookup(key.stripPrefix("DBLP:")).foreach: res =>
           Files.writeString(

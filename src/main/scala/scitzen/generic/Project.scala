@@ -4,21 +4,15 @@ import scitzen.compat.Logging.cli
 
 import java.nio.file.{Files, Path}
 
-/* Note, currently guaranteed to point to either a file, or nothing */
 case class ProjectPath private (absolute: Path)(project: Project):
   private def relativeToProject     = project.root.relativize(absolute)
-  def directory: Path       = absolute.getParent
   def projectAbsolute: Path = Path.of("/").resolve(relativeToProject)
-  def resolve(p: String): Option[ProjectPath] = project.resolve(directory, p)
+  def resolve(p: String): Option[ProjectPath] = project.resolve(absolute.getParent, p)
 
 object ProjectPath:
   def apply(project: Project, target: Path) =
     val normalized = project.root.resolve(target).normalize()
     require(normalized.startsWith(project.root), s"»$target« is not within »$project.root«")
-    require(
-      Files.isRegularFile(normalized) || Files.notExists(normalized),
-      s"only regular files may be documents: $normalized"
-    )
     new ProjectPath(normalized)(project)
 
 case class Project private (root: Path, config: ProjectConfig):
