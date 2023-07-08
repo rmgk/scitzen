@@ -24,8 +24,6 @@ object Filetype:
   val all: List[Filetype]           = List(svg, png, pdf, webp, jpg)
   val lookup: Map[String, Filetype] = all.flatMap(ft => (ft.extension, ft) +: ft.aliases.map(al => (al, ft))).toMap
 
-  println(lookup)
-
   def nameWithoutExtension(p: Path): String =
     val filename = p.getFileName.toString
     val ext      = filename.lastIndexOf('.')
