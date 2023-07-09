@@ -32,7 +32,7 @@ class SastToTexConverter(
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
     settings: Attributes,
-  outputDirectory: ProjectPath,
+    outputDirectory: ProjectPath,
     flags: Flags,
 ) extends ProtoConverter[String, String](articleRef, anal, settings, outputDirectory):
 
@@ -113,6 +113,8 @@ class SastToTexConverter(
     directive.command match
       case Include            => handleInclude(ctx, directive)
       case Other("aggregate") => handleAggregate(ctx, directive)
+      case Image =>
+        "\\noindent" +: convertInlineDirective(ctx, directive)
 
       case other =>
         convertInlineDirective(ctx, directive).mapc(inlineResToBlock)
@@ -132,11 +134,11 @@ class SastToTexConverter(
           val cctx = convertInlinesCombined(ctx, content.inl)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
-          if !flags.hardwrap then cctx.single :+ ""
+          if !flags.hardwrap then cctx.map(c => Chain("", c, ""))
           else
             cctx.map { text =>
               val latexenc = text.trim.replace("\n", "\\newline{}\n")
-              Chain("\\noindent", latexenc, "\n")
+              Chain("\n\\noindent", latexenc, "")
             }
 
         case Parsed(_, blockContent) =>
@@ -215,7 +217,7 @@ class SastToTexConverter(
         else
           ctx.retc(s"$$${attributes.target}$$")
       case Other("break") => ctx.retc(s"\\clearpage{}")
-      case Other("rule") => convertBlockDirective(
+      case Other("rule") => convertInlineDirective(
           ctx,
           Directive(
             Ref,
