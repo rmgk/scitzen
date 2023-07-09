@@ -18,18 +18,17 @@ import java.nio.charset.StandardCharsets
 import scala.annotation.unused
 
 class SastToHtmlConverter(
-    articleRef: ArticleRef,
+    articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
     outputDirectory: ProjectPath,
-    includes: Set[ArticleRef]
 ) extends ProtoConverter[Recipe, Recipe](articleRef, anal, settings, outputDirectory):
 
   override def subconverter(
-      articleRef: ArticleRef,
+      aref: ArticleRef,
       attr: Attributes
   ): ProtoConverter[Recipe, Recipe] =
-    new SastToHtmlConverter(articleRef, anal, attr, outputDirectory, includes)
+    new SastToHtmlConverter(::(aref, articleRef), anal, attr, outputDirectory)
 
   override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Recipe(inl.foreach(_.run))
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
@@ -294,6 +293,8 @@ class SastToHtmlConverter(
         reporter(directive.prov)
       )
       cli.warn(s"\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}")
+
+    val includes = anal.directory.includesFix(articleRef.last)
 
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
       val nameOpt   = attrs.textOption

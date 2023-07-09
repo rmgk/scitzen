@@ -29,7 +29,7 @@ object SastToTexConverter {
 }
 
 class SastToTexConverter(
-    articleRef: ArticleRef,
+    articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
     outputDirectory: ProjectPath,
@@ -41,10 +41,10 @@ class SastToTexConverter(
   type Cta    = Ctx[?]
 
   override def subconverter(
-      articleRef: ArticleRef,
+      aref: ArticleRef,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTexConverter(articleRef, anal, attr, outputDirectory, flags)
+    new SastToTexConverter(::(aref, articleRef), anal, attr, outputDirectory, flags)
 
   override def stringToInlineRes(str: String): String = latexencode(str)
 

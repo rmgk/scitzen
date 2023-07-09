@@ -38,7 +38,7 @@ object ConvertPdf:
         val temptexfile = temptexdir.resolve(jobname + ".tex")
 
         val converter = new SastToTexConverter(
-          titled.article.ref,
+          ::(titled.article.ref, Nil),
           anal,
           Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
           ProjectPath(project, temptexdir),

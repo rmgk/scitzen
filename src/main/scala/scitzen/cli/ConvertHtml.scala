@@ -66,11 +66,10 @@ class ConvertHtml(anal: ConversionAnalysis):
     val targetPath = project.imagePaths.articleOutputPath(titled.header)
 
     val converter = new SastToHtmlConverter(
-      articleRef = titled.article.ref,
+      articleRef = ::(titled.article.ref, Nil),
       anal = anal,
       Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
-      ProjectPath(project, targetPath.getParent),
-      anal.directory.includesFix(titled.article.ref)
+      ProjectPath(project, targetPath.getParent)
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 

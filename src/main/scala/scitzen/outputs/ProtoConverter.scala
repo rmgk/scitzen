@@ -13,13 +13,13 @@ import scitzen.sast.Attribute.Named
 import java.nio.file.Files
 
 abstract class ProtoConverter[BlockRes, InlineRes](
-    articleRef: ArticleRef,
+    articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
     outputDirectory: ProjectPath,
 ):
 
-  def doc      = articleRef.document
+  def doc      = articleRef.head.document
   val project  = anal.project
   val reporter = doc.reporter
 
@@ -31,7 +31,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   val videoEndings = List(".mp4", ".mkv", ".webm")
 
   def subconverter(
-      articleRef: ArticleRef,
+      aref: ArticleRef,
       attr: Attributes
   ): ProtoConverter[BlockRes, InlineRes]
 
@@ -125,7 +125,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         it2.filter: titled =>
           tags.exists(titled.header.tags.contains)
       else it2
-    it3.filter(_.article.ref != articleRef)
+    val includes = anal.directory.includesFix(articleRef.last)
+    it3.filter(v => !includes(v.article.ref))
 
   def handleAggregate(ctx: Cta, directive: Directive): ConversionContext[Chain[BlockRes]] = {
     val it = handleArticleQuery(directive)

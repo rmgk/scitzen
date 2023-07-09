@@ -7,17 +7,17 @@ import scitzen.sast.DCommand.{Include, Lookup}
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 
 class SastToTextConverter(
-    articleRef: ArticleRef,
+    articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
   outputDirectory: ProjectPath,
 ) extends ProtoConverter[String, String](articleRef, anal, settings, outputDirectory):
 
   override def subconverter(
-      articleRef: ArticleRef,
+      aref: ArticleRef,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    SastToTextConverter(articleRef, anal, attr, outputDirectory)
+    SastToTextConverter(::(aref, articleRef), anal, attr, outputDirectory)
 
   override def convertBlock(ctx: Cta, block: Block): CtxCF =
     val Block(command, attr, blockType) = block

@@ -22,7 +22,7 @@ object ConvertTemplate:
       case Some(templateFile) =>
         val templateArticle = directory.byPath(templateFile).head
         val documentString = SastToTextConverter(
-          templateArticle.ref,
+          ::(templateArticle.ref, Nil),
           ConversionAnalysis(
             project,
             Nil,
