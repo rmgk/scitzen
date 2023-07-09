@@ -4,15 +4,15 @@ import de.rmgk.Chain
 import de.rmgk.delay.Sync
 import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
-import scitzen.compat.Logging.cli
+import scitzen.compat.Logging.{cli}
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.generic.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 import scitzen.resources.ImageTarget
+import scitzen.sast.*
 import scitzen.sast.Attribute.Named
 import scitzen.sast.DCommand.*
-import scitzen.sast.*
 
 import java.nio.charset.StandardCharsets
 import scala.annotation.unused
@@ -295,12 +295,21 @@ class SastToHtmlConverter(
       cli.warn(s"\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}")
 
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
-      val nameOpt = attrs.textOption
-      val titled  = anal.directory.byRef(targetDocument.articleRef)
+      val nameOpt   = attrs.textOption
+      val titledOpt = anal.directory.byRef.get(targetDocument.articleRef)
       val fileRef =
         if anal.directory.includedInFixpoint.getOrElse(targetDocument.articleRef, Set.empty).contains(articleRef)
         then ""
-        else project.imagePaths.relativeArticleTarget(titled.header).toString
+        else
+          titledOpt match
+            case Some(titled) =>
+              project.imagePaths.relativeArticleTarget(titled.header).toString
+            case None =>
+              cli.warn(s"ambiguous reference to snippet, assuming included", directive)
+//              println(anal.directory.includedIn.get(targetDocument.articleRef).map(_.map(_.document.path)))
+//              println(anal.directory.includedInFixpoint.get(targetDocument.articleRef).map(_.map(_.document.path)))
+//              println(articleRef.document.path)
+              ""
 
       val resctx = targetDocument.sast match
         case sec @ Section(title, _, _) =>
@@ -333,7 +342,7 @@ class SastToHtmlConverter(
           cli.warn(s"can not refer to $other")
           ctx.empty
       if fileRef.nonEmpty
-      then resctx.reference(titled.article.ref)
+      then resctx.reference(titledOpt.get.article.ref)
       else resctx
     }.getOrElse {
       cli.warn(s"no ref resolutions", directive)

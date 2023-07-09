@@ -9,17 +9,17 @@ case class SastRef(sast: Sast, articleRef: ArticleRef):
   def scope = articleRef.document.path
 
 object References:
-
-//  def containingDocument(articleRef: ArticleRef, directory: ArticleDirectory) =
-//    val titled: List[TitledArticle] = directory.byRef(articleRef).article.context.includes.flatMap: inc =>
-//      References.resolve(inc, doc, anal.directory).map: ref =>
-//        anal.directory.byRef(ref.articleRef)
-//    titled.map(_.article.ref).contains(targetDocument.articleRef)
-
   def resolve(directive: Directive, document: Document, directory: ArticleDirectory): Seq[SastRef] =
     val scope =
       directive.attributes.plain("scope").flatMap(document.resolve).getOrElse(document.path)
-    References.filterCandidates(scope, directory.labels.getOrElse(directive.attributes.target, Nil))
+    val candidates =
+      val target = directive.attributes.target
+      val byPath = document.resolve(target).flatMap(directory.byPath.get).flatMap(_.headOption).map: (art: Article) =>
+        SastRef(art.sast.head, art.ref)
+      .toList
+      val byLabel = directory.labels.getOrElse(directive.attributes.target, Nil)
+      byPath ++ byLabel
+    References.filterCandidates(scope, candidates)
 
   def filterCandidates(scope: ProjectPath, candidates: Seq[SastRef]): Seq[SastRef] =
     candidates match
