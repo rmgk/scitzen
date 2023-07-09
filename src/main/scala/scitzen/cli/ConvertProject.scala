@@ -119,14 +119,16 @@ object ConvertProject:
     cli.info(s"generated html ${timediff()}")
     val pdfresult = ConvertPdf.convertToPdf(anal).toArray
     cli.info(s"generated tex ${timediff()}")
-    if imageFileMap.isDefined then
-      ImageReferences.listAll(anal, imageFileMap.get)
-      cli.info(s"generated imagemap ${timediff()}")
+    val ifmres =
+      if imageFileMap.isEmpty
+      then Nil
+      else ImageReferences.listAll(anal, imageFileMap.get)
 
     val convertees: Array[(FileDependency, ImageTarget)] =
       val htmldeps = htmlresult.iterator.zip(continually(ImageTarget.Tex))
       val pdfdeps  = pdfresult.iterator.flatMap(_.dependencies).zip(continually(ImageTarget.Tex))
-      (htmldeps ++ pdfdeps).toArray
+      val ifmdeps = ifmres.iterator.zip(continually(ImageTarget.Raster))
+      (htmldeps ++ pdfdeps ++ ifmdeps).toArray
 
     val okParallelism = math.max(Runtime.getRuntime.availableProcessors(), 4)
 
