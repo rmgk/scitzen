@@ -35,11 +35,12 @@ class ArticleDirectory(project: Project, val articles: Seq[Article]):
 
   val byLabel: Map[String, TitledArticle]               = titled.iterator.map(t => Tuple2(t.header.autolabel, t)).toMap
   val byRef: Map[ArticleRef, TitledArticle]             = titled.iterator.map(a => Tuple2(a.article.ref, a)).toMap
-  val snippetByRef: Map[ArticleRef, Article] = articles.iterator.map(art => Tuple2(art.ref, art)).toMap
+  val snippetByRef: Map[ArticleRef, Article]            = articles.iterator.map(art => Tuple2(art.ref, art)).toMap
   def findByLabel(label: String): Option[TitledArticle] = byLabel.get(label)
 
   lazy val includes: Map[ArticleRef, Set[ArticleRef]] =
     articles.flatMap: article =>
+      (article.ref, article.ref) +:
       article.context.includes.flatMap: directive =>
         References.resolve(directive, article.doc, this).map: target =>
           (article.ref, target.articleRef)

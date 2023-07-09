@@ -299,7 +299,7 @@ class SastToHtmlConverter(
       val nameOpt   = attrs.textOption
       val titledOpt = anal.directory.byRef.get(targetDocument.articleRef)
       val fileRef =
-        if includes.contains(articleRef)
+        if includes.contains(targetDocument.articleRef)
         then ""
         else
           titledOpt match
