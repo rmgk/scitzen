@@ -127,7 +127,7 @@ object ConvertProject:
     val convertees: Array[(FileDependency, ImageTarget)] =
       val htmldeps = htmlresult.iterator.zip(continually(ImageTarget.Tex))
       val pdfdeps  = pdfresult.iterator.flatMap(_.dependencies).zip(continually(ImageTarget.Tex))
-      val ifmdeps = ifmres.iterator.zip(continually(ImageTarget.Raster))
+      val ifmdeps  = ifmres.iterator.zip(continually(ImageTarget.Raster))
       (htmldeps ++ pdfdeps ++ ifmdeps).toArray
 
     val okParallelism = math.max(Runtime.getRuntime.availableProcessors(), 4)
@@ -148,11 +148,14 @@ object ConvertProject:
             then project.imagePaths.lookup(imageTarget).convert(dep.original)
             else Async(())
           val targetpath = dep.outputDirectory.absolute.resolve(dep.relativeFinalization)
-          require(targetpath != dep.file.absolute && targetpath != dep.original, "tried to overwrite file with itself")
-          Files.createDirectories(targetpath.getParent)
-          Files.deleteIfExists(targetpath)
-          try Files.createLink(targetpath, dep.file.absolute)
-          catch case f: FileAlreadyExistsException => () // concurrency issue, ignore
+          require(targetpath != dep.original.absolute, "tried to overwrite file with itself")
+          if targetpath != dep.file.absolute
+          then
+            Files.createDirectories(targetpath.getParent)
+            Files.deleteIfExists(targetpath)
+            try Files.createLink(targetpath, dep.file.absolute)
+            catch case f: FileAlreadyExistsException => () // concurrency issue, ignore
+            ()
         .run(using ())(_ => cdl.countDown())
       cdl.await()
       cli.info(s"converted ${convertees.size} images ${timediff()}")
