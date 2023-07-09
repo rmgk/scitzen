@@ -125,7 +125,7 @@ object ConvertProject:
       else ImageReferences.listAll(anal, imageFileMap.get)
 
     val convertees: Array[(FileDependency, ImageTarget)] =
-      val htmldeps = htmlresult.iterator.zip(continually(ImageTarget.Tex))
+      val htmldeps = htmlresult.iterator.zip(continually(ImageTarget.Html))
       val pdfdeps  = pdfresult.iterator.flatMap(_.dependencies).zip(continually(ImageTarget.Tex))
       val ifmdeps  = ifmres.iterator.zip(continually(ImageTarget.Raster))
       (htmldeps ++ pdfdeps ++ ifmdeps).toArray

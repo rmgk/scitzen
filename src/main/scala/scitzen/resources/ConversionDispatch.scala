@@ -47,7 +47,7 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
     val absoluteInput = input.absolute
     converterFor(input) match
       case None =>
-        Logging.cli.warn(s"unknown file ending", absoluteInput)
+        Logging.cli.warn(s"no converter to ${imageTarget.choices} from ", absoluteInput)
         Async(false)
       case Some(converter) =>
         val targetfile = predictTargetOf(input, converter.produces).absolute

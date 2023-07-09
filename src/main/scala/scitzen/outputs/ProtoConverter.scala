@@ -9,7 +9,6 @@ import scitzen.generic.{Article, ArticleRef, ProjectPath, TitledArticle}
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
-import scitzen.sast.BCommand.Other
 
 import java.nio.file.Files
 
