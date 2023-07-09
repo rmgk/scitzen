@@ -9,6 +9,7 @@ import scitzen.generic.{Article, ArticleRef, ProjectPath, TitledArticle}
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
+import scitzen.sast.BCommand.Other
 
 import java.nio.file.Files
 
@@ -85,7 +86,11 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertInlineText(ctx: Cta, inlineText: InlineText): CtxInl
   def convertInlineDirective(ctx: Cta, directive: Directive): CtxInl
 
-  def convertImage(ctx: Cta, directive: Directive, imageTarget: ImageTarget)(cont: Ctx[FileDependency] => CtxInl): CtxInl =
+  def convertImage(
+      ctx: Cta,
+      directive: Directive,
+      imageTarget: ImageTarget
+  )(cont: Ctx[FileDependency] => CtxInl): CtxInl =
     doc.resolve(directive.attributes.target) match
       case Some(path) if Files.exists(path.absolute) =>
         if !imageTarget.requiresConversion(path)
