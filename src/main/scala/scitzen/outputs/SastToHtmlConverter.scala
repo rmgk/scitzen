@@ -21,14 +21,15 @@ class SastToHtmlConverter(
     articleRef: ArticleRef,
     anal: ConversionAnalysis,
     settings: Attributes,
-    outputDirectory: ProjectPath
+    outputDirectory: ProjectPath,
+    includes: Set[ArticleRef]
 ) extends ProtoConverter[Recipe, Recipe](articleRef, anal, settings, outputDirectory):
 
   override def subconverter(
       articleRef: ArticleRef,
       attr: Attributes
   ): ProtoConverter[Recipe, Recipe] =
-    new SastToHtmlConverter(articleRef, anal, attr, outputDirectory)
+    new SastToHtmlConverter(articleRef, anal, attr, outputDirectory, includes)
 
   override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Recipe(inl.foreach(_.run))
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
@@ -298,17 +299,14 @@ class SastToHtmlConverter(
       val nameOpt   = attrs.textOption
       val titledOpt = anal.directory.byRef.get(targetDocument.articleRef)
       val fileRef =
-        if anal.directory.includedInFixpoint.getOrElse(targetDocument.articleRef, Set.empty).contains(articleRef)
+        if includes.contains(articleRef)
         then ""
         else
           titledOpt match
             case Some(titled) =>
               project.imagePaths.relativeArticleTarget(titled.header).toString
             case None =>
-              cli.warn(s"ambiguous reference to snippet, assuming included", directive)
-//              println(anal.directory.includedIn.get(targetDocument.articleRef).map(_.map(_.document.path)))
-//              println(anal.directory.includedInFixpoint.get(targetDocument.articleRef).map(_.map(_.document.path)))
-//              println(articleRef.document.path)
+              cli.warn(s"invalid reference to non-included snippet", directive)
               ""
 
       val resctx = targetDocument.sast match

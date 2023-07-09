@@ -69,7 +69,8 @@ class ConvertHtml(anal: ConversionAnalysis):
       articleRef = titled.article.ref,
       anal = anal,
       Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
-      ProjectPath(project, targetPath.getParent)
+      ProjectPath(project, targetPath.getParent),
+      anal.directory.includesFix(titled.article.ref)
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 

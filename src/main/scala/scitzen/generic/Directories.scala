@@ -38,14 +38,14 @@ class ArticleDirectory(project: Project, val articles: Seq[Article]):
   val snippetByRef: Map[ArticleRef, Article] = articles.iterator.map(art => Tuple2(art.ref, art)).toMap
   def findByLabel(label: String): Option[TitledArticle] = byLabel.get(label)
 
-  lazy val includedIn: Map[ArticleRef, Set[ArticleRef]] =
+  lazy val includes: Map[ArticleRef, Set[ArticleRef]] =
     articles.flatMap: article =>
       article.context.includes.flatMap: directive =>
         References.resolve(directive, article.doc, this).map: target =>
-          (target.articleRef, article.ref)
+          (article.ref, target.articleRef)
     .groupBy(_._1).view.mapValues(_.iterator.map(_._2).toSet).toMap
 
-  lazy val includedInFixpoint: Map[ArticleRef, Set[ArticleRef]] =
+  lazy val includesFix: Map[ArticleRef, Set[ArticleRef]] =
     @tailrec
     def fixpointStep(current: Map[ArticleRef, Set[ArticleRef]]): Map[ArticleRef, Set[ArticleRef]] =
       val next = current.view.mapValues: includes =>
@@ -55,7 +55,7 @@ class ArticleDirectory(project: Project, val articles: Seq[Article]):
       if combined == current then current
       else fixpointStep(combined)
     val start = System.nanoTime()
-    val res   = fixpointStep(includedIn)
+    val res   = fixpointStep(includes)
     Logging.cli.trace(s"fix took ${(System.nanoTime() - start) / 1000000}ms")
     res
 
