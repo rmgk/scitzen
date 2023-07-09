@@ -29,7 +29,7 @@ object Dependencies {
     val scribe        = "3.10.7"
     val sqliteJdbc    = "3.42.0.0"
     val sourcecode    = "0.3.0"
-    val upickle       = "3.1.0"
+    val upickle       = "3.1.2"
   }
 
   import Dependencies.Versions as V
