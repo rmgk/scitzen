@@ -39,8 +39,6 @@ jobs:
         with:
           apps: sbt
       - name: generate native image
-        shell: bash
-        working-directory: ./
         run: |
           sbt writeClasspath
           native-image @target/classpath.txt scitzen.cli.ScitzenCommandline
