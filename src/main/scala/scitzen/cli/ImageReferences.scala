@@ -14,14 +14,12 @@ object ImageReferences:
     val fileImageMap: Map[String, List[Reference]] = anal.directory.articles.map { art =>
 
       val images = art.context.imageDirectives.flatMap { directive =>
-
-        val path = anal.project.imagePaths.raster.predictTarget(art.doc.resolve(directive.attributes.target).get).get
-        // val (line, column) = fd.parsed.reporter.indexToPosition(mcro.attributes.prov.start)
-        Some(Reference(
-          path.absolute.toString,
-          art.doc.reporter.bytePosToCodepointPos(directive.prov.start),
-          art.doc.reporter.bytePosToCodepointPos(directive.prov.end)
-        ))
+        anal.project.imagePaths.raster.predictTarget(art.doc.resolve(directive.attributes.target).get).map: path =>
+          Reference(
+            path.absolute.toString,
+            art.doc.reporter.bytePosToCodepointPos(directive.prov.start),
+            art.doc.reporter.bytePosToCodepointPos(directive.prov.end)
+          )
       }
       art.doc.path.absolute.toString -> images
     }.filter(_._2.nonEmpty).toMap
