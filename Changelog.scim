@@ -1,3 +1,10 @@
+== v.next
+
+• Use positive class names for customizable things that differ from the HTML default:
+	the logic before was, that the default should not add a class, to reduce the html size a bit. However, thinking about it, all the negations seem like a terrible idea (:not(no-justify), really? wtf?). So instead let’s make configurable style choices add class names when they differ from the HTML default display.
+
+	I also changed the default to be hardwraps. I think this is in big parts due to me changing my writing style to just write paragraphs in a single line. But more than that, I feel that for less formal texts, a newline within a paragraph is actually a perfectly fine style element and should be preserved as such. For more formal writing, such as with papers, is also less annoying to have to change a setting. I think this also has become the default for Github Markdown (at least in comments) for exactly the same reasoning – it just makes more sense in comments an such.
+
 == v1.1
 2021-12-07
 
