@@ -59,7 +59,7 @@ case class Project private (root: Path, config: ProjectConfig):
   def resolve(currentWorkingDirectory: Path, pathString: Path): Option[ProjectPath] =
     val res = resolveUnchecked(currentWorkingDirectory, pathString)
     Some(res).filter(p => p.startsWith(root) && (Files.isRegularFile(p) || Files.notExists(p))).map { p =>
-      ProjectPath(this, root.relativize(p))
+      ProjectPath(this, p)
     }
   def resolve(currentWorkingDirectory: Path, pathString: String): Option[ProjectPath] =
     resolve(currentWorkingDirectory, Path.of(pathString))

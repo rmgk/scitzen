@@ -5,7 +5,7 @@ import de.rmgk.logging.Loggable
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
-import scitzen.generic.{Article, ArticleRef, ProjectPath, TitledArticle}
+import scitzen.generic.{ArticleRef, ProjectPath, References, TitledArticle}
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
@@ -160,10 +160,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
             convertSast(ctx, Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov))
 
       case other =>
-        val resolution: Seq[Article] = if attributes.target.endsWith(".scim") then
-          doc.resolve(attributes.target).flatMap(anal.directory.byPath.get).getOrElse(Nil)
-        else
-          anal.directory.findByLabel(attributes.target).map(_.article).toList
+        val resolution = References.resolve(directive, document = doc, directory = anal.directory).map: sr =>
+          anal.directory.snippetByRef(sr.articleRef)
         if resolution.nonEmpty
         then
           (ctx.fold(resolution): (ctx, article) =>
