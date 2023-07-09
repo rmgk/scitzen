@@ -65,7 +65,7 @@ case class Project private (root: Path, config: ProjectConfig):
     resolve(currentWorkingDirectory, Path.of(pathString))
 
 object Project:
-  val scitzenconfig: String = "scitzen.config"
+  val scitzenconfig: String = "scitzen.project"
 
   def apply(root: Path, config: ProjectConfig) =
     val absolutelyNormal = root.toAbsolutePath.normalize()
