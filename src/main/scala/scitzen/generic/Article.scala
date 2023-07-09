@@ -48,7 +48,7 @@ object Flags:
     Flags(
       html = true,
       tex = false,
-      hardwrap = false,
+      hardwrap = true,
       justify = true,
       `section numbers` = true,
       hidden = false,

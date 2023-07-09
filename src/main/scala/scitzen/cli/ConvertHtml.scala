@@ -107,7 +107,7 @@ class ConvertHtml(anal: ConversionAnalysis):
 
         val mainClass =
           val hardwrap = Option.when(titled.flags.hardwrap)("hardwrap")
-          val noJustify = Option.when(!titled.flags.justify)("no-justify")
+          val noJustify = Option.when(titled.flags.justify)("justify")
           val parts = List(hardwrap, noJustify).flatten
           Option.when(parts.nonEmpty):
             parts.mkString(" ")

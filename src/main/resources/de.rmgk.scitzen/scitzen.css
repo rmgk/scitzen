@@ -202,7 +202,7 @@ main.hardwrap :is(p, ol, ul, dl, figcaption) {
 	white-space: pre-line;
 }
 
-main:not(.no-justify) :is(p, ol, ul, dl, figcaption) {
+main.justify :is(p, ol, ul, dl, figcaption) {
 	text-align: justify;
 }
 
