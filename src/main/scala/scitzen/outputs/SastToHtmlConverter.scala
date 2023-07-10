@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import de.rmgk.delay.Sync
 import scitzen.bibliography.BibEntry
 import scitzen.cli.ConversionAnalysis
-import scitzen.compat.Logging.{cli}
+import scitzen.compat.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.generic.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag
@@ -44,7 +44,7 @@ class SastToHtmlConverter(
     )
 
   private val excludedFromMeta =
-    Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language")
+    Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language", "link")
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
     @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
