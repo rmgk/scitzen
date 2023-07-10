@@ -13,8 +13,9 @@ object ImageReferences:
   implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
   def listAll(anal: ConversionAnalysis, output: Path): List[FileDependency] =
-    val fileImageMap: Map[String, List[(Reference, FileDependency)]] = anal.directory.articles.map { art =>
+    val fileImageMap: Map[String, List[(Reference, FileDependency)]] = anal.selected.map { titled =>
 
+      def art = titled.article
 
       val images = art.context.imageDirectives.flatMap { directive =>
         art.doc.resolve(directive.attributes.target).flatMap: orig =>
