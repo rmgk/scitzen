@@ -11,9 +11,6 @@ import java.nio.file.Files
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
-
-
-
 object Katex:
   private val katexstr: String =
     val bo = new ByteArrayOutputStream()

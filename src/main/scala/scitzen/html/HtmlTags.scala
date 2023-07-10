@@ -1,6 +1,5 @@
 package scitzen.html
 
-
 val validHtml5Tags = List(
   "!DOCTYPE html", // Defines the document type
   "a",             // Defines a hyperlink

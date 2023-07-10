@@ -27,6 +27,6 @@ class SagTest extends munit.FunSuite {
   }
 
   test("code") {
-    println(printCode(HtmlPages("").tHead(delay.Sync{()})))
+    println(printCode(HtmlPages("").tHead(delay.Sync { () })))
   }
 }

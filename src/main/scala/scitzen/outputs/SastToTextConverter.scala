@@ -4,13 +4,16 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.generic.{ArticleRef, ProjectPath}
 import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section,
+  Slist, SpaceComment, Text
+}
 
 class SastToTextConverter(
     articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
-  outputDirectory: ProjectPath,
+    outputDirectory: ProjectPath,
 ) extends ProtoConverter[String, String](articleRef, anal, settings, outputDirectory):
 
   override def subconverter(

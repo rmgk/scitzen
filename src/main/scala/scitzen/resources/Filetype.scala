@@ -3,7 +3,7 @@ package scitzen.resources
 import java.nio.file.Path
 
 object Filetype:
-  val all: Set[Filetype]           = Set(svg, png, pdf, webp, jpg, mp4, gif)
+  val all: Set[Filetype]            = Set(svg, png, pdf, webp, jpg, mp4, gif)
   val lookup: Map[String, Filetype] = all.flatMap(ft => (ft.extension, ft) +: ft.aliases.map(al => (al, ft))).toMap
 
   def nameWithoutExtension(p: Path): String =

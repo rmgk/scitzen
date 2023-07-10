@@ -30,9 +30,9 @@ import java.nio.charset.StandardCharsets
   */
 object Escaping {
 
-  val `&lt;` = "&lt;".getBytes(StandardCharsets.UTF_8)
-  val `&gt;` = "&gt;".getBytes(StandardCharsets.UTF_8)
-  val `&amp;` = "&amp;".getBytes(StandardCharsets.UTF_8)
+  val `&lt;`   = "&lt;".getBytes(StandardCharsets.UTF_8)
+  val `&gt;`   = "&gt;".getBytes(StandardCharsets.UTF_8)
+  val `&amp;`  = "&amp;".getBytes(StandardCharsets.UTF_8)
   val `&quot;` = "&quot;".getBytes(StandardCharsets.UTF_8)
 
   /** Code to escape text HTML nodes. Based on code from scala.xml
@@ -41,9 +41,9 @@ object Escaping {
   def escape(text: Array[Byte], outputStream: OutputStream) = {
     // Implemented per XML spec:
     // http://www.w3.org/International/questions/qa-controls
-    val inputSize           = text.size
-    var inputLastCopy       = 0
-    var inputCheckPos       = 0
+    val inputSize     = text.size
+    var inputLastCopy = 0
+    var inputCheckPos = 0
 
     def write(escape: Array[Byte]) =
       val len = inputCheckPos - inputLastCopy

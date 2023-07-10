@@ -21,7 +21,7 @@ case class SastContext[+T](
   def addSection(section: Section): SastContext[T]     = copy(sections = section :: sections)
   def addCitation(cite: Directive): SastContext[T]     = copy(citations = cite :: citations)
   def addReference(ref: Directive): SastContext[T]     = copy(citations = ref :: citations)
-  def addInclude(include: Directive): SastContext[T]     = copy(includes = include :: includes)
+  def addInclude(include: Directive): SastContext[T]   = copy(includes = include :: includes)
 
   def nextId: SastContext[Int] = copy(uniquectr = uniquectr + 1, data = uniquectr)
 

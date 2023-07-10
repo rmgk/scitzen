@@ -7,7 +7,12 @@ import scitzen.sast.Section
 
 import java.nio.file.Path
 
-case class FileDependency(file: ProjectPath, original: ProjectPath, relativeFinalization: Path, outputDirectory: ProjectPath)
+case class FileDependency(
+    file: ProjectPath,
+    original: ProjectPath,
+    relativeFinalization: Path,
+    outputDirectory: ProjectPath
+)
 
 /** The conversion context, used to keep state of in the conversion. */
 case class ConversionContext[+T](
@@ -16,10 +21,10 @@ case class ConversionContext[+T](
     sections: List[Section] = Nil,
     features: Set[String] = Set.empty,
     referenced: List[ArticleRef] = List.empty,
-  fileDependencies: List[FileDependency] = List.empty
+    fileDependencies: List[FileDependency] = List.empty
 ):
   def cite(citations: List[BibEntry]): ConversionContext[T] = copy(usedCitations = citations ::: usedCitations)
-  def reference(articleRef: ArticleRef)               = copy(referenced = articleRef :: referenced)
+  def reference(articleRef: ArticleRef)                     = copy(referenced = articleRef :: referenced)
 
   def requireInOutput(dep: FileDependency): ConversionContext[T] =
     copy(fileDependencies = dep :: fileDependencies)

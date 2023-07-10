@@ -6,8 +6,8 @@ import scitzen.resources.ImagePaths
 import java.nio.file.{Files, Path}
 
 case class ProjectPath private (absolute: Path)(project: Project):
-  private def relativeToProject     = project.root.relativize(absolute)
-  def projectAbsolute: Path = Path.of("/").resolve(relativeToProject)
+  private def relativeToProject               = project.root.relativize(absolute)
+  def projectAbsolute: Path                   = Path.of("/").resolve(relativeToProject)
   def resolve(p: String): Option[ProjectPath] = project.resolve(absolute.getParent, p)
 
 object ProjectPath:
@@ -18,8 +18,11 @@ object ProjectPath:
       if target.endsWith(".") then plain.resolve(".")
       else plain
     require(
-      normalized.startsWith(project.root) || normalized.startsWith(project.outputdir) || normalized.startsWith(project.cacheDir) ,
-      s"»$target« is not within »$project«")
+      normalized.startsWith(project.root) || normalized.startsWith(project.outputdir) || normalized.startsWith(
+        project.cacheDir
+      ),
+      s"»$target« is not within »$project«"
+    )
     new ProjectPath(normalized)(project)
 
 case class Project private (root: Path, config: ProjectConfig):
@@ -34,7 +37,6 @@ case class Project private (root: Path, config: ProjectConfig):
 
   val pdfTemplatePath: ProjectPath =
     ProjectPath(this, outputdir.resolve("templates").resolve("default-template.tex.scim"))
-
 
   lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
   lazy val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))

@@ -26,7 +26,7 @@ object Format:
           (Path.of(file), date)
         .toMap
     ca.directory.byPath.foreach: (path, articles) =>
-      val content = articles.head.doc.content
+      val content  = articles.head.doc.content
       val modified = Files.getLastModifiedTime(path.absolute)
       if !formattedHashes.get(path.absolute).contains(modified.toString)
       then
