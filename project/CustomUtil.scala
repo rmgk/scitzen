@@ -1,7 +1,7 @@
 import sbt.IO
 
 import java.io.File
-import java.net.URL
+import java.net.URI
 import java.nio.file.{Files, Path, StandardOpenOption}
 import java.security.MessageDigest
 
@@ -18,7 +18,7 @@ object CustomUtil {
 
   def fetchResource(urlStr: String, sha1sum: String, target: Path): File = {
     Files.createDirectories(target.getParent)
-    val url = new URL(urlStr)
+    val url = new URI(urlStr).toURL
     val fos = Files.newOutputStream(target, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
     try IO.transferAndClose(url.openStream(), fos)
     finally fos.close()
