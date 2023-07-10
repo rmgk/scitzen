@@ -158,7 +158,7 @@ object ConvertProject:
             ()
         .run(using ())(_ => cdl.countDown())
       cdl.await()
-      cli.info(s"converted ${convertees.size} images ${timediff()}")
+      cli.info(s"ensured conversions for ${convertees.size} images ${timediff()}")
     }
 
     {
