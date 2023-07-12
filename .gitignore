@@ -1,8 +1,9 @@
-.idea/
-target/
 .bloop
+.bsp/
+.idea/
 .metals
+Examples/scitzen.out/
+metals.sbt
 node_modules/
 package-lock.json
-.bsp/
-Examples/scitzen.out/
+target/
