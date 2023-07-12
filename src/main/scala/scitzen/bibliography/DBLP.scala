@@ -1,6 +1,9 @@
 package scitzen.bibliography
 
+import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, readFromString}
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import org.jsoup.Jsoup
+import scitzen.bibliography.DBLPApi.Outer
 import scitzen.cli.Format
 
 import java.net.{CookieManager, URI, URLEncoder}
@@ -9,25 +12,25 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import scala.jdk.FutureConverters.*
-import upickle.default.ReadWriter
-
 import java.net.http.HttpClient.Redirect
 import java.nio.file.{Files, Path}
 
 object DBLPApi:
-  case class Outer(result: Result) derives ReadWriter
-  case class Result(hits: Hits) derives ReadWriter
-  case class Hits(hit: List[Hit] = Nil) derives ReadWriter
-  case class Hit(info: Info) derives ReadWriter
+  case class Outer(result: Result)
+  case class Result(hits: Hits)
+  case class Hits(hit: List[Hit] = Nil)
+  case class Hit(info: Info)
   case class Info(
       key: String,
       title: String,
       ee: String = ""
-  ) derives ReadWriter
-  case class Authors(author: List[Author]) derives ReadWriter
-  case class Author(`@pid`: String, text: String) derives ReadWriter
+  )
+  case class Authors(author: List[Author])
+  case class Author(`@pid`: String, text: String)
 
 object DBLP:
+
+  val codec: JsonValueCodec[Outer] = JsonCodecMaker.make
 
   val client = HttpClient.newBuilder.connectTimeout(Duration.ofSeconds(30)).followRedirects(
     Redirect.ALWAYS
@@ -63,7 +66,7 @@ object DBLP:
       BodyHandlers.ofString()
     )
     // println(s"json: ${res.body()}")
-    upickle.default.read[DBLPApi.Outer](res.body()).result.hits.hit.map(_.info)
+    readFromString[DBLPApi.Outer](res.body())(using codec).result.hits.hit.map(_.info)
 
   def downloadPDFAndFormat(q: String) =
     val hits = search(q)
