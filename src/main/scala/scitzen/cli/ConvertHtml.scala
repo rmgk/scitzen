@@ -11,7 +11,7 @@ import scitzen.sast.{Attribute, Attributes, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
-import scala.annotation.{tailrec}
+import scala.annotation.tailrec
 import scala.math.Ordering.Implicits.seqOrdering
 
 class ConvertHtml(anal: ConversionAnalysis):

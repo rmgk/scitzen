@@ -4,8 +4,8 @@ import de.rmgk.delay.Async
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.{Hashes, Latexmk}
 import scitzen.generic.ProjectPath
-import scitzen.resources.Filetype
 import scitzen.outputs.SastToTexConverter
+import scitzen.resources.Filetype
 import scitzen.sast.{Attribute, Attributes}
 
 import java.nio.charset.{Charset, StandardCharsets}

@@ -1,8 +1,8 @@
 package scitzen.parser
 
-import scitzen.sast.{Inline, Prov, Sast}
 import de.rmgk.scip.*
 import scitzen.generic.Document
+import scitzen.sast.{Inline, Prov, Sast}
 
 object Parse {
 

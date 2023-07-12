@@ -1,8 +1,8 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, Parsed, Prov, Sast}
 import scitzen.parser.CommonParsers.*
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, Parsed, Prov, Sast}
 
 object DelimitedBlockParsers {
   // use ` for verbatim text, : for parsed text

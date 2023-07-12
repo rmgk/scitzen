@@ -1,15 +1,14 @@
 package scitzen.html
 
-import de.rmgk.{Chain, delay}
 import de.rmgk.delay.{Sync, SyncCompanion}
+import de.rmgk.{Chain, delay}
 
 import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
 import scala.annotation.implicitNotFound
-import scala.quoted.*
-import scala.language.dynamics
-import scala.compiletime.summonInline
 import scala.compiletime.*
+import scala.language.dynamics
+import scala.quoted.*
 
 object sag {
 

@@ -1,7 +1,7 @@
 package scitzen.resources
 
 import scitzen.generic.ProjectPath
-import Filetype.*
+import scitzen.resources.Filetype.*
 
 enum ImageTarget(
     val name: String,

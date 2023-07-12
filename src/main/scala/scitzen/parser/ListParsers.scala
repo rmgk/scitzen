@@ -1,7 +1,7 @@
 package scitzen.parser
 import de.rmgk.scip.*
-import scitzen.sast.{Block, ListItem, Prov, Slist, Text}
 import scitzen.parser.CommonParsers.*
+import scitzen.sast.{Block, ListItem, Prov, Slist, Text}
 
 import java.nio.charset.StandardCharsets
 

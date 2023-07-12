@@ -2,14 +2,14 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
+import scitzen.compat.Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.generic.{ArticleRef, Flags, ProjectPath, References, SastRef}
-import scitzen.sast.DCommand.*
-import scitzen.sast.*
 import scitzen.outputs.SastToTexConverter.latexencode
-import scitzen.compat.Logging.cli
 import scitzen.resources.ImageTarget
+import scitzen.sast.*
 import scitzen.sast.Attribute.Named
+import scitzen.sast.DCommand.*
 
 object SastToTexConverter {
   def latexencode(input: String): String =

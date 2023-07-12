@@ -1,5 +1,6 @@
 package scitzen.extern
 
+import de.rmgk.delay.extensions.runToFuture
 import de.rmgk.logging.Loggable
 import scitzen.cli.ConvertTemplate
 import scitzen.compat.Logging
@@ -16,7 +17,6 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Using
 import scala.util.control.NonFatal
-import de.rmgk.delay.extensions.runToFuture
 
 given Loggable[Throwable] with
   override def normal(v: Throwable): String = s"${v.getClass.getSimpleName}: »${v.getMessage}«"

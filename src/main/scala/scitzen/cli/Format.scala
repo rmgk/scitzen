@@ -1,15 +1,14 @@
 package scitzen.cli
 
 import scitzen.bibliography.BibDB
-
-import java.nio.charset.{Charset, StandardCharsets}
+import scitzen.compat.Logging.cli
 import scitzen.generic.ArticleDirectory
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
-import scitzen.compat.Logging.cli
 
-import scala.jdk.CollectionConverters.*
+import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path, StandardOpenOption}
+import scala.jdk.CollectionConverters.*
 
 object Format:
 

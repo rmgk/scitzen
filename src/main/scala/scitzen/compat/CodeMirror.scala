@@ -2,11 +2,11 @@ package scitzen.compat
 
 import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
-import scitzen.sast._
+import scitzen.sast.*
 
 object MirrorToSast {
 
-  import scitzen.compat.{CodeMirror => C}
+  import scitzen.compat.CodeMirror as C
 
   def convert(document: C.Document) = {
     val blocks = document.doc.asInstanceOf[C.doc].content

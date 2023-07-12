@@ -1,14 +1,14 @@
 package scitzen.cli
 
 import de.rmgk.delay.Async
+import de.rmgk.delay.extensions.run
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
+import scitzen.contexts.FileDependency
 import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
 import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
-import de.rmgk.delay.extensions.run
-import scitzen.contexts.FileDependency
 import scitzen.resources.ImageTarget
 
 import java.nio.file.{FileAlreadyExistsException, Files, Path}

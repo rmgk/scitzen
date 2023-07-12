@@ -2,12 +2,11 @@ package scitzen.cli
 
 import de.rmgk.options.*
 import scitzen.cli.ConvertProject.executeConversions
-import scitzen.compat.Logging.cli
-import scitzen.generic.{Project}
+import scitzen.compat.Logging.{cli, given}
+import scitzen.generic.Project
 import scopt.OParser
 
 import java.nio.file.{Files, Path}
-import scitzen.compat.Logging.given
 
 object ScitzenCommandline {
   def main(args: Array[String]): Unit = {

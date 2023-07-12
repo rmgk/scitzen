@@ -1,7 +1,7 @@
 package scitzen.generic
 
-import scitzen.sast.{Block, Directive, Sast, Section}
 import scitzen.compat.Logging.cli
+import scitzen.sast.{Block, Directive, Sast, Section}
 
 import scala.jdk.CollectionConverters.*
 

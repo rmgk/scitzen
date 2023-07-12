@@ -6,14 +6,14 @@ import org.jsoup.Jsoup
 import scitzen.bibliography.DBLPApi.Outer
 import scitzen.cli.Format
 
-import java.net.{CookieManager, URI, URLEncoder}
-import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.HttpClient.Redirect
 import java.net.http.HttpResponse.BodyHandlers
+import java.net.http.{HttpClient, HttpRequest}
+import java.net.{CookieManager, URI, URLEncoder}
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
 import java.time.Duration
 import scala.jdk.FutureConverters.*
-import java.net.http.HttpClient.Redirect
-import java.nio.file.{Files, Path}
 
 object DBLPApi:
   case class Outer(result: Result)
@@ -25,7 +25,6 @@ object DBLPApi:
       title: String,
       ee: String = ""
   )
-  case class Authors(author: List[Author])
   case class Author(`@pid`: String, text: String)
 
 object DBLP:
