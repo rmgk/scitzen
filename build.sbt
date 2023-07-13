@@ -6,8 +6,6 @@ lazy val scitzen = project.in(file("."))
     name         := "scitzen",
     organization := "de.rmgk",
     scalaVersion_3,
-    resolverJitpack,
-    resolverS01,
     libraryDependencies ++= Seq(
       jsoup.value,
       slips.chain.value,

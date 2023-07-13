@@ -1,7 +1,6 @@
 package scitzen.cli
 
 import de.rmgk.delay.Async
-import de.rmgk.delay.extensions.run
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli

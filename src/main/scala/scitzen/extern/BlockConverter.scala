@@ -1,6 +1,5 @@
 package scitzen.extern
 
-import de.rmgk.delay.extensions.runToFuture
 import de.rmgk.logging.Loggable
 import scitzen.cli.ConvertTemplate
 import scitzen.compat.Logging
