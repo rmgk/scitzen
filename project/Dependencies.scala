@@ -3,7 +3,6 @@
 
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 import sbt.*
-import sbt.Keys.*
 
 object Dependencies {
 
@@ -23,7 +22,7 @@ object Dependencies {
     val scalaJavaTime = "2.3.0"
     val scalaLoci     = "eb0719f08f"
     val scalacheck    = "1.17.0"
-    val scalajsDom    = "2.4.0"
+    val scalajsDom    = "2.6.0"
     val scalatags     = "0.12.0"
     val scopt         = "4.1.0"
     val scribe        = "3.10.7"
