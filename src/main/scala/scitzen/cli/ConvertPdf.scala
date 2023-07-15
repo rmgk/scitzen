@@ -50,12 +50,12 @@ object ConvertPdf:
 
         val content = resultContext.data
 
-        val someBib = project.bibfiles.nonEmpty || Files.isRegularFile(project.bibfileDBLPcache.absolute)
-        if someBib
+        val allbib = project.bibfiles ++ Option.when(Files.isRegularFile(project.bibfileDBLPcache.absolute))(project.bibfileDBLPcache)
+        if allbib.nonEmpty
         then
           val target = temptexdir.resolve("bibliography.bib")
           Files.deleteIfExists(target)
-          (project.bibfileDBLPcache +: project.bibfiles).foreach { bf =>
+          allbib.foreach { bf =>
             Files.write(
               target,
               Files.readAllBytes(bf.absolute),
@@ -68,7 +68,7 @@ object ConvertPdf:
         val templateSettings =
           Attributes(project.config.attrs.raw ++ titled.header.attributes.raw ++
             resultContext.features.map(s => Attribute(s"feature $s", "")) ++
-            Option.when(someBib)(Attribute("bibliography path", "bibliography.bib")).toList :+
+            Option.when(allbib.nonEmpty)(Attribute("bibliography path", "bibliography.bib")).toList :+
             Attribute("template content", content.mkString("\n")))
 
         val documentString: String =

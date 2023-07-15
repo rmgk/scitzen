@@ -3,6 +3,7 @@ package scitzen.bibliography
 import de.rmgk.delay.{Async, Sync}
 import scitzen.bibliography.BibManager.bibIds
 import scitzen.compat.Logging
+import scitzen.parser.{Parse}
 import scitzen.project.{Project, ProjectPath}
 import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{BibQuery, Cite}
@@ -21,7 +22,11 @@ class BibManager(project: Project) {
      else
        Map.empty
     ) ++
-    project.bibfiles.map(Bibtex.makeBib).flatten
+    project.bibfiles.map: f =>
+      Parse.bibfileUnwrap(Files.readAllBytes(f.absolute)).foreach: bp =>
+        println(new String(bp.full))
+      Bibtex.makeBib(f)
+    .flatten
 
   def prefetch(citations: Set[Directive]): Async[Any, BibDB] = Sync:
     val currentBib = parsebib()

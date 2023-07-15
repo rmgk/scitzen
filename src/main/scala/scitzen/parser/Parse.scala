@@ -38,4 +38,8 @@ object Parse {
   def inlineUnwrap(paragraphString: Array[Byte]): List[Inline] = {
     parseResult(paragraphString, allInlines)
   }
+
+  def bibfileUnwrap(bibfile: Array[Byte]): List[Biblet] = {
+    parseResult(bibfile, BibPreparser.entry.list(Scip(true)))
+  }
 }
