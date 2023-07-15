@@ -8,9 +8,11 @@ import scitzen.outputs.SastToTexConverter
 import scitzen.resources.Filetype
 import scitzen.sast.{Attribute, Attributes}
 
+import java.io.BufferedOutputStream
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, StandardOpenOption}
 import scala.jdk.CollectionConverters.*
+import scala.util.Using
 
 object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8
@@ -50,25 +52,27 @@ object ConvertPdf:
 
         val content = resultContext.data
 
-        val allbib = project.bibfiles ++ Option.when(Files.isRegularFile(project.bibfileDBLPcache.absolute))(project.bibfileDBLPcache)
-        if allbib.nonEmpty
-        then
-          val target = temptexdir.resolve("bibliography.bib")
-          Files.deleteIfExists(target)
-          allbib.foreach { bf =>
-            Files.write(
-              target,
-              Files.readAllBytes(bf.absolute),
-              StandardOpenOption.APPEND,
-              StandardOpenOption.CREATE
-            )
-          }
+        val target = temptexdir.resolve("bibliography.bib")
 
+        Using(
+          new BufferedOutputStream(Files.newOutputStream(
+            target,
+            StandardOpenOption.APPEND,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING
+          ))
+        ): bo =>
+          resultContext.usedCitations.foreach: used =>
+            anal.bib.bibletmap.getOrElse(used.id, Nil).foreach: biblet =>
+              biblet.full.inputstream.transferTo(bo)
+        .get
 
         val templateSettings =
           Attributes(project.config.attrs.raw ++ titled.header.attributes.raw ++
             resultContext.features.map(s => Attribute(s"feature $s", "")) ++
-            Option.when(allbib.nonEmpty)(Attribute("bibliography path", "bibliography.bib")).toList :+
+            Option.when(resultContext.usedCitations.nonEmpty)(
+              Attribute("bibliography path", "bibliography.bib")
+            ).toList :+
             Attribute("template content", content.mkString("\n")))
 
         val documentString: String =

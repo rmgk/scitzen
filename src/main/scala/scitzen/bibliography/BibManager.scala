@@ -23,15 +23,28 @@ class BibManager(project: Project) {
 
   val dblpcachePath: ProjectPath = project.bibfileDBLPcache
 
+  val biblets = project.bibfiles.flatMap: f =>
+    Parse.bibfileUnwrap(Files.readAllBytes(f.absolute))
+  val knowKeys = biblets.map(_.id).toSet
+  if biblets.size != knowKeys.size then
+    Logging.cli.warn("duplicate bib entries detected")
+    biblets.groupBy(_.id).flatMap: (k, v) =>
+      if v.sizeIs > 1 then Some(k)
+      else None
+    .foreach(k => println(s"\t$k"))
+
+  val bibentriesCached =
+    if !Files.exists(project.bibEntryCache.absolute) then Nil
+    else
+      val lb = new ListBuffer[BibEntry]
+      Using(Files.newInputStream(project.bibEntryCache.absolute)): is =>
+        scanJsonValuesFromStream[BibEntry](is): be =>
+          lb.append(be)
+          true
+      .get
+      lb.toList
+
   def prefetch(citations: Set[Directive]): Async[Any, BibDB] = Sync:
-    val biblets = project.bibfiles.flatMap: f =>
-      Parse.bibfileUnwrap(Files.readAllBytes(f.absolute))
-    val knowKeys = biblets.map(_.id).toSet
-    if biblets.size != knowKeys.size then
-      Logging.cli.warn("duplicate bib entries detected")
-      biblets.groupBy(_.id).flatMap: (k, v) =>
-        if v.sizeIs > 1 then Some(k) else None
-      .foreach(println)
 
     val grouped           = citations.groupBy(_.command)
     val citeDirectives    = grouped.getOrElse(Cite, List.empty)
@@ -45,7 +58,8 @@ class BibManager(project: Project) {
     val allCitations = citeKeys.toSet ++ queries.valuesIterator.flatten.map(info => s"DBLP:${info.key}")
     val missing      = allCitations -- knowKeys
     val dblp         = missing.filter(_.startsWith("DBLP:"))
-    val downloadedBiblets: List[Biblet] = if dblp.isEmpty then Nil else
+    val downloadedBiblets: List[Biblet] = if dblp.isEmpty then Nil
+    else
       Logging.cli.info(s"scheduling download of ${dblp.size} missing citations")
       Files.createDirectories(dblpcachePath.absolute.getParent)
       dblp.iterator.flatMap: key =>
@@ -60,28 +74,22 @@ class BibManager(project: Project) {
           Parse.bibfileUnwrap(resBytes)
       .toList
 
-    val bibentriesCached = if !Files.exists(project.bibEntryCache.absolute) then Nil
-    else
-      val lb = new ListBuffer[BibEntry]
-      Using(Files.newInputStream(project.bibEntryCache.absolute)): is =>
-        scanJsonValuesFromStream[BibEntry](is): be =>
-          lb.append(be)
-          true
-      .get
-      lb.toList
-
     val unknownBibentries = allCitations -- bibentriesCached.iterator.map(_.id).toSet
 
     val allBiblets: Seq[Biblet] = downloadedBiblets ++ biblets
+    val bibletmap = allBiblets.groupBy(_.id)
 
 
     val newBibentries: List[BibEntry] = if unknownBibentries.isEmpty then Nil
     else
-      val bibletmap = allBiblets.groupBy(_.id)
       val all = unknownBibentries.iterator.flatMap(bibletmap.get).flatten.flatMap: biblet =>
         Bibtex.parse(biblet.full.inputstream)
       .toList
-      Using(BufferedOutputStream(Files.newOutputStream(project.bibEntryCache.absolute, StandardOpenOption.APPEND, StandardOpenOption.CREATE))): bo =>
+      Using(BufferedOutputStream(Files.newOutputStream(
+        project.bibEntryCache.absolute,
+        StandardOpenOption.APPEND,
+        StandardOpenOption.CREATE
+      ))): bo =>
         all.foreach: be =>
           writeToStream(be, bo)
           // writes a byte, even though the value is a char, and the method takes an int.
@@ -89,9 +97,7 @@ class BibManager(project: Project) {
       .get
       all
 
-
-
-    BibDB(Bibtex.makeBib(bibentriesCached ++ newBibentries), queries)
+    BibDB(Bibtex.makeBib(bibentriesCached ++ newBibentries), queries, bibletmap)
 }
 
 object BibManager:
@@ -99,7 +105,7 @@ object BibManager:
     def bibIds: List[String] = directive.attributes.target.split(',').iterator.map(_.trim).toList
   }
 
-case class BibDB(entries: Map[String, BibEntry], queried: Map[String, List[DBLPApi.Info]]):
+case class BibDB(entries: Map[String, BibEntry], queried: Map[String, List[DBLPApi.Info]], bibletmap: Map[String, Seq[Biblet]]):
   def convert(directive: Directive): Directive =
     val query = directive.attributes.target
     val keys  = queried.get(query).toList.flatten.map(info => s"DBLP:${info.key}")
@@ -115,4 +121,4 @@ case class BibDB(entries: Map[String, BibEntry], queried: Map[String, List[DBLPA
     directive.bibIds
 
 object BibDB:
-  def empty: BibDB = BibDB(Map.empty, Map.empty)
+  def empty: BibDB = BibDB(Map.empty, Map.empty, Map.empty)

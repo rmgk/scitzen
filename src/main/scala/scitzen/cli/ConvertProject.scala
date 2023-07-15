@@ -59,6 +59,8 @@ object ConvertProject:
       Files.write(project.pdfTemplatePath.absolute, bytes)
       ()
 
+    val bibmanagerFuture = Future(BibManager(project))
+
     val documents = ArticleProcessing.loadDocuments(project)
 
     val directory = ArticleDirectory(
@@ -70,10 +72,10 @@ object ConvertProject:
 
     cli.info(s"parsed ${documents.size} documents ${timediff()}")
 
-    val dblpFuture = Future {
-      val bibres = BibManager(project).prefetch(directory.articles.flatMap(_.context.citations).toSet)
-      bibres.runToFuture(using ())
-    }.flatten
+    val dblpFuture = bibmanagerFuture.map: bibmanager =>
+      bibmanager.prefetch(directory.articles.flatMap(_.context.citations).toSet)
+        .runToFuture(using ())
+    .flatten
 
     cli.info(s"scheduled bib ${timediff()}")
 
@@ -93,7 +95,7 @@ object ConvertProject:
       .toList
 
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
-    cli.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
+    cli.info(s"awaited bib (entries ${bibdb.entries.size}) (queried ${bibdb.queried.size}) ${timediff()}")
 
     val anal = ConversionAnalysis(
       project = project,
