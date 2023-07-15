@@ -3,7 +3,8 @@ package scitzen.project
 import scitzen.compat.Logging.cli
 import scitzen.resources.ImagePaths
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{FileVisitOption, Files, Path}
+import scala.util.Using
 
 case class ProjectPath private (absolute: Path)(project: Project):
   private def relativeToProject               = project.root.relativize(absolute)
@@ -38,10 +39,36 @@ case class Project private (root: Path, config: ProjectConfig):
   val pdfTemplatePath: ProjectPath =
     ProjectPath(this, outputdir.resolve("templates").resolve("default-template.tex.scim"))
 
-  lazy val bibfile: Option[ProjectPath]  = config.bibliography.flatMap(s => resolve(root, s))
-  lazy val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
 
-  // be careful about initialization below, the followng two do leak the (partially uninitialized) this reference
+
+  /** Does follow symlinks.
+    * Ignores files and folders starting with a .
+    */
+  val projectFiles: Seq[ProjectPath] =
+    val source = root
+    import scala.jdk.CollectionConverters.*
+    def hasDotComponent(c: Path): Boolean =
+      source.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
+
+    Using(Files.walk(source, FileVisitOption.FOLLOW_LINKS)): stream =>
+      stream.iterator().asScala.filter: (c: Path) =>
+         !hasDotComponent(c) && !c.startsWith(outputdir) && !c.startsWith(cacheDir)
+      .map(asProjectPath).toVector
+    .get :+ pdfTemplatePath
+
+  def byExtension(ending: String): Seq[ProjectPath] =
+    val toTest = s".$ending"
+    projectFiles.filter: c =>
+      Files.isRegularFile(c.absolute) &&
+        c.absolute.getFileName.toString.endsWith(toTest)
+
+  val sources = byExtension("scim")
+
+  val bibfiles = byExtension("bib")
+
+  val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
+
+  // be careful about initialization below, the following two do leak the (partially uninitialized) this reference
 
   val imagePaths = ImagePaths(this)
 

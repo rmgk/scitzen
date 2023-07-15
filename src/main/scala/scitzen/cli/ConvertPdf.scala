@@ -9,7 +9,7 @@ import scitzen.resources.Filetype
 import scitzen.sast.{Attribute, Attributes}
 
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.{Files, StandardCopyOption, StandardOpenOption}
+import java.nio.file.{Files, StandardOpenOption}
 import scala.jdk.CollectionConverters.*
 
 object ConvertPdf:
@@ -50,27 +50,25 @@ object ConvertPdf:
 
         val content = resultContext.data
 
-        project.bibfile.foreach { bf =>
-          Files.copy(
-            bf.absolute,
-            temptexdir.resolve("bibliography.bib"),
-            StandardCopyOption.REPLACE_EXISTING,
-            StandardCopyOption.COPY_ATTRIBUTES
-          )
-        }
-        if Files.isRegularFile(project.bibfileDBLPcache.absolute) then
-          Files.write(
-            temptexdir.resolve("bibliography.bib"),
-            Files.readAllBytes(project.bibfileDBLPcache.absolute),
-            StandardOpenOption.CREATE,
-            StandardOpenOption.APPEND
-          )
-          ()
+        val someBib = project.bibfiles.nonEmpty || Files.isRegularFile(project.bibfileDBLPcache.absolute)
+        if someBib
+        then
+          val target = temptexdir.resolve("bibliography.bib")
+          Files.deleteIfExists(target)
+          (project.bibfileDBLPcache +: project.bibfiles).foreach { bf =>
+            Files.write(
+              target,
+              Files.readAllBytes(bf.absolute),
+              StandardOpenOption.APPEND,
+              StandardOpenOption.CREATE
+            )
+          }
+
 
         val templateSettings =
           Attributes(project.config.attrs.raw ++ titled.header.attributes.raw ++
             resultContext.features.map(s => Attribute(s"feature $s", "")) ++
-            project.bibfile.map(_ => Attribute("bibliography path", "bibliography.bib")).toList :+
+            Option.when(someBib)(Attribute("bibliography path", "bibliography.bib")).toList :+
             Attribute("template content", content.mkString("\n")))
 
         val documentString: String =

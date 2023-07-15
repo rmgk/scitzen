@@ -21,7 +21,7 @@ class BibManager(project: Project) {
      else
        Map.empty
     ) ++
-    project.bibfile.map(Bibtex.makeBib).getOrElse(Map.empty)
+    project.bibfiles.map(Bibtex.makeBib).flatten
 
   def prefetch(citations: Set[Directive]): Async[Any, BibDB] = Sync:
     val currentBib = parsebib()

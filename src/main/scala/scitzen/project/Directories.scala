@@ -6,9 +6,7 @@ import scitzen.outputs.SastToSastConverter
 import scitzen.parser.Parse
 import scitzen.sast.{Sast, Section}
 
-import java.nio.file.{FileVisitOption, Files, Path}
 import scala.annotation.tailrec
-import scala.util.Using
 
 class ArticleDirectory(project: Project, val articles: Seq[Article]):
   val byPath: Map[ProjectPath, Seq[Article]] =
@@ -96,28 +94,11 @@ object ArticleProcessing:
     then res
     else snip :: res
 
-  def isScim(c: Path): Boolean =
-    Files.isRegularFile(c) &&
-    c.getFileName.toString.endsWith(".scim")
 
-  /** returns a list of .scim files starting at `source`.
-    * Does follow symlinks.
-    * Ignores files and folders starting with a .
-    */
-  def discoverSources(source: Path): Vector[Path] =
-    import scala.jdk.CollectionConverters.*
-    def hasDotComponent(c: Path): Boolean =
-      source.relativize(c).iterator().asScala.exists { _.toString.startsWith(".") }
 
-    Using(Files.walk(source, FileVisitOption.FOLLOW_LINKS)): stream =>
-      stream.iterator().asScala.filter: c =>
-        isScim(c) && !hasDotComponent(c)
-      .toVector
-    .get
-
-  def loadDocuments(project: Project): Vector[Document] =
+  def loadDocuments(project: Project): Seq[Document] =
     Logging.cli.trace(s"discovering sources in ${project.root}")
-    val sources = discoverSources(project.root)
+    val sources = project.sources
     Logging.cli.trace(s"parsing ${sources.length} documents")
     sources.map: source =>
-      Document(project.asProjectPath(source))
+      Document(source)
