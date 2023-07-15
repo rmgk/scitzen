@@ -16,6 +16,8 @@ object BibPreparser {
     scx.next
     val id = until(",".any).min(1).str.run.trim
 
+    Predef.require(!id.contains(' '), s"something went wrong when parsing a bibfile for id: ${id}")
+
     var opened = 0
 
     @tailrec
