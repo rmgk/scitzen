@@ -3,7 +3,7 @@ package scitzen.cli
 import de.rmgk.delay.Async
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.{Hashes, Latexmk}
-import scitzen.generic.ProjectPath
+import scitzen.project.ProjectPath
 import scitzen.outputs.SastToTexConverter
 import scitzen.resources.Filetype
 import scitzen.sast.{Attribute, Attributes}

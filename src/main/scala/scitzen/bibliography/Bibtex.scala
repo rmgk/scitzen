@@ -2,7 +2,7 @@ package scitzen.bibliography
 
 import de.undercouch.citeproc.bibtex.BibTeXConverter
 import de.undercouch.citeproc.csl.CSLItemData
-import scitzen.generic.ProjectPath
+import scitzen.project.ProjectPath
 
 import java.io.InputStream
 import java.nio.file.Files

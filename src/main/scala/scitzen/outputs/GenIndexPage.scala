@@ -1,6 +1,6 @@
 package scitzen.outputs
 
-import scitzen.generic.{Project, TitledArticle}
+import scitzen.project.{Project, TitledArticle}
 import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText, Prov, Sast, ScitzenDateTime, Section, Text}
 
 import scala.collection.immutable.ArraySeq

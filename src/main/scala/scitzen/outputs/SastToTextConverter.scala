@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
-import scitzen.generic.{ArticleRef, ProjectPath}
+import scitzen.project.{ArticleRef, ProjectPath}
 import scitzen.sast.DCommand.{Include, Lookup}
 import scitzen.sast.{
   Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section,

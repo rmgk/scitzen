@@ -3,7 +3,7 @@ package scitzen.resources
 import de.rmgk.delay.Async
 import scitzen.compat.Logging
 import scitzen.compat.Logging.given
-import scitzen.generic.{Project, ProjectPath}
+import scitzen.project.{Project, ProjectPath}
 
 import java.nio.file.Files
 import scala.util.boundary

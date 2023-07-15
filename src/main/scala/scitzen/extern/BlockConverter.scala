@@ -4,7 +4,7 @@ import de.rmgk.logging.Loggable
 import scitzen.cli.ConvertTemplate
 import scitzen.compat.Logging
 import scitzen.compat.Logging.cli
-import scitzen.generic.{Article, ArticleDirectory, Project}
+import scitzen.project.{Article, ArticleDirectory, Project}
 import scitzen.sast.Attribute.Nested
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Sast}
 

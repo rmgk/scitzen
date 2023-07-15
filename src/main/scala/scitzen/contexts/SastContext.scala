@@ -1,7 +1,7 @@
 package scitzen.contexts
 
 import de.rmgk.Chain
-import scitzen.generic.SastRef
+import scitzen.project.SastRef
 import scitzen.sast.{Block, Directive, Section}
 
 /** The conversion context, used to keep state of the conversion. */

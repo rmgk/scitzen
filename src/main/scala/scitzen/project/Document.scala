@@ -1,4 +1,4 @@
-package scitzen.generic
+package scitzen.project
 
 import scitzen.sast.{Block, Directive, Prov}
 

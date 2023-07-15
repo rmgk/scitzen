@@ -3,7 +3,7 @@ package scitzen.cli
 import de.rmgk.options.*
 import scitzen.cli.ConvertProject.executeConversions
 import scitzen.compat.Logging.{cli, given}
-import scitzen.generic.Project
+import scitzen.project.Project
 import scopt.OParser
 
 import java.nio.file.{Files, Path}

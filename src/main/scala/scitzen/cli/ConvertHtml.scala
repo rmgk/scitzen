@@ -4,7 +4,7 @@ import de.rmgk.delay
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.extern.ResourceUtil
-import scitzen.generic.*
+import scitzen.project.*
 import scitzen.html.sag.{Recipe, Sag, SagContext}
 import scitzen.outputs.{HtmlPages, SastToHtmlConverter}
 import scitzen.sast.{Attribute, Attributes, Prov, Section}

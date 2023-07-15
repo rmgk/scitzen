@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
-import scitzen.generic.{ArticleRef, SastRef}
+import scitzen.project.{ArticleRef, SastRef}
 import scitzen.sast.*
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include, Index, Ref}
 

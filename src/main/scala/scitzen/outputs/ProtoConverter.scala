@@ -5,7 +5,7 @@ import de.rmgk.logging.Loggable
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
-import scitzen.generic.{ArticleRef, ProjectPath, References, TitledArticle}
+import scitzen.project.{ArticleRef, ProjectPath, References, TitledArticle}
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named

@@ -1,4 +1,4 @@
-package scitzen.generic
+package scitzen.project
 
 import scitzen.parser.{AttributesParser, Parse}
 import scitzen.sast.{Attributes, Prov}

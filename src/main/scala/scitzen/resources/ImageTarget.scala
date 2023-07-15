@@ -1,6 +1,6 @@
 package scitzen.resources
 
-import scitzen.generic.ProjectPath
+import scitzen.project.ProjectPath
 import scitzen.resources.Filetype.*
 
 enum ImageTarget(

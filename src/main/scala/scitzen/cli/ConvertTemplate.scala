@@ -4,7 +4,7 @@ import scitzen.bibliography.BibDB
 import scitzen.compat.Logging
 import scitzen.contexts.ConversionContext
 import scitzen.extern.BlockConversions
-import scitzen.generic.{ArticleDirectory, Project, ProjectPath}
+import scitzen.project.{ArticleDirectory, Project, ProjectPath}
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Attributes
 

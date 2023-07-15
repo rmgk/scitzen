@@ -2,7 +2,7 @@ package scitzen.resources
 
 import de.rmgk.delay.*
 import de.rmgk.script.*
-import scitzen.generic.ProjectPath
+import scitzen.project.ProjectPath
 
 import scala.util.Try
 

@@ -2,7 +2,7 @@ package scitzen.contexts
 
 import de.rmgk.Chain
 import scitzen.bibliography.BibEntry
-import scitzen.generic.{ArticleRef, ProjectPath}
+import scitzen.project.{ArticleRef, ProjectPath}
 import scitzen.sast.Section
 
 import java.nio.file.Path

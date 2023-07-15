@@ -1,6 +1,6 @@
 package scitzen.resources
 
-import scitzen.generic.{Project, ProjectPath}
+import scitzen.project.{Project, ProjectPath}
 import scitzen.sast.Section
 
 import java.nio.file.Path

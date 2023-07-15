@@ -7,7 +7,7 @@ import scitzen.compat.Logging.cli
 import scitzen.contexts.FileDependency
 import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
-import scitzen.generic.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
+import scitzen.project.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
 import scitzen.resources.ImageTarget
 
 import java.nio.file.{FileAlreadyExistsException, Files, Path}

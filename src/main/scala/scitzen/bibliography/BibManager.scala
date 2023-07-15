@@ -3,7 +3,7 @@ package scitzen.bibliography
 import de.rmgk.delay.{Async, Sync}
 import scitzen.bibliography.BibManager.bibIds
 import scitzen.compat.Logging
-import scitzen.generic.{Project, ProjectPath}
+import scitzen.project.{Project, ProjectPath}
 import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{BibQuery, Cite}
 import scitzen.sast.{Attribute, Attributes, Directive}

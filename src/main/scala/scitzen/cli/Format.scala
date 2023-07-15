@@ -2,7 +2,7 @@ package scitzen.cli
 
 import scitzen.bibliography.BibDB
 import scitzen.compat.Logging.cli
-import scitzen.generic.ArticleDirectory
+import scitzen.project.ArticleDirectory
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
 
