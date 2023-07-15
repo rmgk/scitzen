@@ -1,35 +1,37 @@
 package scitzen.bibliography
 
+import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, scanJsonValuesFromStream, writeToStream}
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import de.rmgk.delay.{Async, Sync}
 import scitzen.bibliography.BibManager.bibIds
 import scitzen.compat.Logging
-import scitzen.parser.{Parse}
+import scitzen.parser.{Biblet, Parse}
 import scitzen.project.{Project, ProjectPath}
 import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{BibQuery, Cite}
 import scitzen.sast.{Attribute, Attributes, Directive}
 
+import java.io.BufferedOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, StandardOpenOption}
+import scala.collection.mutable.ListBuffer
+import scala.util.Using
+
+given JsonValueCodec[BibEntry] = JsonCodecMaker.make
 
 class BibManager(project: Project) {
 
   val dblpcachePath: ProjectPath = project.bibfileDBLPcache
 
-  def parsebib(): Map[String, BibEntry] =
-    (if Files.exists(dblpcachePath.absolute) then
-       Bibtex.makeBib(dblpcachePath)
-     else
-       Map.empty
-    ) ++
-    project.bibfiles.map: f =>
-      Parse.bibfileUnwrap(Files.readAllBytes(f.absolute)).foreach: bp =>
-        println(new String(bp.full))
-      Bibtex.makeBib(f)
-    .flatten
-
   def prefetch(citations: Set[Directive]): Async[Any, BibDB] = Sync:
-    val currentBib = parsebib()
+    val biblets = project.bibfiles.flatMap: f =>
+      Parse.bibfileUnwrap(Files.readAllBytes(f.absolute))
+    val knowKeys = biblets.map(_.id).toSet
+    if biblets.size != knowKeys.size then
+      Logging.cli.warn("duplicate bib entries detected")
+      biblets.groupBy(_.id).flatMap: (k, v) =>
+        if v.sizeIs > 1 then Some(k) else None
+      .foreach(println)
 
     val grouped           = citations.groupBy(_.command)
     val citeDirectives    = grouped.getOrElse(Cite, List.empty)
@@ -41,23 +43,57 @@ class BibManager(project: Project) {
 
     val citeKeys     = citeDirectives.flatMap(BibManager.bibIds)
     val allCitations = citeKeys.toSet ++ queries.valuesIterator.flatten.map(info => s"DBLP:${info.key}")
-    val missing      = allCitations -- currentBib.keySet
+    val missing      = allCitations -- knowKeys
     val dblp         = missing.filter(_.startsWith("DBLP:"))
-    if dblp.nonEmpty then
+    val downloadedBiblets: List[Biblet] = if dblp.isEmpty then Nil else
       Logging.cli.info(s"scheduling download of ${dblp.size} missing citations")
       Files.createDirectories(dblpcachePath.absolute.getParent)
-      dblp.foreach: key =>
-        DBLP.lookup(key.stripPrefix("DBLP:")).foreach: res =>
-          Files.writeString(
+      dblp.iterator.flatMap: key =>
+        DBLP.lookup(key.stripPrefix("DBLP:")).iterator.flatMap: res =>
+          val resBytes = res.getBytes(StandardCharsets.UTF_8)
+          Files.write(
             dblpcachePath.absolute,
-            res,
-            StandardCharsets.UTF_8,
+            resBytes,
             StandardOpenOption.APPEND,
             StandardOpenOption.CREATE
           )
+          Parse.bibfileUnwrap(resBytes)
+      .toList
 
-    BibDB(parsebib(), queries)
+    val bibentriesCached = if !Files.exists(project.bibEntryCache.absolute) then Nil
+    else
+      val lb = new ListBuffer[BibEntry]
+      Using(Files.newInputStream(project.bibEntryCache.absolute)): is =>
+        scanJsonValuesFromStream[BibEntry](is): be =>
+          lb.append(be)
+          true
+      .get
+      lb.toList
+
+    val unknownBibentries = allCitations -- bibentriesCached.iterator.map(_.id).toSet
+
+    val allBiblets: Seq[Biblet] = downloadedBiblets ++ biblets
+
+
+    val newBibentries: List[BibEntry] = if unknownBibentries.isEmpty then Nil
+    else
+      val bibletmap = allBiblets.groupBy(_.id)
+      val all = unknownBibentries.iterator.flatMap(bibletmap.get).flatten.flatMap: biblet =>
+        Bibtex.parse(biblet.full.inputstream)
+      .toList
+      Using(BufferedOutputStream(Files.newOutputStream(project.bibEntryCache.absolute, StandardOpenOption.APPEND, StandardOpenOption.CREATE))): bo =>
+        all.foreach: be =>
+          writeToStream(be, bo)
+          // writes a byte, even though the value is a char, and the method takes an int.
+          bo.write('\n')
+      .get
+      all
+
+
+
+    BibDB(Bibtex.makeBib(bibentriesCached ++ newBibentries), queries)
 }
+
 object BibManager:
   extension (directive: Directive) {
     def bibIds: List[String] = directive.attributes.target.split(',').iterator.map(_.trim).toList

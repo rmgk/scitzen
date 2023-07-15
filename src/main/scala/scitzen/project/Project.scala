@@ -64,9 +64,11 @@ case class Project private (root: Path, config: ProjectConfig):
 
   val sources = byExtension("scim")
 
-  val bibfiles = byExtension("bib")
-
   val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
+  val bibEntryCache: ProjectPath = asProjectPath(cacheDir.resolve("bibentries.json"))
+
+  val bibfiles = byExtension("bib") ++ Option.when(Files.exists(bibfileDBLPcache.absolute))(bibfileDBLPcache)
+
 
   // be careful about initialization below, the following two do leak the (partially uninitialized) this reference
 

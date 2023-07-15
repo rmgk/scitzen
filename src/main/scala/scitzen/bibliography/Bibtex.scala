@@ -2,13 +2,10 @@ package scitzen.bibliography
 
 import de.undercouch.citeproc.bibtex.BibTeXConverter
 import de.undercouch.citeproc.csl.CSLItemData
-import scitzen.project.ProjectPath
 
 import java.io.InputStream
-import java.nio.file.Files
 import scala.jdk.CollectionConverters.*
 import scala.math.Ordering.Implicits.seqOrdering
-import scala.util.Using
 
 object Bibtex:
 
@@ -34,8 +31,8 @@ object Bibtex:
     items.valuesIterator.map { citeprocToBib }.toList
   }
 
-  def makeBib(bibpath: ProjectPath): Map[String, BibEntry] =
-    Using(Files.newInputStream(bibpath.absolute))(Bibtex.parse).get.sortBy(be =>
+  def makeBib(allbibs: Seq[BibEntry]): Map[String, BibEntry] =
+    allbibs.sortBy(be =>
       be.authors.map(_.familyName)
     ).zipWithIndex.map {
       case (be, i) => be.id -> be.copy(citekey = Some(be.authorYear.getOrElse((i + 1).toString)))
