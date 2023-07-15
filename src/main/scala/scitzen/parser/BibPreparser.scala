@@ -21,17 +21,10 @@ object BibPreparser {
     @tailrec
     def rec(opened: Int): Unit =
       until("{}\\".any).min(0).orFail.run
-      () match
-        case _ if "}".any.run =>
-          if opened > 0
-          then
-            rec(opened - 1)
-          else ()
-        case _ if "\\".any.run =>
-          scx.next
-          rec(opened)
-        case _ if "{".any.run =>
-          rec(opened + 1)
+      if "\\".any.run then { scx.next; return rec(opened) }
+      if "{".any.run then return rec(opened + 1)
+      if "}".any.run && opened > 0 then return rec(opened - 1)
+      ()
 
     rec(0)
     val full = scx.input.slice(start, scx.index + 1)
