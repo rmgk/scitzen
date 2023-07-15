@@ -81,10 +81,6 @@ object ConvertProject:
 
     cli.info(s"block converted ${blockConversions.mapping.size} ${timediff()}")
 
-    val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
-
-    cli.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
-
     val cachedConverter = new CachedConverterRouter(
       project.cacheDir.resolve("inlineConverter.json"),
       KatexLibrary(project.config.katexMacros.flatMap(project.resolve(project.root, _)))
@@ -95,6 +91,9 @@ object ConvertProject:
         selection.exists: sel =>
           art.article.doc.path.absolute.startsWith(sel)
       .toList
+
+    val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
+    cli.info(s"awaited bib ${bibdb.entries.size} ${bibdb.queried.size} ${timediff()}")
 
     val anal = ConversionAnalysis(
       project = project,
