@@ -117,7 +117,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
   def convertTex(article: Article, block: Block, content: String, attr: Attributes): List[Sast] =
     val texbytes    = content.getBytes(StandardCharsets.UTF_8)
     val contentHash = Hashes.sha1hex(texbytes)
-    val target      = project.cachePath(Path.of(s"$contentHash/$contentHash.pdf"))
+    val target      = project.cachePath(Path.of(s"subtex/$contentHash/$contentHash.pdf"))
     val res =
       if Files.exists(target.absolute)
       then Some(target.absolute)
