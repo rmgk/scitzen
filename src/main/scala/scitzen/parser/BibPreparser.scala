@@ -18,23 +18,20 @@ object BibPreparser {
 
     Predef.require(!id.contains(' '), s"something went wrong when parsing a bibfile for id: ${id}")
 
-
     @tailrec
     def rec(opened: Int): Unit =
       until("{}\\".any).min(0).orFail.run
-      if "}".any.run
-      then
-        if opened > 0
-        then
-          rec(opened - 1)
-        else ()
-      else if "\\".any.run
-      then
-        scx.next
-        rec(opened)
-      else if "{".any.run
-      then
-        rec(opened + 1)
+      () match
+        case _ if "}".any.run =>
+          if opened > 0
+          then
+            rec(opened - 1)
+          else ()
+        case _ if "\\".any.run =>
+          scx.next
+          rec(opened)
+        case _ if "{".any.run =>
+          rec(opened + 1)
 
     rec(0)
     val full = scx.input.slice(start, scx.index + 1)
