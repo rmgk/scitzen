@@ -15,7 +15,7 @@ object Format:
   implicit val saneCharsetDefault: Charset = StandardCharsets.UTF_8
 
   def formatContents(ca: ConversionAnalysis): Unit =
-    val cachefile = ca.project.cacheDir.resolve("formatted")
+    val cachefile = ca.project.cacheDir.resolve("formatted.tsv")
     var formattedHashes =
       if !Files.exists(cachefile)
       then Map.empty
