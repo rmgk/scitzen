@@ -1,9 +1,9 @@
 package scitzen.cli
 
 import de.rmgk.delay.Async
-import scitzen.contexts.{ConversionContext, FileDependency}
+import scitzen.contexts.{ConversionContext, TargetedFileDependency}
 import scitzen.extern.{Hashes, Latexmk}
-import scitzen.project.ProjectPath
+import scitzen.project.{ProjectPath, TitledArticle}
 import scitzen.outputs.SastToTexConverter
 import scitzen.resources.Filetype
 import scitzen.sast.{Attribute, Attributes}
@@ -17,15 +17,16 @@ import scala.util.Using
 object ConvertPdf:
   implicit val charset: Charset = StandardCharsets.UTF_8
 
-  case class PdfTask(dependencies: List[FileDependency], task: Async[Any, Unit])
+  case class PdfTask(dependencies: List[TargetedFileDependency], task: Async[Any, Unit])
 
   def convertToPdf(
-      anal: ConversionAnalysis
+      anal: ConversionAnalysis,
+      selected: List[TitledArticle]
   ): List[PdfTask] =
 
     def project = anal.project
 
-    anal.selected.filter(ta => ta.flags.tex || ta.header.attributes.plain("texTemplate").isDefined)
+    selected.filter(ta => ta.flags.tex || ta.header.attributes.plain("texTemplate").isDefined)
       .map: titled =>
 
         val articlename = Format.canonicalName(titled.header)
@@ -43,7 +44,6 @@ object ConvertPdf:
           ::(titled.article.ref, Nil),
           anal,
           Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
-          ProjectPath(project, temptexdir),
           flags = titled.flags,
         )
 
@@ -57,7 +57,6 @@ object ConvertPdf:
         Using(
           new BufferedOutputStream(Files.newOutputStream(
             target,
-            StandardOpenOption.APPEND,
             StandardOpenOption.CREATE,
             StandardOpenOption.TRUNCATE_EXISTING
           ))
@@ -86,7 +85,7 @@ object ConvertPdf:
           )
 
         PdfTask(
-          resultContext.fileDependencies, {
+          resultContext.fileDependencies.map(fd => TargetedFileDependency(fd, ProjectPath(project, temptexfile))), {
             val scripthash  = Hashes.sha1hex(documentString)
             val successfile = temptexdir.resolve("lastsuccess.sha1")
             if Files.exists(successfile) && Files.readString(successfile) == scripthash then Async(())

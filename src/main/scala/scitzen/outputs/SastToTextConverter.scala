@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
-import scitzen.project.{ArticleRef, ProjectPath}
+import scitzen.project.{ArticleRef}
 import scitzen.sast.DCommand.{Include, Lookup}
 import scitzen.sast.{
   Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section,
@@ -13,14 +13,13 @@ class SastToTextConverter(
     articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
-    outputDirectory: ProjectPath,
-) extends ProtoConverter[String, String](articleRef, anal, settings, outputDirectory):
+) extends ProtoConverter[String, String](articleRef, anal, settings):
 
   override def subconverter(
       aref: ArticleRef,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    SastToTextConverter(::(aref, articleRef), anal, attr, outputDirectory)
+    SastToTextConverter(::(aref, articleRef), anal, attr)
 
   override def convertBlock(ctx: Cta, block: Block): CtxCF =
     val Block(command, attr, blockType) = block

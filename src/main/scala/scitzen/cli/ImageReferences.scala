@@ -2,7 +2,8 @@ package scitzen.cli
 
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.contexts.FileDependency
+import scitzen.contexts.{FileDependency, TargetedFileDependency}
+import scitzen.project.TitledArticle
 import scitzen.resources.ImageTarget
 
 import java.nio.file.{Files, Path}
@@ -12,8 +13,8 @@ object ImageReferences:
   case class Reference(file: String, start: Int, end: Int)
   implicit val rferenceRW: JsonValueCodec[Map[String, List[Reference]]] = JsonCodecMaker.make
 
-  def listAll(anal: ConversionAnalysis, output: Path): List[FileDependency] =
-    val fileImageMap: Map[String, List[(Reference, FileDependency)]] = anal.selected.map { titled =>
+  def listAll(anal: ConversionAnalysis, output: Path, selected: List[TitledArticle]): List[TargetedFileDependency] =
+    val fileImageMap: Map[String, List[(Reference, TargetedFileDependency)]] = selected.map { titled =>
 
       def art = titled.article
 
@@ -30,7 +31,7 @@ object ImageReferences:
                 art.doc.reporter.bytePosToCodepointPos(directive.prov.start),
                 art.doc.reporter.bytePosToCodepointPos(directive.prov.end)
               ),
-              FileDependency(path, orig, path.absolute, path)
+              TargetedFileDependency(FileDependency(path, orig, path.absolute), path)
             )
       }
       art.doc.path.absolute.toString -> images

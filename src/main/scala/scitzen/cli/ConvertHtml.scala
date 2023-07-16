@@ -1,8 +1,7 @@
 package scitzen.cli
 
 import de.rmgk.delay
-import scitzen.cli.ScitzenCommandline.ClSync
-import scitzen.contexts.{ConversionContext, FileDependency}
+import scitzen.contexts.{ConversionContext, TargetedFileDependency}
 import scitzen.extern.ResourceUtil
 import scitzen.project.*
 import scitzen.html.sag.{Recipe, Sag, SagContext}
@@ -23,8 +22,8 @@ class ConvertHtml(anal: ConversionAnalysis):
   val stylesheet: Array[Byte] = ResourceUtil.load("scitzen.css")
 
   def convertToHtml(
-      sync: Option[ClSync],
-  ): List[FileDependency] =
+      selected: List[TitledArticle]
+  ): List[TargetedFileDependency] =
 
     Files.createDirectories(project.outputdirWeb)
 
@@ -35,15 +34,14 @@ class ConvertHtml(anal: ConversionAnalysis):
     def procRec(
         rem: List[TitledArticle],
         done: Set[ArticleRef],
-        acc: List[FileDependency],
-    ): List[FileDependency] =
+        acc: List[TargetedFileDependency],
+    ): List[TargetedFileDependency] =
       rem match
         case Nil => acc
         case titled :: rest =>
           val cctx = convertArticle(
             titled,
             cssfile,
-            sync,
           )
           val found = cctx.referenced.toSet -- done
 
@@ -51,25 +49,23 @@ class ConvertHtml(anal: ConversionAnalysis):
           procRec(
             foundArticles reverse_::: rest,
             done ++ found,
-            acc ++ cctx.fileDependencies
+            acc ++ cctx.fileDependencies.map(fd => TargetedFileDependency(fd, cctx.data))
           )
 
-    val htmlSelected = anal.selected.filter(ta => ta.flags.html)
+    val htmlSelected = selected.filter(ta => ta.flags.html)
     procRec(htmlSelected, htmlSelected.map(_.article.ref).toSet, Nil)
 
   def convertArticle(
       titled: TitledArticle,
       cssfile: Path,
-      sync: Option[ClSync],
-  ): ConversionContext[?] =
+  ): ConversionContext[ProjectPath] =
 
-    val targetPath = project.imagePaths.articleOutputPath(titled.header)
+    val targetPath = ProjectPath(project, project.imagePaths.articleOutputPath(titled.header))
 
     val converter = new SastToHtmlConverter(
       articleRef = ::(titled.article.ref, Nil),
       anal = anal,
       Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
-      ProjectPath(project, targetPath.getParent)
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
@@ -145,5 +141,5 @@ class ConvertHtml(anal: ConversionAnalysis):
           titled.article.doc.resolve(templatePath),
           templateSettings
         )
-    Files.writeString(targetPath, res)
-    convertedArticleCtx
+    Files.writeString(targetPath.absolute, res)
+    convertedArticleCtx.ret(targetPath)

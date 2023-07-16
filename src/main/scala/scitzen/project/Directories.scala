@@ -8,7 +8,7 @@ import scitzen.sast.{Sast, Section}
 
 import scala.annotation.tailrec
 
-class ArticleDirectory(project: Project, val articles: Seq[Article]):
+class ArticleDirectory(globalFlags: Flags, val articles: Seq[Article]):
   val byPath: Map[ProjectPath, Seq[Article]] =
     articles.groupBy(fd => fd.doc.path)
 
@@ -24,7 +24,7 @@ class ArticleDirectory(project: Project, val articles: Seq[Article]):
       TitledArticle(
         t,
         art,
-        project.config.flags.apply(t.attributes.plainList("flags"))
+        globalFlags.apply(t.attributes.plainList("flags"))
       )
     )
   )

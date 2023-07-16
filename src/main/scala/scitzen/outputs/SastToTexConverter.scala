@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.compat.Logging.cli
 import scitzen.contexts.ConversionContext
-import scitzen.project.{ArticleRef, Flags, ProjectPath, References, SastRef}
+import scitzen.project.{ArticleRef, Flags, References, SastRef}
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
@@ -32,9 +32,8 @@ class SastToTexConverter(
     articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
-    outputDirectory: ProjectPath,
     flags: Flags,
-) extends ProtoConverter[String, String](articleRef, anal, settings, outputDirectory):
+) extends ProtoConverter[String, String](articleRef, anal, settings):
 
   type CtxCS  = ConversionContext[Chain[String]]
   type Ctx[T] = ConversionContext[T]
@@ -44,7 +43,7 @@ class SastToTexConverter(
       aref: ArticleRef,
       attr: Attributes
   ): ProtoConverter[String, String] =
-    new SastToTexConverter(::(aref, articleRef), anal, attr, outputDirectory, flags)
+    new SastToTexConverter(::(aref, articleRef), anal, attr, flags)
 
   override def stringToInlineRes(str: String): String = latexencode(str)
 

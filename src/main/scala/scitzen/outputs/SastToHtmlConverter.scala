@@ -21,14 +21,13 @@ class SastToHtmlConverter(
     articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
     settings: Attributes,
-    outputDirectory: ProjectPath,
-) extends ProtoConverter[Recipe, Recipe](articleRef, anal, settings, outputDirectory):
+) extends ProtoConverter[Recipe, Recipe](articleRef, anal, settings):
 
   override def subconverter(
       aref: ArticleRef,
       attr: Attributes
   ): ProtoConverter[Recipe, Recipe] =
-    new SastToHtmlConverter(::(aref, articleRef), anal, attr, outputDirectory)
+    new SastToHtmlConverter(::(aref, articleRef), anal, attr)
 
   override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Recipe(inl.foreach(_.run))
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
@@ -222,7 +221,7 @@ class SastToHtmlConverter(
           case Some(path) =>
             val rel = project.imagePaths.relativizeImage(path)
             ctx.retc(Sag.script(`type` = "text/javascript", src = rel.toString))
-              .requireInOutput(FileDependency(path, path, rel, outputDirectory))
+              .requireInOutput(FileDependency(path, path, rel))
           case None =>
             cli.warn("no script", directive)
             ctx.retc(stringToInlineRes(directiveString(directive)))

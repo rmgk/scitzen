@@ -4,7 +4,7 @@ import de.rmgk.delay.Async
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
-import scitzen.contexts.FileDependency
+import scitzen.contexts.{TargetedFileDependency}
 import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
 import scitzen.project.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
@@ -20,14 +20,15 @@ import scala.jdk.StreamConverters.*
 
 case class ConversionAnalysis(
     project: Project,
-    selected: List[TitledArticle],
     directory: ArticleDirectory,
     block: BlockConversions,
     bib: BibDB,
     converter: Option[CachedConverterRouter],
 )
 
-inline def bind[Ctx, R](inline a: Async[Ctx, R]): R = a.bind
+object ConversionAnalysis:
+  def minimal(project: Project, directory: ArticleDirectory): ConversionAnalysis =
+    ConversionAnalysis(project, directory, BlockConversions(Map.empty), BibDB.empty, None)
 
 object ConvertProject:
 
@@ -64,7 +65,7 @@ object ConvertProject:
     val documents = ArticleProcessing.loadDocuments(project)
 
     val directory = ArticleDirectory(
-      project,
+      project.config.flags,
       // note: tried to parallelize this, does not seem to be worth it in most cases
       documents.flatMap: doc =>
         ArticleProcessing.processArticles(doc)
@@ -99,7 +100,6 @@ object ConvertProject:
 
     val anal = ConversionAnalysis(
       project = project,
-      selected = selected,
       directory = directory,
       block = blockConversions,
       bib = bibdb,
@@ -115,16 +115,16 @@ object ConvertProject:
       Format.formatRename(directory)
       cli.info(s"formatted filenames ${timediff()}")
 
-    val htmlresult = ConvertHtml(anal).convertToHtml(sync)
+    val htmlresult = ConvertHtml(anal).convertToHtml(selected)
     cli.info(s"generated html ${timediff()}")
-    val pdfresult = ConvertPdf.convertToPdf(anal).toArray
+    val pdfresult = ConvertPdf.convertToPdf(anal, selected).toArray
     cli.info(s"generated tex ${timediff()}")
     val ifmres =
       if imageFileMap.isEmpty
       then Nil
-      else ImageReferences.listAll(anal, imageFileMap.get)
+      else ImageReferences.listAll(anal, imageFileMap.get, selected)
 
-    val convertees: Array[(FileDependency, ImageTarget)] =
+    val convertees: Array[(TargetedFileDependency, ImageTarget)] =
       val htmldeps = htmlresult.iterator.zip(continually(ImageTarget.Html))
       val pdfdeps  = pdfresult.iterator.flatMap(_.dependencies).zip(continually(ImageTarget.Tex))
       val ifmdeps  = ifmres.iterator.zip(continually(ImageTarget.Raster))
@@ -138,16 +138,17 @@ object ConvertProject:
 
       val converted = new ConcurrentHashMap[ProjectPath, Any](convertees.size * 2)
 
-      convertees.foreach: (dep, imageTarget) =>
+      convertees.foreach: (tdep, imageTarget) =>
+        def dep = tdep.dep
         Async[Unit].resource(semaphore.acquire(), _ => { semaphore.release() }): _ =>
           val token = new {}
-          bind:
+          Async.bind:
             if
               dep.file != dep.original &&
               converted.computeIfAbsent(dep.file, _ => token) == token
             then project.imagePaths.lookup(imageTarget).convert(dep.original)
             else Async(())
-          val targetpath = dep.outputDirectory.absolute.resolve(dep.relativeFinalization)
+          val targetpath = tdep.outputPath.absolute.getParent.resolve(dep.relativeFinalization)
           require(targetpath != dep.original.absolute, "tried to overwrite file with itself")
           if targetpath != dep.file.absolute
           then

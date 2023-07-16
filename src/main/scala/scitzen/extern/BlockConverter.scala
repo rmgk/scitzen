@@ -1,12 +1,14 @@
 package scitzen.extern
 
 import de.rmgk.logging.Loggable
-import scitzen.cli.ConvertTemplate
+import scitzen.cli.{ConversionAnalysis, ConvertTemplate}
 import scitzen.compat.Logging
 import scitzen.compat.Logging.cli
+import scitzen.contexts.{ConversionContext}
+import scitzen.outputs.SastToTextConverter
 import scitzen.project.{Article, ArticleDirectory, Project}
 import scitzen.sast.Attribute.Nested
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Sast}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, DCommand, Directive, Fenced, Parsed, Sast}
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.lang.ProcessBuilder.Redirect
@@ -47,12 +49,17 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     conversions.foldLeft(List[Sast](block)) { case (current, Nested(name, attrs)) =>
       current match
         case Nil => Nil
+        case List(Block(_, _, Parsed(_, content))) =>
+          val resctx = new SastToTextConverter(::(article.ref, Nil), ConversionAnalysis.minimal(project, articleDirectory),
+            Attributes(project.config.attrs.raw ++ article.titled.map(_.attributes.raw).getOrElse(Nil) ++ attrs.raw))
+            .convertSastSeq(ConversionContext(()), content)
+          List(block.copy(content = Fenced(resctx.data.mkString("\n")))(block.prov))
         case List(block @ Block(_, _, Fenced(content))) =>
           try
             cli.trace("applying conversion", name)
             name match
               case "template" => applyTemplate(attrs, block, content, article)
-              case "js"       => convertJS(current, attrs)
+              case "js"       => convertJS(content, block, attrs)
               case "tex"      => convertTex(article, block, content, attrs)
               case "graphviz" => graphviz(content, block, attrs)
               case "mermaid"  => mermaid(content, block)
@@ -105,14 +112,9 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       cli.warn(s"error scala compiling »$sourcepath« see »$errorFile«")
       Nil
 
-  def convertJS(sast: List[Sast], attr: Attributes): List[Sast] =
-    sast match
-      case List(block @ Block(_, _, Fenced(content))) =>
-        val res = scitzen.extern.JsRunner().run(content, attr)
-        List(Block(BCommand.Code, Attributes.empty, Fenced(res))(block.prov))
-      case other =>
-        cli.warn(s"js conversion not applicable")
-        sast
+  def convertJS(content: String, block: Block, attr: Attributes): List[Sast] =
+    val res = scitzen.extern.JsRunner().run(content, attr)
+    List(Block(BCommand.Code, Attributes.empty, Fenced(res))(block.prov))
 
   def convertTex(article: Article, block: Block, content: String, attr: Attributes): List[Sast] =
     val texbytes    = content.getBytes(StandardCharsets.UTF_8)
@@ -185,8 +187,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         mermaidSource.absolute.toString,
         "--output",
         target.absolute.toString
-      )
-        .inheritIO().start().waitFor()
+      ).inheritIO().start().waitFor()
       cli.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString))(block.prov))
 
@@ -205,5 +206,6 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         Attributes(project.config.attrs.raw ++ attributes.raw :+ Attribute("template content", origContent))
       )
     List(block.copy(content = Fenced(resolved))(block.prov))
+
 
 }
