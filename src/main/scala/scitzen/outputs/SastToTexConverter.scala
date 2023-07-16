@@ -241,10 +241,13 @@ class SastToTexConverter(
 
       case BibQuery => convertInline(ctx, anal.bib.convert(directive))
       case Cite =>
+        val usedctx = ctx.cite(
+          attributes.target.split(',').iterator.map(_.trim).filterNot(_.isEmpty).flatMap(anal.bib.entries.get).toList
+        )
         val cmndCtx = attributes.plain("style") match
-          case Some("author") => ctx.ret("citet")
-          case Some("inline") => ctx.ret("bibentry").useFeature("bibentry")
-          case _              => ctx.ret("cite")
+          case Some("author") => usedctx.ret("citet")
+          case Some("inline") => usedctx.ret("bibentry").useFeature("bibentry")
+          case _              => usedctx.ret("cite")
 
         nbrs(attributes)(cmndCtx).mapc(str => s"$str\\${cmndCtx.data}{${attributes.target}}")
 
