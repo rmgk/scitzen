@@ -13,7 +13,6 @@ lazy val scitzen = project.in(file("."))
       slips.scip.value,
       slips.options.value,
       slips.script.value,
-      scopt.value,
       jsoniterScala.value,
       munit.value,
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.29.0",

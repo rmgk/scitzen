@@ -2,7 +2,6 @@ package scitzen.cli
 
 import de.rmgk.delay.Async
 import scitzen.bibliography.{BibDB, BibManager}
-import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
 import scitzen.contexts.TargetedFileDependency
 import scitzen.extern.Katex.KatexLibrary
@@ -44,7 +43,6 @@ object ConvertProject:
     () => timediff
 
   def executeConversions(
-      sync: Option[ClSync],
       imageFileMap: Option[Path],
       project: Project,
       selection: List[Path],
