@@ -62,12 +62,12 @@ case class Project private (root: Path, config: ProjectConfig):
       Files.isRegularFile(c.absolute) &&
         c.absolute.getFileName.toString.endsWith(toTest)
 
-  val sources = byExtension("scim")
+  def sources = byExtension("scim")
 
   val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
   val bibEntryCache: ProjectPath = asProjectPath(cacheDir.resolve("bibentries.json"))
 
-  val bibfiles = byExtension("bib") ++ Option.when(Files.exists(bibfileDBLPcache.absolute))(bibfileDBLPcache)
+  def bibfiles = byExtension("bib") ++ Option.when(Files.exists(bibfileDBLPcache.absolute))(bibfileDBLPcache)
 
 
   // be careful about initialization below, the following two do leak the (partially uninitialized) this reference
