@@ -2,12 +2,9 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
-import scitzen.project.{ArticleRef}
-import scitzen.sast.DCommand.{Include, Lookup}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section,
-  Slist, SpaceComment, Text
-}
+import scitzen.project.ArticleRef
+import scitzen.sast.DCommand.{Include, Lookup, Other}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section, Slist, SpaceComment, Text}
 
 class SastToTextConverter(
     articleRef: ::[ArticleRef],
@@ -75,7 +72,12 @@ class SastToTextConverter(
           ctx.empty
         case Some(res) =>
           convertInlineSeq(ctx, res.inl)
-
+    case Other("path") =>
+      val res = handlePath(ctx, directive)
+      res.data match
+        case Some(path) =>
+          res.retc(path.toString)
+        case None => res.retc("")
     case other => ctx.retc("")
 
   override def stringToInlineRes(str: String): String = str

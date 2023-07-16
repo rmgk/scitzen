@@ -10,7 +10,7 @@ import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
 abstract class ProtoConverter[BlockRes, InlineRes](
     articleRef: ::[ArticleRef],
@@ -152,8 +152,8 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleInclude(ctx: Cta, directive: Directive): Ctx[Chain[BlockRes | InlineRes]] = {
     val attributes = directive.attributes
-    attributes.text.plainString match
-      case "code" =>
+    attributes.textOption.map(_.plainString) match
+      case Some("code") =>
         doc.resolve(attributes.target) match
           case None => convertInlineSeq(ctx, List(directive))
           case Some(file) =>
@@ -174,6 +174,17 @@ abstract class ProtoConverter[BlockRes, InlineRes](
           )
           ctx.empty: CtxCF
 
+  }
+
+  def handlePath(ctx: Cta, directive: Directive): Ctx[Option[Path]] = {
+    val search = Path.of(directive.attributes.target)
+    project.projectFiles.find: p =>
+      p.projectAbsolute.endsWith(search)
+    .match
+      case None => ctx.ret(None)
+      case Some(pp) =>
+        val relative = anal.project.root.relativize(pp.absolute)
+        ctx.requireInOutput(FileDependency(pp, pp, relative)).ret(Some(relative))
   }
 
 end ProtoConverter

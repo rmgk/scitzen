@@ -4,7 +4,7 @@ import de.rmgk.delay.Async
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.cli.ScitzenCommandline.ClSync
 import scitzen.compat.Logging.cli
-import scitzen.contexts.{TargetedFileDependency}
+import scitzen.contexts.TargetedFileDependency
 import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
 import scitzen.project.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}

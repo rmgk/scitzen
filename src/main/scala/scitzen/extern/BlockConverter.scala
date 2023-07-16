@@ -4,7 +4,7 @@ import de.rmgk.logging.Loggable
 import scitzen.cli.{ConversionAnalysis, ConvertTemplate}
 import scitzen.compat.Logging
 import scitzen.compat.Logging.cli
-import scitzen.contexts.{ConversionContext}
+import scitzen.contexts.ConversionContext
 import scitzen.outputs.SastToTextConverter
 import scitzen.project.{Article, ArticleDirectory, Project}
 import scitzen.sast.Attribute.Nested
@@ -46,21 +46,24 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       cli.warn(s"conversion block has no converters", article.doc.reporter.apply(block))
       return Nil
 
-    conversions.foldLeft(List[Sast](block)) { case (current, Nested(name, attrs)) =>
+    val (resctx, transformed) = block match
+      case Block(_, _, Parsed(_, content)) =>
+        val resctx = new SastToTextConverter(::(article.ref, Nil), ConversionAnalysis.minimal(project, articleDirectory),
+          Attributes(project.config.attrs.raw ++ article.titled.map(_.attributes.raw).getOrElse(Nil)))
+          .convertSastSeq(ConversionContext(()), content)
+        (Some(resctx), block.copy(content = Fenced(resctx.data.mkString("\n")))(block.prov))
+      case other => (None, other)
+
+    conversions.foldLeft(List[Sast](transformed)) { case (current, Nested(name, attrs)) =>
       current match
         case Nil => Nil
-        case List(Block(_, _, Parsed(_, content))) =>
-          val resctx = new SastToTextConverter(::(article.ref, Nil), ConversionAnalysis.minimal(project, articleDirectory),
-            Attributes(project.config.attrs.raw ++ article.titled.map(_.attributes.raw).getOrElse(Nil) ++ attrs.raw))
-            .convertSastSeq(ConversionContext(()), content)
-          List(block.copy(content = Fenced(resctx.data.mkString("\n")))(block.prov))
         case List(block @ Block(_, _, Fenced(content))) =>
           try
             cli.trace("applying conversion", name)
             name match
               case "template" => applyTemplate(attrs, block, content, article)
               case "js"       => convertJS(content, block, attrs)
-              case "tex"      => convertTex(article, block, content, attrs)
+              case "tex"      => convertTex(article, block, content, attrs, resctx)
               case "graphviz" => graphviz(content, block, attrs)
               case "mermaid"  => mermaid(content, block)
               case "scalaCli" => convertScalaCli(content, block)
@@ -116,7 +119,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
     val res = scitzen.extern.JsRunner().run(content, attr)
     List(Block(BCommand.Code, Attributes.empty, Fenced(res))(block.prov))
 
-  def convertTex(article: Article, block: Block, content: String, attr: Attributes): List[Sast] =
+  def convertTex(article: Article, block: Block, content: String, attr: Attributes, resctx: Option[ConversionContext[?]]): List[Sast] =
     val texbytes    = content.getBytes(StandardCharsets.UTF_8)
     val contentHash = Hashes.sha1hex(texbytes)
     val target      = project.cachePath(Path.of(s"subtex/$contentHash/$contentHash.pdf"))
@@ -128,6 +131,13 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         Files.createDirectories(dir)
         val texfile = dir.resolve(contentHash + ".tex")
         Files.write(texfile, texbytes)
+        resctx.foreach: ctx =>
+          ctx.fileDependencies.foreach: dep =>
+            val deptarget = dir.resolve(dep.relativeFinalization)
+            if !Files.exists(deptarget) then
+              Files.createDirectories(deptarget.getParent)
+              Files.createLink(deptarget, dep.file.absolute)
+              ()
         Await.result(Latexmk.latexmk(dir, contentHash, texfile).runToFuture(using ()), Duration.Inf)
     res match
       case Some(res) =>
