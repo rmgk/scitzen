@@ -12,4 +12,4 @@ enum ImageTarget(
     unsupportedFormat.exists(fmt => filename.absolute.toString.endsWith(s".${fmt.extension}"))
   case Html   extends ImageTarget("html target", List(svg), Set(pdf))
   case Tex    extends ImageTarget("tex target", List(pdf, jpg), Filetype.all -- List(png, pdf, jpg))
-  case Raster extends ImageTarget("raster target", List(png), Filetype.all -- List(png, jpg))
+  case Raster extends ImageTarget("raster target", List(png, jpg), Filetype.all -- List(png, jpg))
