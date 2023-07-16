@@ -3,10 +3,6 @@
   "name":"[Ljava.lang.String;"
 },
 {
-  "name":"de.rmgk.scip$Scx",
-  "fields":[{"name":"0bitmap$1"}]
-},
-{
   "name":"java.lang.ClassValue"
 },
 {
@@ -19,10 +15,6 @@
 },
 {
   "name":"org.graalvm.polyglot.management.Management"
-},
-{
-  "name":"scopt.OParser$",
-  "fields":[{"name":"0bitmap$1"}]
 },
 {
   "name":"sun.misc.Unsafe",
