@@ -9,9 +9,7 @@ import scala.util.Using
 
 object Prism:
 
-  private val prismcontext =
-    val engine: Engine = Engine.newBuilder().build()
-    Context.newBuilder("js").engine(engine).build()
+  private val prismcontext = Context.create("js")
 
   lazy val highlightVal = prismcontext.synchronized:
     prismcontext.eval("js", "Prism.highlight")
