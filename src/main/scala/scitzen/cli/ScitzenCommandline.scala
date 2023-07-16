@@ -6,7 +6,7 @@ import scitzen.cli.ConvertProject.executeConversions
 import scitzen.compat.Logging.{cli, given}
 import scitzen.project.Project
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 
 object ScitzenCommandline {
   def main(args: Array[String]): Unit = {
@@ -20,9 +20,10 @@ object ScitzenCommandline {
         None
       ).value
 
-      val absolute: List[Path] = RemainingArguments("scope", "path to project, file, or scope to compile").value.map(
-        Path.of(_).toAbsolutePath.normalize
-      )
+      val absolute: List[Path] = RemainingArguments("scope", "path to project, file, or scope to compile").value.map: p =>
+        val normalized = Path.of(p).toAbsolutePath.normalize
+        if !Files.exists(normalized) then cli.warn(s"root does not exist: $normalized")
+        normalized
 
       val projectSearchPath = absolute.headOption.getOrElse(Path.of(""))
 
