@@ -2,7 +2,7 @@ package scitzen.cli
 
 import scitzen.bibliography.BibDB
 import scitzen.compat.Logging.cli
-import scitzen.project.ArticleDirectory
+import scitzen.project.{ArticleDirectory, TitledArticle}
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
 
@@ -40,7 +40,8 @@ object Format:
     )
     ()
 
-  def formatRename(documentDirectory: ArticleDirectory): Unit =
+  def formatRename(documentDirectory: ArticleDirectory, selected: List[TitledArticle]): Unit =
+    // todo: make this work on selected things, and also for
     documentDirectory.byPath.foreach: (document, articles) =>
       articles match
         case Seq(article) =>

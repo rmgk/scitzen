@@ -110,7 +110,7 @@ object ConvertProject:
       Format.formatContents(anal)
       cli.info(s"formatted contents ${timediff()}")
     if project.config.format.contains("filename") then
-      Format.formatRename(directory)
+      Format.formatRename(directory, selected)
       cli.info(s"formatted filenames ${timediff()}")
 
     val htmlresult = ConvertHtml(anal).convertToHtml(selected)
