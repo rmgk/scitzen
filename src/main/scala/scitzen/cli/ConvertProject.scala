@@ -2,10 +2,11 @@ package scitzen.cli
 
 import de.rmgk.delay.Async
 import scitzen.bibliography.{BibDB, BibManager}
+import scitzen.blockconverters.{BlockConversions, BlockConverter}
 import scitzen.compat.Logging.cli
 import scitzen.contexts.TargetedFileDependency
 import scitzen.extern.Katex.KatexLibrary
-import scitzen.extern.{BlockConversions, BlockConverter, CachedConverterRouter, ResourceUtil}
+import scitzen.extern.{CachedConverterRouter, ResourceUtil}
 import scitzen.project.{ArticleDirectory, ArticleProcessing, Project, ProjectPath, TitledArticle}
 import scitzen.resources.ImageTarget
 

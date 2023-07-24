@@ -1,9 +1,9 @@
 package scitzen.cli
 
 import scitzen.bibliography.BibDB
+import scitzen.blockconverters.BlockConversions
 import scitzen.compat.Logging
 import scitzen.contexts.ConversionContext
-import scitzen.extern.BlockConversions
 import scitzen.project.{ArticleDirectory, Project, ProjectPath}
 import scitzen.outputs.SastToTextConverter
 import scitzen.sast.Attributes
