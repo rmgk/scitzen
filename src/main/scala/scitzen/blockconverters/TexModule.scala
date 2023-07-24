@@ -40,7 +40,7 @@ object TexModule extends BlockConverterModule {
             DCommand.Image,
             Attributes(List(
               Attribute(target.projectAbsolute.toString),
-              Attribute("css_style", "background-color:white")
+              Attribute("color", "autoinvert")
             ))
           )(block.prov)
         )

@@ -393,10 +393,7 @@ class SastToHtmlConverter(
         if videoEndings.exists(filename.endsWith) then
           Sag.video(src = path.toString, loop = true, autoplay = true, `class` = cssClass)
         else
-          val myStyle: Option[String] =
-            if directive.attributes.target.endsWith(".pdf")
-            then Some(s"background-color: white; ${directive.attributes.plain("css_style").getOrElse("")}")
-            else directive.attributes.plain("css_style")
+          val myStyle: Option[String] = directive.attributes.plain("css_style")
           Sag.img(src = path.toString, `class` = cssClass, style = myStyle)
   }
 
