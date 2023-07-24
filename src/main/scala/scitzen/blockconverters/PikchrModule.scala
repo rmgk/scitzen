@@ -9,10 +9,13 @@ import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.util.Using
+import scala.util.control.NonFatal
 
 object PikchrModule extends BlockConverterModule {
 
   override def handles: String = "pikchr"
+
+  val viewboxRegex = raw"""viewBox="(?<x>[\d\.]+)\s+(?<y>[\d\.]+)\s+(?<width>[\d\.]+)\s+(?<height>[\d\.]+)"""".r
 
   override def convert(converterParams: ConverterParams): List[Sast] =
 
@@ -24,17 +27,28 @@ object PikchrModule extends BlockConverterModule {
       val start = System.nanoTime()
       val pikchr = process"pikchr --svg-only -"
         .redirectError(Redirect.INHERIT)
-        .redirectOutput(target.absolute.toFile)
         .start()
       Using.resource(pikchr.getOutputStream) { os => os.write(bytes) }
       pikchr.waitFor()
+      val svg = Using.resource(pikchr.getInputStream) { _.readToString }
+      val updated =
+        try
+          val res    = viewboxRegex.findFirstMatchIn(svg).get
+          val width  = res.group("width").toDouble
+          val height = res.group("height").toDouble
+          s"""<svg width="${width}" height="$height"""" + svg.substring(4)
+        catch
+          case NonFatal(e) =>
+            cli.warn(s"could not find viewbox during pikchr transformation", e)
+            svg
+      Files.writeString(target.absolute, updated, StandardCharsets.UTF_8)
       cli.info(s"pikchr compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     List(Directive(
       DCommand.Image,
-      Attributes(Seq(
+      Attributes(converterParams.block.attributes.raw ++ Seq(
         Attribute(target.projectAbsolute.toString),
         Attribute("css_style", "background-color:white"),
-      ) ++ converterParams.block.attributes.raw)
+      ))
     )(converterParams.block.prov))
 
 }

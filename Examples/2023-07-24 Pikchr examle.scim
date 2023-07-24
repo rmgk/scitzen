@@ -1,7 +1,7 @@
 = Pikchr examle
 date = 2023-07-24
 
-```convert{pikchr={}; size=text}
+```convert{pikchr={}}
 	arrow right 200% "Scitzen" "Source"
 	box rad 10px "Scitzen" "Commandline" fit
 	arrow right 200% "normal pipeline" above
