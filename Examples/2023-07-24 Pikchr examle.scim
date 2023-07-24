@@ -1,0 +1,10 @@
+= Pikchr examle
+date = 2023-07-24
+
+```convert{pikchr={}; size=text}
+	arrow right 200% "Scitzen" "Source"
+	box rad 10px "Scitzen" "Commandline" fit
+	arrow right 200% "normal pipeline" above
+	arrow <-> down 70% from last box.s
+	box same "Pikchr" "Formatter" "(pikchr.c)" fit
+```

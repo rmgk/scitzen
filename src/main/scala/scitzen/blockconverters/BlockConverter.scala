@@ -27,7 +27,7 @@ case class BlockConversions(mapping: Map[Block, List[Sast]]):
 class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
 
   val modules =
-    List(TexModule, GraphvizModule, MermaidModule, FileContentModule, ScalaCliModule, TemplateModule, JsModule)
+    List(TexModule, GraphvizModule, MermaidModule, FileContentModule, ScalaCliModule, TemplateModule, JsModule, PikchrModule)
 
   def run(): BlockConversions =
     BlockConversions:
