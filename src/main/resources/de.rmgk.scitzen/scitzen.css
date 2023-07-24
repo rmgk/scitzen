@@ -282,13 +282,17 @@ img, video {
 
 	/* display: block; */
 	height: auto;
-	max-height: 90vh;
 	max-width: 100%;
+}
+
+:is(img, video):not(.sizing-vertical) {
+	max-height: 90vh;
 }
 
 :is(img, video).sizing-text {
 	max-width: min(100%, var(--main-content-width));
 }
+
 
 @media (prefers-color-scheme: dark) {
 	:is(img, video).color-autoinvert {

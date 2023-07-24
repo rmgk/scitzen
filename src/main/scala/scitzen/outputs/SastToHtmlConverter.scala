@@ -386,7 +386,7 @@ class SastToHtmlConverter(
       ctx.retc:
         val filename  = path.getFileName.toString
         val cssClass =
-          val size = directive.attributes.plain("size").map(s => s"sizing-$s")
+          val size = directive.attributes.plain("size").iterator.flatMap(s => s.split(",")).map(s => s"sizing-${s.trim}")
           val invert = directive.attributes.plain("color").map(s => s"color-$s")
           val res = List(size, invert).flatten.mkString(" ")
           Option.when(res.nonEmpty)(res)
