@@ -290,6 +290,11 @@ img, video {
 	max-width: min(100%, var(--main-content-width));
 }
 
+@media (prefers-color-scheme: dark) {
+	:is(img, video).color-autoinvert {
+		filter: invert(100%) hue-rotate(180deg);
+	}
+}
 
 /* center contents of a figure, in particular the caption */
 figure {

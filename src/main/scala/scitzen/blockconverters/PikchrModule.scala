@@ -47,7 +47,7 @@ object PikchrModule extends BlockConverterModule {
       DCommand.Image,
       Attributes(converterParams.block.attributes.raw ++ Seq(
         Attribute(target.projectAbsolute.toString),
-        Attribute("css_style", "background-color:white"),
+        Attribute("color", "autoinvert")
       ))
     )(converterParams.block.prov))
 

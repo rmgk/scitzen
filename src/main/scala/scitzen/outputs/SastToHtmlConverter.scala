@@ -385,15 +385,19 @@ class SastToHtmlConverter(
       val path = ctx.data.relativeFinalization
       ctx.retc:
         val filename  = path.getFileName.toString
-        val sizeclass = directive.attributes.plain("size").map(s => s"sizing-$s")
+        val cssClass =
+          val size = directive.attributes.plain("size").map(s => s"sizing-$s")
+          val invert = directive.attributes.plain("color").map(s => s"color-$s")
+          val res = List(size, invert).flatten.mkString(" ")
+          Option.when(res.nonEmpty)(res)
         if videoEndings.exists(filename.endsWith) then
-          Sag.video(src = path.toString, loop = true, autoplay = true, `class` = sizeclass)
+          Sag.video(src = path.toString, loop = true, autoplay = true, `class` = cssClass)
         else
           val myStyle: Option[String] =
             if directive.attributes.target.endsWith(".pdf")
             then Some(s"background-color: white; ${directive.attributes.plain("css_style").getOrElse("")}")
             else directive.attributes.plain("css_style")
-          Sag.img(src = path.toString, `class` = sizeclass, style = myStyle)
+          Sag.img(src = path.toString, `class` = cssClass, style = myStyle)
   }
 
 end SastToHtmlConverter
