@@ -9,10 +9,11 @@ object DelimitedBlockParsers {
   def anyStart: Scip[String] = ":`".any.rep.min(2).str
 
   def makeDelimited(start: Scip[String]): Scip[Block] = Scip {
+    val startIndex = scx.index
     val delimiter    = start.run
     val command      = DirectiveParsers.macroCommand.opt.trace("delimited marco").run
     val attr         = (AttributesParser.braces.opt <~ spaceLineF).trace("delim braces").run
-    val (text, prov) = withProv(untilIS(eol and seq(delimiter) and spaceLineB)).trace("delim block").run
+    val (text, innerProv) = withProv(untilIS(eol and seq(delimiter) and spaceLineB)).trace("delim block").run
     val stripRes     = stripIfPossible(text, delimiter.length)
     val strippedText = stripRes.getOrElse(text)
     val rawAttr      = attr.getOrElse(Nil)
@@ -30,7 +31,8 @@ object DelimitedBlockParsers {
       Attributes(rawAttr),
       blockContent
     )(
-      if (stripRes.isEmpty) prov else prov.copy(indent = delimiter.length)
+      Prov(startIndex, scx.index)
+      //if (stripRes.isEmpty) innerProv else innerProv.copy(indent = delimiter.length)
     )
   }.trace("make delimited")
 

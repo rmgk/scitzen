@@ -5,6 +5,7 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.contexts.{FileDependency, TargetedFileDependency}
 import scitzen.project.TitledArticle
 import scitzen.resources.ImageTarget
+import scitzen.sast.{DCommand, Directive}
 
 import java.nio.file.{Files, Path}
 
@@ -18,11 +19,17 @@ object ImageReferences:
 
       def art = titled.article
 
-      val images = art.context.imageDirectives.flatMap { directive =>
+      val blockImageDirectives: List[Directive] = art.context.convertBlocks.flatMap: block =>
+        anal.block.substitute(block).flatMap:
+          case img @ Directive(DCommand.Image, _) => Some(img)
+          case _                                  => None
+
+      val images = (art.context.imageDirectives ++ blockImageDirectives).flatMap { directive =>
         art.doc.resolve(directive.attributes.target).flatMap: orig =>
           locally:
             if ImageTarget.Raster.requiresConversion(orig)
-            then anal.project.imagePaths.raster.predictTarget(orig)
+            then
+              anal.project.imagePaths.raster.predictTarget(orig)
             else Some(orig)
           .map: path =>
             (

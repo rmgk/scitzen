@@ -17,7 +17,7 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
         is.accepts.contains(inputType)
       boundary:
         imageTarget.choices.foreach: accepted =>
-          candidates.collectFirst: can =>
+          candidates.foreach: can =>
             if can.produces == accepted
             then boundary.break(Some(inputType -> can))
         None
@@ -25,10 +25,12 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
   end conversionChoice
 
   def converterFor(input: ProjectPath): Option[ImageConverter] =
-    Filetype.of(input.absolute).flatMap(conversionChoice.get)
+    Filetype.of(input.absolute).flatMap: ft =>
+      conversionChoice.get(ft)
 
   def predictTarget(input: ProjectPath): Option[ProjectPath] =
-    converterFor(input).map(c => predictTargetOf(input, c.produces))
+    converterFor(input).map:c =>
+      predictTargetOf(input, c.produces)
 
   def predictTargetOf(input: ProjectPath, targetType: Filetype): ProjectPath =
     val targetFilename =
