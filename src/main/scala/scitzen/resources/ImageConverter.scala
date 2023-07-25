@@ -26,7 +26,7 @@ object ImageConverter:
 class Cairosvg(produces: Filetype) extends ImageConverter(produces)(Filetype.svg):
   override def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean] = Async:
     val res: Process =
-      process"cairosvg ${input.absolute} -f ${produces.extension} -o ${output.absolute}".start().onExit().toAsync.bind
+      process"cairosvg --background white ${input.absolute} -f ${produces.extension} -o ${output.absolute}".start().onExit().toAsync.bind
     res.exitValue() == 0
 
 class ImageMagick(accepts: Filetype*)(produces: Filetype) extends ImageConverter(produces)(accepts*):
