@@ -31,9 +31,11 @@ abstract class SvgViewboxModule(override val handles: String, processBuilder: Pr
         .redirectError(Redirect.DISCARD)
         .start()
       Using.resource(pikchr.getOutputStream) { os => os.write(bytes) }
-      if pikchr.waitFor() != 0
-        then cli.warn(s"${handles} compilation returned error code")
       val svg = Using.resource(pikchr.getInputStream) { _.readToString }
+      if pikchr.waitFor() != 0
+      then
+        cli.warn(s"${handles} compilation returned error code:")
+        cli.warn(svg.indent(2))
       val updated =
         try
           val res    = viewboxRegex.findFirstMatchIn(svg).get
