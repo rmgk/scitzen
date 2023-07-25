@@ -2,7 +2,7 @@ package scitzen.blockconverters
 
 import scitzen.compat.Logging.cli
 import scitzen.extern.Hashes
-import scitzen.sast.{Attributes, DCommand, Directive, Sast}
+import scitzen.sast.{Attributes, DCommand, Directive, Sast, Attribute}
 
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
@@ -38,5 +38,11 @@ object GraphvizModule extends BlockConverterModule {
       Using.resource(process.getOutputStream) { os => os.write(bytes) }
       process.waitFor()
       cli.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-    List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString))(block.prov))
+    List(Directive(
+      DCommand.Image,
+      Attributes(block.attributes.raw ++ Seq(
+        Attribute(target.projectAbsolute.toString),
+        Attribute("color", "autoinvert")
+      ))
+    )(block.prov))
 }
