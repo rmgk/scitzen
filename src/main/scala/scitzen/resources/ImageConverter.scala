@@ -42,10 +42,17 @@ class ImageMagickAnimation(accepts: Filetype*)(produces: Filetype) extends Image
     res.exitValue() == 0
 
 class Pdftocairo(produces: Filetype) extends ImageConverter(produces)(Filetype.pdf):
+  val isVector: Boolean = produces match
+    case Filetype.svg | Filetype.pdf => true
+    case other => false
   override def convert(input: ProjectPath, output: ProjectPath): Async[Any, Boolean] =
     Async:
+      val stripedOut =
+        if isVector
+        then output.absolute.toString
+        else output.absolute.toString.stripSuffix(s".${produces.extension}")
       val res: Process =
         process"""pdftocairo
-                ${Option.unless(produces == Filetype.svg)("-singlefile")}
-                ${"-" + produces.extension} ${input.absolute} ${output.absolute}""".start().onExit().toAsync.bind
+                ${Option.unless(isVector)("-singlefile")}
+                ${"-" + produces.extension} ${input.absolute} ${stripedOut}""".start().onExit().toAsync.bind
       res.exitValue() == 0
