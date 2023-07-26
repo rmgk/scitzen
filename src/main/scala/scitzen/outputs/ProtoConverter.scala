@@ -89,8 +89,12 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       directive: Directive,
       imageTarget: ImageTarget
   )(cont: Ctx[FileDependency] => CtxInl): CtxInl =
-    doc.resolve(directive.attributes.target) match
-      case Some(path) if Files.exists(path.absolute) =>
+    val targetString = directive.attributes.target
+    val candidates = if targetString.matches(raw"^\.*[/\\]")
+    then doc.resolve(targetString).toSeq
+    else project.projectFiles.filter(_.absolute.endsWith(targetString))
+    candidates match
+      case Seq(path) if Files.exists(path.absolute) =>
         if !imageTarget.requiresConversion(path)
         then
           val dep = FileDependency(path, path, project.imagePaths.relativizeImage(path))
