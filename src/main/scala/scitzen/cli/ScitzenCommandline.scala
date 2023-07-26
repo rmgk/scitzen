@@ -10,13 +10,14 @@ import java.nio.file.{Files, Path}
 given [T](using avp: ArgumentValueParser[T]): ArgumentValueParser[List[T]] with
   override def apply(args: List[String]): (Option[List[T]], List[String]) =
     def rec(remaining: List[String], acc: List[T]): (Option[List[T]], List[String]) =
-      if remaining.isEmpty
-      then (Some(acc), Nil)
-      else
-        val (value, rest) = avp.apply(remaining)
-        value match
-          case None    => (Some(acc.reverse), remaining)
-          case Some(v) => rec(rest, v :: acc)
+      remaining match
+        case head :: _ if !head.startsWith("--") =>
+          val (value, rest) = avp.apply(remaining)
+          value match
+            case None    => (Some(acc.reverse), remaining)
+            case Some(v) => rec(rest, v :: acc)
+        case other => (Some(acc), remaining)
+
     rec(args, Nil)
 
   override def valueDescription: String = s"${avp.valueDescription}*"
