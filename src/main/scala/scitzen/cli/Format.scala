@@ -2,7 +2,7 @@ package scitzen.cli
 
 import scitzen.bibliography.BibDB
 import scitzen.compat.Logging.cli
-import scitzen.project.{ArticleDirectory, TitledArticle}
+import scitzen.project.{ArticleDirectory, ProjectPath}
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
 
@@ -40,20 +40,39 @@ object Format:
     )
     ()
 
-  def formatRename(documentDirectory: ArticleDirectory, selected: List[TitledArticle]): Unit =
-    // todo: make this work on selected things, and also for
+  def formatRename(documentDirectory: ArticleDirectory, selected: List[ProjectPath], bibDB: BibDB): Unit =
     documentDirectory.byPath.foreach: (document, articles) =>
-      articles match
-        case Seq(article) =>
-          article.titled match
-            case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute, t)
-            case _ => cli.trace(
-                s"could not format ${document.absolute}, did not contain a single article with a date"
-              )
-        case _ =>
-          cli.trace(
-            s"could not format ${document.absolute}, did not contain a single article with a date"
-          )
+      if !selected.contains(document)
+      then ()
+      else
+        articles.toList match
+          case Seq(article) =>
+            article.titled match
+              case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute, t)
+              case _ => cli.trace(
+                  s"could not format ${document.absolute}, did not contain a single article with a date"
+                )
+          case head :: _ =>
+            val remaining = articles.flatMap: art =>
+              art.titled match
+                case Some(title) =>
+                  val target = art.doc.path.absolute.resolveSibling(canonicalName(title) + ".scim")
+                  if Files.exists(target)
+                  then
+                    cli.warn(s"rename target exists")
+                    art.sast
+                  else
+                    formatContent(target, Array.emptyByteArray, art.sast, bibDB)
+                    Nil
+                case None =>
+                  art.sast
+            if remaining.nonEmpty
+            then formatContent(head.doc.path.absolute, head.doc.content, remaining, bibDB)
+
+          case other =>
+            cli.warn(
+              s"could not format ${document.absolute}, did not contain anything???",
+            )
 
   def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast], bibDB: BibDB): Unit =
     val result      = SastToScimConverter(bibDB).toScimS(sast)
@@ -73,7 +92,8 @@ object Format:
 
   def canonicalName(header: Section): String =
     val title = sluggify(header.filename.getOrElse(header.title))
-    header.date.map(_.date.full).fold(title)(d => d + " " + title)
+    val shortTitle = title.substring(0, math.min(80, title.length))
+    header.date.map(_.date.full).fold(shortTitle)(d => d + " " + shortTitle)
 
   def sluggify(str: String): String =
     str

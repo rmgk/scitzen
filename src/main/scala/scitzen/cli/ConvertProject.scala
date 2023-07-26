@@ -112,7 +112,7 @@ object ConvertProject:
       Format.formatContents(anal)
       cli.info(s"formatted contents ${timediff()}")
     if formatFilenames then
-      Format.formatRename(directory, selected)
+      Format.formatRename(directory, selected.map(_.article.doc.path).distinct, bibdb)
       cli.info(s"formatted filenames ${timediff()}")
 
     val htmlresult = ConvertHtml(anal).convertToHtml(selected)

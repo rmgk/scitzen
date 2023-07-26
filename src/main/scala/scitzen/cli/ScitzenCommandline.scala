@@ -1,7 +1,10 @@
 package scitzen.cli
 
+import de.rmgk.logging
+import de.rmgk.logging.{DefaultLogPrinter, Level, Logger}
 import de.rmgk.options.*
 import scitzen.cli.ConvertProject.executeConversions
+import scitzen.compat.Logging
 import scitzen.compat.Logging.{cli, given}
 import scitzen.project.Project
 
@@ -40,6 +43,19 @@ object ScitzenCommandline {
           normalized
 
       val projectSearchPath = absolute.headOption.getOrElse(Path.of(""))
+
+      named[Option[String]]("--verbose", "enable trace logging", None).value match
+        case Some(str) =>
+          val rx = str.r
+          Logging.cli = Logger(
+            Level.Trace,
+            new DefaultLogPrinter(printPosition = true, verboseInfo = false) {
+              override def print[T](logLine: logging.LogLine[T]): Unit =
+                if logLine.level != Level.Trace || rx.findFirstIn(logLine.context.enclosing.value).isDefined
+                then println(format(logLine))
+            }
+          )
+        case other =>
 
       def run(): Unit =
         Project.fromSource(projectSearchPath) match
