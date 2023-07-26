@@ -85,7 +85,7 @@ object Format:
       ()
 
   def renameFileFromHeader(orig: Path, sdoc: Section): Unit =
-    val newName: String = canonicalName(sdoc) + ".scim"
+    val newName: String = canonicalName(sdoc).stripSuffix(".") + ".scim"
     val target = orig.resolveSibling(newName)
     if newName != orig.getFileName.toString then
       if Files.exists(target)
@@ -97,7 +97,7 @@ object Format:
 
   def canonicalName(header: Section): String =
     val title      = sluggify(header.filename.getOrElse(header.title))
-    val shortTitle = title.substring(0, math.min(80, title.length))
+    val shortTitle = title.substring(0, math.min(160, title.length))
     header.date.map(_.date.full).fold(shortTitle)(d => d + " " + shortTitle)
 
   def sluggify(str: String): String =
