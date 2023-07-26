@@ -39,8 +39,6 @@ case class Project private (root: Path, adhoc: Option[Path], config: ProjectConf
   val pdfTemplatePath: ProjectPath =
     ProjectPath(this, outputdir.resolve("templates").resolve("default-template.tex.scim"))
 
-
-
   /** Does follow symlinks.
     * Ignores files and folders starting with a .
     */
@@ -52,7 +50,7 @@ case class Project private (root: Path, adhoc: Option[Path], config: ProjectConf
 
     Using(Files.walk(source, FileVisitOption.FOLLOW_LINKS)): stream =>
       stream.iterator().asScala.filter: (c: Path) =>
-         !hasDotComponent(c) && !c.startsWith(outputdir) && !c.startsWith(cacheDir)
+        !hasDotComponent(c) && !c.startsWith(outputdir) && !c.startsWith(cacheDir)
       .map(asProjectPath).toVector
     .get :+ pdfTemplatePath
 
@@ -60,15 +58,14 @@ case class Project private (root: Path, adhoc: Option[Path], config: ProjectConf
     val toTest = s".$ending"
     projectFiles.filter: c =>
       Files.isRegularFile(c.absolute) &&
-        c.absolute.getFileName.toString.endsWith(toTest)
+      c.absolute.getFileName.toString.endsWith(toTest)
 
   def sources = byExtension("scim")
 
   val bibfileDBLPcache: ProjectPath = asProjectPath(cacheDir.resolve("dblpcache.bib"))
-  val bibEntryCache: ProjectPath = asProjectPath(cacheDir.resolve("bibentries.json"))
+  val bibEntryCache: ProjectPath    = asProjectPath(cacheDir.resolve("bibentries.json"))
 
   def bibfiles = byExtension("bib") ++ Option.when(Files.exists(bibfileDBLPcache.absolute))(bibfileDBLPcache)
-
 
   // be careful about initialization below, the following two do leak the (partially uninitialized) this reference
 
@@ -111,7 +108,7 @@ object Project:
     findRoot(file.toAbsolutePath) match
       case None =>
         val adHocRoot = if Files.isDirectory(file) then file else file.getParent
-        Some(Project(adHocRoot, Some(file),  ProjectConfig()))
+        Some(Project(adHocRoot, Some(file), ProjectConfig()))
       case Some(file) => fromConfig(file)
 
   def fromConfig(file: Path): Option[Project] =

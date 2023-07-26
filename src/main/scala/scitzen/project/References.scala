@@ -3,6 +3,7 @@ package scitzen.project
 import scitzen.compat.Logging.cli
 import scitzen.sast.{Block, Directive, Sast, Section}
 
+import java.nio.file.Path
 import scala.jdk.CollectionConverters.*
 
 case class SastRef(sast: Sast, articleRef: ArticleRef):
@@ -19,9 +20,17 @@ object References:
       .toList
       val byLabel = directory.labels.getOrElse(directive.attributes.target, Nil)
       byPath ++ byLabel
-    References.filterCandidates(scope, candidates)
+    References.filterCandidates(scope, candidates, _.scope.absolute)
 
-  def filterCandidates(scope: ProjectPath, candidates: Seq[SastRef]): Seq[SastRef] =
+  def resolveResource(project: Project, doc: Document, targetString: String): Seq[ProjectPath] =
+    if targetString.matches(raw"^\.*[/\\]")
+    then doc.resolve(targetString).toList
+    else
+      val candidates = project.projectFiles.filter(_.absolute.endsWith(targetString))
+      filterCandidates(doc.path, candidates, _.absolute)
+
+
+  def filterCandidates[T](scope: ProjectPath, candidates: Seq[T], by: T => Path): Seq[T] =
     candidates match
       case Nil    => candidates
       case Seq(_) => candidates
@@ -30,7 +39,7 @@ object References:
         val sorted = multiple.map { c =>
           Tuple2(
             c,
-            c.scope.absolute.iterator().asScala.zip(searchScope).takeWhile {
+            by(c).iterator().asScala.zip(searchScope).takeWhile {
               case (l, r) => l == r
             }.size
           )

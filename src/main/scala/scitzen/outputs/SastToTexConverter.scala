@@ -258,7 +258,8 @@ class SastToTexConverter(
         val candidates =
           References.filterCandidates(
             doc.path,
-            anal.directory.labels.getOrElse(attributes.target, Nil)
+            anal.directory.labels.getOrElse(attributes.target, Nil),
+            _.scope.absolute
           )
 
         if candidates.sizeIs > 1 then

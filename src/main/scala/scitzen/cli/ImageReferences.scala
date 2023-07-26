@@ -3,7 +3,7 @@ package scitzen.cli
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import scitzen.contexts.{FileDependency, TargetedFileDependency}
-import scitzen.project.TitledArticle
+import scitzen.project.{References, TitledArticle}
 import scitzen.resources.ImageTarget
 import scitzen.sast.{DCommand, Directive}
 
@@ -25,7 +25,7 @@ object ImageReferences:
           case _                                  => None
 
       val images = (art.context.imageDirectives ++ blockImageDirectives).flatMap { directive =>
-        art.doc.resolve(directive.attributes.target).flatMap: orig =>
+        References.resolveResource(anal.project, art.doc, directive.attributes.target).flatMap: orig =>
           locally:
             if ImageTarget.Raster.requiresConversion(orig)
             then
