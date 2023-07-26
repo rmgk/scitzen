@@ -47,6 +47,7 @@ object ConvertProject:
       imageFileMap: Option[Path],
       project: Project,
       selection: List[Path],
+      formatFilenames: Boolean
   ): Unit =
     val timediff = makeTimediff()
 
@@ -107,10 +108,10 @@ object ConvertProject:
 
     cli.info(s"completed conversions ${timediff()}")
 
-    if project.config.format.contains("content") then
+    if !project.adhoc.isDefined then
       Format.formatContents(anal)
       cli.info(s"formatted contents ${timediff()}")
-    if project.config.format.contains("filename") then
+    if formatFilenames then
       Format.formatRename(directory, selected)
       cli.info(s"formatted filenames ${timediff()}")
 

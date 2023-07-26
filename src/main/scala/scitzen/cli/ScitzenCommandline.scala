@@ -48,7 +48,8 @@ object ScitzenCommandline {
             executeConversions(
               imageMap,
               project,
-              absolute
+              absolute,
+              named[Boolean]("--format-filenames", "adapt filenames to reflect article headers", false).value
             )
 
       if benchmark > 0
