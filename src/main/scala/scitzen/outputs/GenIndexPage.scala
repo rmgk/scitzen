@@ -8,6 +8,7 @@ import scala.collection.immutable.ArraySeq
 object GenIndexPage:
 
   val months = ArraySeq(
+    "Nonuary",
     "January",
     "February",
     "March",
@@ -29,8 +30,8 @@ object GenIndexPage:
 
   def sectionTitle(fd: TitledArticle): String =
     fd.header.date.fold("") { date =>
-      val m = date.date.month
-      s"${date.year}-$m " + months(m.toInt - 1)
+      val m = date.date.month.getOrElse("0")
+      s"${date.year}-$m " + months(m.toInt)
     }
 
   def directiveFor(project: Project, doc: TitledArticle): Directive =

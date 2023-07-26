@@ -1,11 +1,13 @@
 package scitzen.sast
 
-case class ScitzenDate(year: String, month: String, day: String) {
-  def full = s"$year-$month-$day"
+case class ScitzenDate(year: String, month: Option[String], day: Option[String]) {
+  require(if day.isDefined then month.isDefined else true)
+  def full = Iterator(Some(year), month, day).flatten.mkString("-")
 }
-case class ScitzenTime(hour: String, minute: String, second: String) {
-  def short = s"$hour:$minute"
-  def iso   = s"$hour:$minute:${second}Z"
+case class ScitzenTime(hour: String, minute: Option[String], second: Option[String]) {
+  require(if second.isDefined then minute.isDefined else true)
+  def short = hour + minute.map(m => s":$m")
+  def iso   = Iterator(Some(hour), minute, second).flatten.mkString("", ":", "Z")
 }
 case class ScitzenDateTime(date: ScitzenDate, timeO: Option[ScitzenTime]) {
   def timeAppend: String   = timeO.fold("")(st => s" ${st.short}")

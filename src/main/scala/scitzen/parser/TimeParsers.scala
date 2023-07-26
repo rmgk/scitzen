@@ -10,17 +10,15 @@ object TimeParsers {
   inline def digits: Scip[Boolean] = bpred(b => '0' <= b && b <= '9').rep.min(1)
   inline def date: Scip[ScitzenDate] = Scip {
     val y = digits.str.run
-    "-".all.run
-    val m = digits.str.run
-    "-".all.run
-    val d = digits.str.run
+    val m = ("-".all ifso digits.str).opt.run
+    val d = ("-".all ifso digits.str).opt.run
     ScitzenDate(y, m, d)
   }
   inline def time = Scip {
     val res = ScitzenTime(
       digits.str.run,
-      (":".all ifso digits.str).run,
-      (":".all ifso digits.str).run
+      (":".all ifso digits.str).opt.run,
+      (":".all ifso digits.str).opt.run
     )
     (".".all.orFail ~> digits).attempt.run
     res

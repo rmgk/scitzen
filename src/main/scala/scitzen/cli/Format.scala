@@ -9,6 +9,7 @@ import scitzen.sast.{Sast, Section}
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path, StandardOpenOption}
 import scala.jdk.CollectionConverters.*
+import scitzen.compat.Logging.given
 
 object Format:
 
@@ -66,8 +67,9 @@ object Format:
                     Nil
                 case None =>
                   art.sast
-            if remaining.nonEmpty
-            then formatContent(head.doc.path.absolute, head.doc.content, remaining, bibDB)
+            if remaining.isEmpty
+            then Files.delete(head.doc.path.absolute)
+            else formatContent(head.doc.path.absolute, head.doc.content, remaining, bibDB)
 
           case other =>
             cli.warn(
@@ -82,16 +84,19 @@ object Format:
       Files.write(file, resultBytes)
       ()
 
-  def renameFileFromHeader(f: Path, sdoc: Section): Unit =
+  def renameFileFromHeader(orig: Path, sdoc: Section): Unit =
     val newName: String = canonicalName(sdoc) + ".scim"
-
-    if newName != f.getFileName.toString then
-      cli.info(s"rename ${f.getFileName} to $newName")
-      Files.move(f, f.resolveSibling(newName))
-      ()
+    val target = orig.resolveSibling(newName)
+    if newName != orig.getFileName.toString then
+      if Files.exists(target)
+      then cli.warn(s"rename target already exists", orig)
+      else
+        cli.info(s"rename ${orig.getFileName} to $newName")
+        Files.move(orig, target)
+        ()
 
   def canonicalName(header: Section): String =
-    val title = sluggify(header.filename.getOrElse(header.title))
+    val title      = sluggify(header.filename.getOrElse(header.title))
     val shortTitle = title.substring(0, math.min(80, title.length))
     header.date.map(_.date.full).fold(shortTitle)(d => d + " " + shortTitle)
 
