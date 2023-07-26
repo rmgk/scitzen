@@ -3,7 +3,7 @@ package scitzen.outputs
 import de.rmgk.Chain
 import de.rmgk.delay.Sync
 import scitzen.bibliography.BibEntry
-import scitzen.cli.ConversionAnalysis
+import scitzen.cli.{ConversionAnalysis, Format}
 import scitzen.compat.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.project.{ArticleRef, ProjectPath, References, SastRef}
@@ -304,7 +304,7 @@ class SastToHtmlConverter(
         else
           titledOpt match
             case Some(titled) =>
-              project.imagePaths.relativeArticleTarget(titled.header).toString
+              Format.canonicalName(titled.header, ".html")
             case None =>
               cli.warn(s"invalid reference to non-included snippet", directive)
               ""

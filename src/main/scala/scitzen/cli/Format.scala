@@ -49,15 +49,15 @@ object Format:
         articles.toList match
           case Seq(article) =>
             article.titled match
-              case Some(t) if t.date.isDefined => renameFileFromHeader(document.absolute, t)
+              case Some(t) => renameFileFromHeader(document.absolute, t)
               case _ => cli.trace(
-                  s"could not format ${document.absolute}, did not contain a single article with a date"
+                  s"could not format ${document.absolute}, did not contain a titled article"
                 )
           case head :: _ =>
             val remaining = articles.flatMap: art =>
               art.titled match
                 case Some(title) =>
-                  val target = art.doc.path.absolute.resolveSibling(canonicalName(title) + ".scim")
+                  val target = art.doc.path.absolute.resolveSibling(canonicalName(title, ".scim"))
                   if Files.exists(target)
                   then
                     cli.warn(s"rename target exists")
@@ -85,8 +85,8 @@ object Format:
       ()
 
   def renameFileFromHeader(orig: Path, sdoc: Section): Unit =
-    val newName: String = canonicalName(sdoc).stripSuffix(".") + ".scim"
-    val target = orig.resolveSibling(newName)
+    val newName: String = canonicalName(sdoc, ".scim")
+    val target          = orig.resolveSibling(newName)
     if newName != orig.getFileName.toString then
       if Files.exists(target)
       then cli.warn(s"rename target already exists", orig)
@@ -95,10 +95,12 @@ object Format:
         Files.move(orig, target)
         ()
 
-  def canonicalName(header: Section): String =
-    val title      = sluggify(header.filename.getOrElse(header.title))
+  def canonicalName(header: Section, extension: String): String =
+    val proto      = if extension == ".scim" then header.title else header.filename.getOrElse(header.title)
+    val title      = sluggify(proto)
     val shortTitle = title.substring(0, math.min(160, title.length))
-    header.date.map(_.date.full).fold(shortTitle)(d => d + " " + shortTitle)
+    val name = header.date.map(_.date.full).fold(shortTitle)(d => d + " " + shortTitle)
+    name.stripSuffix(".") + extension
 
   def sluggify(str: String): String =
     str

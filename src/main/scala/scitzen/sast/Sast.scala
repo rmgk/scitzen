@@ -2,8 +2,6 @@ package scitzen.sast
 
 import scitzen.parser.TimeParsers
 
-import java.nio.file.Path
-
 sealed trait Sast
 
 case class Slist(children: Seq[ListItem]) extends Sast
@@ -44,10 +42,6 @@ case class Section(titleText: Text, prefix: String, attributes: Attributes)(val 
     case "#"   => 1
     case "##"  => 2
     case "###" => 3
-  lazy val relativePath: Path =
-    def genName = s"${date.map(_.full).getOrElse("")} ${title}"
-    val name    = filename.getOrElse(genName.take(100))
-    Path.of(scitzen.cli.Format.sluggify(s"$name.html"))
   lazy val tags = attributes.plain("tags").getOrElse("").split(',').map(_.trim).filter(_.nonEmpty).toList
 
 object Section:

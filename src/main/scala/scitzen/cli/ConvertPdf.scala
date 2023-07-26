@@ -29,7 +29,7 @@ object ConvertPdf:
     selected.filter(ta => ta.flags.tex || ta.header.attributes.plain("texTemplate").isDefined)
       .map: titled =>
 
-        val articlename = Format.canonicalName(titled.header)
+        val articlename = Format.canonicalName(titled.header, ".pdf")
 
         Files.createDirectories(project.outputdirPdf)
 

@@ -1,7 +1,6 @@
 package scitzen.resources
 
 import scitzen.project.{Project, ProjectPath}
-import scitzen.sast.Section
 
 import java.nio.file.Path
 
@@ -20,9 +19,3 @@ class ImagePaths(project: Project):
       project.root.relativize(targetFile.absolute)
     )
 
-  // not sure if here is the best place for these, but good enough
-  val articleOutputDir: Path = project.outputdirWeb
-  def articleOutputPath(article: Section): Path =
-    articleOutputDir resolve article.relativePath
-  def relativeArticleTarget(targetPost: Section): Path =
-    articleOutputDir.relativize(articleOutputPath(targetPost))
