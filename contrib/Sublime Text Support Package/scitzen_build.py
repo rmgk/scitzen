@@ -82,9 +82,10 @@ class ScitzenBuildCommand(sublime_plugin.WindowCommand):
             self.proc.terminate()
             self.proc = None
 
-        commandstring = ["scitzen", file, 
+        commandstring = ["scitzen",
             # "--sync-file", file, "--sync-position", str(position),
-            "--image-file-map", self.image_sync_file.name]
+            "--image-file-map", self.image_sync_file.name,
+            file]
         print("calling", commandstring)
 
         self.proc = subprocess.Popen(
