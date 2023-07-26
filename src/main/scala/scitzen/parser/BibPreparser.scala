@@ -2,24 +2,28 @@ package scitzen.parser
 
 import de.rmgk.scip.*
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.{ByteArrayInputStream, InputStream, SequenceInputStream}
+import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 
 case class Inputrange(start: Int, end: Int, full: Array[Byte]):
   def inputstream: InputStream =
     new ByteArrayInputStream(full, start, end - start)
-case class Biblet(format: String, id: String, full: Inputrange)
-
+case class Biblet(format: String, id: String, inner: Inputrange, alias: List[String]):
+  def inputstream: InputStream =
+    SequenceInputStream(ByteArrayInputStream(header.getBytes(StandardCharsets.UTF_8)), inner.inputstream)
+  def header: String = s"@$format{$id,"
 
 object BibPreparser {
 
   def entry: Scip[Biblet] = Scip:
     until("@".any).run
-    val start = scx.index
     scx.next
     val format = until("{".any).min(1).str.run
     scx.next
     val id = until(",".any).min(1).str.run.trim
+    scx.next
+    val startInner = scx.index
 
     Predef.require(!id.contains(' '), s"something went wrong when parsing a bibfile for id: ${id}")
 
@@ -31,5 +35,5 @@ object BibPreparser {
       ()
     rec(0)
 
-    Biblet(format = format, id = id, full = Inputrange(start, scx.index + 1, scx.input))
+    Biblet(format, id, Inputrange(startInner, scx.index + 1, scx.input), alias = List(id))
 }

@@ -63,7 +63,7 @@ object ConvertPdf:
         ): bo =>
           resultContext.usedCitations.foreach: used =>
             anal.bib.bibletmap.getOrElse(used.id, Nil).foreach: biblet =>
-              biblet.full.inputstream.transferTo(bo)
+              biblet.inputstream.transferTo(bo)
         .get
 
         val templateSettings =

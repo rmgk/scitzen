@@ -5,15 +5,14 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import org.jsoup.Jsoup
 import scitzen.bibliography.DBLPApi.Outer
 import scitzen.cli.Format
+import scitzen.parser.Parse
 
-import java.net.http.HttpClient.Redirect
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest}
-import java.net.{CookieManager, URI, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.time.Duration
 import scala.jdk.FutureConverters.*
+import HttpUtil.{client, query}
+import scitzen.parser.Biblet
 
 object DBLPApi:
   case class Outer(result: Result)
@@ -27,27 +26,19 @@ object DBLPApi:
   )
   case class Author(`@pid`: String, text: String)
 
-object DBLP:
+object DBLP extends BibtexProvider:
 
   val codec: JsonValueCodec[Outer] = JsonCodecMaker.make
 
-  val client = HttpClient.newBuilder.connectTimeout(Duration.ofSeconds(30)).followRedirects(
-    Redirect.ALWAYS
-  ).cookieHandler(new CookieManager()).build
-  def query(url: String, params: Map[String, String] = Map.empty): HttpRequest =
-    val query = params.map((k, v) => s"$k=${URLEncoder.encode(v, StandardCharsets.UTF_8)}").mkString("&")
-    val uri   = URI.create(s"$url${if query.nonEmpty then "?" else ""}$query")
-    println(s"uri: $uri")
-    HttpRequest.newBuilder.uri(uri).timeout(Duration.ofSeconds(30)).build
-
-  def lookup(key: String): Option[String] =
-    val res = client.send(query(s"https://dblp.org/rec/$key.bib"), BodyHandlers.ofString())
-    if res.statusCode() != 200
-    then None
-    else Some(res.body())
+  def lookup(uri: String): Option[Biblet] =
+    if !uri.startsWith("DBLP:") then None
+    else
+      val key = uri.stripPrefix("DBLP:")
+      HttpUtil.getBody(HttpUtil.query(s"https://dblp.org/rec/$key.bib")).map: res =>
+        Parse.bibfileUnwrap(res.getBytes(StandardCharsets.UTF_8)).head
 
   def lookupFormatted(key: String): List[String] =
-    val res   = client.send(query(s"https://dblp.org/rec/$key.bib"), BodyHandlers.ofInputStream())
+    val res   = HttpUtil.client.send(HttpUtil.query(s"https://dblp.org/rec/$key.bib"), BodyHandlers.ofInputStream())
     val items = Bibtex.parse(res.body())
 
     items.map { bi =>
@@ -60,8 +51,8 @@ object DBLP:
   val DagstuhlRx      = """//drops\.dagstuhl\.de/""".r.unanchored
 
   def search(q: String): List[DBLPApi.Info] =
-    val res = client.send(
-      query(s"https://dblp.org/search/publ/api", Map("format" -> "json", "q" -> q)),
+    val res = HttpUtil.client.send(
+      HttpUtil.query(s"https://dblp.org/search/publ/api", Map("format" -> "json", "q" -> q)),
       BodyHandlers.ofString()
     )
     // println(s"json: ${res.body()}")
@@ -72,7 +63,7 @@ object DBLP:
     hits.map { info =>
       val format = lookupFormatted(info.key)
       println(s"info url: ${info.ee}")
-      val pdfpage = client.send(query(info.ee), BodyHandlers.ofInputStream())
+      val pdfpage = HttpUtil.client.send(HttpUtil.query(info.ee), BodyHandlers.ofInputStream())
       println(s"final uri: ${pdfpage.uri()}")
       val soup = Jsoup.parse(pdfpage.body(), StandardCharsets.UTF_8.toString, pdfpage.uri().toString)
       val pdfurl = pdfpage.uri().toString match

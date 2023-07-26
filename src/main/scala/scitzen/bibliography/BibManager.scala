@@ -12,7 +12,6 @@ import scitzen.sast.DCommand.{BibQuery, Cite}
 import scitzen.sast.{Attribute, Attributes, Directive}
 
 import java.io.BufferedOutputStream
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, StandardOpenOption}
 import scala.collection.mutable.ListBuffer
 import scala.util.Using
@@ -57,33 +56,30 @@ class BibManager(project: Project) {
     val citeKeys     = citeDirectives.flatMap(BibManager.bibIds)
     val allCitations = citeKeys.toSet ++ queries.valuesIterator.flatten.map(info => s"DBLP:${info.key}")
     val missing      = allCitations -- knowKeys
-    val dblp         = missing.filter(_.startsWith("DBLP:"))
-    val downloadedBiblets: List[Biblet] = if dblp.isEmpty then Nil
+    val downloadedBiblets: List[Biblet] = if missing.isEmpty then Nil
     else
-      Logging.cli.info(s"scheduling download of ${dblp.size} missing citations")
+      Logging.cli.info(s"scheduling download of ${missing.size} missing citations")
       Files.createDirectories(dblpcachePath.absolute.getParent)
-      dblp.iterator.flatMap: key =>
-        DBLP.lookup(key.stripPrefix("DBLP:")).iterator.flatMap: res =>
-          val resBytes = res.getBytes(StandardCharsets.UTF_8)
-          Files.write(
-            dblpcachePath.absolute,
-            resBytes,
-            StandardOpenOption.APPEND,
-            StandardOpenOption.CREATE
-          )
-          Parse.bibfileUnwrap(resBytes)
+      missing.iterator.flatMap: uri =>
+        List(DBLP, SemanticScholar).flatMap(_.lookup(uri))
+          .iterator.tapEach: res =>
+            Using(Files.newOutputStream(
+              dblpcachePath.absolute,
+              StandardOpenOption.APPEND,
+              StandardOpenOption.CREATE
+            )): os =>
+              res.inputstream.transferTo(os)
       .toList
 
     val unknownBibentries = allCitations -- bibentriesCached.iterator.map(_.id).toSet
 
     val allBiblets: Seq[Biblet] = downloadedBiblets ++ biblets
-    val bibletmap = allBiblets.groupBy(_.id)
-
+    val bibletmap               = allBiblets.groupBy(_.id)
 
     val newBibentries: List[BibEntry] = if unknownBibentries.isEmpty then Nil
     else
       val all = unknownBibentries.iterator.flatMap(bibletmap.get).flatten.flatMap: biblet =>
-        Bibtex.parse(biblet.full.inputstream)
+        Bibtex.parse(biblet.inputstream)
       .toList
       Using(BufferedOutputStream(Files.newOutputStream(
         project.bibEntryCache.absolute,
@@ -105,7 +101,11 @@ object BibManager:
     def bibIds: List[String] = directive.attributes.target.split(',').iterator.map(_.trim).toList
   }
 
-case class BibDB(entries: Map[String, BibEntry], queried: Map[String, List[DBLPApi.Info]], bibletmap: Map[String, Seq[Biblet]]):
+case class BibDB(
+    entries: Map[String, BibEntry],
+    queried: Map[String, List[DBLPApi.Info]],
+    bibletmap: Map[String, Seq[Biblet]]
+):
   def convert(directive: Directive): Directive =
     val query = directive.attributes.target
     val keys  = queried.get(query).toList.flatten.map(info => s"DBLP:${info.key}")
