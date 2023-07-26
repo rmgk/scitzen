@@ -6,19 +6,19 @@ Scitzen has its own markup language, which is a mixture of Markdown, Asciidoc(to
 
 # Why?
 
-• Writing static-site-generators is easier than figuring out existing ones.
-• Markdown is too limited. Extensions are tool specific.
-• Markdown and Asciidoc have too many things I find hard to remember.
-• LaTeX has too much ad-hoc styling.
-• Writing my own tool, allows me to co-evolve my documents along with my tool.
+* Writing static-site-generators is easier than figuring out existing ones.
+* Markdown is too limited. Extensions are tool specific.
+* Markdown and Asciidoc have too many things I find hard to remember.
+* LaTeX has too much ad-hoc styling.
+* Writing my own tool, allows me to co-evolve my documents along with my tool.
 
 
 # How?
 
-• There should also be an action that builds a native image you can download.
-• Example project: https://github.com/rmgk/dissertation-scitzen-example
+* There should also be an action that builds a native image you can download.
+* Example project: https://github.com/rmgk/dissertation-scitzen-example
 
 
 # So, why is the README still written in Markdown?
 
-This is actually a valid Scitzen document. We just call it .md to trick Github into rendering the headers.
+This is actually a valid Scitzen document. We just call it .md to trick Github into rendering the headers and lists, which incidentally is also the only syntax shared with markdown.
