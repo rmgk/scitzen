@@ -94,8 +94,6 @@ object ArticleProcessing:
     then res
     else snip :: res
 
-
-
   def loadDocuments(project: Project): Seq[Document] =
     Logging.cli.trace(s"discovering sources in ${project.root}")
     val sources = project.sources

@@ -1,6 +1,5 @@
 package scitzen.bibliography
 
-
 import java.net.http.HttpRequest
 import java.net.http.HttpClient.Redirect
 import java.net.http.HttpResponse.{BodyHandler, BodyHandlers}

@@ -384,11 +384,12 @@ class SastToHtmlConverter(
     convertImage(ctx, directive, ImageTarget.Html): ctx =>
       val path = ctx.data.relativeFinalization
       ctx.retc:
-        val filename  = path.getFileName.toString
+        val filename = path.getFileName.toString
         val cssClass =
-          val size = directive.attributes.plain("size").iterator.flatMap(s => s.split(",")).map(s => s"sizing-${s.trim}")
+          val size =
+            directive.attributes.plain("size").iterator.flatMap(s => s.split(",")).map(s => s"sizing-${s.trim}")
           val invert = directive.attributes.plain("color").map(s => s"color-$s")
-          val res = List(size, invert).flatten.mkString(" ")
+          val res    = List(size, invert).flatten.mkString(" ")
           Option.when(res.nonEmpty)(res)
         if videoEndings.exists(filename.endsWith) then
           Sag.video(src = path.toString, loop = true, autoplay = true, `class` = cssClass)

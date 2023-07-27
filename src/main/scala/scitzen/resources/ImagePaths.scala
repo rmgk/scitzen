@@ -18,4 +18,3 @@ class ImagePaths(project: Project):
     Path.of("resources").resolve(
       project.root.relativize(targetFile.absolute)
     )
-

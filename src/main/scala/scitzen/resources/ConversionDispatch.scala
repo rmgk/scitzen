@@ -29,7 +29,7 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
       conversionChoice.get(ft)
 
   def predictTarget(input: ProjectPath): Option[ProjectPath] =
-    converterFor(input).map:c =>
+    converterFor(input).map: c =>
       predictTargetOf(input, c.produces)
 
   def predictTargetOf(input: ProjectPath, targetType: Filetype): ProjectPath =

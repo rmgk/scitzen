@@ -29,7 +29,6 @@ object References:
       val candidates = project.projectFiles.filter(_.absolute.endsWith(targetString))
       filterCandidates(doc.path, candidates, _.absolute)
 
-
   def filterCandidates[T](scope: ProjectPath, candidates: Seq[T], by: T => Path): Seq[T] =
     candidates match
       case Nil    => candidates
