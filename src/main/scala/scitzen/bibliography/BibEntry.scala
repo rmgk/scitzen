@@ -30,7 +30,7 @@ case class BibEntry(
         case Nil => ()
         case insides =>
           val term = Sync:
-            def writeTerminator() = sag.write('.': Byte); sag.write(' ': Byte)
+            def writeTerminator() = { sag.write('.': Byte); sag.write(' ': Byte) }
             insides.foreach {
               case s: String =>
                 sag.write(s.stripSuffix("."))
