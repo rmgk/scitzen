@@ -23,10 +23,12 @@ object References:
     References.filterCandidates(scope, candidates, _.scope.absolute)
 
   def resolveResource(project: Project, doc: Document, targetString: String): Seq[ProjectPath] =
-    if targetString.matches(raw"^\.*[/\\]")
+    if targetString.matches(raw"^\.*[/\\].*")
     then doc.resolve(targetString).toList
     else
-      val candidates = project.projectFiles.filter(_.absolute.endsWith(targetString))
+      val targetPath = Path.of(targetString)
+      val candidates =
+        project.projectFilenames.getOrElse(targetPath.getFileName, Nil).filter(_.absolute.endsWith(targetPath))
       filterCandidates(doc.path, candidates, _.absolute)
 
   def filterCandidates[T](scope: ProjectPath, candidates: Seq[T], by: T => Path): Seq[T] =

@@ -54,6 +54,9 @@ case class Project private (root: Path, adhoc: Option[Path], config: ProjectConf
       .map(asProjectPath).toVector
     .get :+ pdfTemplatePath
 
+  val projectFilenames: Map[Path, Seq[ProjectPath]] =
+    projectFiles.groupBy(_.absolute.getFileName)
+
   def byExtension(ending: String): Seq[ProjectPath] =
     val toTest = s".$ending"
     projectFiles.filter: c =>
