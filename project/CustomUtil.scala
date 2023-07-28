@@ -5,9 +5,6 @@ import java.net.URI
 import java.nio.file.{Files, Path, StandardOpenOption}
 import java.security.MessageDigest
 
-import sbt.{TaskKey, Compile}
-import sbt.Keys.{fullClasspathAsJars, target}
-
 object CustomUtil {
 
   val sha1digester: MessageDigest = MessageDigest.getInstance("SHA-1")
