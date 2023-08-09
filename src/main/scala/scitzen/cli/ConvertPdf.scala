@@ -33,7 +33,7 @@ object ConvertPdf:
 
         Files.createDirectories(project.outputdirPdf)
 
-        val targetfile = project.outputdirPdf.resolve(s"$articlename.pdf")
+        val targetfile = project.outputdirPdf.resolve(s"$articlename")
 
         val jobname    = Filetype.nameWithoutExtension(targetfile)
         val temptexdir = project.cacheDir.resolve(s"$articlename.outdir")
