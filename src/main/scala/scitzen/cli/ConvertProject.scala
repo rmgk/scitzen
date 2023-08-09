@@ -54,6 +54,7 @@ object ConvertProject:
     cli.info(s"found project in ./${Path.of("").toAbsolutePath.relativize(project.root)} ${timediff()}")
 
     Files.createDirectories(project.outputdir)
+    Files.createDirectories(project.cacheDir)
     if !Files.exists(project.pdfTemplatePath.absolute) then
       Files.createDirectories(project.pdfTemplatePath.absolute.getParent)
       val bytes = ResourceUtil.load("default-template.tex.scim")
