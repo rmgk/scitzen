@@ -100,7 +100,7 @@ class SastToTexConverter(
 
       case ListItem(_, _, _) :: _ =>
         ctx.fold[ListItem, String](children) { (ctx, child) =>
-          val inlinesCtx = convertInlinesCombined(ctx, child.text.inl).map(s => s"\\item[$s]{}")
+          val inlinesCtx = convertInlinesCombined(ctx, child.text.inl).map(s => s"\\item[$s]{}\\hfill{}")
           inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])((singleSast: Sast) =>
             convertSast(inlinesCtx, singleSast)
           )
