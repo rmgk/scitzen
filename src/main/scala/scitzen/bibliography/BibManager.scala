@@ -76,22 +76,23 @@ class BibManager(project: Project) {
     val allBiblets: Seq[Biblet] = downloadedBiblets ++ biblets
     val bibletmap               = allBiblets.groupBy(_.id)
 
-    val newBibentries: List[BibEntry] = if unknownBibentries.isEmpty then Nil
-    else
-      val all = unknownBibentries.iterator.flatMap(bibletmap.get).flatten.flatMap: biblet =>
-        Bibtex.parse(biblet.inputstream)
-      .toList
-      Using(BufferedOutputStream(Files.newOutputStream(
-        project.bibEntryCache.absolute,
-        StandardOpenOption.APPEND,
-        StandardOpenOption.CREATE
-      ))): bo =>
-        all.foreach: be =>
-          writeToStream(be, bo)
-          // writes a byte, even though the value is a char, and the method takes an int.
-          bo.write('\n')
-      .get
-      all
+    val newBibentries: List[BibEntry] =
+      if unknownBibentries.isEmpty then Nil
+      else
+        val all = unknownBibentries.iterator.flatMap(bibletmap.get).flatten.flatMap: biblet =>
+          Bibtex.parse(biblet.inputstream)
+        .toList
+        Using(BufferedOutputStream(Files.newOutputStream(
+          project.bibEntryCache.absolute,
+          StandardOpenOption.APPEND,
+          StandardOpenOption.CREATE
+        ))): bo =>
+          all.foreach: be =>
+            writeToStream(be, bo)
+            // writes a byte, even though the value is a char, and the method takes an int.
+            bo.write('\n')
+        .get
+        all
 
     BibDB(Bibtex.makeBib(bibentriesCached ++ newBibentries), queries, bibletmap)
 }
