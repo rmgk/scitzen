@@ -56,20 +56,22 @@ class BibManager(project: Project) {
     val citeKeys     = citeDirectives.flatMap(BibManager.bibIds)
     val allCitations = citeKeys.toSet ++ queries.valuesIterator.flatten.map(info => s"DBLP:${info.key}")
     val missing      = allCitations -- knowKeys
-    val downloadedBiblets: List[Biblet] = if missing.isEmpty then Nil
-    else
-      Logging.cli.info(s"scheduling download of ${missing.size} missing citations")
-      Files.createDirectories(dblpcachePath.absolute.getParent)
-      missing.iterator.flatMap: uri =>
-        List(DBLP, SemanticScholar).flatMap(_.lookup(uri))
-          .iterator.tapEach: res =>
-            Using(Files.newOutputStream(
-              dblpcachePath.absolute,
-              StandardOpenOption.APPEND,
-              StandardOpenOption.CREATE
-            )): os =>
-              res.inputstream.transferTo(os)
-      .toList
+    val downloadedBiblets: List[Biblet] =
+      if missing.isEmpty
+      then Nil
+      else
+        Logging.cli.info(s"scheduling download of ${missing.size} missing citations")
+        Files.createDirectories(dblpcachePath.absolute.getParent)
+        missing.iterator.flatMap: uri =>
+          List(DBLP, SemanticScholar).flatMap(_.lookup(uri))
+            .iterator.tapEach: res =>
+              Using(Files.newOutputStream(
+                dblpcachePath.absolute,
+                StandardOpenOption.APPEND,
+                StandardOpenOption.CREATE
+              )): os =>
+                res.inputstream.transferTo(os)
+        .toList
 
     val unknownBibentries = allCitations -- bibentriesCached.iterator.map(_.id).toSet
 
@@ -77,7 +79,8 @@ class BibManager(project: Project) {
     val bibletmap               = allBiblets.groupBy(_.id)
 
     val newBibentries: List[BibEntry] =
-      if unknownBibentries.isEmpty then Nil
+      if unknownBibentries.isEmpty
+      then Nil
       else
         val all = unknownBibentries.iterator.flatMap(bibletmap.get).flatten.flatMap: biblet =>
           Bibtex.parse(biblet.inputstream)
