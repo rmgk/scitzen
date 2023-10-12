@@ -1,0 +1,3 @@
+= Issues
+
+• Same scitzen version on another machine may produce different hashes used to make references unique. Investigate if this can be fixed for reproducibility.
