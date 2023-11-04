@@ -4,13 +4,14 @@
   "methods":[{"name":"getBoolean","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"java.lang.ClassLoader",
-  "methods":[
-    {"name":"getPlatformClassLoader","parameterTypes":[] }, 
-    {"name":"loadClass","parameterTypes":["java.lang.String"] }
-  ]
+  "name":"java.lang.Class",
+  "methods":[{"name":"getClassLoader","parameterTypes":[] }]
 },
 {
-  "name":"jdk.internal.loader.ClassLoaders$PlatformClassLoader"
+  "name":"java.lang.ClassLoader",
+  "methods":[{"name":"loadClass","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"jdk.internal.loader.Loader"
 }
 ]
