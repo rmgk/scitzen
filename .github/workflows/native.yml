@@ -31,17 +31,16 @@ jobs:
         continue-on-error: true
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '20'
+          java-version: '21'
           distribution: 'graalvm'
-          components: 'native-image,js'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: coursier/setup-action@v1
         with:
           apps: sbt
       - name: generate native image
         run: |
-          sbt writeClasspath
-          native-image @target/classpath.txt scitzen.cli.ScitzenCommandline
+          sbt stageJars
+          native-image --class-path "target/jars/*" scitzen.cli.ScitzenCommandline
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
