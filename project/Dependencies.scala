@@ -15,7 +15,7 @@ object Dependencies {
   def okHttp        = libraryDependencies += "com.squareup.okhttp3"         % "okhttp"           % "4.10.0"
   def pprint        = libraryDependencies += "com.lihaoyi"                %%% "pprint"           % "0.8.1"
   def quicklens     = libraryDependencies += "com.softwaremill.quicklens" %%% "quicklens"        % "1.9.0"
-  def scalacheck    = libraryDependencies += "org.scalacheck"             %%% "scalacheck"       % "1.17.0"   % Test
+  def scalacheck    = libraryDependencies += "org.scalacheck"             %%% "scalacheck"       % "1.17.0"    % Test
   def scalaJavaTime = libraryDependencies += "io.github.cquiroz"          %%% "scala-java-time"  % "2.3.0"
   def scalajsDom    = libraryDependencies += "org.scala-js"               %%% "scalajs-dom"      % "2.6.0"
   def scalatags     = libraryDependencies += "com.lihaoyi"                %%% "scalatags"        % "0.12.0"
