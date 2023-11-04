@@ -39,8 +39,8 @@ jobs:
           apps: sbt
       - name: generate native image
         run: |
-          sbt stageJars
-          native-image --class-path "target/jars/*" scitzen.cli.ScitzenCommandline
+          sbt writeClasspath
+          native-image @target/classpath.txt scitzen.cli.ScitzenCommandline
       - uses: actions/upload-artifact@master
         with:
           path: ${{ matrix.local_path }}
