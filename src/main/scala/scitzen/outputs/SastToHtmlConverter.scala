@@ -43,7 +43,7 @@ class SastToHtmlConverter(
     )
 
   private val excludedFromMeta =
-    Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language", "link")
+    Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language", "link", "htmlTemplate")
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
     @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
