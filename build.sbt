@@ -16,9 +16,9 @@ lazy val scitzen = project.in(file("."))
     munit,
     libraryDependencies ++= Seq(
       "org.webjars.bowergithub.prismjs" % "prism"         % "1.29.0",
-      "org.webjars.npm"                 % "katex"         % "0.16.4",
+      "org.webjars.npm"                 % "katex"         % "0.16.8",
       "org.jbibtex"                     % "jbibtex"       % "1.0.20",
       "de.undercouch"                   % "citeproc-java" % "2.0.0",
-      "org.graalvm.js" % "js" % "23.0.0", // explicitly depend on graal.js to allow running on non-graal JVMs
+      "org.graalvm.js" % "js" % "23.0.2", // explicitly depend on graal.js to allow running on non-graal JVMs
     ),
   )
