@@ -1,4 +1,4 @@
-//> using scala "2.13.8"
+//> using scala "2.13.12"
 //> using platform "js"
 //> using lib "org.scala-js::scalajs-dom::2.1.0"
 //> using lib "com.lihaoyi::scalatags::0.11.1"
