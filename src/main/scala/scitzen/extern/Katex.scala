@@ -15,7 +15,7 @@ object Katex:
   private val katexstr: String =
     val bo = new ByteArrayOutputStream()
     Using.resource(
-      getClass.getClassLoader.getResourceAsStream("META-INF/resources/webjars/katex/0.16.4/dist/katex.min.js")
+      getClass.getClassLoader.getResourceAsStream("META-INF/resources/webjars/katex/0.16.9/dist/katex.min.js")
     ) { r =>
       r.transferTo(bo)
       bo.toString

@@ -22,8 +22,8 @@ object Dependencies {
   def scribe        = libraryDependencies += "com.outr"                   %%% "scribe"           % "3.10.7"
   def scribeSlf4j   = libraryDependencies += "com.outr"                    %% "scribe-slf4j"     % "3.10.7"
   def scribeSlf4j2  = libraryDependencies += "com.outr"                    %% "scribe-slf4j2"    % "3.10.7"
-  def sourcecode    = libraryDependencies += "com.lihaoyi"                %%% "sourcecode"       % "0.3.0"
-  def sqliteJdbc    = libraryDependencies += "org.xerial"                   % "sqlite-jdbc"      % "3.43.2.1"
+  def sourcecode    = libraryDependencies += "com.lihaoyi"                %%% "sourcecode"       % "0.3.1"
+  def sqliteJdbc    = libraryDependencies += "org.xerial"                   % "sqlite-jdbc"      % "3.43.2.2"
   def upickle       = libraryDependencies += "com.lihaoyi"                %%% "upickle"          % "3.1.3"
   def jsoniterScala =
     libraryDependencies ++= Seq(
@@ -46,7 +46,7 @@ object Dependencies {
       if (false)
         libraryDependencies += "io.github.scala-loci" %%% s"scala-loci-$n" % "0.5.0"
       else
-        libraryDependencies += "com.github.scala-loci.scala-loci" %%% s"scala-loci-$n" % "eb0719f08f"
+        libraryDependencies += "com.github.scala-loci.scala-loci" %%% s"scala-loci-$n" % "e7f17cc41a"
 
     def communication = generic("communication")
     def circe         = generic("serializer-circe")
@@ -58,6 +58,6 @@ object Dependencies {
     def wsWeb         = generic("communicator-ws-webnative")
     def wsJavalin     = generic("communicator-ws-javalin")
     def wsJetty       = generic("communicator-ws-jetty")
-    def wsJetty11     = generic("communicator-ws-jetty11")
+    def wsJetty12     = generic("communicator-ws-jetty12")
   }
 }
