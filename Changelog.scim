@@ -1,9 +1,9 @@
 == v.next
 
 • Use positive class names for customizable things that differ from the HTML default:
-	the logic before was, that the default should not add a class, to reduce the html size a bit. However, thinking about it, all the negations seem like a terrible idea (:not(no-justify), really? wtf?). So instead let’s make configurable style choices add class names when they differ from the HTML default display.
+	the logic before was, that the default should not add a class, to reduce the HTML size a bit. However, thinking about it, all the negations seem like a terrible idea (:not(no-justify), really? wtf?). So instead let’s make configurable style choices add class names when they differ from the HTML default display.
 
-	I also changed the default to be hardwraps. I think this is in big parts due to me changing my writing style to just write paragraphs in a single line. But more than that, I feel that for less formal texts, a newline within a paragraph is actually a perfectly fine style element and should be preserved as such. For more formal writing, such as with papers, is also less annoying to have to change a setting. I think this also has become the default for Github Markdown (at least in comments) for exactly the same reasoning – it just makes more sense in comments an such.
+	I also changed the default to be hard wraps. I think this is in big parts due to me changing my writing style to just write paragraphs in a single line. But more than that, I feel that for less formal texts, a newline within a paragraph is actually a perfectly fine style element and should be preserved as such. For more formal writing, such as with papers, is also less annoying to have to change a setting. I think this also has become the default for GitHub Markdown (at least in comments) for exactly the same reasoning – it just makes more sense in comments and such.
 
 == v1.1
 2021-12-07
@@ -16,9 +16,9 @@ Note that there should be a :link{GH action building binaries; https://github.co
 	• lots of small bits how individual macros are handled and with the HTML formatting
 	• nothing major with regards to syntax (maybe we can parse nested macros now, but maybe we could also do it before?)
 
-Btw. if you ever create a Scitzen project I highly recommend to install :link{coursier; https://get-coursier.io/} and use an incantation like the following to create a self contained executable bootstrap jar file called `build`, which is ~50 kB in size and only requires a JVM to be executed and can then be used to compile your project. While this JVM based runner is much slower than the compiled binary, you can store it together with your project, and if you ever find you need to compile the project again in the future, it should still work (without you having to figure out what scitzen version to use):
+Btw. if you ever create a Scitzen project I highly recommend installing :link{coursier; https://get-coursier.io/} and use an incantation like the following to create a self-contained executable bootstrap jar file called `build`, which is ~50 kB in size and only requires a JVM to be executed and can then be used to compile your project. While this JVM based runner is much slower than the compiled binary, you can store it together with your project, and if you ever find you need to compile the project again in the future, it should still work (without you having to figure out what scitzen version to use):
 
-Incantation where you should replace the commit hash with any other commit hash (may be slow if thats the first time :link{jitpack; https://jitpack.io/} build the commit for you):
+Incantation where you should replace the commit hash with any other commit hash (maybe slow if that’s the first time :link{jitpack; https://jitpack.io/} build the commit for you):
 	cs bootstrap --repository jitpack com.github.rmgk:scitzen:2bb552ce24e30ca74c3e5daec24d766f6c78652f --main-class scitzen.cli.Scitzen -f -o build
 
 This also feels more like a blog post than a changelog, but … why not 🤷.
@@ -33,10 +33,10 @@ Includes the following features.
 • Syntax has been quite stable for a while.
 • HTML and LaTeX (PDF) output.
 • Automatically converts used images between PDF, SVG, and PNG depending on the support of the output format.
-• Built in CSS Stylesheet for list of articles and the articles themselves (non configurable).
+• Built in CSS Stylesheet for list of articles and the articles themselves (non-configurable).
 • Flexible LaTeX templates.
 • Inline GraphViz and Mermaid conversions.
-• Katex for LaTeX math in HTML.
+• KaTeX for LaTeX math in HTML.
 
 Caveats:
 
