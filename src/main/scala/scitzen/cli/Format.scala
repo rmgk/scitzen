@@ -96,10 +96,15 @@ object Format:
         ()
 
   def canonicalName(header: Section, extension: String): String =
-    val proto      = if extension == ".scim" then header.title else header.filename.getOrElse(header.title)
+    // for scim names we always use date + title, never the filename
+    val isScim = extension == ".scim"
+    val proto      = if isScim then header.title else header.filename.getOrElse(header.title)
     val title      = sluggify(proto)
     val shortTitle = title.substring(0, math.min(160, title.length))
-    val name       = header.date.map(_.date.full).fold(shortTitle)(d => d + " " + shortTitle)
+    val name =
+      if !isScim && header.filename.isDefined
+      then shortTitle
+      else header.date.map(_.date.full).fold(shortTitle)(d => d + " " + shortTitle)
     name.stripSuffix(".") + extension
 
   def sluggify(str: String): String =

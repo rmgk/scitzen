@@ -60,8 +60,6 @@ class ConvertHtml(anal: ConversionAnalysis):
       cssfile: Path,
   ): ConversionContext[ProjectPath] =
 
-    val targetPath = ProjectPath(project, project.outputdirWeb.resolve(Format.canonicalName(titled.header, ".html")))
-
     val converter = new SastToHtmlConverter(
       articleRef = ::(titled.article.ref, Nil),
       anal = anal,
@@ -141,5 +139,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           titled.article.doc.resolve(templatePath),
           templateSettings
         )
+
+    val targetPath = ProjectPath(project, project.outputdirWeb.resolve(Format.canonicalName(titled.header, ".html")))
     Files.writeString(targetPath.absolute, res)
     convertedArticleCtx.ret(targetPath)
