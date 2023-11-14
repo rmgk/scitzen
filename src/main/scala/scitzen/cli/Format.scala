@@ -97,7 +97,7 @@ object Format:
 
   def canonicalName(header: Section, extension: String): String =
     // for scim names we always use date + title, never the filename
-    val isScim = extension == ".scim"
+    val isScim     = extension == ".scim"
     val proto      = if isScim then header.title else header.filename.getOrElse(header.title)
     val title      = sluggify(proto)
     val shortTitle = title.substring(0, math.min(160, title.length))
