@@ -1,12 +1,42 @@
-== v.next
+= Changelog
+
+== v1.2
+date = 2023-11-15
 
 • Use positive class names for customizable things that differ from the HTML default:
 	the logic before was, that the default should not add a class, to reduce the HTML size a bit. However, thinking about it, all the negations seem like a terrible idea (:not(no-justify), really? wtf?). So instead let’s make configurable style choices add class names when they differ from the HTML default display.
 
 	I also changed the default to be hard wraps. I think this is in big parts due to me changing my writing style to just write paragraphs in a single line. But more than that, I feel that for less formal texts, a newline within a paragraph is actually a perfectly fine style element and should be preserved as such. For more formal writing, such as with papers, is also less annoying to have to change a setting. I think this also has become the default for GitHub Markdown (at least in comments) for exactly the same reasoning – it just makes more sense in comments and such.
 
+Sometime in the last two years I realized that it is much more practical to just have changelog files, instead of writing the changelog to the tag. In particular this makes it much easier to just note down things as I change them. Then again, Scitzen never had meaningful versions anyway, so documenting changes is really just more to rethink design decisions, which is also why the above note is the only one that made the cut. (And also because I don’t remember most of the time I change anything significant.)
+
+I guess other things include:
+
+• prism based syntax highlighting
+• tons of changes to how native image works
+	• the overall trend seems to be more stability, in particular since it’s kinda integrated with JDK 21 (releases) now
+	• but dang I have to spend a lot of effort into making it compile every time again
+	• on the other hand, non native image performance has also improved and is certainly usable
+• css has become featureful enough that I no longer feel the need for sass \o/
+• I replaced the option parsing library with another one
+	• [spoiler] … and then gave up and wrote my own
+• I wrote my own parser combinator library to replace fastparse (after I ported enough of fastparse to scala 3 to make it work for my usecase)
+• chrome got enough mathml support, that just including mathml actually works there now \o/ (I did nothing to that end)
+• some bib management and download capabilities
+• conversions became much more systematic
+• I wrote my own html templating library (see the pattern yet?)
+• tons of other things changed 😜
+
+
+Dependencies are weird now – the only remaining Scala dependencies are jsoniter-scala (which is just wonderful) and sourcecode (which is tiny, but also likely to be replaced by just plain Scala 3 as soon as I care). But then, there are huge mixed Java/JS dependencies like citeproc-java, and the whole Graal/Truffle stack to run prism, and katex. So actually Scitzen does have very little dependencies, but Graal/Truffle is one heck of a giant one.
+
+
+
+
+
+
 == v1.1
-2021-12-07
+date = 2021-12-07
 
 Note that there should be a :link{GH action building binaries; https://github.com/rmgk/scitzen/actions/workflows/native.yml} for each commit, and versioned releases have no better guarantees than any other random build.
 
