@@ -16,6 +16,7 @@ import scitzen.sast.DCommand.*
 
 import java.nio.charset.StandardCharsets
 import scala.annotation.unused
+import scala.util.Random
 
 class SastToHtmlConverter(
     articleRef: ::[ArticleRef],
@@ -43,7 +44,19 @@ class SastToHtmlConverter(
     )
 
   private val excludedFromMeta =
-    Set("label", "categories", "people", "tags", "folder", "date", "flags", "filename", "language", "link", "htmlTemplate")
+    Set(
+      "label",
+      "categories",
+      "people",
+      "tags",
+      "folder",
+      "date",
+      "flags",
+      "filename",
+      "language",
+      "link",
+      "htmlTemplate"
+    )
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
     @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
@@ -260,15 +273,19 @@ class SastToHtmlConverter(
       case Other(otherCommand) =>
         otherCommand match
           case "footnote" =>
-            convertInlineSeq(ctx, attrs.text.inl).mapc: res =>
-              Sag.details(Sag.summary("※"), res)
+            convertInlineSeq(ctx, attrs.text.inl).map: res =>
+              val randomId = Random.nextLong().toString
+              Chain(
+                Sag.input(`type` = "checkbox", id = randomId, `class` = "footnote"),
+                Sag.span(`class` = "footnote", res)
+              )
 
           case "ins" =>
             convertInlineSeq(ctx, attrs.text.inl).mapc: res =>
-              Sag.applyDynamic("ins")(res)
+              Sag.ins(res)
           case "del" =>
             convertInlineSeq(ctx, attrs.text.inl).mapc: res =>
-              Sag.applyDynamic("del")(res)
+              Sag.del(res)
 
           case "todo" => ctx.retc(Sag.code(`class` = "todo", SastToScimConverter(anal.bib).macroToScim(directive)))
           case "tableofcontents" => ctx.empty

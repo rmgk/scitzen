@@ -342,6 +342,13 @@ del {
 	font-style: italic;
 }
 
+input.footnote:not(:checked) ~ span.footnote {
+	display: none;
+}
+input.footnote:checked ~ span.footnote {
+	display: normal;
+}
+
 
 /**************************************************************/
 /* index page styling */
