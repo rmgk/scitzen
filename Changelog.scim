@@ -6,6 +6,9 @@
 • make plain strikethrough available?
 • providence information is borked (due to two pass parse)
 
+== v.next
+
+• footnotes no longer completely broken in html output
 
 
 == v1.2
