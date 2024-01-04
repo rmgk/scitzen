@@ -1,6 +1,6 @@
 package scitzen.blockconverters
 
-import de.rmgk.script.syntax
+import de.rmgk.script
 import scitzen.compat.Logging.cli
 import scitzen.extern.Hashes
 import scitzen.sast.{Attribute, Attributes, DCommand, Directive, Sast}
@@ -31,7 +31,7 @@ abstract class SvgViewboxModule(override val handles: String, processBuilder: Pr
         .redirectError(Redirect.DISCARD)
         .start()
       Using.resource(pikchr.getOutputStream) { os => os.write(bytes) }
-      val svg = Using.resource(pikchr.getInputStream) { _.readToString }
+      val svg = Using.resource(pikchr.getInputStream) { is => new String(is.readAllBytes(), StandardCharsets.UTF_8) }
       if pikchr.waitFor() != 0
       then
         cli.warn(s"${handles} compilation returned error code:")
