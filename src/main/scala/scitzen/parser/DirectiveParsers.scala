@@ -28,10 +28,10 @@ object DirectiveParsers {
 
   inline def commentStart: Scip[Boolean] = ":%".all
 
-  inline def commentEndingWith(inline endingFun: Scip[Boolean]): Scip[Directive] =
-    withProv(commentStart ifso (until(eol).min(0) and (endingFun.lookahead or eol)).str)
+  val comment: Scip[Directive] =
+    withProv(commentContent.str)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
-  val comment: Scip[Directive] = commentEndingWith(Scip { false })
+  val commentContent: Scip[Boolean] = commentStart and until(eol).min(0) and eol
 
 }
