@@ -69,15 +69,23 @@ object Fusion {
       container.content match
         case kv: KeyValue =>
           Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
-          add(container.copy(content = Text(InlineText(kv.indent + kv.attribute.id) +: kv.attribute.text.inl))(
-            container.prov
-          ))
+          if kv.attribute.isInstanceOf[Attribute.Nested]
+          then
+            add(container.copy(content =
+              Text(InlineText(s"${kv.indent}${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
+            )(
+              container.prov
+            ))
+          else
+            add(container.copy(content = Text(InlineText(s"${kv.indent}${kv.attribute.id}=") +: kv.attribute.text.inl))(
+              container.prov
+            ))
         case dir: Directive => Some(TopFuser(dir :: sastAcc))
         case Atoms.Fenced(commands, attributes, content) =>
           val block = Block(commands, attributes, Fenced(content))(container.prov)
           Some(TopFuser(block :: sastAcc))
         case del: Delimited =>
-          Some(StackFuser(BlockFuser(del, container.prov, TopFuser(Nil), done = false), this))
+          Some(StackFuser(BlockFuser(container.indent, del, container.prov, TopFuser(Nil), done = false), this))
         case other =>
           LazyList(SectionFuser, ParagraphFuser, ListFuser, WhitespaceFuser).flatMap(_.add(container)).headOption match
             case None =>
@@ -96,22 +104,23 @@ object Fusion {
 
   }
 
-  case class BlockFuser(delimited: Delimited, prov: Prov, current: Fuser, done: Boolean) extends Fuser {
+  case class BlockFuser(indent: String, delimited: Delimited, prov: Prov, current: Fuser, done: Boolean) extends Fuser {
     override def close(): List[Sast] =
       val inner = current.close().reverse
       List(Block(delimited.command, delimited.attributes, scitzen.sast.Parsed(delimited.delimiter, inner))(prov))
     def add(container: Container[Atom]): Option[Fuser] =
       if done then None
       else
+        val coypContainer = container.copy(indent = container.indent.stripPrefix(indent + "\t"))(container.prov)
         container.content match
           case Delimited(delimited.delimiter, BCommand.Empty, Attributes.empty) =>
             Some(copy(done = true, prov = prov.copy(end = container.prov.end)))
           case other =>
-            current.add(container) match
+            current.add(coypContainer) match
               case Some(res) =>
                 Some(copy(current = res))
               case None =>
-                unhandled(container)
+                unhandled(coypContainer)
                 None
   }
 
@@ -142,7 +151,9 @@ object Fusion {
   val ParagraphFuser = AccumulatingFuser[Text](
     Nil,
     { containers =>
-      val text = Text(containers.reverseIterator.flatMap(c => InlineText("\n") +: c.content.inl).toSeq.drop(1))
+      val text = Text(containers.reverseIterator.flatMap(c =>
+        InlineText("\n") +: ((if c.indent.nonEmpty then List(InlineText(c.indent)) else Nil) concat c.content.inl)
+      ).toSeq.drop(1))
       List(Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)))
     }
   )
@@ -241,7 +252,7 @@ object Atoms {
 
   def keyValue: Scip[KeyValue] = Scip {
     val indent            = CommonParsers.verticalSpaces.str.run
-    val (attribute, prov) = CommonParsers.withProv(AttributesParser.namedAttribute).run
+    val (attribute, prov) = CommonParsers.withProv(AttributesParser.namedAttribute <~ CommonParsers.spaceLineF).run
     CommonParsers.eol.run
     KeyValue(indent, attribute, prov)
   }
