@@ -92,11 +92,11 @@ object Fusion {
             val attributes = Attributes(kvs.iterator.map { ckv => ckv.attribute }.toSeq)
             fuseTop(rest, Section(Text(content), prefix, attributes)(container.prov) :: sastAcc)
           case ListAtom(_, _) =>
-            val (list, rest) = fuseList(tail, Nil)
+            val (list, rest) = fuseList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
           case Whitespace(content) =>
             val (ws, rest) = collectType[Whitespace](atoms)
-            val content = ws.map(ws => List(s"${ws.indent}${ws.content.content}")).mkString
+            val content    = ws.map(ws => s"${ws.indent}${ws.content.content}").mkString
             fuseTop(
               rest,
               Block(
@@ -107,20 +107,32 @@ object Fusion {
             )
           case _: Text =>
             val (containers, rest) = collectType[Text](atoms)
-            val text = Text(containers.reverseIterator.flatMap(c =>
+            val text = Text(containers.iterator.flatMap(c =>
               InlineText("\n") +: ((if c.indent.nonEmpty then List(InlineText(c.indent)) else Nil) concat c.content.inl)
-            ).toSeq.drop(1))
-            fuseTop(rest, Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)) :: sastAcc)
+            ).drop(1).toSeq)
+            fuseTop(
+              rest,
+              Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)) :: sastAcc
+            )
   }
 
   def fuseList(atoms: Atoms, acc: List[ParsedListItem]): (Slist, Atoms) = {
     atoms match
       case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
-        val (textSnippets, rest) = tail.collectWhile:
-          case cont @ Container(ident, text: Text) => Some(Container(ident, text)(cont.prov))
-          case other                               => None
+        val (textSnippets, rest) = collectType[Text | Directive](tail)
         val snippets =
-          textSnippets.flatMap(cont => InlineText("\n") +: InlineText(cont.indent) +: cont.content.inl).drop(1)
+          textSnippets.flatMap { cont =>
+            InlineText("\n") +: (
+              (if cont.indent.nonEmpty
+               then List(InlineText(cont.indent))
+               else Nil)
+              concat (
+                cont.content match
+                  case Text(inl) => inl
+                  case dir: Directive => List(dir)
+                )
+            )
+          }
         fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), cont.prov, None) :: acc)
       case other =>
         (ListParsers.ListConverter.listtoSast(acc.reverse), atoms)
@@ -131,7 +143,9 @@ object Fusion {
       case Container(`indent`, Delimited(del.delimiter, BCommand.Empty, Attributes.empty)) =>
         false
       case other => true
-    val innerSast = fuseTop(innerAtoms, Nil)
+    val adaptedIndent = innerAtoms.map:
+      case cont @ Container(cindent, content) => Container(cindent.stripPrefix(indent).stripPrefix("\t"), content)(cont.prov)
+    val innerSast = fuseTop(adaptedIndent, Nil)
     (
       Block(del.command, del.attributes, scitzen.sast.Parsed(del.delimiter, innerSast))(prov),
       rest.drop(1)
