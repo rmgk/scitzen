@@ -2,12 +2,12 @@ package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.parser.CommonParsers.*
-import scitzen.sast.{Attributes, BCommand, Block, Paragraph, Sast, Section, SpaceComment, Text}
+import scitzen.sast.{Attributes, BCommand, Block, Inline, Paragraph, Sast, Section, SpaceComment, Text}
 
 object BlockParsers {
 
-  val sectionInlines   = InlineParsers.full(eol)
-  val paragraphInlines = InlineParsers.full(eol and spaceLineB)
+  val sectionInlines: Scip[List[Inline]]   = InlineParsers.full(eol)
+  val paragraphInlines: Scip[List[Inline]] = InlineParsers.full(eol and spaceLineB)
 
   def paragraph: Scip[Block] = Scip {
     val attrOpt         = (AttributesParser.braces <~ spaceLineF).opt.run

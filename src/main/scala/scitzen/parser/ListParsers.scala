@@ -35,7 +35,7 @@ object ListParsers {
 
   object ListConverter {
 
-    def splitted[ID, Item](items: List[(ID, Item)]): Seq[(Item, Seq[Item])] =
+    private def splitted[ID, Item](items: List[(ID, Item)]): Seq[(Item, Seq[Item])] =
       items match {
         case Nil => Nil
         case (marker, item) :: tail =>

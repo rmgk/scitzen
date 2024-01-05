@@ -10,6 +10,8 @@ case class ListItem(marker: String, text: Text, content: Option[Sast])
 sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:
   require(str.nonEmpty)
+  override def toString: String = s"“$str”"
+
 case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast
 
 case class Text(inl: Seq[Inline]) {
