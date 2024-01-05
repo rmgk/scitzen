@@ -6,9 +6,14 @@ import scitzen.compat.Logging
 import scitzen.fusion.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.ListParsers.ParsedListItem
-import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers}
+import scitzen.parser.{
+  AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers
+}
 import scitzen.project.{Document, Project}
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section,
+  SpaceComment, Text
+}
 
 import java.nio.file.Path
 
@@ -64,7 +69,9 @@ object Fusion {
       container.content match
         case kv: KeyValue =>
           Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
-          add(container.copy(content = Text(InlineText(kv.indent + kv.attribute.id) +: kv.attribute.text.inl))(container.prov))
+          add(container.copy(content = Text(InlineText(kv.indent + kv.attribute.id) +: kv.attribute.text.inl))(
+            container.prov
+          ))
         case dir: Directive => Some(TopFuser(dir :: sastAcc))
         case Atoms.Fenced(commands, attributes, content) =>
           val block = Block(commands, attributes, Fenced(content))(container.prov)
@@ -91,7 +98,7 @@ object Fusion {
 
   case class BlockFuser(delimited: Delimited, prov: Prov, current: Fuser, done: Boolean) extends Fuser {
     override def close(): List[Sast] =
-      val inner = current.close()
+      val inner = current.close().reverse
       List(Block(delimited.command, delimited.attributes, scitzen.sast.Parsed(delimited.delimiter, inner))(prov))
     def add(container: Container[Atom]): Option[Fuser] =
       if done then None
@@ -114,11 +121,11 @@ object Fusion {
       containers =>
         containers.reverse match
           case (head @ Container(_, SectionAtom(pfx, content))) :: keyValues =>
-            val attributes = Attributes(keyValues.reverseIterator.map {
+            val attributes = Attributes(keyValues.map {
               case Container(_, kv: KeyValue) => kv.attribute
               case other                      => ???
             }.toSeq)
-            List(Section(Text(content), pfx, Attributes.empty)(head.prov))
+            List(Section(Text(content), pfx, attributes)(head.prov))
           case other =>
             println(s"head was not a container but: $other")
             ???
@@ -135,7 +142,7 @@ object Fusion {
   val ParagraphFuser = AccumulatingFuser[Text](
     Nil,
     { containers =>
-      val text = Text(containers.reverseIterator.flatMap(c => c.content.inl).toSeq)
+      val text = Text(containers.reverseIterator.flatMap(c => InlineText("\n") +: c.content.inl).toSeq.drop(1))
       List(Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)))
     }
   )
@@ -220,7 +227,7 @@ object Atoms {
     Scip {
       val prefix  = choice("= ", "== ", "# ", "## ", "### ").str.run
       val inlines = BlockParsers.sectionInlines.run
-      SectionAtom(prefix, inlines)
+      SectionAtom(prefix.dropRight(1), inlines)
     }
 
   def list: Scip[ListAtom] =
@@ -269,10 +276,17 @@ object Atoms {
     val command = DirectiveParsers.macroCommand.opt.trace("fenced macro").run
     val attr    = (AttributesParser.braces.opt <~ CommonParsers.spaceLineF).trace("fenced braces").run
     val content = untilIS(newline and seq(indent) and seq(start) and eol).run
+
+    val innerContent = content.linesWithSeparators.map(line => line.stripPrefix(indent)).mkString
+
+    val strippedContent = DelimitedBlockParsers.stripIfPossible(
+      innerContent,
+      start.length
+    ).getOrElse(innerContent)
     val fen = Fenced(
       commands = BCommand.parse(command.getOrElse("")),
       attributes = Attributes(attr.getOrElse(Nil)),
-      content = content
+      content = strippedContent
     )
     Container(indent, fen)(Prov(sindex, scx.index))
   }
