@@ -9,7 +9,7 @@ import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import scala.collection.immutable.ArraySeq
 
-val astIncludesWhitespacelines = true
+val isFusedParser = true
 
 class SastToScimConverter(bibDB: BibDB):
 
@@ -40,7 +40,7 @@ class SastToScimConverter(bibDB: BibDB):
 
           case ListItem(marker, Text(inl), Some(rest)) =>
             Chain(
-              s"$marker" + inlineToScim(inl) + (if rest.isInstanceOf[Slist] then "" else ":"),
+              s"$marker" + inlineToScim(inl) + (if rest.isInstanceOf[Slist] || isFusedParser then "" else ":"),
               toScim(rest).iterator.mkString("\n").stripTrailing
             )
         }
@@ -70,7 +70,7 @@ class SastToScimConverter(bibDB: BibDB):
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
         val res     = attrres :+ inlineToScim(content.inl)
-        if astIncludesWhitespacelines
+        if isFusedParser
         then res
         else res :+ ""
 
@@ -160,7 +160,7 @@ class AttributesToScim(bibDB: BibDB):
         else s"""$k=${convert(v, spacy, force, light)}"""
     }
 
-    val moreNewlines = if astIncludesWhitespacelines
+    val moreNewlines = if isFusedParser
       then ""
       else "\n"
 

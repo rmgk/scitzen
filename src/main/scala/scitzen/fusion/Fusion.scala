@@ -113,6 +113,14 @@ object Fusion {
 
   def fuseList(atoms: Atoms, acc: List[ParsedListItem]): (Slist, Atoms) = {
     atoms match
+      case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail if Text(content).plainString.stripTrailing().endsWith(":") =>
+        val nextIndent = tail.head.indent
+        val (inner, rest) = tail.collectWhile: cont =>
+          if cont.indent.startsWith(nextIndent) then Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent))(cont.prov)) else None
+        val innerFused =  fuseTop(inner, Nil)
+        val block = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
+        fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content), cont.prov, Some(block)) :: acc)
+
       case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
         val (textSnippets, rest) = collectType[Text | Directive](tail)
         val snippets =
