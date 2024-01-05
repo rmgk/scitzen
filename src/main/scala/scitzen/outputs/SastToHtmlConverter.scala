@@ -32,7 +32,7 @@ class SastToHtmlConverter(
 
   override def inlineResToBlock(inl: Chain[Recipe]): Recipe  = Recipe(inl.foreach(_.run))
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
-  override def stringToInlineRes(str: String): Recipe        = Sag.String(str)
+  override def stringToInlineRes(str: String): Recipe        = Sag.span(str)
 
   def listItemToHtml(child: ListItem)(ctx: Cta): CtxCF =
     val textCtx = convertInlineSeq(ctx, child.text.inl)
