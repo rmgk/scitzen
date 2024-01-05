@@ -3,8 +3,8 @@ date        = 2022-07-31
 texTemplate = /templates/memoir.scim
 style       = article
 
-Roses are red
-violets are blue
+Roses are :emph{red}
+violets are :strong{blue}
 I make my formats just for you
 
 :image{this does not exist.png}
@@ -12,3 +12,15 @@ I make my formats just for you
 :emph{test}
 
 :{failedLookup; default=}
+
+
+• this
+	• is a nested
+	• list
+• with
+• a couple
+	• of
+		• items
+	• and stuff
+
+• this should be a second list
