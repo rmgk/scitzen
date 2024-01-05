@@ -252,7 +252,7 @@ object Atoms {
     override def toString: String = s"Whitespace(»${content.replace("\n", "\\n")}«)"
 
   def whitespace: Scip[Whitespace] =
-    (CommonParsers.verticalSpaces and (DirectiveParsers.commentContent or eol)).str.map(Whitespace.apply)
+    (CommonParsers.verticalSpaces and (DirectiveParsers.commentContent.attempt or eol)).str.map(Whitespace.apply)
 
   case class Delimited(delimiter: String, command: BCommand, attributes: Attributes)
 
