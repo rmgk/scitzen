@@ -122,8 +122,8 @@ object Fusion {
       if done then None
       else
         val copyContainer = container.copy(indent = container.indent.stripPrefix(indent + "\t"))(container.prov)
-        container.content match
-          case Delimited(delimited.delimiter, BCommand.Empty, Attributes.empty) =>
+        container match
+          case Container(`indent`, Delimited(delimited.delimiter, BCommand.Empty, Attributes.empty)) =>
             Some(copy(done = true, prov = prov.copy(end = container.prov.end)))
           case other =>
             current.add(copyContainer) match
