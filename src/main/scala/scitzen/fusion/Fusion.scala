@@ -252,8 +252,8 @@ object Atoms {
 
   def keyValue: Scip[KeyValue] = Scip {
     val indent            = CommonParsers.verticalSpaces.str.run
-    val (attribute, prov) = CommonParsers.withProv(AttributesParser.namedAttribute <~ CommonParsers.spaceLineF).run
-    CommonParsers.eol.run
+    val (attribute, prov) = CommonParsers.withProv(AttributesParser.namedAttribute).run
+    CommonParsers.spaceLineF.run
     KeyValue(indent, attribute, prov)
   }
 
