@@ -6,13 +6,9 @@ import scitzen.compat.Logging
 import scitzen.fusion.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.ListParsers.ParsedListItem
-import scitzen.parser.{
-  AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers
-}
+import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers}
 import scitzen.project.{Document, Project}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, Paragraph, Prov, Sast, Section, SpaceComment, Text
-}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, SpaceComment, Text}
 
 import java.nio.file.Path
 
@@ -66,6 +62,9 @@ object Fusion {
 
     def add(container: Container[Atom]): Option[Fuser] =
       container.content match
+        case kv: KeyValue =>
+          Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
+          add(container.copy(content = Text(InlineText(kv.indent + kv.attribute.id) +: kv.attribute.text.inl))(container.prov))
         case dir: Directive => Some(TopFuser(dir :: sastAcc))
         case Atoms.Fenced(commands, attributes, content) =>
           val block = Block(commands, attributes, Fenced(content))(container.prov)
@@ -120,7 +119,9 @@ object Fusion {
               case other                      => ???
             }.toSeq)
             List(Section(Text(content), pfx, Attributes.empty)(head.prov))
-          case other => ???
+          case other =>
+            println(s"head was not a container but: $other")
+            ???
 
     }
   )
