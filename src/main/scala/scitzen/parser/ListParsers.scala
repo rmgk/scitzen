@@ -15,7 +15,8 @@ object ListParsers {
   def simpleListItem: Scip[ParsedListItem] = Scip {
     val marker          = simpleMarker.str.run
     val (content, prov) = withProv(until(eol and (spaceLineB or simpleMarker)).min(0).str <~ eol.orFail).run
-    ParsedListItem(marker, content, prov, None)
+    val inner = Parse.inlineUnwrap(content.getBytes(StandardCharsets.UTF_8))
+    ParsedListItem(marker, Text(inner), prov, None)
   }
 
   def descriptionListContent: Scip[(String, Prov)] =
@@ -25,13 +26,14 @@ object ListParsers {
     val marker      = simpleMarker.str.run
     val (str, prov) = descriptionListContent.run
     val innerBlock  = DelimitedBlockParsers.whitespaceLiteral.opt.run
-    ParsedListItem(marker, str, prov, innerBlock)
+    val inner = Parse.inlineUnwrap(str.getBytes(StandardCharsets.UTF_8))
+    ParsedListItem(marker, Text(inner), prov, innerBlock)
   }
 
   def list: Scip[Slist] =
     (descriptionListItem | simpleListItem).list(Scip { true }).require(_.nonEmpty).map(ListConverter.listtoSast)
 
-  case class ParsedListItem(marker: String, itemText: String, prov: Prov, content: Option[Block])
+  case class ParsedListItem(marker: String, itemText: Text, prov: Prov, content: Option[Block])
 
   object ListConverter {
 
@@ -55,10 +57,9 @@ object ListParsers {
     private def otherList(split: Seq[(ParsedListItem, Seq[ParsedListItem])]): Slist = {
       val listItems = split.map {
         case (item, children) =>
-          val itemSast    = Parse.inlineUnwrap(item.itemText.getBytes(StandardCharsets.UTF_8))
           val contentSast = item.content
           val childSasts  = if (children.isEmpty) None else Some(listtoSast(children))
-          ListItem(item.marker, Text(itemSast), contentSast.orElse(childSasts))
+          ListItem(item.marker, item.itemText, contentSast.orElse(childSasts))
       }
       scitzen.sast.Slist(listItems)
     }
