@@ -6,14 +6,9 @@ import scitzen.compat.Logging
 import scitzen.fusion.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.ListParsers.ParsedListItem
-import scitzen.parser.{
-  AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers
-}
+import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers}
 import scitzen.project.{Document, Project}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section,
-  SpaceComment, Text
-}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, Slist, SpaceComment, Text}
 
 import java.nio.file.Path
 
@@ -40,16 +35,106 @@ object Fusion {
 
     val scx = newscx()
 
-    def rec(fuser: Fuser): Fuser =
+    def atoms(): Atoms =
       if scx.index >= scx.maxpos
-      then fuser
+      then LazyList.empty
       else
         val atom = Atoms.alternatives.runInContext(scx)
-        fuser.add(atom) match
-          case Some(fuser) => rec(fuser)
-          case None        => ???
+        atom #:: atoms()
 
-    rec(TopFuser(Nil)).close().reverse
+    fuseTop(atoms(), Nil)
+  }
+
+  extension [A](list: LazyList[A])
+    def collectWhile[R](f: A => Option[R]): (LazyList[R], LazyList[A]) =
+      list match
+        case LazyList() => (LazyList.empty, list)
+        case head #:: tail =>
+          f(head) match
+            case None => (LazyList.empty, list)
+            case Some(res) =>
+              lazy val (good, bad) = tail.collectWhile(f)
+              (res #:: good, bad)
+
+  type Atoms = LazyList[Container[Atom]]
+
+  def fuseTop(atoms: Atoms, sastAcc: List[Sast]): List[Sast] = {
+
+    atoms match
+      case LazyList() => sastAcc.reverse
+      case container #:: tail =>
+        container.content match
+          case kv: KeyValue =>
+            fuseTop(applyKVHack(container) #:: tail, sastAcc)
+          case dir: Directive => fuseTop(tail, dir :: sastAcc)
+          case Atoms.Fenced(commands, attributes, content) =>
+            val block = Block(commands, attributes, Fenced(content))(container.prov)
+            fuseTop(tail, block :: sastAcc)
+          case del: Delimited =>
+            val (delimited, rest) = fuseDelimited(container.indent, del, container.prov, tail)
+            fuseTop(rest, delimited :: sastAcc)
+          case SectionAtom(prefix, content) =>
+            val (kvs, rest) = tail.collectWhile:
+              case Container(indent, content: KeyValue) => Some(content)
+              case other                                => None
+            val attributes = Attributes(kvs.iterator.map { ckv => ckv.attribute }.toSeq)
+            List(Section(Text(content), prefix, attributes)(container.prov))
+          case ListAtom(_, _) =>
+            val (list, rest) = fuseList(tail, Nil)
+            fuseTop(rest, list :: sastAcc)
+          case other =>
+            Logging.cli.warn(s"unhandled: $container, (${container.prov})")
+            fuseTop(tail, sastAcc)
+      //            LazyList(ParagraphFuser, ListFuser, WhitespaceFuser).flatMap(
+      //              _.add(container)
+      //            ).headOption match
+      //              case None =>
+      //                Logging.cli.warn(s"received $container, (${container.prov}) not handled by $this")
+      //                Some(this)
+      //              case Some(child) =>
+      //                Some(StackFuser(child, this))
+
+  }
+
+  def fuseList(atoms: Atoms, acc: List[ParsedListItem]): (Slist, Atoms) = {
+    atoms match
+      case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
+        val (textSnippets, rest) = tail.collectWhile:
+          case cont @ Container(ident, text: Text) => Some(Container(ident, text)(cont.prov))
+          case other                               => None
+        val snippets = textSnippets.flatMap(cont => InlineText("\n") +: InlineText(cont.indent) +: cont.content.inl).drop(1)
+        fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), cont.prov, None) :: acc)
+      case other =>
+        (ListParsers.ListConverter.listtoSast(acc.reverse), atoms)
+  }
+
+//  {
+//    { (_, plis) =>
+//      val combined = plis.foldRight(List.empty[ParsedListItem]): (cont, acc) =>
+//        cont match
+//          case Container(indent, ListAtom(prefix, content)) =>
+//            ParsedListItem(s"$indent$prefix", Text(content), cont.prov, None) :: acc
+//          case Container(indent, t: Text) =>
+//            val (curr :: res) = acc: @unchecked
+//            curr.copy(
+//              itemText = Text(curr.itemText.inl concat (InlineText(s"\n$indent") +: t.inl)),
+//              prov = Prov(curr.prov.start, cont.prov.end)
+//            ) :: res
+//
+//      List(ListParsers.ListConverter.listtoSast(combined.reverse))
+//    }
+//  }
+
+  def fuseDelimited(indent: String, del: Delimited, prov: Prov, atoms: LazyList[Container[Atom]]) = {
+    val (innerAtoms, rest) = atoms.span:
+      case Container(`indent`, Delimited(del.delimiter, BCommand.Empty, Attributes.empty)) =>
+        false
+      case other => true
+    val innerSast = fuseTop(innerAtoms, Nil)
+    (
+      Block(del.command, del.attributes, scitzen.sast.Parsed(del.delimiter, innerSast))(prov),
+      rest.drop(1)
+    )
 
   }
 
@@ -59,22 +144,6 @@ object Fusion {
 
     def unhandled(container: Container[Atom]): Unit =
       Logging.cli.warn(s"received $container, (${container.prov}) not handled by $this")
-  }
-
-  def applyKVHack(container: Container[Atom]): Container[Text] = {
-    val kv = container.content.asInstanceOf[KeyValue]
-    Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
-    if kv.attribute.isInstanceOf[Attribute.Nested]
-    then
-      container.copy(content =
-        Text(InlineText(s"${kv.indent}${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
-      )(
-        container.prov
-      )
-    else
-      container.copy(content = Text(InlineText(s"${kv.indent}${kv.attribute.id}=") +: kv.attribute.text.inl))(
-        container.prov
-      )
   }
 
   case class TopFuser(sastAcc: List[Sast]) extends Fuser {
@@ -197,6 +266,22 @@ object Fusion {
       List(ListParsers.ListConverter.listtoSast(combined.reverse))
     }
   )
+
+  def applyKVHack(container: Container[Atom]): Container[Text] = {
+    val kv = container.content.asInstanceOf[KeyValue]
+    Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
+    if kv.attribute.isInstanceOf[Attribute.Nested]
+    then
+      container.copy(content =
+        Text(InlineText(s"${kv.indent}${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
+      )(
+        container.prov
+      )
+    else
+      container.copy(content = Text(InlineText(s"${kv.indent}${kv.attribute.id}=") +: kv.attribute.text.inl))(
+        container.prov
+      )
+  }
 
 }
 
