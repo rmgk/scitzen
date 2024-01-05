@@ -61,6 +61,23 @@ object Fusion {
       Logging.cli.warn(s"received $container, (${container.prov}) not handled by $this")
   }
 
+
+  def applyKVHack(container: Container[Atom]): Container[Text] = {
+    val kv = container.content.asInstanceOf[KeyValue]
+    Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
+    if kv.attribute.isInstanceOf[Attribute.Nested]
+    then
+      container.copy(content =
+        Text(InlineText(s"${kv.indent}${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
+      )(
+        container.prov
+      )
+    else
+      container.copy(content = Text(InlineText(s"${kv.indent}${kv.attribute.id}=") +: kv.attribute.text.inl))(
+        container.prov
+      )
+  }
+
   case class TopFuser(sastAcc: List[Sast]) extends Fuser {
 
     override def close(): List[Sast] = sastAcc
@@ -68,18 +85,7 @@ object Fusion {
     def add(container: Container[Atom]): Option[Fuser] =
       container.content match
         case kv: KeyValue =>
-          Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
-          if kv.attribute.isInstanceOf[Attribute.Nested]
-          then
-            add(container.copy(content =
-              Text(InlineText(s"${kv.indent}${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
-            )(
-              container.prov
-            ))
-          else
-            add(container.copy(content = Text(InlineText(s"${kv.indent}${kv.attribute.id}=") +: kv.attribute.text.inl))(
-              container.prov
-            ))
+          add(applyKVHack(container))
         case dir: Directive => Some(TopFuser(dir :: sastAcc))
         case Atoms.Fenced(commands, attributes, content) =>
           val block = Block(commands, attributes, Fenced(content))(container.prov)
@@ -99,7 +105,11 @@ object Fusion {
     override def close(): List[Sast] = current.close() ::: top.close()
     def add(container: Container[Atom]): Option[Fuser] =
       current.add(container) match
-        case None      => top.copy(sastAcc = close()).add(container)
+        case None      =>
+          if container.content.isInstanceOf[KeyValue]
+          then
+            add(applyKVHack(container))
+          else top.copy(sastAcc = close()).add(container)
         case Some(res) => Some(copy(current = res))
 
   }
@@ -111,16 +121,16 @@ object Fusion {
     def add(container: Container[Atom]): Option[Fuser] =
       if done then None
       else
-        val coypContainer = container.copy(indent = container.indent.stripPrefix(indent + "\t"))(container.prov)
+        val copyContainer = container.copy(indent = container.indent.stripPrefix(indent + "\t"))(container.prov)
         container.content match
           case Delimited(delimited.delimiter, BCommand.Empty, Attributes.empty) =>
             Some(copy(done = true, prov = prov.copy(end = container.prov.end)))
           case other =>
-            current.add(coypContainer) match
+            current.add(copyContainer) match
               case Some(res) =>
                 Some(copy(current = res))
               case None =>
-                unhandled(coypContainer)
+                unhandled(copyContainer)
                 None
   }
 
