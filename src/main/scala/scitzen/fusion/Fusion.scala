@@ -61,7 +61,6 @@ object Fusion {
       Logging.cli.warn(s"received $container, (${container.prov}) not handled by $this")
   }
 
-
   def applyKVHack(container: Container[Atom]): Container[Text] = {
     val kv = container.content.asInstanceOf[KeyValue]
     Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
@@ -91,7 +90,7 @@ object Fusion {
           val block = Block(commands, attributes, Fenced(content))(container.prov)
           Some(TopFuser(block :: sastAcc))
         case del: Delimited =>
-          Some(StackFuser(BlockFuser(container.indent, del, container.prov, TopFuser(Nil), done = false), this))
+          Some(StackFuser(NestedFuser(container.indent, del, container.prov, TopFuser(Nil), done = false), this))
         case other =>
           LazyList(SectionFuser, ParagraphFuser, ListFuser, WhitespaceFuser).flatMap(_.add(container)).headOption match
             case None =>
@@ -105,7 +104,7 @@ object Fusion {
     override def close(): List[Sast] = current.close() ::: top.close()
     def add(container: Container[Atom]): Option[Fuser] =
       current.add(container) match
-        case None      =>
+        case None =>
           if container.content.isInstanceOf[KeyValue]
           then
             add(applyKVHack(container))
@@ -114,7 +113,8 @@ object Fusion {
 
   }
 
-  case class BlockFuser(indent: String, delimited: Delimited, prov: Prov, current: Fuser, done: Boolean) extends Fuser {
+  case class NestedFuser(indent: String, delimited: Delimited, prov: Prov, current: Fuser, done: Boolean)
+      extends Fuser {
     override def close(): List[Sast] =
       val inner = current.close().reverse
       List(Block(delimited.command, delimited.attributes, scitzen.sast.Parsed(delimited.delimiter, inner))(prov))
