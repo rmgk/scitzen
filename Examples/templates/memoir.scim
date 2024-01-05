@@ -30,7 +30,7 @@
 % hyperref does all sorts of PDF goodies
 \usepackage[colorlinks]{hyperref}
 :% the following makes magic pdfs where link color vanishes when printed
-:% however, that does not seem to work with linux pdf viewers, and generally seeems like a gigantic hack
+:% however, that does not seem to work with linux pdf viewers, and generally seems like a gigantic hack
 :% \usepackage[ocgcolorlinks]{ocgx2}[2017/03/30]
 
 % adapt colors of hyperref
