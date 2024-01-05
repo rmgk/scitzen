@@ -134,22 +134,10 @@ object Fusion {
                 None
   }
 
-  val SectionFuser = AccumulatingFuser[KeyValue | SectionAtom](
-    Nil,
-    {
-      containers =>
-        containers.reverse match
-          case (head @ Container(_, SectionAtom(pfx, content))) :: keyValues =>
-            val attributes = Attributes(keyValues.map {
-              case Container(_, kv: KeyValue) => kv.attribute
-              case other                      => ???
-            }.toSeq)
-            List(Section(Text(content), pfx, attributes)(head.prov))
-          case other =>
-            println(s"head was not a container but: $other")
-            ???
-
-    }
+  val SectionFuser = AccumulatingFuser[SectionAtom, KeyValue]((head, keyValues) =>
+    val (Some(Container(_, SectionAtom(prefix, content)))) = head: @unchecked
+    val attributes = Attributes(keyValues.reverse.map { ckv => ckv.content.attribute })
+    List(Section(Text(content), prefix, attributes)(head.get.prov))
   )
 
   def combineProvidence(containers: Seq[Container[Atom]]): Prov =
@@ -158,50 +146,51 @@ object Fusion {
       containers.iterator.map(_.prov.end).max
     )
 
-  val ParagraphFuser = AccumulatingFuser[Text](
-    Nil,
-    { containers =>
-      val text = Text(containers.reverseIterator.flatMap(c =>
-        InlineText("\n") +: ((if c.indent.nonEmpty then List(InlineText(c.indent)) else Nil) concat c.content.inl)
-      ).toSeq.drop(1))
-      List(Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)))
-    }
+  val ParagraphFuser = AccumulatingFuser[Nothing, Text]((_, containers) =>
+    val text = Text(containers.reverseIterator.flatMap(c =>
+      InlineText("\n") +: ((if c.indent.nonEmpty then List(InlineText(c.indent)) else Nil) concat c.content.inl)
+    ).toSeq.drop(1))
+    List(Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)))
   )
 
-  val WhitespaceFuser = AccumulatingFuser[Whitespace](
-    Nil,
-    { containers =>
-      List(Block(
-        BCommand.Empty,
-        Attributes.empty,
-        SpaceComment(containers.reverseIterator.map(c => c.content.content).mkString)
-      )(combineProvidence(containers)))
-    }
+  val WhitespaceFuser = AccumulatingFuser[Nothing, Whitespace]((_, containers) =>
+    List(Block(
+      BCommand.Empty,
+      Attributes.empty,
+      SpaceComment(containers.reverseIterator.map(c => c.content.content).mkString)
+    )(combineProvidence(containers)))
   )
 
-  case class AccumulatingFuser[As <: Atom](
-      accumulator: List[Container[As]],
-      combiner: List[Container[As]] => List[Sast],
-  )(using TypeTest[Atom, As]) extends Fuser {
-    override def add(container: Container[Atom]): Option[Fuser] = container.content match
-      case _: As =>
-        Some(copy(accumulator = container.asInstanceOf[Container[As]] :: accumulator))
-      case other => None
+  case class AccumulatingFuser[Head <: Atom, Content <: Atom](
+      combiner: (Option[Container[Head]], List[Container[Content]]) => List[Sast],
+      head: Option[Container[Head]] = None,
+      accumulator: List[Container[Content]] = Nil,
+  )(using TypeTest[Atom, Head], TypeTest[Atom, Content]) extends Fuser {
+    override def add(container: Container[Atom]): Option[Fuser] =
+      container.content match
+        case _: Head if head.isEmpty =>
+          Some(copy(head = Some(container.asInstanceOf[Container[Head]])))
+        case _: Content =>
+          Some(copy(accumulator = container.asInstanceOf[Container[Content]] :: accumulator))
+        case other => None
     override def close(): List[Sast] =
-      combiner(accumulator)
+      combiner(head, accumulator)
   }
 
-  val ListFuser = AccumulatingFuser[ListAtom | Text](
-    Nil,
-    { plis =>
+  given TypeTest[Atom, Nothing] with {
+    override def unapply(x: Atom): Option[x.type & Nothing] = None
+  }
+
+  val ListFuser = AccumulatingFuser[Nothing, ListAtom | Text](
+    { (_, plis) =>
       val combined = plis.foldRight(List.empty[ParsedListItem]): (cont, acc) =>
         cont match
           case Container(indent, ListAtom(prefix, content)) =>
-            ParsedListItem(s"$indent$prefix", Text(content).plainString, cont.prov, None) :: acc
+            ParsedListItem(s"$indent$prefix", Text(content), cont.prov, None) :: acc
           case Container(indent, t: Text) =>
             val (curr :: res) = acc: @unchecked
             curr.copy(
-              itemText = s"${curr.itemText}${t.plainString}",
+              itemText = Text(curr.itemText.inl concat (InlineText(s"\n$indent") +: t.inl)),
               prov = Prov(curr.prov.start, cont.prov.end)
             ) :: res
 
