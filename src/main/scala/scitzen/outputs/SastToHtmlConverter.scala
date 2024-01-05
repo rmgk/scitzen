@@ -59,7 +59,7 @@ class SastToHtmlConverter(
     )
   def tMeta(ctx: Cta, section: Section): CtxCF =
 
-    @unused val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
+    val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
       .flatMap(_.split(","))
 
     val extraAttributes = ctx.fold[(String, Text), Recipe](section.attributes.raw.collect:
