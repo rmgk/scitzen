@@ -160,13 +160,8 @@ class AttributesToScim(bibDB: BibDB):
         else s"""$k=${convert(v, spacy, force, light)}"""
     }
 
-    val additionalNewline =
-      if astIncludesWhitespacelines
-      then ""
-      else "\n"
-
     if !(spacy && attributes.raw.size > 1) then
-      if light && attributes.positional.isEmpty then pairs.mkString("", "; ", additionalNewline)
+      if light && attributes.positional.isEmpty then pairs.mkString("", "; ", "\n")
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
-    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", additionalNewline)
+    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", "\n")
     else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
