@@ -8,7 +8,6 @@ import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText}
 
 object DirectiveParsers {
 
-  val detectStart: Scip[Boolean] = directiveStart and Identifier.identifier.opt and AttributesParser.open.all
   val macroCommand: Scip[String] = identifierB.str
 
   val full: Scip[Directive] = withProv(Scip {
@@ -29,12 +28,10 @@ object DirectiveParsers {
 
   inline def commentStart: Scip[Boolean] = ":%".all
 
-  val syntaxStart: Scip[Boolean] = commentStart or DirectiveParsers.detectStart
-
-  inline def commentEnding(inline endingFun: Scip[Boolean]): Scip[Directive] =
+  inline def commentEndingWith(inline endingFun: Scip[Boolean]): Scip[Directive] =
     withProv(commentStart ifso (until(eol).min(0) and (endingFun.lookahead or eol)).str)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
-  val comment: Scip[Directive] = commentEnding(Scip { false })
+  val comment: Scip[Directive] = commentEndingWith(Scip { false })
 
 }

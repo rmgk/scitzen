@@ -36,7 +36,7 @@ object InlineParsers {
 
       if ending.run then addPlain()
       else
-        (DirectiveParsers.commentEnding(ending) | DirectiveParsers.raw | DirectiveParsers.full).opt.run match
+        (DirectiveParsers.commentEndingWith(ending) | DirectiveParsers.raw | DirectiveParsers.full).opt.run match
           case Some(inl) => inlineOptions(inl :: addPlain())
           case None =>
             if scx.next then inlineOptions(acc)
