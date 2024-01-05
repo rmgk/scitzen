@@ -1,6 +1,7 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
+import scitzen.fusion.Fusion
 import scitzen.project.Document
 import scitzen.sast.{Inline, Prov, Sast}
 
@@ -31,7 +32,8 @@ object Parse {
   val parserDocument: Scip[List[Sast]] = BlockParsers.alternatives.list(Scip { true }) <~ end.orFail
 
   def documentUnwrap(doc: Document): List[Sast] = {
-    parseResult(doc.content, parserDocument)
+    //parseResult(doc.content, parserDocument)
+    Fusion.documentUnwrap(doc)
   }
 
   val allInlines = InlineParsers.full(end)

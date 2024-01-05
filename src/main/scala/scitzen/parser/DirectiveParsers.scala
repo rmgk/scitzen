@@ -29,9 +29,9 @@ object DirectiveParsers {
   inline def commentStart: Scip[Boolean] = ":%".all
 
   val comment: Scip[Directive] =
-    withProv(commentContent.str)
+    withProv(commentContent)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
-  val commentContent: Scip[Boolean] = commentStart and until(eol).min(0) and eol
+  val commentContent: Scip[String] = commentStart ifso untilIS(eol)
 
 }
