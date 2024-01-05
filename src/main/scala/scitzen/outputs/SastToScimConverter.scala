@@ -9,6 +9,8 @@ import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import scala.collection.immutable.ArraySeq
 
+val astIncludesWhitespacelines = true
+
 class SastToScimConverter(bibDB: BibDB):
 
   val attributeConverter = AttributesToScim(bibDB)
@@ -67,7 +69,10 @@ class SastToScimConverter(bibDB: BibDB):
     sb.content match
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        attrres :+ inlineToScim(content.inl) :+ ""
+        val res     = attrres :+ inlineToScim(content.inl)
+        if astIncludesWhitespacelines
+        then res
+        else res :+ ""
 
       case Parsed(delimiter, blockContent) =>
         val content = toScimS(blockContent)
@@ -155,8 +160,13 @@ class AttributesToScim(bibDB: BibDB):
         else s"""$k=${convert(v, spacy, force, light)}"""
     }
 
+    val additionalNewline =
+      if astIncludesWhitespacelines
+      then ""
+      else "\n"
+
     if !(spacy && attributes.raw.size > 1) then
-      if light && attributes.positional.isEmpty then pairs.mkString("", "; ", "\n")
+      if light && attributes.positional.isEmpty then pairs.mkString("", "; ", additionalNewline)
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
-    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", "\n")
+    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", additionalNewline)
     else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
