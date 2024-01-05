@@ -32,6 +32,6 @@ object DirectiveParsers {
     withProv(commentContent)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
-  val commentContent: Scip[String] = commentStart ifso untilIS(eol)
+  val commentContent: Scip[String] = commentStart ifso until(eol).min(0).str
 
 }
