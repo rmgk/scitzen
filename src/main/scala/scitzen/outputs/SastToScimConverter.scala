@@ -9,8 +9,6 @@ import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import scala.collection.immutable.ArraySeq
 
-val isFusedParser = true
-
 class SastToScimConverter(bibDB: BibDB):
 
   val attributeConverter = AttributesToScim(bibDB)
@@ -40,7 +38,7 @@ class SastToScimConverter(bibDB: BibDB):
 
           case ListItem(marker, Text(inl), Some(rest)) =>
             Chain(
-              s"$marker" + inlineToScim(inl) + (if rest.isInstanceOf[Slist] || isFusedParser then "" else ":"),
+              s"$marker" + inlineToScim(inl),
               toScim(rest).iterator.mkString("\n").stripTrailing
             )
         }
@@ -69,10 +67,7 @@ class SastToScimConverter(bibDB: BibDB):
     sb.content match
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        val res     = attrres :+ inlineToScim(content.inl)
-        if isFusedParser
-        then res
-        else res :+ ""
+        attrres :+ inlineToScim(content.inl)
 
       case Parsed(delimiter, blockContent) =>
         val content = toScimS(blockContent)
@@ -160,12 +155,8 @@ class AttributesToScim(bibDB: BibDB):
         else s"""$k=${convert(v, spacy, force, light)}"""
     }
 
-    val moreNewlines = if isFusedParser
-      then ""
-      else "\n"
-
     if !(spacy && attributes.raw.size > 1) then
-      if light && attributes.positional.isEmpty then pairs.mkString("", "; ", moreNewlines)
+      if light && attributes.positional.isEmpty then pairs.mkString("; ")
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
-    else if light && attributes.positional.isEmpty then pairs.mkString("", "\n", moreNewlines)
+    else if light && attributes.positional.isEmpty then pairs.mkString("\n")
     else pairs.mkString(s"${AttributesParser.open}\n\t", "\n\t", s"\n${AttributesParser.close}")
