@@ -4,12 +4,17 @@
 
 • Same scitzen version on another machine may produce different hashes used to make references unique. Investigate if this can be fixed for reproducibility.
 • make plain strikethrough available?
-• providence information is borked (due to two pass parse)
 
 == v.next
 
 • footnotes no longer completely broken in html output
+• providence should work again
+	• rewrote how parsing works
 
+A bit on the new parsing strategy. Before, there were quite some complications with nested blocks, which basically just looked for their end tag, and then (recursively) called into the parser for the content, essentially making that a two-pass parse process. While that by itself was fine, it also made providence information (which index of the input the parser is currently looking at) incorrect. This was non-trivial to fix because the nested blocks have some indentation which is removed, so one would have to do an index by index translation. That would be possible, but is annoying.
+Now the parser goes through the file and generates small chunks I call atoms that roughly correspond to individual lines (I think it would be fair to call this tokenization – although tokens in classical parser literature seem to be generally smaller than what currently constitutes an atom). And then those are combined into the same AST as before.
+The major advantage is, that atoms are independent of any nesting – a nested block is simply marked by a start and end atom and is then combined later. Atoms just know their own indentation, but don’t care if it is correct at all (yes, this means it’s now legal to have indented things like section markers anywhere, which seems plausible).
+A second major advantage is that atoms have more well-defined ending, in particular compared to paragraphs before. Or rather, paragraphs ended essentially on a newline followed by an empty line, which has weird interactions with the end of the file (in particular, the formatter would always end the last paragraph with its empty line, causing weird additional empty lines at the end of files). Worse, other types of content (such as lists or headlines) could not directly follow a paragraph without a newline. While I am not yet sure if that would be good style to do, it certainly seems like plausible behavior. And interesting side note is that paragraphs now always have some other AST structure between them (such as a whitespace block).
 
 == v1.2
 date = 2023-11-15
