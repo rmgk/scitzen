@@ -1,4 +1,4 @@
-= Formatting test
+= Formatting test and edgecases
 date        = 2022-07-31
 texTemplate = /templates/memoir.scim
 style       = article
@@ -24,3 +24,7 @@ I make my formats just for you
 	• and stuff
 
 • this should be a second list
+
+
+
+  :% comment
