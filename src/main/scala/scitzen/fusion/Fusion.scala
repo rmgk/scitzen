@@ -5,9 +5,14 @@ import scitzen.compat.Logging
 import scitzen.fusion.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.ListParsers.ParsedListItem
-import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers}
+import scitzen.parser.{
+  AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers
+}
 import scitzen.project.{Document, Project}
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, Slist,
+  SpaceComment, Text
+}
 
 import java.nio.file.Path
 import scala.annotation.tailrec
@@ -19,23 +24,24 @@ object Fusion {
     absolute.map: abs =>
       val pp  = project.asProjectPath(abs)
       val doc = Document(pp)
-      val res = documentUnwrap(doc)
+      val res = {
+        val content = doc.content
+
+        def newscx() = Scx(
+          input = content,
+          index = 0,
+          maxpos = content.length,
+          depth = 0,
+          lastFail = -1,
+          tracing = false
+        )
+
+        parser.runInContext(newscx())
+      }
       res.foreach(el => println(el))
     ()
 
-  def documentUnwrap(doc: Document): List[Sast] = {
-    val content = doc.content
-    def newscx() = Scx(
-      input = content,
-      index = 0,
-      maxpos = content.length,
-      depth = 0,
-      lastFail = -1,
-      tracing = false
-    )
-
-    val scx = newscx()
-
+  def parser: Scip[List[Sast]] = Scip {
     def atoms(): Atoms =
       if scx.index >= scx.maxpos
       then LazyList.empty
@@ -93,7 +99,10 @@ object Fusion {
             fuseTop(rest, list :: sastAcc)
           case Whitespace(content) =>
             val (ws, rest) = collectType[Whitespace](atoms)
-            val content    = ws.map(ws => s"${ws.indent}${ws.content.content}").mkString
+            val content = ws.map(w => {
+              if !w.indent.isBlank then println(s"»${w.indent}«");
+              s"${w.indent}${w.content.content}"
+            }).mkString
             fuseTop(
               rest,
               Block(
@@ -107,7 +116,7 @@ object Fusion {
             val text = Text(containers.iterator.flatMap: container =>
               val inlineIndent = if container.indent.nonEmpty then List(InlineText(container.indent)) else Nil
               val inlines = container.content match
-                case text: Text => text.inl
+                case text: Text           => text.inl
                 case directive: Directive => List(directive)
               InlineText("\n") +: (inlineIndent concat inlines)
             .drop(1).toSeq)
@@ -120,12 +129,15 @@ object Fusion {
   @tailrec
   def fuseList(atoms: Atoms, acc: List[ParsedListItem]): (Slist, Atoms) = {
     atoms match
-      case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail if Text(content).plainString.stripTrailing().endsWith(":") =>
+      case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail
+          if Text(content).plainString.stripTrailing().endsWith(":") =>
         val nextIndent = tail.head.indent
         val (inner, rest) = tail.collectWhile: cont =>
-          if cont.indent.startsWith(nextIndent) then Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent))(cont.prov)) else None
-        val innerFused =  fuseTop(inner, Nil)
-        val block = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
+          if cont.indent.startsWith(nextIndent) then
+            Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent))(cont.prov))
+          else None
+        val innerFused = fuseTop(inner, Nil)
+        val block      = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
         fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content), cont.prov, Some(block)) :: acc)
 
       case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
@@ -138,9 +150,9 @@ object Fusion {
                else Nil)
               concat (
                 cont.content match
-                  case Text(inl) => inl
+                  case Text(inl)      => inl
                   case dir: Directive => List(dir)
-                )
+              )
             )
           }
         fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), cont.prov, None) :: acc)
@@ -154,7 +166,8 @@ object Fusion {
         false
       case other => true
     val adaptedIndent = innerAtoms.map:
-      case cont @ Container(cindent, content) => Container(cindent.stripPrefix(indent).stripPrefix("\t"), content)(cont.prov)
+      case cont @ Container(cindent, content) =>
+        Container(cindent.stripPrefix(indent).stripPrefix("\t"), content)(cont.prov)
     val innerSast = fuseTop(adaptedIndent, Nil)
     (
       Block(del.command, del.attributes, scitzen.sast.Parsed(del.delimiter, innerSast))(prov),
@@ -186,5 +199,3 @@ object Fusion {
   }
 
 }
-
-

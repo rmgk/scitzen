@@ -1,13 +1,14 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
+import scitzen.compat.Logging
 import scitzen.fusion.Fusion
 import scitzen.project.Document
 import scitzen.sast.{Inline, Prov, Sast}
 
 object Parse {
 
-  def parseResult[T](content: Array[Byte], parser: Scip[T], prov: Prov = Prov()): T = {
+  def parseResult[T](content: Array[Byte], parser: Scip[T], document: Option[Document] = None): T = {
     def newscx() = Scx(
       input = content,
       index = 0,
@@ -21,6 +22,7 @@ object Parse {
       parser.runInContext(scx)
     catch
       case f: ScipEx =>
+        Logging.cli.warn(s"error parsing ${document.map{_.path} }")
         try parser.runInContext(newscx().copy(tracing = true))
         catch
           case f: ScipEx => ()
@@ -32,8 +34,12 @@ object Parse {
   val parserDocument: Scip[List[Sast]] = BlockParsers.alternatives.list(Scip { true }) <~ end.orFail
 
   def documentUnwrap(doc: Document): List[Sast] = {
-    //parseResult(doc.content, parserDocument)
-    Fusion.documentUnwrap(doc)
+    parseResult(
+      doc.content,
+      Fusion.parser,
+      Some(doc)
+    )
+
   }
 
   val allInlines = InlineParsers.full(end)

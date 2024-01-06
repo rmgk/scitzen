@@ -12,7 +12,7 @@ class ProjectConfig(val attrs: Attributes = Attributes.empty):
 
 object ProjectConfig {
   def parse(content: Array[Byte]): ProjectConfig = {
-    val value = Parse.parseResult(content, AttributesParser.configFile, Prov())
+    val value = Parse.parseResult(content, AttributesParser.configFile)
     val attrs = Attributes(value)
     ProjectConfig(attrs)
   }

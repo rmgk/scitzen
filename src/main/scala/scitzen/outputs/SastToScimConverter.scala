@@ -91,7 +91,7 @@ class SastToScimConverter(bibDB: BibDB):
 
       case SpaceComment(text) =>
         Chain.from(ArraySeq.unsafeWrapArray(
-          text.stripLineEnd.split("\\n", -1).map(_.trim)
+          text.stripLineEnd.split("\\n", -1).map(_.stripTrailing())
         ))
       case Fenced(text) =>
         val delimiter = "```"

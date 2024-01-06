@@ -6,6 +6,8 @@ import scitzen.parser.InlineParsers.directiveStart
 import scitzen.sast.DCommand.Comment
 import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText}
 
+/** Directives generally start with : and have a fixed ending.
+ * If used as blocks, one needs to consider initial whitespace and the end of line, which are not considered part of the directive by these parsers */
 object DirectiveParsers {
 
   val macroCommand: Scip[String] = identifierB.str
@@ -32,6 +34,6 @@ object DirectiveParsers {
     withProv(commentContent)
       .map { case (text, prov) => Directive(Comment, Attribute("", text).toAttributes)(prov) }
 
-  val commentContent: Scip[String] = commentStart ifso until(eol).min(0).str
+  val commentContent: Scip[String] = (commentStart ifso until(eol).min(0).str)
 
 }
