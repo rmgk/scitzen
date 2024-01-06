@@ -1,10 +1,10 @@
 package sciparse
 
-import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DirectiveParsers, Parse}
 import de.rmgk.scip.*
 import munit.Location
 import scitzen.bibliography.BibDB
 import scitzen.outputs.SastToScimConverter
+import scitzen.parser.{AttributesParser, CommonParsers, DirectiveParsers, Parse}
 
 import java.nio.charset.StandardCharsets
 

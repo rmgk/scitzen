@@ -7,31 +7,6 @@ import java.nio.charset.StandardCharsets
 
 object ListParsers {
 
-  def simpleMarker: Scip[Boolean] =
-    (verticalSpaces and ("-•*".any.trace("list symbol") or (digits and ".".all)) and verticalSpace).trace(
-      "list marker"
-    )
-
-  def simpleListItem: Scip[ParsedListItem] = Scip {
-    val marker          = simpleMarker.str.run
-    val (content, prov) = withProv(until(eol and (spaceLineB or simpleMarker)).min(0).str <~ eol.orFail).run
-    val inner = Parse.inlineUnwrap(content.getBytes(StandardCharsets.UTF_8))
-    ParsedListItem(marker, Text(inner), prov, None)
-  }
-
-  def descriptionListContent: Scip[(String, Prov)] =
-    withProv(until(((":".all and verticalSpaces and eol) or eol)).min(1).str <~
-      (":".all and verticalSpaces and eol).orFail)
-  def descriptionListItem: Scip[ParsedListItem] = Scip {
-    val marker      = simpleMarker.str.run
-    val (str, prov) = descriptionListContent.run
-    val innerBlock  = DelimitedBlockParsers.whitespaceLiteral.opt.run
-    val inner = Parse.inlineUnwrap(str.getBytes(StandardCharsets.UTF_8))
-    ParsedListItem(marker, Text(inner), prov, innerBlock)
-  }
-
-  def list: Scip[Slist] =
-    (descriptionListItem | simpleListItem).list(Scip { true }).require(_.nonEmpty).map(ListConverter.listtoSast)
 
   case class ParsedListItem(marker: String, itemText: Text, prov: Prov, content: Option[Block])
 

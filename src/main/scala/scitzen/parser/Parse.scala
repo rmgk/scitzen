@@ -30,7 +30,7 @@ object Parse {
         throw IllegalStateException(s"parse exception: ${scx.ScipExInstance.getMessage}}", e)
   }
 
-  val parserDocument: Scip[List[Sast]] = BlockParsers.alternatives.list(Scip { true }) <~ end.orFail
+  val parserDocument: Scip[List[Sast]] = Fusion.parser
 
   def documentUnwrap(doc: Document): List[Sast] = {
     parseResult(
@@ -42,10 +42,6 @@ object Parse {
   }
 
   val allInlines = InlineParsers.full(end)
-
-  def inlineUnwrap(paragraphString: Array[Byte]): List[Inline] = {
-    parseResult(paragraphString, allInlines)
-  }
 
   def bibfileUnwrap(bibfile: Array[Byte]): List[Biblet] = {
     parseResult(bibfile, BibPreparser.entry.list(Scip(true)))

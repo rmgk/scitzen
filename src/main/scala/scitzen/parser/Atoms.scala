@@ -2,7 +2,7 @@ package scitzen.parser
 
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
 import scitzen.parser.CommonParsers.{eol, newline, untilIS}
-import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
+import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.sast.{Attribute, Attributes, BCommand, Directive, Inline, Prov, Text}
 
 
@@ -39,17 +39,20 @@ object Atoms {
   case class SectionAtom(prefix: String, content: Seq[Inline])
   case class ListAtom(prefix: String, content: Seq[Inline])
 
+  val sectionInlines: Scip[List[Inline]]   = InlineParsers.full(eol)
+
+
   def section: Scip[SectionAtom] =
     Scip {
       val prefix  = choice("= ", "== ", "# ", "## ", "### ").str.run
-      val inlines = BlockParsers.sectionInlines.run
+      val inlines = sectionInlines.run
       SectionAtom(prefix.dropRight(1), inlines)
     }
 
   def list: Scip[ListAtom] =
     Scip {
       val prefix  = (("-•*".any or (CommonParsers.digits and ".".all)) and " ".all).str.run
-      val inlines = BlockParsers.sectionInlines.run
+      val inlines = sectionInlines.run
       ListAtom(prefix, inlines)
     }
 
@@ -61,7 +64,7 @@ object Atoms {
     KeyValue(attribute, prov)
   }
 
-  def unquoted: Scip[Text] = BlockParsers.sectionInlines.map(Text.apply)
+  def unquoted: Scip[Text] = sectionInlines.map(Text.apply)
 
   case class Whitespace(content: String):
     override def toString: String = s"Whitespace(»${content.replace("\n", "\\n")}«)"

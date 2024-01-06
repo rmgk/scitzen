@@ -5,38 +5,6 @@ import scitzen.parser.CommonParsers.*
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, Parsed, Prov, Sast}
 
 object DelimitedBlockParsers {
-  // use ` for verbatim text, : for parsed text
-  def anyStart: Scip[String] = ":`".any.rep.min(2).str
-
-  def makeDelimited(start: Scip[String]): Scip[Block] = Scip {
-    val startIndex        = scx.index
-    val delimiter         = start.run
-    val command           = DirectiveParsers.macroCommand.opt.trace("delimited marco").run
-    val attr              = (AttributesParser.braces.opt <~ spaceLineF).trace("delim braces").run
-    val (text, innerProv) = withProv(untilIS(eol and seq(delimiter) and spaceLineB)).trace("delim block").run
-    val stripRes          = stripIfPossible(text, delimiter.length)
-    val strippedText      = stripRes.getOrElse(text)
-    val rawAttr           = attr.getOrElse(Nil)
-    val blockContent =
-      delimiter(0) match {
-        case '`' => Fenced(strippedText)
-        case ':' =>
-          val sast: Seq[Sast] = Parse.parserDocument.trace("subparser delim").runInContext(
-            Scx(strippedText).copy(tracing = scx.tracing, depth = scx.depth)
-          )
-          scitzen.sast.Parsed(delimiter, sast)
-      }
-    scitzen.sast.Block(
-      BCommand.parse(command.getOrElse("")),
-      Attributes(rawAttr),
-      blockContent
-    )(
-      Prov(startIndex, scx.index)
-      // if (stripRes.isEmpty) innerProv else innerProv.copy(indent = delimiter.length)
-    )
-  }.trace("make delimited")
-
-  def anyDelimited: Scip[Block] = (makeDelimited(anyStart))
 
   val spaceNewline = "^ *\\n?$".r
 
@@ -55,25 +23,4 @@ object DelimitedBlockParsers {
     }
     Some(res.result())
   }
-
-  def whitespaceLiteral: Scip[Block] = Scip {
-    val (parsed, prov) = withProv(Scip {
-      significantSpaceLine.rep.run
-      val indentation = (significantVerticalSpaces.str <~ eol.lookahead.map(!_).orFail).run
-      val start       = untilI(eol).dropstr.run
-      val indentP     = seq(indentation).orFail
-      val lines = (
-        (indentP ~> untilI(eol).dropstr) |
-          (significantSpaceLine.rep.min(0).str <~ indentP.lookahead)
-      ).list(Scip { true }).run
-
-      val sast: Seq[Sast] =
-        Parse.parserDocument.trace("subparser").run(using
-          Scx((start +: lines).mkString).copy(tracing = scx.tracing, depth = scx.depth)
-        ) // Prov(index, indent = indentation.length))
-      scitzen.sast.Parsed(indentation, sast)
-    }).run
-    scitzen.sast.Block(BCommand.Empty, Attributes(Nil), parsed)(prov.copy(indent = parsed.delimiter.length))
-  }
-
 }
