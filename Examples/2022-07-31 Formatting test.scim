@@ -34,3 +34,11 @@ I make my formats just for you
 	some inner
 ```
 directly after
+
+inline latex …
+
+\geometry{twoside=false, head=1pc, foot=2pc,
+     paperwidth=8.5in, paperheight=11in,
+     includeheadfoot,
+     top=78pt, bottom=114pt, inner=0pt, outer=0pt
+     }
