@@ -22,6 +22,19 @@ case class Text(inl: Seq[Inline]) {
         m.attributes.text.plainString
     }.mkString("")
   }
+
+  def fuse: Text = {
+    def rec(rem: Seq[Inline], acc: List[Inline]): List[Inline] =
+      rem match
+        case Seq(InlineText(a, aq), InlineText(b, bq), rest*) if aq == bq =>
+          rec(InlineText(s"$a$b", aq) +: rest, acc)
+        case Seq(first, second, rest*) =>
+          rec(rem.tail, first :: acc)
+        case other =>
+          (rem.toList reverse_::: acc).reverse
+
+    Text(rec(inl, Nil))
+  }
 }
 case object Text:
   def of(str: String): Text =
