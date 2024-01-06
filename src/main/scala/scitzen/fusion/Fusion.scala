@@ -79,8 +79,6 @@ object Fusion {
       case LazyList() => sastAcc.reverse
       case container #:: tail =>
         container.content match
-          case kv: KeyValue =>
-            fuseTop(applyKVHack(container) #:: tail, sastAcc)
           case dir: Directive => fuseTop(tail, dir :: sastAcc)
           case Atoms.Fenced(commands, attributes, content) =>
             val block = Block(commands, attributes, Fenced(content))(container.prov)
@@ -111,15 +109,16 @@ object Fusion {
                 SpaceComment(content)
               )(combineProvidence(ws)) :: sastAcc
             )
-          case _: Text =>
-            val (containers, rest) = collectType[Text | Directive](atoms)
+          case _: (Text | KeyValue) =>
+            val (containers, rest) = collectType[Text | Directive | KeyValue](atoms)
             val text = Text(containers.iterator.flatMap: container =>
               val inlineIndent = if container.indent.nonEmpty then List(InlineText(container.indent)) else Nil
               val inlines = container.content match
                 case text: Text           => text.inl
                 case directive: Directive => List(directive)
+                case kv: KeyValue         => applyKVHack(kv).inl
               InlineText("\n") +: (inlineIndent concat inlines)
-            .drop(1).toSeq)
+            .drop(1).toSeq).fuse
             fuseTop(
               rest,
               Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)) :: sastAcc
@@ -182,20 +181,13 @@ object Fusion {
       containers.iterator.map(_.prov.end).max
     )
 
-  def applyKVHack(container: Container[Atom]): Container[Text] = {
-    val kv = container.content.asInstanceOf[KeyValue]
+  def applyKVHack(kv: KeyValue): Text = {
     Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
     if kv.attribute.isInstanceOf[Attribute.Nested]
     then
-      container.copy(content =
-        Text(InlineText(s"${kv.indent}${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
-      )(
-        container.prov
-      )
+      Text(InlineText(s"${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
     else
-      container.copy(content = Text(InlineText(s"${kv.indent}${kv.attribute.id}=") +: kv.attribute.text.inl))(
-        container.prov
-      )
+      Text(InlineText(s"${kv.attribute.id}=") +: kv.attribute.text.inl)
   }
 
 }
