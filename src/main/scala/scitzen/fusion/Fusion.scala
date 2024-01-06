@@ -10,6 +10,7 @@ import scitzen.project.{Document, Project}
 import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, Slist, SpaceComment, Text}
 
 import java.nio.file.Path
+import scala.annotation.tailrec
 import scala.reflect.TypeTest
 
 object Fusion {
@@ -65,6 +66,7 @@ object Fusion {
 
   type Atoms = LazyList[Container[Atom]]
 
+  @tailrec
   def fuseTop(atoms: Atoms, sastAcc: List[Sast]): List[Sast] = {
 
     atoms match
@@ -115,6 +117,7 @@ object Fusion {
             )
   }
 
+  @tailrec
   def fuseList(atoms: Atoms, acc: List[ParsedListItem]): (Slist, Atoms) = {
     atoms match
       case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail if Text(content).plainString.stripTrailing().endsWith(":") =>
