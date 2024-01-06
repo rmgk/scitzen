@@ -1,4 +1,4 @@
-package scitzen.fusion
+package scitzen.parser
 
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
 import scitzen.parser.CommonParsers.{eol, newline, untilIS}

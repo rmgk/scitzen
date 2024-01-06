@@ -2,7 +2,6 @@ package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.compat.Logging
-import scitzen.fusion.Fusion
 import scitzen.project.Document
 import scitzen.sast.{Inline, Prov, Sast}
 

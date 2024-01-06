@@ -1,18 +1,13 @@
-package scitzen.fusion
+package scitzen.parser
 
 import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
 import scitzen.compat.Logging
-import scitzen.fusion.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
+import scitzen.parser.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.ListParsers.ParsedListItem
-import scitzen.parser.{
-  AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers
-}
+import scitzen.parser.{AttributesParser, BlockParsers, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers}
 import scitzen.project.{Document, Project}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, Slist,
-  SpaceComment, Text
-}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, Slist, SpaceComment, Text}
 
 import java.nio.file.Path
 import scala.annotation.tailrec
