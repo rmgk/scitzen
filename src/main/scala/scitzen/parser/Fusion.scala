@@ -4,13 +4,9 @@ import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
 import scitzen.compat.Logging
 import scitzen.parser.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
-import scitzen.parser.ListParsers.ParsedListItem
-import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers, ListParsers}
+import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Paragraph, Prov, Sast, Section, Slist,
-  SpaceComment, Text
-}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Prov, Sast, Section, Slist, SpaceComment, Text}
 
 import java.nio.file.Path
 import scala.annotation.tailrec
@@ -152,8 +148,44 @@ object Fusion {
           }
         fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), cont.prov, None) :: acc)
       case other =>
-        (ListParsers.ListConverter.listtoSast(acc.reverse), atoms)
+        (ListConverter.listtoSast(acc.reverse), atoms)
   }
+
+
+  case class ParsedListItem(marker: String, itemText: Text, prov: Prov, content: Option[Block])
+
+  object ListConverter {
+
+    private def splitted[ID, Item](items: List[(ID, Item)]): Seq[(Item, Seq[Item])] =
+      items match {
+        case Nil => Nil
+        case (marker, item) :: tail =>
+          val (take, drop) = tail.span { case (c, _) => marker != c }
+          (item -> take.map(_._2)) +: splitted(drop)
+      }
+
+    def listtoSast(items: Seq[ParsedListItem]): Slist = {
+      /* defines which characters are distinguishing list levels */
+      def norm(m: String) = m.replaceAll("""[^\s\*\.•\-]""", "")
+
+      val split = splitted(items.iterator.map(i => (norm(i.marker), i)).toList)
+
+      if (split.isEmpty) Slist(Nil)
+      else otherList(split)
+    }
+
+    private def otherList(split: Seq[(ParsedListItem, Seq[ParsedListItem])]): Slist = {
+      val listItems = split.map {
+        case (item, children) =>
+          val contentSast = item.content
+          val childSasts = if (children.isEmpty) None
+          else Some(listtoSast(children))
+          ListItem(item.marker, item.itemText, contentSast.orElse(childSasts))
+      }
+      scitzen.sast.Slist(listItems)
+    }
+  }
+
 
   def fuseDelimited(indent: String, del: Delimited, prov: Prov, atoms: LazyList[Container[Atom]]) = {
     val (innerAtoms, rest) = atoms.span:
