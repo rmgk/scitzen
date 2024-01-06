@@ -101,10 +101,14 @@ object Fusion {
               )(combineProvidence(ws)) :: sastAcc
             )
           case _: Text =>
-            val (containers, rest) = collectType[Text](atoms)
-            val text = Text(containers.iterator.flatMap(c =>
-              InlineText("\n") +: ((if c.indent.nonEmpty then List(InlineText(c.indent)) else Nil) concat c.content.inl)
-            ).drop(1).toSeq)
+            val (containers, rest) = collectType[Text | Directive](atoms)
+            val text = Text(containers.iterator.flatMap: container =>
+              val inlineIndent = if container.indent.nonEmpty then List(InlineText(container.indent)) else Nil
+              val inlines = container.content match
+                case text: Text => text.inl
+                case directive: Directive => List(directive)
+              InlineText("\n") +: (inlineIndent concat inlines)
+            .drop(1).toSeq)
             fuseTop(
               rest,
               Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)) :: sastAcc
