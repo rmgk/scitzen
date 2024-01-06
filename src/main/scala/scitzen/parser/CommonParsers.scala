@@ -24,6 +24,7 @@ object CommonParsers {
     @tailrec def rec(): Unit =
       if end.run then ()
       else
+        // if end returns false, it might have consumed some input so we have to reset
         scx.index = lastPosition
         if scx.next then
           lastPosition = scx.index
