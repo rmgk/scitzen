@@ -85,10 +85,8 @@ object Fusion {
             val (delimited, rest) = fuseDelimited(container.indent, del, container.prov, tail)
             fuseTop(rest, delimited :: sastAcc)
           case SectionAtom(prefix, content) =>
-            val (kvs, rest) = tail.collectWhile:
-              case Container(indent, content: KeyValue) => Some(content)
-              case other                                => None
-            val attributes = Attributes(kvs.iterator.map { ckv => ckv.attribute }.toSeq)
+            val (kvs, rest) = collectType[KeyValue](tail)
+            val attributes = Attributes(kvs.iterator.map { ckv => ckv.content.attribute }.toSeq)
             fuseTop(rest, Section(Text(content), prefix, attributes)(container.prov) :: sastAcc)
           case ListAtom(_, _) =>
             val (list, rest) = fuseList(atoms, Nil)
