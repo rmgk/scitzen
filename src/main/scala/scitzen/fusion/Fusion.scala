@@ -182,7 +182,7 @@ object Fusion {
     )
 
   def applyKVHack(kv: KeyValue): Text = {
-    Logging.cli.warn(s"line looking like key value pair: »${kv}« reinterpreted as text")
+    Logging.cli.trace(s"line looking like key value pair: »${kv}« reinterpreted as text")
     if kv.attribute.isInstanceOf[Attribute.Nested]
     then
       Text(InlineText(s"${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
