@@ -49,16 +49,6 @@ class SastToScimConverter(bibDB: BibDB):
 
       case tlb: Block => convertBlock(tlb)
 
-  def stripLastEnd(strings: Chain[String]): Chain[String] =
-    Chain.from(
-      (strings.iterator.toList.reverse match
-        case Nil => Nil
-        case head :: tail =>
-          val stripped = head.stripTrailing()
-          if stripped.isEmpty then tail else stripped :: tail
-      ).reverse
-    )
-
   def addIndent(lines: String, delimiter: String): String =
     lines.linesWithSeparators.map { line =>
       if line == "\n" then line
