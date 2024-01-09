@@ -2,7 +2,7 @@ package scitzen.parser
 
 import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
 import scitzen.compat.Logging
-import scitzen.parser.Atoms.{Atom, Container, Delimited, ListAtom, SectionAtom, Whitespace, annotatedAtom}
+import scitzen.parser.Atoms.{Atom, Container, Delimited, ListAtom, SectionAtom, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}
@@ -76,20 +76,15 @@ object Fusion {
       case LazyList() => sastAcc.reverse
       case container #:: tail =>
         container.content match
-          case dir: Directive => fuseTop(tail, dir :: sastAcc)
-          case Atoms.Fenced(commands, attributes, content) =>
-            val block = Block(commands, attributes, Fenced(content))(container.prov)
-            fuseTop(tail, block :: sastAcc)
+          case unchanged: (Directive | Block | Section) => fuseTop(tail, unchanged :: sastAcc)
           case del: Delimited =>
             val (delimited, rest) = fuseDelimited(container.indent, del, container.prov, tail)
             fuseTop(rest, delimited :: sastAcc)
-          case sec: Section =>
-            fuseTop(tail, sec :: sastAcc)
           case ListAtom(_, _) =>
             val (list, rest) = fuseList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
-          case _: Whitespace =>
-            val (ws, rest) = collectType[Whitespace](atoms)
+          case _: SpaceComment =>
+            val (ws, rest) = collectType[SpaceComment](atoms)
             val content = ws.map(w => {
               s"${w.indent}${w.content.content}"
             }).mkString

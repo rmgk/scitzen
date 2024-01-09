@@ -3,7 +3,7 @@ package scitzen.parser
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
 import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
-import scitzen.sast.{Attribute, Attributes, BCommand, Directive, Inline, Prov, Section, Text}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, Prov, Section, SpaceComment, Text}
 
 object Atoms {
 
@@ -23,7 +23,7 @@ object Atoms {
   }
 
   type Atom =
-    Directive | Text | Whitespace | Delimited | Fenced | ListAtom | Section
+    Directive | Text | SpaceComment | Delimited | Block | ListAtom | Section
   case class Container[+A <: Atom](indent: String, content: A)(val prov: Prov)
 
   def annotatedAtom[A <: Atom](atomParser: Scip[A]): Scip[Container[A]] = Scip {
@@ -60,12 +60,9 @@ object Atoms {
 
   def unquoted: Scip[Text] = textline.map(Text.apply)
 
-  case class Whitespace(content: String):
-    override def toString: String = s"Whitespace(»${content.replace("\n", "\\n")}«)"
-
-  def whitespace: Scip[Whitespace] =
+  def whitespace: Scip[SpaceComment] =
     (CommonParsers.verticalSpaces and (DirectiveParsers.commentContent.attempt or Scip(true)) and eol).str.map(
-      Whitespace.apply
+      SpaceComment.apply
     )
 
   case class Delimited(delimiter: String, command: BCommand, attributes: Attributes)
@@ -81,9 +78,7 @@ object Atoms {
     )
   }
 
-  case class Fenced(commands: BCommand, attributes: Attributes, content: String)
-
-  def fenced: Scip[Container[Fenced]] = Scip {
+  def fenced: Scip[Container[Block]] = Scip {
     val sindex  = scx.index
     val indent  = CommonParsers.verticalSpaces.str.run
     val start   = "`".any.rep.min(2).str.run
@@ -97,11 +92,14 @@ object Atoms {
       innerContent,
       start.length
     ).getOrElse(innerContent)
-    val fen = Fenced(
-      commands = BCommand.parse(command.getOrElse("")),
+
+    val prov = Prov(sindex, scx.index)
+
+    val fen = Block(
+      command = BCommand.parse(command.getOrElse("")),
       attributes = Attributes(attr.getOrElse(Nil)),
-      content = strippedContent
-    )
-    Container(indent, fen)(Prov(sindex, scx.index))
+      content = Fenced(strippedContent)
+    )(prov)
+    Container(indent, fen)(prov)
   }
 }
