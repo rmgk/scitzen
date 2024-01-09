@@ -6,7 +6,10 @@ import scitzen.parser.Atoms.{Atom, Container, Delimited, ListAtom, SectionAtom, 
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Prov, Sast, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Prov, Sast,
+  Section, Slist, SpaceComment, Text
+}
 
 import java.nio.file.Path
 import scala.annotation.tailrec
@@ -85,7 +88,7 @@ object Fusion {
           case ListAtom(_, _) =>
             val (list, rest) = fuseList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
-          case Whitespace(content) =>
+          case _: Whitespace =>
             val (ws, rest) = collectType[Whitespace](atoms)
             val content = ws.map(w => {
               if !w.indent.isBlank then println(s"»${w.indent}«");
@@ -148,7 +151,6 @@ object Fusion {
         (ListConverter.listtoSast(acc.reverse), atoms)
   }
 
-
   case class ParsedListItem(marker: String, itemText: Text, prov: Prov, content: Option[Block])
 
   object ListConverter {
@@ -182,7 +184,6 @@ object Fusion {
       scitzen.sast.Slist(listItems)
     }
   }
-
 
   def fuseDelimited(indent: String, del: Delimited, prov: Prov, atoms: LazyList[Container[Atom]]) = {
     val (innerAtoms, rest) = atoms.span:
