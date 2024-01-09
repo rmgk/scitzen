@@ -2,7 +2,7 @@ package scitzen.parser
 
 import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
 import scitzen.compat.Logging
-import scitzen.parser.Atoms.{Atom, Container, Delimited, KeyValue, ListAtom, SectionAtom, Whitespace, annotatedAtom}
+import scitzen.parser.Atoms.{Atom, Container, Delimited, ListAtom, SectionAtom, Whitespace, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}
@@ -99,14 +99,13 @@ object Fusion {
                 SpaceComment(content)
               )(combineProvidence(ws)) :: sastAcc
             )
-          case _: (Text | KeyValue) =>
-            val (containers, rest) = collectType[Text | Directive | KeyValue](atoms)
+          case _: (Text) =>
+            val (containers, rest) = collectType[Text | Directive](atoms)
             val text = Text(containers.iterator.flatMap: container =>
               val inlineIndent = if container.indent.nonEmpty then List(InlineText(container.indent)) else Nil
               val inlines = container.content match
                 case text: Text           => text.inl
                 case directive: Directive => List(directive)
-                case kv: KeyValue         => applyKVHack(kv).inl
               InlineText("\n") +: (inlineIndent concat inlines)
             .drop(1).toSeq).fuse
             fuseTop(
@@ -206,14 +205,5 @@ object Fusion {
       containers.iterator.map(_.prov.start).min,
       containers.iterator.map(_.prov.end).max
     )
-
-  def applyKVHack(kv: KeyValue): Text = {
-    Logging.cli.trace(s"line looking like key value pair: »${kv}« reinterpreted as text")
-    if kv.attribute.isInstanceOf[Attribute.Nested]
-    then
-      Text(InlineText(s"${kv.attribute.id}={") +: kv.attribute.text.inl :+ InlineText("}"))
-    else
-      Text(InlineText(s"${kv.attribute.id}=") +: kv.attribute.text.inl)
-  }
 
 }

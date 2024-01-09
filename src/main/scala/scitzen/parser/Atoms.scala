@@ -15,7 +15,6 @@ object Atoms {
         annotatedAtom(
           Atoms.section.trace("section") |
           Atoms.list.trace("list") |
-          Atoms.keyValue.trace("key value") |
           Atoms.delimited.trace("block delim") |
           (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive") |
           Atoms.whitespace |
@@ -24,7 +23,7 @@ object Atoms {
   }
 
   type Atom =
-    Directive | KeyValue | Text | Whitespace | Delimited | Fenced | ListAtom | Section
+    Directive | Text | Whitespace | Delimited | Fenced | ListAtom | Section
   case class Container[+A <: Atom](indent: String, content: A)(val prov: Prov)
 
   def annotatedAtom[A <: Atom](atomParser: Scip[A]): Scip[Container[A]] = Scip {
@@ -60,14 +59,6 @@ object Atoms {
       val inlines = sectionInlines.run
       ListAtom(prefix, inlines)
     }
-
-  case class KeyValue(attribute: Attribute, prov: Prov)
-
-  def keyValue: Scip[KeyValue] = Scip {
-    val (attribute, prov) = CommonParsers.withProv(AttributesParser.namedAttribute).run
-    CommonParsers.spaceLineF.run
-    KeyValue(attribute, prov)
-  }
 
   def unquoted: Scip[Text] = sectionInlines.map(Text.apply)
 
