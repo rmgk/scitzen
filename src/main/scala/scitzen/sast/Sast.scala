@@ -2,9 +2,9 @@ package scitzen.sast
 
 import scitzen.parser.TimeParsers
 
-sealed trait Sast
+type Sast = Slist | Directive | Section | Block
 
-case class Slist(children: Seq[ListItem]) extends Sast
+case class Slist(items: Seq[ListItem])
 case class ListItem(marker: String, text: Text, content: Option[Sast])
 
 sealed trait Inline
@@ -12,7 +12,7 @@ case class InlineText(str: String, quoted: Int = 0) extends Inline:
   require(str.nonEmpty)
   override def toString: String = s"“$str”"
 
-case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline with Sast
+case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline
 
 case class Text(inl: Seq[Inline]) {
   def plainString: String = {
@@ -42,7 +42,7 @@ case object Text:
     else Text(List(InlineText(str)))
   val empty: Text = Text(Nil)
 
-case class Section(titleText: Text, prefix: String, attributes: Attributes) extends Sast:
+case class Section(titleText: Text, prefix: String, attributes: Attributes):
   private def label: Option[String] = attributes.plain("label")
   val title: String                 = titleText.plainString
   val autolabel: String             = label.getOrElse(title)
@@ -64,7 +64,7 @@ object Section:
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
     Ordering.by(s => counts(s.prefix))
 
-case class Block(command: BCommand, attributes: Attributes, content: BlockType)(val prov: Prov) extends Sast
+case class Block(command: BCommand, attributes: Attributes, content: BlockType)(val prov: Prov)
 
 sealed trait BlockType
 case class Paragraph(content: Text)                      extends BlockType

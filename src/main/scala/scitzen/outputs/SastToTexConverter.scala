@@ -82,7 +82,7 @@ class SastToTexConverter(
       pushed.retc(header) :++ Chain.from(label)
 
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
-    val children = slist.children
+    val children = slist.items
     children match
       case Nil => ctx.ret(Chain.nil)
 
