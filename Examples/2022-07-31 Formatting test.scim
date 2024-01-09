@@ -42,3 +42,7 @@ inline latex …
      includeheadfoot,
      top=78pt, bottom=114pt, inner=0pt, outer=0pt
      }
+
+
+{ test = true}
+this is a paragraph with attributes

@@ -69,7 +69,10 @@ class SastToScimConverter(bibDB: BibDB):
     sb.content match
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        attrres ++ inlineToScim(content.inl)
+        val inner   = inlineToScim(content.inl)
+        if attrres.nonEmpty
+        then Chain(attrres, Chain("\n"), inner).flatten
+        else inner
 
       case Parsed(delimiter, blockContent) =>
         val content = toScimS(blockContent).mkString
@@ -116,14 +119,14 @@ class SastToScimConverter(bibDB: BibDB):
       case _ =>
         s":${DCommand.printMacroCommand(mcro.command)}${attributeConverter.convert(mcro.attributes, spacy, force = true)}"
 
-  def inlineToScim(inners: Seq[Inline]): Seq[String] =
-    inners.map {
+  def inlineToScim(inners: Seq[Inline]): Chain[String] =
+    inners.iterator.map {
       case InlineText(str, 0) => str
       case InlineText(str, x) =>
         val qs = "\"" * x
         s":$qs[$str]$qs"
       case m: Directive => macroToScim(m)
-    }
+    }.to(Chain)
 
 class AttributesToScim(bibDB: BibDB):
 
