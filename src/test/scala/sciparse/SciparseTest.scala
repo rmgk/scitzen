@@ -4,7 +4,8 @@ import de.rmgk.scip.*
 import munit.Location
 import scitzen.bibliography.BibDB
 import scitzen.outputs.SastToScimConverter
-import scitzen.parser.{AttributesParser, CommonParsers, DirectiveParsers, Parse}
+import scitzen.parser.{Atoms, AttributesParser, CommonParsers, DirectiveParsers, Parse}
+import scitzen.sast.InlineText
 
 import java.nio.charset.StandardCharsets
 
@@ -218,6 +219,13 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
     |• c
     |
     |""".stripMargin)
+  }
+
+
+  test("text parser") {
+    val ctx = Scx("actual text\n    \n").copy(tracing = false)
+    val res = Atoms.textline.runInContext(ctx)
+    assertEquals(res, List(InlineText("actual text", 0)))
   }
 
 }
