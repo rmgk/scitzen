@@ -120,33 +120,33 @@ object Fusion {
   @tailrec
   def fuseList(atoms: Atoms, acc: List[ParsedListItem]): (Slist, Atoms) = {
     atoms match
-      case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail
-          if Text(content).plainString.stripTrailing().endsWith(":") =>
-        val nextIndent = tail.head.indent
-        val (inner, rest) = tail.collectWhile: cont =>
-          if cont.indent.startsWith(nextIndent) then
-            Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent))(cont.prov))
-          else None
-        val innerFused = fuseTop(inner, Nil)
-        val block      = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
-        fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content), cont.prov, Some(block)) :: acc)
-
       case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
-        val (textSnippets, rest) = collectType[Text | Directive](tail)
-        val snippets =
-          textSnippets.flatMap { cont =>
-            InlineText("\n") +: (
-              (if cont.indent.nonEmpty
-               then List(InlineText(cont.indent))
-               else Nil)
-              concat (
-                cont.content match
-                  case Text(inl)      => inl
-                  case dir: Directive => List(dir)
+        if Text(content).plainString.stripTrailing().endsWith(":")
+        then
+          val nextIndent = tail.head.indent
+          val (inner, rest) = tail.collectWhile: cont =>
+            if cont.indent.startsWith(nextIndent) then
+              Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent))(cont.prov))
+            else None
+          val innerFused = fuseTop(inner, Nil)
+          val block      = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
+          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content), cont.prov, Some(block)) :: acc)
+        else
+          val (textSnippets, rest) = collectType[Text | Directive](tail)
+          val snippets =
+            textSnippets.flatMap { cont =>
+              InlineText("\n") +: (
+                (if cont.indent.nonEmpty
+                 then List(InlineText(cont.indent))
+                 else Nil)
+                concat (
+                  cont.content match
+                    case Text(inl)      => inl
+                    case dir: Directive => List(dir)
+                )
               )
-            )
-          }
-        fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), cont.prov, None) :: acc)
+            }
+          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), cont.prov, None) :: acc)
       case other =>
         (ListConverter.listtoSast(acc.reverse), atoms)
   }
