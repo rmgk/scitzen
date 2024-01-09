@@ -25,8 +25,8 @@ object GenIndexPage:
 
   def sectionFor(name: String) =
     if name.isBlank
-    then Section(Text(List()), prefix = "#", Attributes(Seq(Attribute("unique ref", "unnamed"))))(Prov())
-    else Section(Text(List(InlineText(name))), prefix = "#", Attributes(Seq(Attribute("unique ref", name))))(Prov())
+    then Section(Text(List()), prefix = "#", Attributes(Seq(Attribute("unique ref", "unnamed"))))
+    else Section(Text(List(InlineText(name))), prefix = "#", Attributes(Seq(Attribute("unique ref", name))))
 
   def sectionTitle(fd: TitledArticle): String =
     fd.header.date.fold("") { date =>

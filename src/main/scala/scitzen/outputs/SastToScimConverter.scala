@@ -19,7 +19,7 @@ class SastToScimConverter(bibDB: BibDB):
       force: Boolean,
       light: Boolean = false
   ): Chain[String] =
-    val attrStr = AttributesToScim(bibDB).convert(attributes, spacy, force, light)
+    val attrStr = attributeConverter.convert(attributes, spacy, force, light)
     if attrStr.isEmpty then Chain.nil
     else Chain(attrStr)
 

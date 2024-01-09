@@ -79,7 +79,7 @@ class ConvertHtml(anal: ConversionAnalysis):
         scitzen.sast.Text(List(scitzen.sast.InlineText(bibname))),
         "==",
         Attributes(Seq(scitzen.sast.Attribute("unique ref", bibid)))
-      )(Prov())
+      )
     ).toList
     val citations: Recipe =
       if bibEntries.isEmpty then Recipe(())

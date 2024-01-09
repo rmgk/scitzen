@@ -42,7 +42,7 @@ case object Text:
     else Text(List(InlineText(str)))
   val empty: Text = Text(Nil)
 
-case class Section(titleText: Text, prefix: String, attributes: Attributes)(val prov: Prov) extends Sast:
+case class Section(titleText: Text, prefix: String, attributes: Attributes) extends Sast:
   private def label: Option[String] = attributes.plain("label")
   val title: String                 = titleText.plainString
   val autolabel: String             = label.getOrElse(title)
@@ -70,6 +70,7 @@ sealed trait BlockType
 case class Paragraph(content: Text)                      extends BlockType
 case class Fenced(content: String)                       extends BlockType
 case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
-case class SpaceComment(content: String)                 extends BlockType
+case class SpaceComment(content: String)                 extends BlockType:
+  override def toString: String = s"SpaceComment(${content.replace("\n", "\\n")})"
 
 case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)

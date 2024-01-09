@@ -15,7 +15,7 @@ object MirrorToSast {
 
   def convertBlock(block: C.Block): Sast = block match {
     case CodeMirror.heading(attrs, content) =>
-      Section(Text(content.map(convertInline)), "#" * (attrs.level - 1), Attributes(Nil))(Prov())
+      Section(Text(content.map(convertInline)), "#" * (attrs.level - 1), Attributes(Nil))
     case CodeMirror.paragraph(content) =>
       println(s"converting $content")
       val res = Paragraph(Text(content.map(convertInline)))

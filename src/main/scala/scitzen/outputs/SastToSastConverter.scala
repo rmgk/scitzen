@@ -41,7 +41,7 @@ class SastToSastConverter(articleRef: ArticleRef):
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
         convertInlines(title.inl)(conCtx).map { title =>
-          Section(Text(title.toList), level, newSection.attributes)(newSection.prov)
+          Section(Text(title.toList), level, newSection.attributes)
         }
 
       case Slist(children) =>
@@ -82,10 +82,10 @@ class SastToSastConverter(articleRef: ArticleRef):
     then resctx.addConversionBlock(resctx.data)
     else resctx
 
-  private def ensureSectionRef(sec: Section, ctx: Cta) = {
+  private def ensureSectionRef(sec: Section, ctx: Cta): Ctx[Section] = {
     val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
     val (aliases, attr) = resctx.data
-    val ublock          = sec.copy(attributes = attr)(sec.prov)
+    val ublock          = sec.copy(attributes = attr)
     val target          = SastRef(ublock, articleRef)
     refAliases(resctx, aliases, target).ret(ublock)
   }
