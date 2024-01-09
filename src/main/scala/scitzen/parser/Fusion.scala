@@ -99,7 +99,7 @@ object Fusion {
                 SpaceComment(content)
               )(combineProvidence(ws)) :: sastAcc
             )
-          case _: (Text) =>
+          case _: Text =>
             val (containers, rest) = collectType[Text | Directive](atoms)
             val text = Text(containers.iterator.flatMap: container =>
               val inlineIndent = if container.indent.nonEmpty then List(InlineText(container.indent)) else Nil
