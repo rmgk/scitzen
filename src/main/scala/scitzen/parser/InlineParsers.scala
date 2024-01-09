@@ -14,7 +14,8 @@ object InlineParsers {
       inline ending: Scip[Boolean]
   ): Scip[List[Inline]] = Scip {
 
-    var start = scx.index
+    // start of the current text segment
+    var textStart = scx.index
 
     @tailrec
     def inlineOptions(acc: List[Inline]): List[Inline] = {
@@ -28,10 +29,10 @@ object InlineParsers {
       // closes the current run of plain text and adds it as a separate Inline node
       def addPlain(): List[Inline] =
         try
-          if start < current
-          then InlineText(scx.str(start, current)) :: acc
+          if textStart < current
+          then InlineText(scx.str(textStart, current)) :: acc
           else acc
-        finally start = scx.index
+        finally textStart = scx.index
 
       if ending.run then addPlain()
       else

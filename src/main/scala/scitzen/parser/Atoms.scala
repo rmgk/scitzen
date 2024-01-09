@@ -37,7 +37,7 @@ object Atoms {
   case class SectionAtom(prefix: String, content: Seq[Inline])
   case class ListAtom(prefix: String, content: Seq[Inline])
 
-  val sectionInlines: Scip[List[Inline]] = Scip {
+  val textline: Scip[List[Inline]] = Scip {
     val res = InlineParsers.full(eol).run
     if res.isEmpty then scx.fail
     else res
@@ -46,7 +46,7 @@ object Atoms {
   def section: Scip[Section] =
     Scip {
       val prefix  = choice("= ", "== ", "# ", "## ", "### ").str.run
-      val inlines = sectionInlines.run
+      val inlines = textline.run
       val attrl   = AttributesParser.namedAttribute.list(eol).run
       // need to eat one newnline …
       if attrl.nonEmpty then eol.orFail.run
@@ -56,11 +56,11 @@ object Atoms {
   def list: Scip[ListAtom] =
     Scip {
       val prefix  = (("-•*".any or (CommonParsers.digits and ".".all)) and " ".all).str.run
-      val inlines = sectionInlines.run
+      val inlines = textline.run
       ListAtom(prefix, inlines)
     }
 
-  def unquoted: Scip[Text] = sectionInlines.map(Text.apply)
+  def unquoted: Scip[Text] = textline.map(Text.apply)
 
   case class Whitespace(content: String):
     override def toString: String = s"Whitespace(»${content.replace("\n", "\\n")}«)"
