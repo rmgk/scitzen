@@ -1,29 +1,30 @@
 package scitzen.parser
 
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
-import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS}
+import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS, withProv}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, Prov, Section, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, Prov, Section, SpaceComment, Text
+}
 
 object Atoms {
 
   def alternatives: Scip[Container[Atom]] = Scip {
-
-    Atoms.fenced.opt.run match
-      case Some(res) => res
-      case None =>
-        annotatedAtom(
-          Atoms.section.trace("section") |
-          Atoms.list.trace("list") |
-          Atoms.delimited.trace("block delim") |
-          (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive") |
-          Atoms.whitespace |
-          Atoms.unquoted
-        ).trace("block").run
+    (
+      Atoms.fenced |
+      Atoms.whitespace |
+      annotatedAtom(
+        Atoms.section.trace("section") |
+        Atoms.list.trace("list") |
+        Atoms.delimited.trace("block delim") |
+        (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive") |
+        Atoms.unquoted
+      )
+    ).trace("block").run
   }
 
   type Atom =
-    Directive | Text | SpaceComment | Delimited | Block | ListAtom | Section
+    Directive | Text | Delimited | Block | ListAtom | Section
   case class Container[+A <: Atom](indent: String, content: A)(val prov: Prov)
 
   def annotatedAtom[A <: Atom](atomParser: Scip[A]): Scip[Container[A]] = Scip {
@@ -60,10 +61,15 @@ object Atoms {
 
   def unquoted: Scip[Text] = textline.map(Text.apply)
 
-  def whitespace: Scip[SpaceComment] =
-    (CommonParsers.verticalSpaces and (DirectiveParsers.commentContent.attempt or Scip(true)) and eol).str.map(
-      SpaceComment.apply
-    )
+  def whitespace: Scip[Container[Block]] = Scip {
+    val start = scx.index
+    val content = (
+      CommonParsers.significantSpaceLine or
+      (CommonParsers.verticalSpaces and DirectiveParsers.commentContent.attempt and eol)
+      ).rep.min(1).str.run
+    val prov = Prov(start, scx.index)
+    Container("", Block(BCommand.Empty, Attributes.empty, SpaceComment(content))(prov))(prov)
+  }
 
   case class Delimited(delimiter: String, command: BCommand, attributes: Attributes)
 
@@ -78,7 +84,7 @@ object Atoms {
     )
   }
 
-  def fenced: Scip[Container[Block]] = Scip {
+  def fenced: Scip[Container[Atom]] = Scip {
     val sindex  = scx.index
     val indent  = CommonParsers.verticalSpaces.str.run
     val start   = "`".any.rep.min(2).str.run

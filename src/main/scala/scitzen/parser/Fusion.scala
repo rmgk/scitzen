@@ -83,19 +83,6 @@ object Fusion {
           case ListAtom(_, _) =>
             val (list, rest) = fuseList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
-          case _: SpaceComment =>
-            val (ws, rest) = collectType[SpaceComment](atoms)
-            val content = ws.map(w => {
-              s"${w.indent}${w.content.content}"
-            }).mkString
-            fuseTop(
-              rest,
-              Block(
-                BCommand.Empty,
-                Attributes.empty,
-                SpaceComment(content)
-              )(combineProvidence(ws)) :: sastAcc
-            )
           case _: Text =>
             val (containers, rest) = collectType[Text | Directive](atoms)
             val text = Text(containers.iterator.flatMap: container =>
