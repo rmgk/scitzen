@@ -118,7 +118,7 @@ object Fusion {
   }
 
   @tailrec
-  def fuseList(atoms: Atoms, acc: List[ParsedListItem]): (Slist, Atoms) = {
+  def fuseList(atoms: Atoms, acc: List[ListItem]): (Slist, Atoms) = {
     atoms match
       case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
         if Text(content).plainString.stripTrailing().endsWith(":")
@@ -130,7 +130,7 @@ object Fusion {
             else None
           val innerFused = fuseTop(inner, Nil)
           val block      = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
-          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content), Some(block)) :: acc)
+          fuseList(rest, ListItem(s"$indent$pfx", Text(content), Some(block)) :: acc)
         else
           val (textSnippets, rest) = collectType[Text | Directive](tail)
           val snippets =
@@ -146,12 +146,10 @@ object Fusion {
                 )
               )
             }
-          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), None) :: acc)
+          fuseList(rest, ListItem(s"$indent$pfx", Text(content concat snippets), None) :: acc)
       case other =>
         (ListConverter.listtoSast(acc.reverse), atoms)
   }
-
-  case class ParsedListItem(marker: String, itemText: Text, content: Option[Block])
 
   object ListConverter {
 
@@ -163,7 +161,7 @@ object Fusion {
           (item -> take.map(_._2)) +: splitted(drop)
       }
 
-    def listtoSast(items: Seq[ParsedListItem]): Slist = {
+    def listtoSast(items: Seq[ListItem]): Slist = {
       /* defines which characters are distinguishing list levels */
       def norm(m: String) = m.replaceAll("""[^\s\*\.•\-]""", "")
 
@@ -173,13 +171,13 @@ object Fusion {
       else otherList(split)
     }
 
-    private def otherList(split: Seq[(ParsedListItem, Seq[ParsedListItem])]): Slist = {
+    private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
       val listItems = split.map {
         case (item, children) =>
           val contentSast = item.content
           val childSasts = if (children.isEmpty) None
           else Some(listtoSast(children))
-          ListItem(item.marker, item.itemText, contentSast.orElse(childSasts))
+          ListItem(item.marker, item.text, contentSast.orElse(childSasts))
       }
       scitzen.sast.Slist(listItems)
     }
