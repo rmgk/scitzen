@@ -29,21 +29,23 @@ class SastToScimConverter(bibDB: BibDB):
   def toScim(sast: Sast): Chain[String] =
     sast match
       case Section(title, prefix, attributes) =>
-        (prefix + " " + inlineToScim(title.inl)) +:
-        attributesToScim(attributes, spacy = true, force = false, light = true)
+        Chain(prefix, " ") ++ inlineToScim(title.inl) ++ ("\n" +:
+        attributesToScim(attributes, spacy = true, force = false, light = true))
 
       case Slist(children) => Chain.from(children).flatMap {
           case ListItem(marker, inner, None) =>
-            Chain(marker + inlineToScim(inner.inl))
+            marker +: inlineToScim(inner.inl) :+ "\n"
 
           case ListItem(marker, Text(inl), Some(rest)) =>
             Chain(
-              s"$marker" + inlineToScim(inl),
-              toScim(rest).iterator.mkString("\n").stripTrailing
-            )
+              Chain(marker),
+              inlineToScim(inl),
+              Chain("\n"),
+              toScim(rest)
+            ).flatten
         }
 
-      case mcro: Directive => Chain(macroToScim(mcro))
+      case mcro: Directive => Chain(macroToScim(mcro), "\n")
 
       case tlb: Block => convertBlock(tlb)
 
@@ -67,37 +69,44 @@ class SastToScimConverter(bibDB: BibDB):
     sb.content match
       case Paragraph(content) =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        attrres :+ inlineToScim(content.inl)
+        attrres ++ inlineToScim(content.inl)
 
       case Parsed(delimiter, blockContent) =>
-        val content = toScimS(blockContent)
+        val content = toScimS(blockContent).mkString
         delimiter.charAt(0) match
           case ':' =>
             Chain(
-              "::" + BCommand.print(sb.command) +
+              "::",
+              BCommand.print(sb.command),
               AttributesToScim(bibDB).convert(sb.attributes, force = false, spacy = false),
-              content.map(addIndent(_, "\t")).iterator.mkString("\n").stripTrailing(),
-              "::"
+              "\n",
+              addIndent(content, "\t"),
+              "::\n"
             )
           // space indented blocks are currently only used for description lists
           // they are parsed and inserted as if the indentation was not present
           case ' ' | '\t' =>
-            stripLastEnd(content.map(addIndent(_, delimiter)))
+            Chain(addIndent(content, delimiter))
 
       case SpaceComment(text) =>
-        Chain.from(ArraySeq.unsafeWrapArray(
-          text.stripLineEnd.split("\\n", -1).map(_.stripTrailing())
-        ))
+        Chain(
+          text.split("\\n", -1).map(_.stripTrailing()).mkString("\n")
+        )
       case Fenced(text) =>
         val delimiter = "```"
         Chain(
-          delimiter + BCommand.print(sb.command) + AttributesToScim(bibDB).convert(
+          delimiter,
+          BCommand.print(sb.command),
+          AttributesToScim(bibDB).convert(
             sb.attributes,
             spacy = false,
             force = false
           ),
+          "\n",
           addIndent(text, "\t"),
-          delimiter
+          "\n",
+          delimiter,
+          "\n"
         )
 
   def macroToScim(mcro: Directive, spacy: Boolean = false): String =
@@ -107,19 +116,19 @@ class SastToScimConverter(bibDB: BibDB):
       case _ =>
         s":${DCommand.printMacroCommand(mcro.command)}${attributeConverter.convert(mcro.attributes, spacy, force = true)}"
 
-  def inlineToScim(inners: Seq[Inline]): String =
+  def inlineToScim(inners: Seq[Inline]): Seq[String] =
     inners.map {
       case InlineText(str, 0) => str
       case InlineText(str, x) =>
         val qs = "\"" * x
         s":$qs[$str]$qs"
       case m: Directive => macroToScim(m)
-    }.mkString("")
+    }
 
 class AttributesToScim(bibDB: BibDB):
 
   def encodeText(text: Text): String =
-    val value = SastToScimConverter(bibDB).inlineToScim(text.inl)
+    val value = SastToScimConverter(bibDB).inlineToScim(text.inl).mkString("")
     AttributeDeparser.quote(
       forceEmpty = false,
       value,

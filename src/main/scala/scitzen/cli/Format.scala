@@ -78,7 +78,7 @@ object Format:
 
   def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast], bibDB: BibDB): Unit =
     val result      = SastToScimConverter(bibDB).toScimS(sast)
-    val resultBytes = result.iterator.mkString("", "\n", "\n").getBytes(StandardCharsets.UTF_8)
+    val resultBytes = result.iterator.mkString("").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
       cli.info(s"formatting ${file.getFileName}")
       Files.write(file, resultBytes)

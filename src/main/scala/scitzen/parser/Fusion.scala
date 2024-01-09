@@ -109,8 +109,8 @@ object Fusion {
               val inlines = container.content match
                 case text: Text           => text.inl
                 case directive: Directive => List(directive)
-              InlineText("\n") +: (inlineIndent concat inlines)
-            .drop(1).toSeq).fuse
+              (inlineIndent concat inlines) :+ InlineText("\n")
+            .toSeq).fuse
             fuseTop(
               rest,
               Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)) :: sastAcc

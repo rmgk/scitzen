@@ -48,8 +48,6 @@ object Atoms {
       val prefix  = choice("= ", "== ", "# ", "## ", "### ").str.run
       val inlines = textline.run
       val attrl   = AttributesParser.namedAttribute.list(eol).run
-      // need to eat one newnline …
-      if attrl.nonEmpty then eol.orFail.run
       Section(Text(inlines), prefix.substring(0, prefix.length - 1), Attributes(attrl))
     }
 
