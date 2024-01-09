@@ -91,7 +91,6 @@ object Fusion {
           case _: Whitespace =>
             val (ws, rest) = collectType[Whitespace](atoms)
             val content = ws.map(w => {
-              if !w.indent.isBlank then println(s"»${w.indent}«");
               s"${w.indent}${w.content.content}"
             }).mkString
             fuseTop(
