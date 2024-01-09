@@ -39,7 +39,11 @@ object Atoms {
   case class SectionAtom(prefix: String, content: Seq[Inline])
   case class ListAtom(prefix: String, content: Seq[Inline])
 
-  val sectionInlines: Scip[List[Inline]]   = InlineParsers.full(eol, allowEmpty = false)
+  val sectionInlines: Scip[List[Inline]]   = Scip {
+    val res = InlineParsers.full(eol).run
+    if res.isEmpty then scx.fail
+    else res
+  }
 
 
   def section: Scip[SectionAtom] =

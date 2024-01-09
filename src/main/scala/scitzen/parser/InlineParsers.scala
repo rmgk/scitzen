@@ -11,8 +11,7 @@ object InlineParsers {
   inline def endingChars: Scip[Boolean]    = ":;\"]\n}".any
 
   inline def full(
-      inline ending: Scip[Boolean],
-      inline allowEmpty: Boolean
+      inline ending: Scip[Boolean]
   ): Scip[List[Inline]] = Scip {
 
     var start = scx.index
@@ -43,10 +42,7 @@ object InlineParsers {
             else addPlain()
     }
 
-    val inlines = inlineOptions(Nil).reverse
-
-    if !allowEmpty && inlines.isEmpty then scx.fail else inlines
-
+    inlineOptions(Nil).reverse
   }
 
 }
