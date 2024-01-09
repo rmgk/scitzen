@@ -18,7 +18,7 @@ class SciparseTest extends munit.FunSuite {
         DirectiveParsers.full.runInContext(
           Scx(""":emph{some plaintext; key= value ; key= "[value]";"[[1, 10, 20, 30, 80]]"  }""").copy(tracing = false)
         )
-      println(res)
+      //println(res)
       val result    = SastToScimConverter.toScimS(List(res))
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr, ":emph{some plaintext; key=value ; key=value; [1, 10, 20, 30, 80]}\n")
@@ -29,7 +29,7 @@ class SciparseTest extends munit.FunSuite {
     try
       val res =
         DirectiveParsers.full.runInContext(Scx(""":emph{ :{ note } }""").copy(tracing = false))
-      println(res)
+      //println(res)
       val result    = SastToScimConverter.toScimS(List(res))
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr, ":emph{:{note } }\n")
@@ -85,7 +85,7 @@ Immer
 """
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
-      println(res)
+      //println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr.trim, input.trim)
@@ -116,7 +116,7 @@ hah
 """
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
-      println(res)
+      // println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr, input)
@@ -134,7 +134,7 @@ hah
 """
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
-      println(res)
+      // println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr, input)
@@ -151,10 +151,10 @@ hah
       inline def matcher = ((seq("``")))
       val scx            = Scx(str).copy(tracing = false)
       val bytes          = "``".getBytes(StandardCharsets.UTF_8)
-      println(bytes.toList)
-      println(scx.available)
-      println(printCode(matcher))
-      println(matcher.runInContext(scx))
+      // println(bytes.toList)
+      // println(scx.available)
+      // println(printCode(matcher))
+      // println(matcher.runInContext(scx))
 
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
   }
@@ -169,7 +169,7 @@ hah
 """
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
-      println(res)
+      //println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr, input)
@@ -184,7 +184,7 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
 """
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
-      println(res)
+      //println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr, input)
@@ -195,7 +195,7 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
     try
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
-      println(res)
+      //println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "\n", "\n")
       assertEquals(resultStr.trim, input.trim)

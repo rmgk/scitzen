@@ -10,7 +10,7 @@ def impl[T: Type](expr: Expr[T])(using quotes: Quotes): Expr[String] = {
   import quotes.reflect.*
   val e = expr.show.toString
   // val t = expr.asTerm.toString
-  println(e)
+  // println(e)
   // println(t)
   Expr(e)
 

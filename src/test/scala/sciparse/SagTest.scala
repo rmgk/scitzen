@@ -22,11 +22,12 @@ class SagTest extends munit.FunSuite {
 
     val ctx = new sag.SagContext(new ByteArrayOutputStream())
     xt.body(style = "some", xt.p("this is a pragraph with weird symbols \" attribute > value")).runInContext(ctx)
-    println(ctx.baos.toString(StandardCharsets.UTF_8))
+    /*println*/(ctx.baos.toString(StandardCharsets.UTF_8))
 
   }
 
   test("code") {
-    println(printCode(HtmlPages("").tHead(delay.Sync { () })))
+    //println:
+      printCode(HtmlPages("").tHead(delay.Sync { () }))
   }
 }
