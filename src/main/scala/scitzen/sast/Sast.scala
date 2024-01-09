@@ -73,4 +73,4 @@ case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
 case class SpaceComment(content: String)                 extends BlockType:
   override def toString: String = s"SpaceComment(${content.replace("\n", "\\n")})"
 
-case class Prov(start: Int = -1, end: Int = -1, indent: Int = 0)
+case class Prov(start: Int = -1, end: Int = -1)
