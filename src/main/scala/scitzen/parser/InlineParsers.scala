@@ -10,6 +10,7 @@ object InlineParsers {
   inline def directiveStart: Scip[Boolean] = ":".all
   inline def endingChars: Scip[Boolean]    = ":;\"]\n}".any
 
+  /** ending is not included in the inline text */
   inline def full(
       inline ending: Scip[Boolean]
   ): Scip[List[Inline]] = Scip {
