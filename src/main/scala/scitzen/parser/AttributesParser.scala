@@ -45,16 +45,6 @@ object AttributesParser {
     scitzen.sast.Text(r.run)
   }.trace("text")
 
-  val stringValue: Scip[String] = Scip {
-    maybeQuoted.run match
-      case None => until(";}\n".any).min(0).str.trace(s"unquoted").run
-      case Some(closing) =>
-        val closeP = seq(closing)
-        (until(closeP and verticalSpaces and terminationCheckB).min(0).str <~ closeP.orFail).trace(
-          s"quoted ${closing}"
-        ).run
-  }.trace("string value")
-
   val namedAttributeValue: Scip[Either[Seq[Attribute], Text]] =
     (anySpacesB ifso braces.map(Left.apply)) | text.map(Right.apply)
 
