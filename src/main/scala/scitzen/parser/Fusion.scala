@@ -130,7 +130,7 @@ object Fusion {
             else None
           val innerFused = fuseTop(inner, Nil)
           val block      = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
-          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content), cont.prov, Some(block)) :: acc)
+          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content), Some(block)) :: acc)
         else
           val (textSnippets, rest) = collectType[Text | Directive](tail)
           val snippets =
@@ -146,12 +146,12 @@ object Fusion {
                 )
               )
             }
-          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), cont.prov, None) :: acc)
+          fuseList(rest, ParsedListItem(s"$indent$pfx", Text(content concat snippets), None) :: acc)
       case other =>
         (ListConverter.listtoSast(acc.reverse), atoms)
   }
 
-  case class ParsedListItem(marker: String, itemText: Text, prov: Prov, content: Option[Block])
+  case class ParsedListItem(marker: String, itemText: Text, content: Option[Block])
 
   object ListConverter {
 
