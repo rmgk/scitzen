@@ -12,7 +12,7 @@ object InlineParsers {
 
   inline def full(
       inline ending: Scip[Boolean],
-      inline allowEmpty: Boolean = false
+      inline allowEmpty: Boolean
   ): Scip[List[Inline]] = Scip {
 
     var start = scx.index

@@ -41,8 +41,6 @@ object Parse {
 
   }
 
-  val allInlines = InlineParsers.full(end)
-
   def bibfileUnwrap(bibfile: Array[Byte]): List[Biblet] = {
     parseResult(bibfile, BibPreparser.entry.list(Scip(true)))
   }
