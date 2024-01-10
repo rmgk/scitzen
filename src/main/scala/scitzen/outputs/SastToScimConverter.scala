@@ -47,6 +47,11 @@ class SastToScimConverter(bibDB: BibDB):
 
       case mcro: Directive => Chain(macroToScim(mcro), "\n")
 
+      case SpaceComment(text) =>
+        Chain(
+          text.split("\\n", -1).map(_.stripTrailing()).mkString("\n")
+        )
+
       case tlb: Block => convertBlock(tlb)
 
   def addIndent(lines: String, delimiter: String): String =
@@ -81,10 +86,6 @@ class SastToScimConverter(bibDB: BibDB):
           case ' ' | '\t' =>
             Chain(addIndent(content, delimiter))
 
-      case SpaceComment(text) =>
-        Chain(
-          text.split("\\n", -1).map(_.stripTrailing()).mkString("\n")
-        )
       case Fenced(text) =>
         val delimiter = "```"
         Chain(

@@ -53,6 +53,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def convertSast(ctx: Cta, singleSast: Sast): CtxCF =
     singleSast match
+      case _: SpaceComment => ctx.empty
       case block: Block =>
         if block.command == BCommand.Convert then
           convertSastSeq(ctx, anal.block.substitute(block))

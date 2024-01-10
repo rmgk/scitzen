@@ -190,8 +190,6 @@ class SastToHtmlConverter(
         }
 
     case Fenced(text) => handleCodeListing(ctx, block, text)
-
-    case SpaceComment(_) => ctx.empty
   end convertStandardBlock
 
   def handleCodeListing(ctx: Cta, block: Block, text: String): CtxCF =

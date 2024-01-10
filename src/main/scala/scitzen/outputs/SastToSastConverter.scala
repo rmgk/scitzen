@@ -33,6 +33,8 @@ class SastToSastConverter(articleRef: ArticleRef):
 
   def convertSingle(sast: Sast)(ctx: Cta): Ctx[Sast] =
     sast match
+      case sc: SpaceComment => ctx.ret(sc)
+
       case tlBlock: Block =>
         convertBlock(tlBlock)(ctx)
 

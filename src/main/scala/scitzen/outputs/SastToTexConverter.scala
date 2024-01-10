@@ -181,8 +181,6 @@ class SastToTexConverter(
           then ctx.ret(Chain(s"\\begin{verbatim}", restext, "\\end{verbatim}"))
           else ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
 
-        case SpaceComment(_) => ctx.empty
-
     if !flags.notes then innerCtx
     else
       block.attributes.get("note").fold(innerCtx) { note =>

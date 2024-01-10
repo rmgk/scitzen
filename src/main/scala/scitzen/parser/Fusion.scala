@@ -76,7 +76,7 @@ object Fusion {
       case LazyList() => sastAcc.reverse
       case container #:: tail =>
         container.content match
-          case unchanged: (Directive | Block | Section) => fuseTop(tail, unchanged :: sastAcc)
+          case unchanged: (Directive | Block | Section | SpaceComment) => fuseTop(tail, unchanged :: sastAcc)
           case del: Delimited =>
             val (delimited, rest) = fuseDelimited(container.indent, del, container.prov, tail)
             fuseTop(rest, delimited :: sastAcc)

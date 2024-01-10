@@ -24,7 +24,7 @@ object Atoms {
   }
 
   type Atom =
-    Directive | Text | Delimited | Block | ListAtom | Section
+    Directive | Text | Delimited | Block | ListAtom | Section | SpaceComment
   case class Container[+A <: Atom](indent: String, content: A)(val prov: Prov)
 
   def annotatedAtom[A <: Atom](atomParser: Scip[A]): Scip[Container[A]] = Scip {
@@ -61,14 +61,14 @@ object Atoms {
 
   def unquoted: Scip[Text] = textline.map(Text.apply)
 
-  def whitespace: Scip[Container[Block]] = Scip {
+  def whitespace: Scip[Container[SpaceComment]] = Scip {
     val start = scx.index
     val content = (
       CommonParsers.significantSpaceLine or
       (CommonParsers.verticalSpaces and DirectiveParsers.commentContent.attempt and eol)
       ).rep.min(1).str.run
     val prov = Prov(start, scx.index)
-    Container("", Block(BCommand.Empty, Attributes.empty, SpaceComment(content))(prov))(prov)
+    Container("", SpaceComment(content))(prov)
   }
 
   case class Delimited(delimiter: String, command: BCommand, attributes: Attributes)

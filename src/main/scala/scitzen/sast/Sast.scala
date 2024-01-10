@@ -2,7 +2,7 @@ package scitzen.sast
 
 import scitzen.parser.TimeParsers
 
-type Sast = Slist | Directive | Section | Block
+type Sast = Slist | Directive | Section | Block | SpaceComment
 
 case class Slist(items: Seq[ListItem])
 case class ListItem(marker: String, text: Text, content: Option[Sast])
@@ -70,7 +70,7 @@ sealed trait BlockType
 case class Paragraph(content: Text)                      extends BlockType
 case class Fenced(content: String)                       extends BlockType
 case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
-case class SpaceComment(content: String)                 extends BlockType:
+case class SpaceComment(content: String):
   override def toString: String = s"SpaceComment(${content.replace("\n", "\\n")})"
 
 case class Prov(start: Int = -1, end: Int = -1)
