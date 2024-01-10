@@ -21,7 +21,7 @@ object Atoms {
         Atoms.delimited.trace("block delim") |
         (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive")
       ) |
-      annotatedAtom(stripIndent = false)(
+      annotatedAtom(stripIndent = true)(
         Atoms.unquoted
       )
     ).trace("block").run
