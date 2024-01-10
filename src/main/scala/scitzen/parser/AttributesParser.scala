@@ -16,7 +16,7 @@ object AttributesParser {
 
   val terminationCheckB: Scip[Boolean] = (";".all or close.all or eol).lookahead
   val unquotedInlines: Scip[List[Inline]] =
-    InlineParsers.full(terminationCheckB)
+    InlineParsers.full(terminationCheckB, includeEnd = false)
 
   val maybeQuoted: Scip[Option[String]] = Scip {
     anySpacesF.run
@@ -38,9 +38,12 @@ object AttributesParser {
       case Some(closing) =>
         val closeP = seq(closing)
         InlineParsers.full(
-          (closeP.trace("closing") and verticalSpaces.trace("spaces") and terminationCheckB.trace(
-            "terminate"
-          )).trace("endingfun")
+          (
+            closeP.trace("closing") and
+            verticalSpaces.trace("spaces") and
+            terminationCheckB.trace("terminate")
+          ).trace("endingfun"),
+          includeEnd = false
         ).trace("inline full")
     scitzen.sast.Text(r.run)
   }.trace("text")

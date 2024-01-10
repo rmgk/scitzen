@@ -86,11 +86,12 @@ object Fusion {
           case _: Text =>
             val (containers, rest) = collectType[Text | Directive](atoms)
             val text = Text(containers.iterator.flatMap: container =>
-              val inlineIndent = if container.indent.nonEmpty then List(InlineText(container.indent)) else Nil
-              val inlines = container.content match
-                case text: Text           => text.inl
-                case directive: Directive => List(directive)
-              (inlineIndent concat inlines) :+ InlineText("\n")
+              container.content match
+                case text: Text => text.inl
+                case directive: Directive =>
+                  if container.indent.isEmpty
+                  then List(directive, InlineText("\n"))
+                  else List(InlineText(container.indent), directive, InlineText("\n"))
             .toSeq).fuse
             fuseTop(
               rest,

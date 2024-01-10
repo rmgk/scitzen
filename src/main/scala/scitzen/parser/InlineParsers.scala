@@ -10,9 +10,9 @@ object InlineParsers {
   inline def directiveStart: Scip[Boolean] = ":".all
   inline def endingChars: Scip[Boolean]    = ":;\"]\n}".any
 
-  /** ending is not included in the inline text */
   inline def full(
-      inline ending: Scip[Boolean]
+      inline ending: Scip[Boolean],
+      inline includeEnd: Boolean,
   ): Scip[List[Inline]] = Scip {
 
     // start of the current text segment
@@ -25,23 +25,22 @@ object InlineParsers {
       // be aware that this limits what `ending` may start with
       until(endingChars).run
 
-      val current = scx.index
-
       // closes the current run of plain text and adds it as a separate Inline node
-      def addPlain(): List[Inline] =
+      def addPlain(current: Int): List[Inline] =
         try
           if textStart < current
           then InlineText(scx.str(textStart, current)) :: acc
           else acc
         finally textStart = scx.index
 
-      if ending.run then addPlain()
+      val beforeMatch = scx.index
+      if ending.run then addPlain(if includeEnd then scx.index else beforeMatch)
       else
         (DirectiveParsers.comment | DirectiveParsers.raw | DirectiveParsers.full).opt.run match
-          case Some(inl) => inlineOptions(inl :: addPlain())
+          case Some(inl) => inlineOptions(inl :: addPlain(beforeMatch))
           case None =>
             if scx.next then inlineOptions(acc)
-            else addPlain()
+            else addPlain(beforeMatch)
     }
 
     inlineOptions(Nil).reverse
