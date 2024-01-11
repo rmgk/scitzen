@@ -91,19 +91,6 @@ object Fusion {
             )
   }
 
-  private def extractTextRun(atoms: Atoms): (LazyList[Container[Text | Directive]], LazyList[Container[Atom]], Text) = {
-    val (containers, rest) = collectType[Text | Directive](atoms)
-    val text = Text(containers.iterator.flatMap: container =>
-      val inlines = container.content match
-        case text: Text           => text.inl
-        case directive: Directive => List(directive, InlineText("\n"))
-      if container.indent.isEmpty
-      then inlines
-      else InlineText(container.indent) +: inlines
-    .toSeq).fuse
-    (containers, rest, text)
-  }
-
   @tailrec
   def fuseList(atoms: Atoms, acc: List[ListItem]): (Slist, Atoms) = {
     atoms match
