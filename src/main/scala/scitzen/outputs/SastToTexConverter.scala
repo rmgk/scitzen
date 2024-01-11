@@ -93,12 +93,13 @@ class SastToTexConverter(
   }
 
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF = {
+    if slist.items.isEmpty then return ctx.empty
     val recipes = ctx.fold[(ListItem, List[ListItem]), String](ProtoConverter.sublists(slist.items, Nil)):
       case (ctx, (item, children)) =>
-        val para  = convertParagraph(ctx, item.paragraph)
+        val para  = convertInlinesCombined(ctx, item.paragraph.inlines)
         val inner = convertSlist(para, Slist(children))
         inner.ret(
-          s"\\item{${para.data}" +: inner.data
+          s"\\item{${para.data}}" +: inner.data
         )
 
     recipes.map: i =>
@@ -131,12 +132,12 @@ class SastToTexConverter(
     val cctx = convertInlinesCombined(ctx, paragraph.inlines)
     // appending the newline adds two newlines in the source code to separate the paragraph from the following text
     // the latexenc text does not have any newlines at the end because of the .trim
-    if !flags.hardwrap then cctx.map(c => Chain("", c, ""))
-    else
+    if flags.hardwrap then
       cctx.map { text =>
-        val latexenc = text.trim.replace("\n", "\\newline{}\n")
+        val latexenc = text.strip().replace("\n", "\\newline{}\n")
         Chain("\n\\noindent", latexenc, "")
       }
+    else cctx.map(c => Chain("", c, ""))
 
   override def convertBlock(ctx: Cta, block: Block): CtxCS =
     val innerCtx: CtxCS =

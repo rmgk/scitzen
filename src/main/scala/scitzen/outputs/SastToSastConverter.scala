@@ -54,7 +54,7 @@ class SastToSastConverter(articleRef: ArticleRef):
       case Slist(children) =>
         ctx.fold[ListItem, ListItem](children) { (origctx, origchild) =>
           convertParagraph(origctx, origchild.paragraph.content).map: text =>
-            Chain(ListItem(origchild.marker, Paragraph(text.toSeq)))
+            Chain(ListItem(origchild.marker, origchild.indent, Paragraph(text.toSeq)))
         }.map { cs =>
           Slist(cs.toSeq)
         }

@@ -111,7 +111,7 @@ object Fusion {
         val (textSnippets, rest) = collectType[Text | Directive](tail)
         fuseList(
           rest,
-          ListItem(pfx, Paragraph(Container(indent, Text(content), cont.prov) +: textSnippets)) :: acc
+          ListItem(pfx, indent, Paragraph(Container("", Text(content), cont.prov) +: textSnippets)) :: acc
         )
       case other =>
         (Slist(acc.reverse), atoms)

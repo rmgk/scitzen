@@ -40,8 +40,8 @@ class SastToScimConverter(bibDB: BibDB):
         inlineToScim(paragraph.inlines)
 
       case Slist(children) => Chain.from(children).flatMap {
-          case ListItem(marker, inner) =>
-            marker +: inlineToScim(inner.inlines)
+          case ListItem(marker, indent, inner) =>
+            indent +: marker +: inlineToScim(inner.inlines)
         }
 
       case Sdefinition(children) =>

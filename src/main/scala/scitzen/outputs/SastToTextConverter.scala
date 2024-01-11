@@ -47,7 +47,7 @@ class SastToTextConverter(
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
     ctx.fold(slist.items): (ctx, child) =>
       child match
-        case ListItem(_, paragraph) =>
+        case ListItem(_, _, paragraph) =>
           convertInlineSeq(ctx, paragraph.inlines)
 
   override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF =

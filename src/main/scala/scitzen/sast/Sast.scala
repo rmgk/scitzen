@@ -6,8 +6,7 @@ import scitzen.parser.TimeParsers
 type Sast = Slist | Directive | Section | SpaceComment | Paragraph | Block | Sdefinition
 
 case class Slist(items: Seq[ListItem])
-case class ListItem(marker: String, paragraph: Paragraph):
-  def indent: String = paragraph.content.head.indent
+case class ListItem(marker: String, indent: String, paragraph: Paragraph)
 case class Sdefinition(items: Seq[DefinitionItem])
 case class DefinitionItem(marker: String, text: Text, content: List[Sast])
 
