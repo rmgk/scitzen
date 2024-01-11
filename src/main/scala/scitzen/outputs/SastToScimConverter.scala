@@ -29,16 +29,17 @@ class SastToScimConverter(bibDB: BibDB):
   def toScim(sast: Sast): Chain[String] =
     sast match
       case Section(title, prefix, attributes) =>
-        Chain(prefix, " ") ++ inlineToScim(title.inl) ++ attributesToScim(attributes, spacy = true, force = false, light = true)
+        Chain(prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ attributesToScim(attributes, spacy = true, force = false, light = true)
 
       case Slist(children) => Chain.from(children).flatMap {
           case ListItem(marker, inner, None) =>
-            marker +: inlineToScim(inner.inl)
+            marker +: inlineToScim(inner.inl) :+ "\n"
 
           case ListItem(marker, Text(inl), Some(rest)) =>
             Chain(
               Chain(marker),
               inlineToScim(inl),
+              Chain("\n"),
               toScim(rest)
             ).flatten
         }

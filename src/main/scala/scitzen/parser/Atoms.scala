@@ -49,7 +49,7 @@ object Atoms {
   case class DefinitionListAtom(marker: String, content: Seq[Inline])
 
   val textline: Scip[List[Inline]] = Scip {
-    val inlines = InlineParsers.full(eol, includeEnd = true).run
+    val inlines = InlineParsers.full(eol).run
     if inlines.isEmpty then scx.fail
     else inlines
   }
