@@ -2,6 +2,7 @@ package scitzen.compat
 
 import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
 import com.github.plokhotnyuk.jsoniter_scala.macros.{CodecMakerConfig, JsonCodecMaker}
+import scitzen.parser.Atoms.Container
 import scitzen.sast.*
 
 object MirrorToSast {
@@ -18,7 +19,7 @@ object MirrorToSast {
       Section(Text(content.map(convertInline)), "#" * (attrs.level - 1), Attributes(Nil))
     case CodeMirror.paragraph(content) =>
       println(s"converting $content")
-      val res = Paragraph(Text(content.map(convertInline)))
+      val res = Paragraph(Seq(Container("", Text(content.map(convertInline)), Prov())))
       println(s"to $res")
       Block(BCommand.Empty, Attributes(Nil), res)(Prov())
   }

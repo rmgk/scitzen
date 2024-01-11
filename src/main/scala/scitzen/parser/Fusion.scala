@@ -83,14 +83,14 @@ object Fusion {
             val (list, rest) = fuseDefinitionList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
           case _: Text =>
-            val (containers, rest, text) = extractTextRun(atoms)
+            val (inner, rest) = collectType[Text | Directive](atoms)
             fuseTop(
               rest,
-              Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)) :: sastAcc
+              Block(BCommand.Empty, Attributes.empty, Paragraph(inner))(Prov()) :: sastAcc
             )
   }
 
-  private def extractTextRun(atoms: Atoms) = {
+  private def extractTextRun(atoms: Atoms): (LazyList[Container[Text | Directive]], LazyList[Container[Atom]], Text) = {
     val (containers, rest) = collectType[Text | Directive](atoms)
     val text = Text(containers.iterator.flatMap: container =>
       val inlines = container.content match

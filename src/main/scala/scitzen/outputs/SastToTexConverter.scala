@@ -129,8 +129,8 @@ class SastToTexConverter(
   override def convertBlock(ctx: Cta, block: Block): CtxCS =
     val innerCtx: CtxCS =
       block.content match
-        case Paragraph(content) =>
-          val cctx = convertInlinesCombined(ctx, content.inl)
+        case paragraph: Paragraph =>
+          val cctx = convertInlinesCombined(ctx, paragraph.inlines)
           // appending the newline adds two newlines in the source code to separate the paragraph from the following text
           // the latexenc text does not have any newlines at the end because of the .trim
           if !flags.hardwrap then cctx.map(c => Chain("", c, ""))
@@ -145,8 +145,8 @@ class SastToTexConverter(
             case BCommand.Figure =>
               val (figContent, caption) =
                 blockContent.lastOption match
-                  case Some(Block(_, _, Paragraph(content))) =>
-                    val captionstr = convertInlinesCombined(ctx, content.inl)
+                  case Some(Block(_, _, paragraph: Paragraph)) =>
+                    val captionstr = convertInlinesCombined(ctx, paragraph.inlines)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
                     cli.warn(s"figure has no caption" + doc.reporter(block.prov))

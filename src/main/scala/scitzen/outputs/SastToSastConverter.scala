@@ -2,6 +2,7 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
+import scitzen.parser.Atoms.Container
 import scitzen.project.{ArticleRef, SastRef}
 import scitzen.sast.*
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include, Index, Ref}
@@ -63,7 +64,7 @@ class SastToSastConverter(articleRef: ArticleRef):
         }
 
       case mcro: Directive =>
-        convertMacro(mcro)(ctx)
+        convertDirective(mcro)(ctx)
 
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
     // make all blocks labellable
@@ -71,8 +72,11 @@ class SastToSastConverter(articleRef: ArticleRef):
     val ublock             = refctx.data
     val resctx = ublock.content match
       case Paragraph(content) =>
-        convertInlines(content.inl)(refctx)
-          .map(il => ublock.copy(content = Paragraph(Text(il.toList)))(ublock.prov))
+        val res: Ctx[Chain[Container[Text | Directive]]] = refctx.fold(content): (ctx, cont) =>
+          cont.content match
+            case dir: Directive => convertDirective(dir)(ctx).map(res => Chain(cont.copy(content = res)))
+            case text: Text => convertText(text, ctx).map(res => Chain(cont.copy(content = res)))
+        res.map(il => ublock.copy(content = Paragraph(il.toSeq))(ublock.prov))
 
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent)(refctx).map(bc =>
@@ -112,10 +116,10 @@ class SastToSastConverter(articleRef: ArticleRef):
     ctx.fold(inners) { (ctx, inline) =>
       inline match
         case inlineText: InlineText => ctx.ret(Chain.one(inlineText))
-        case m: Directive           => convertMacro(m)(ctx).single
+        case m: Directive           => convertDirective(m)(ctx).single
     }
 
-  def convertMacro(directive: Directive)(ctx: Cta): Ctx[Directive] =
+  def convertDirective(directive: Directive)(ctx: Cta): Ctx[Directive] =
     directive.command match
       case Image           => ctx.addImage(directive).ret(directive)
       case Include         => ctx.addInclude(directive).ret(directive)

@@ -9,6 +9,7 @@ import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.project.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
+import scitzen.parser.Atoms
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
@@ -167,16 +168,16 @@ class SastToHtmlConverter(
   end convertBlock
 
   def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block.content match
-    case Paragraph(text) => convertInlineSeq(ctx, text.inl).map(cf => Chain(Sag.p(cf)))
+    case paragraph: Paragraph => convertInlineSeq(ctx, paragraph.inlines).map(cf => Chain(Sag.p(cf)))
 
     case Parsed(delimiter, blockContent) =>
       val label = block.attributes.plain("label")
       if block.command == BCommand.Figure
       then
         blockContent.splitAt(blockContent.size - 1) match
-          case (content, Seq(Block(_, _, Paragraph(caption)))) =>
+          case (content, Seq(Block(_, _, caption: Paragraph))) =>
             val contentCtx = convertSastSeq(ctx, content)
-            val captionCtx = convertInlinesCombined(contentCtx, caption.inl)
+            val captionCtx = convertInlinesCombined(contentCtx, caption.inlines)
             captionCtx.retc(Sag.figure(id = label, contentCtx.data, Sag.figcaption(captionCtx.data)))
           case other =>
             cli.warn(s"figure needs to end with a paragraph as its caption", block)

@@ -60,9 +60,9 @@ class SastToScimConverter(bibDB: BibDB):
 
   def convertBlock(sb: Block): Chain[String] =
     sb.content match
-      case Paragraph(content) =>
+      case paragraph: Paragraph =>
         val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        val inner   = inlineToScim(content.inl)
+        val inner   = inlineToScim(paragraph.inlines)
         if attrres.nonEmpty
         then Chain(attrres, Chain("\n"), inner).flatten
         else inner
