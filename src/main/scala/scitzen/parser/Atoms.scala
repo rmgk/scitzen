@@ -15,13 +15,11 @@ object Atoms {
     (
       Atoms.fenced |
       Atoms.whitespace |
-      annotatedAtom(stripIndent = true)(
+      annotatedAtom(
         Atoms.section.trace("section") |
         Atoms.list.trace("list") |
         Atoms.delimited.trace("block delim") |
-        (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive")
-      ) |
-      annotatedAtom(stripIndent = true)(
+        (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive") |
         Atoms.unquoted
       )
     ).trace("block").run
@@ -33,15 +31,12 @@ object Atoms {
   object Container:
     def unapply[A <: Atom](cont: Container[A]): (String, A) = (cont.indent, cont.content)
 
-  inline def annotatedAtom[A <: Atom](inline stripIndent: Boolean)(inline atomParser: Scip[A]): Scip[Container[A]] =
+  inline def annotatedAtom[A <: Atom](inline atomParser: Scip[A]): Scip[Container[A]] =
     Scip {
-      val start = scx.index
-      val indent =
-        inline if stripIndent
-        then CommonParsers.verticalSpaces.str.run
-        else CommonParsers.verticalSpaces.str.lookahead.run
-      val atom = atomParser.run
-      val end  = scx.index
+      val start  = scx.index
+      val indent = CommonParsers.verticalSpaces.str.run
+      val atom   = atomParser.run
+      val end    = scx.index
       Container(indent, atom, Prov(start, end))
     }
 
