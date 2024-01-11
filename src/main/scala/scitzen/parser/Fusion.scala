@@ -149,7 +149,7 @@ object Fusion {
       items match {
         case Nil => Nil
         case (marker, item) :: tail =>
-          val (take, drop) = tail.span { case (c, _) => marker != c }
+          val (take, drop) = tail.span { (c, _) => marker != c }
           (item -> take.map(_._2)) +: splitted(drop)
       }
 
