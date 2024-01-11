@@ -140,7 +140,7 @@ object Fusion {
         fuseDefinitionList(rest, ListItem(s"$indent$pfx", Text(content), Some(block)) :: acc)
 
       case other =>
-        (ListConverter.listtoSast(acc.reverse), atoms)
+        (Slist(acc.reverse), atoms)
   }
 
   object ListConverter {
