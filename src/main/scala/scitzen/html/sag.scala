@@ -174,17 +174,19 @@ object sag {
 
         // write children
         ${
+          val children = attributes.filter(_._1 == "").toList
+
           tagname match
             // void tag
             case "!DOCTYPE html" | "area" | "base" | "br" | "col" | "embed" | "hr" | "img" | "input" | "link" | "meta" | "source" | "track" | "wbr" =>
-              if attributes.filter(_._1 == "").nonEmpty then
+              if children.nonEmpty then
                 report.errorAndAbort(s"may not have children $tagname", args)
               '{}
             case other =>
               '{
                 ${
                   Expr.block(
-                    attributes.filter(_._1 == "").toList.map: attr =>
+                    children.map: attr =>
                       attr._2 match
                         case '{ $v: String } =>
                           '{

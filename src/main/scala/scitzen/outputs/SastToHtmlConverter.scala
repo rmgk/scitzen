@@ -35,10 +35,6 @@ class SastToHtmlConverter(
   override def inlinesAsToplevel(inl: Chain[Recipe]): Recipe = inlineResToBlock(inl)
   override def stringToInlineRes(str: String): Recipe        = Sag.span(str)
 
-  def listItemToHtml(child: ListItem)(ctx: Cta): CtxCF =
-    val textCtx = convertInlineSeq(ctx, child.text.inl)
-    textCtx.data ++: child.content.fold(textCtx.empty[Recipe])((singleSast: Sast) => convertSast(textCtx, singleSast))
-
   def categoriesSpan(categories: Seq[String]): Option[Recipe] =
     Option.when(categories.nonEmpty)(
       Sag.span(`class` = "tags", categories.map(c => Sag.String(s" $c ")))
@@ -104,24 +100,27 @@ class SastToHtmlConverter(
       case 6 => Sag.h6(id = section.ref, innerFrags, link)
     (header +: tMeta(inlineCtx, section)).push(section)
 
-  override def convertSlist(ctx: Cta, slist: Slist): CtxCF = slist match
-    case Slist(Nil) => ctx.empty
-    case Slist(children) => children.head.content match
-        case None | Some(Slist(_)) =>
-          ctx.fold[ListItem, Recipe](children) { (ctx, c) =>
-            listItemToHtml(c)(ctx).map(i => Chain(Sag.li(i)))
-          }.mapc: i =>
-            if children.head.marker.contains(".")
-            then Sag.ol(i)
-            else Sag.ul(i)
-        case _ =>
-          ctx.fold[ListItem, Recipe](children) { (ctx, c) =>
-            val inlinesCtx = convertInlineSeq(ctx, c.text.inl)
-            c.content.fold(inlinesCtx.empty[Recipe])((singleSast: Sast) => convertSast(inlinesCtx, singleSast)).map {
-              innerFrags =>
-                Chain(Sag.dt(inlinesCtx.data), Sag.dd(innerFrags))
-            }
-          }.map(i => Chain(Sag.dl(i)))
+  override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF = {
+    ctx.fold[DefinitionItem, Recipe](deflist.items): (ctx, item) =>
+      val text = convertInlineSeq(ctx, item.text.inl)
+      val inner = convertSastSeq(text, item.content)
+      inner.ret(Chain(Sag.dt(text.data), Sag.dd(inner.data)))
+    .mapc: children =>
+      Sag.dl(children)
+  }
+
+  override def convertSlist(ctx: Cta, slist: Slist): CtxCF = {
+    val recipes = ctx.fold[(ListItem, List[ListItem]), Recipe](ProtoConverter.sublists(slist.items, Nil)):
+      case (ctx, (item, children)) =>
+        val para = convertParagraph(ctx, item.paragraph)
+        val inner = convertSlist(para, Slist(children))
+        inner.retc(Sag.li(para.data, inner.data))
+
+    recipes.mapc: i =>
+      if slist.items.headOption.map(_.marker.contains(".")).getOrElse(false)
+      then Sag.ol(i)
+      else Sag.ul(i)
+  }
 
   override def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     directive.command match
@@ -143,18 +142,18 @@ class SastToHtmlConverter(
 
     val innerCtx = block.command match
       case BCommand.Other("quote") =>
-        val inner = block.content match
+        val inner = block match
           case Parsed(_, content) =>
             convertSastSeq(ctx, content)
-          case Fenced(content) =>
+          case Fenced(_, _, content, _, _) =>
             ctx.retc(Sag.String(content))
         inner.mapc(i => Sag.blockquote(i))
 
       case BCommand.Embed =>
-        val js = block.content match
-          case Fenced(js) => Some(js)
+        val js = block match
+          case Fenced(_, _, js, _, _) => Some(js)
           case _          => None
-        ctx.retc(Sag.script(`type` = "text/javascript", js.map(Sag.Raw(_))))
+        ctx.retc(Sag.script(`type` = "text/javascript", js.map(str => Sag.Raw(str))))
 
       case other =>
         convertStandardBlock(block, ctx)
@@ -169,13 +168,13 @@ class SastToHtmlConverter(
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
     convertInlineSeq(ctx, paragraph.inlines).map(cf => Chain(Sag.p(cf)))
 
-  def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block.content match
+  def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block match
     case Parsed(delimiter, blockContent) =>
       val label = block.attributes.plain("label")
       if block.command == BCommand.Figure
       then
         blockContent.splitAt(blockContent.size - 1) match
-          case (content, Seq(Block(_, _, caption: Paragraph))) =>
+          case (content, Seq(caption: Paragraph)) =>
             val contentCtx = convertSastSeq(ctx, content)
             val captionCtx = convertInlinesCombined(contentCtx, caption.inlines)
             captionCtx.retc(Sag.figure(id = label, contentCtx.data, Sag.figcaption(captionCtx.data)))
@@ -184,13 +183,13 @@ class SastToHtmlConverter(
             ctx.empty
       else
         convertSastSeq(ctx, blockContent).map { blockContent =>
-          if delimiter.isBlank then
+          if delimiter.content.marker.isBlank then
             blockContent
           else
             Chain(Sag.section(blockContent, id = label))
         }
 
-    case Fenced(text) => handleCodeListing(ctx, block, text)
+    case Fenced(_, _, text, _, _) => handleCodeListing(ctx, block, text)
   end convertStandardBlock
 
   def handleCodeListing(ctx: Cta, block: Block, text: String): CtxCF =
@@ -345,7 +344,7 @@ class SastToHtmlConverter(
                 categoriesSpan(categories)
               ))
             }
-        case Block(_, attr, _) =>
+        case block: Block =>
           val label = References.getLabel(targetDocument).get
           convertInlineSeq(ctx, nameOpt.map(_.inl).getOrElse(Nil)).mapc: titleText =>
             if titleText.isEmpty

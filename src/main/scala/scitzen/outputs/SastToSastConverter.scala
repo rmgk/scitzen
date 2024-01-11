@@ -37,10 +37,7 @@ class SastToSastConverter(articleRef: ArticleRef):
       case sc: SpaceComment => ctx.ret(sc)
 
       case Paragraph(content) =>
-        val res: Ctx[Chain[Container[Text | Directive]]] = ctx.fold(content): (ctx, cont) =>
-          cont.content match
-            case dir: Directive => convertDirective(dir)(ctx).map(res => Chain(cont.copy(content = res)))
-            case text: Text     => convertText(text, ctx).map(res => Chain(cont.copy(content = res)))
+        val res = convertParagraph(ctx, content)
         res.map(il => Paragraph(il.toSeq))
 
       case tlBlock: Block =>
@@ -56,34 +53,42 @@ class SastToSastConverter(articleRef: ArticleRef):
 
       case Slist(children) =>
         ctx.fold[ListItem, ListItem](children) { (origctx, origchild) =>
-          val textctx = convertText(origchild.text, origctx)
-          val contentctx = origchild.content match
-            case None => textctx.map(_ => None)
-            case Some(content) =>
-              convertSingle(content)(textctx).map(c => Some(c))
-
-          contentctx.ret {
-            Chain(ListItem(origchild.marker, textctx.data, contentctx.data))
-          }
-
+          convertParagraph(origctx, origchild.paragraph.content).map: text =>
+            Chain(ListItem(origchild.marker, Paragraph(text.toSeq)))
         }.map { cs =>
           Slist(cs.toSeq)
+        }
+
+      case Sdefinition(children) =>
+        ctx.fold[DefinitionItem, DefinitionItem](children) { (origctx, origchild) =>
+          val text = convertText(origchild.text, origctx)
+          val content = convertSeq(origchild.content)(text)
+          content.ret(Chain(DefinitionItem(origchild.marker, text.data, content.data.toList)))
+        }.map { cs =>
+          Sdefinition(cs.toSeq)
         }
 
       case mcro: Directive =>
         convertDirective(mcro)(ctx)
 
+  private def convertParagraph(ctx: Cta, content: Seq[Container[Text | Directive]]) = {
+    val res: Ctx[Chain[Container[Text | Directive]]] = ctx.fold(content): (ctx, cont) =>
+      cont.content match
+        case dir: Directive => convertDirective(dir)(ctx).map(res => Chain(cont.copy(content = res)))
+        case text: Text     => convertText(text, ctx).map(res => Chain(cont.copy(content = res)))
+    res
+  }
   def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
     // make all blocks labellable
     val refctx: Ctx[Block] = ensureBlockRef(block, ctx)
     val ublock             = refctx.data
-    val resctx = ublock.content match
+    val resctx = ublock match
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent)(refctx).map(bc =>
-          ublock.copy(content = Parsed(delimiter, bc.toList))(ublock.prov)
+          Parsed(delimiter, bc.toList)
         )
 
-      case SpaceComment(_) | Fenced(_) => refctx.ret(ublock)
+      case _: Fenced => refctx.ret(ublock)
     if resctx.data.command == BCommand.Convert
     then resctx.addConversionBlock(resctx.data)
     else resctx
@@ -102,7 +107,7 @@ class SastToSastConverter(articleRef: ArticleRef):
       case Some(ref) =>
         val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
         val (aliases, attr) = resctx.data
-        val ublock          = block.copy(attributes = attr)(block.prov)
+        val ublock          = block.withAttributes(attr)
         val target          = SastRef(ublock, articleRef)
         refAliases(resctx, aliases, target).ret(ublock)
   }

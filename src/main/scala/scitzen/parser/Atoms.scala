@@ -3,9 +3,7 @@ package scitzen.parser
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
 import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS, withProv}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, Inline, InlineText, Prov, Section, SpaceComment, Text
-}
+import scitzen.sast.{Attribute, Attributes, BCommand, Directive, Fenced, Inline, InlineText, Parsed, Prov, Section, SpaceComment, Text}
 
 import java.awt.image.ColorModel
 
@@ -26,7 +24,7 @@ object Atoms {
   }
 
   type Atom =
-    Directive | Text | Delimited | ListAtom | Section | SpaceComment | DefinitionListAtom | Block
+    Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
   case class Container[+A <: Atom](indent: String, content: A, prov: Prov)
   object Container:
     def unapply[A <: Atom](cont: Container[A]): (String, A) = (cont.indent, cont.content)
@@ -79,20 +77,20 @@ object Atoms {
     Container("", SpaceComment(content), prov)
   }
 
-  case class Delimited(delimiter: String, command: BCommand, attributes: Attributes)
+  case class Delimiter(marker: String, command: BCommand, attributes: Attributes)
 
-  def delimited: Scip[Delimited] = Scip {
+  def delimited: Scip[Delimiter] = Scip {
     val start   = ":".any.rep.min(2).str.run
     val command = DirectiveParsers.macroCommand.opt.trace("delimited marco").run
     val attr    = (AttributesParser.braces.opt <~ CommonParsers.spaceLineF).trace("delim braces").run
-    Delimited(
-      delimiter = start,
+    Delimiter(
+      marker = start,
       command = BCommand.parse(command.getOrElse("")),
       attributes = Attributes(attr.getOrElse(Nil))
     )
   }
 
-  def fenced: Scip[Container[Atom]] = Scip {
+  def fenced: Scip[Container[Fenced]] = Scip {
     val sindex  = scx.index
     val indent  = CommonParsers.verticalSpaces.str.run
     val start   = "`".any.rep.min(2).str.run
@@ -109,11 +107,13 @@ object Atoms {
 
     val prov = Prov(sindex, scx.index)
 
-    val fen = Block(
+    val fen = Fenced(
       command = BCommand.parse(command.getOrElse("")),
       attributes = Attributes(attr.getOrElse(Nil)),
-      content = Fenced(strippedContent)
-    )(prov)
+      content = strippedContent,
+      indent = indent,
+      prov = prov,
+    )
     Container(indent, fen, prov)
   }
 }

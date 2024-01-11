@@ -15,6 +15,6 @@ object TemplateModule extends BlockConverterModule {
       article.doc.resolve(pathString),
       Attributes(project.config.attrs.raw ++ attributes.raw :+ Attribute("template content", content))
     )
-    List(block.copy(content = Fenced(resolved))(block.prov))
+    List(Fenced(block.command, block.attributes, resolved, block.indent, block.prov))
 
 }

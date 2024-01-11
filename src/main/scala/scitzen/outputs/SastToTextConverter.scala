@@ -4,10 +4,7 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.project.ArticleRef
 import scitzen.sast.DCommand.{Include, Lookup, Other}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Block, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Section,
-  Slist, SpaceComment, Text
-}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, DefinitionItem, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Sdefinition, Section, Slist, SpaceComment, Text}
 
 class SastToTextConverter(
     articleRef: ::[ArticleRef],
@@ -22,26 +19,25 @@ class SastToTextConverter(
     SastToTextConverter(::(aref, articleRef), anal, attr)
 
   override def convertBlock(ctx: Cta, block: Block): CtxCF =
-    val Block(command, attr, blockType) = block
     val keepBlock =
-      command match
+      block.command match
         case BCommand.If =>
           val res =
-            settings.get(attr.target) match
-              case Some(_) if attr.plain("equals").isEmpty =>
+            settings.get(block.attributes.target) match
+              case Some(_) if block.attributes.plain("equals").isEmpty =>
                 true
               case Some(Attribute.Named(id, value)) =>
-                attr.get("equals").forall(_ == value)
+                block.attributes.get("equals").forall(_ == value)
               case other => false
-          if attr.get("not").isDefined then !res
+          if block.attributes.get("not").isDefined then !res
           else res
         case _ => true
 
     if !keepBlock then ctx.empty
     else
-      blockType match
+      block match
         case Parsed(_, blockContent) => convertSastSeq(ctx, blockContent)
-        case Fenced(text)            => ctx.retc(text)
+        case Fenced(_, _, text, _, _)            => ctx.retc(text)
 
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
     convertInlinesCombined(ctx, paragraph.inlines).map(r => Chain(r, "\n\n"))
@@ -49,14 +45,17 @@ class SastToTextConverter(
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     convertInlineSeq(ctx, section.titleText.inl).mapc(inlinesAsToplevel)
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
-    val Slist(children) = slist
-    ctx.fold(children): (ctx, child) =>
+    ctx.fold(slist.items): (ctx, child) =>
       child match
-        case ListItem(_, Text(inl), None) =>
-          convertInlineSeq(ctx, inl)
-        case ListItem(_, text, Some(inner)) =>
-          val tctx = convertInlineSeq(ctx, text.inl)
-          tctx.data ++: convertSast(tctx, inner)
+        case ListItem(_, paragraph) =>
+          convertInlineSeq(ctx, paragraph.inlines)
+
+  override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF =
+    ctx.fold(deflist.items): (ctx, child) =>
+      child match
+          case DefinitionItem(_, text, inner) =>
+              val tctx = convertInlineSeq(ctx, text.inl)
+              tctx.data ++: convertSastSeq(tctx, inner)
 
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")

@@ -12,6 +12,14 @@ import scitzen.sast.Attribute.Named
 
 import java.nio.file.{Files, Path}
 
+object ProtoConverter:
+  def sublists(list: Seq[ListItem], acc: List[(ListItem, List[ListItem])]): List[(ListItem, List[ListItem])] =
+    list match
+      case Nil => acc.reverse
+      case head :: tail =>
+        val (children, rest) = tail.span(li => li.indent.startsWith(head.indent))
+        sublists(rest, (head, children) :: acc)
+
 abstract class ProtoConverter[BlockRes, InlineRes](
     articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,
@@ -53,7 +61,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def convertSast(ctx: Cta, singleSast: Sast): CtxCF =
     singleSast match
-      case _: SpaceComment => ctx.empty
+      case _: SpaceComment      => ctx.empty
       case paragraph: Paragraph => convertParagraph(ctx, paragraph)
       case block: Block =>
         if block.command == BCommand.Convert then
@@ -62,6 +70,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
       case directive: Directive => convertBlockDirective(ctx, directive)
       case section: Section     => convertSection(ctx, section)
       case slist: Slist         => convertSlist(ctx, slist)
+      case sdef: Sdefinition    => convertDefinitionList(ctx, sdef)
 
   def convertBlock(ctx: Cta, block: Block): CtxCF
   def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
@@ -69,6 +78,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertSection(ctx: Cta, section: Section): CtxCF
   def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF
   def convertSlist(ctx: Cta, slist: Slist): CtxCF
+  def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF
 
   def convertInlinesCombined(ctx: Cta, inlines: Iterable[Inline]): Ctx[BlockRes] =
     convertInlineSeq(ctx, inlines).map(v => inlineResToBlock(v))
@@ -160,7 +170,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         doc.resolve(attributes.target) match
           case None => convertInlineSeq(ctx, List(directive))
           case Some(file) =>
-            convertSast(ctx, Block(BCommand.Code, attributes, Fenced(Files.readString(file.absolute)))(directive.prov))
+            convertSast(ctx, Fenced(BCommand.Code, attributes, Files.readString(file.absolute), "", directive.prov))
 
       case other =>
         val resolution = References.resolve(directive, document = doc, directory = anal.directory).map: sr =>

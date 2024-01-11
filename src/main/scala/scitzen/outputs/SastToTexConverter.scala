@@ -81,32 +81,33 @@ class SastToTexConverter(
       val label = attr.plain("unique ref").map(l => s"\\label{$l}").toList
       pushed.retc(header) :++ Chain.from(label)
 
-  override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
-    val children = slist.items
-    children match
-      case Nil => ctx.ret(Chain.nil)
+  override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF = {
+    ctx.fold[DefinitionItem, String](deflist.items): (ctx, item) =>
+      val text  = convertInlineSeq(ctx, item.text.inl)
+      val inner = convertSastSeq(text, item.content)
+      inner.ret(
+        s"\\item[${text.data}]{}\\hfill{}" +: inner.data
+      )
+    .map: content =>
+      "\\begin{description}" +: content :+ "\\end{description}"
+  }
 
-      case ListItem(marker, _, None | Some(Slist(_))) :: _ =>
-        val listType = if marker.contains(".") then "enumerate"
+  override def convertSlist(ctx: Cta, slist: Slist): CtxCF = {
+    val recipes = ctx.fold[(ListItem, List[ListItem]), String](ProtoConverter.sublists(slist.items, Nil)):
+      case (ctx, (item, children)) =>
+        val para  = convertParagraph(ctx, item.paragraph)
+        val inner = convertSlist(para, Slist(children))
+        inner.ret(
+          s"\\item{${para.data}" +: inner.data
+        )
+
+    recipes.map: i =>
+      val listType =
+        if slist.items.headOption.map(_.marker.contains(".")).getOrElse(false)
+        then "enumerate"
         else "itemize"
-        s"\\begin{$listType}" +:
-        ctx.fold[ListItem, String](children) { (ctx, child) =>
-          val inlineCtx = convertInlinesCombined(ctx, child.text.inl).map(s => Chain(s"\\item{$s}"))
-          val contentCtx =
-            child.content.fold(inlineCtx.empty[String])((singleSast: Sast) => convertSast(inlineCtx, singleSast))
-          inlineCtx.data ++: contentCtx
-        } :+
-        s"\\end{$listType}"
-
-      case ListItem(_, _, _) :: _ =>
-        ctx.fold[ListItem, String](children) { (ctx, child) =>
-          val inlinesCtx = convertInlinesCombined(ctx, child.text.inl).map(s => s"\\item[$s]{}\\hfill{}")
-          inlinesCtx.data +: child.content.fold(inlinesCtx.empty[String])((singleSast: Sast) =>
-            convertSast(inlinesCtx, singleSast)
-          )
-        }.map { content =>
-          "\\begin{description}" +: content :+ "\\end{description}"
-        }
+      s"\\begin{$listType}" +: i :+ s"\\end{$listType}"
+  }
 
   override def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     directive.command match
@@ -126,7 +127,6 @@ class SastToTexConverter(
     convertSastSeq(ctx, content) :+
     s"\\end{$name}"
 
-
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
     val cctx = convertInlinesCombined(ctx, paragraph.inlines)
     // appending the newline adds two newlines in the source code to separate the paragraph from the following text
@@ -140,13 +140,13 @@ class SastToTexConverter(
 
   override def convertBlock(ctx: Cta, block: Block): CtxCS =
     val innerCtx: CtxCS =
-      block.content match
+      block match
         case Parsed(_, blockContent) =>
           block.command match
             case BCommand.Figure =>
               val (figContent, caption) =
                 blockContent.lastOption match
-                  case Some(Block(_, _, paragraph: Paragraph)) =>
+                  case Some(paragraph: Paragraph) =>
                     val captionstr = convertInlinesCombined(ctx, paragraph.inlines)
                     (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
                   case _ =>
@@ -169,7 +169,7 @@ class SastToTexConverter(
             case _ =>
               convertSastSeq(ctx, blockContent)
 
-        case Fenced(text) =>
+        case Fenced(_, _, text, _, _) =>
           val labeltext = block.attributes.plain("unique ref") match
             case None => text
             case Some(label) =>

@@ -8,7 +8,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.outputs.SastToTextConverter
 import scitzen.project.{Article, ArticleDirectory, Project}
 import scitzen.sast.Attribute.Nested
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, Parsed, Sast}
+import scitzen.sast.{Attribute, Attributes, BCommand, Fenced, Parsed, Sast, Block}
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
@@ -55,19 +55,19 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       return Nil
 
     val (resctx, transformed) = block match
-      case Block(_, _, Parsed(_, content)) =>
+      case Parsed(del, content) =>
         val resctx = new SastToTextConverter(
           ::(article.ref, Nil),
           ConversionAnalysis.minimal(project, articleDirectory),
           Attributes(project.config.attrs.raw ++ article.titled.map(_.attributes.raw).getOrElse(Nil))
         ).convertSastSeq(ConversionContext(()), content)
-        (Some(resctx), block.copy(content = Fenced(resctx.data.mkString("\n")))(block.prov))
+        (Some(resctx), Fenced(del.content.command, del.content.attributes, resctx.data.mkString("\n"), del.indent, del.prov))
       case other => (None, other)
 
     conversions.foldLeft(List[Sast](transformed)) { case (current, Nested(name, attrs)) =>
       current match
         case Nil => Nil
-        case List(block @ Block(_, _, Fenced(content))) =>
+        case List(block @ Fenced(_, _, content, _, _)) =>
           try
             cli.trace("applying conversion", name)
             modules.find(_.handles == name) match

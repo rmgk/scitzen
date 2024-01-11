@@ -29,21 +29,29 @@ class SastToScimConverter(bibDB: BibDB):
   def toScim(sast: Sast): Chain[String] =
     sast match
       case Section(title, prefix, attributes) =>
-        Chain(prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ attributesToScim(attributes, spacy = true, force = false, light = true)
+        Chain(prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ attributesToScim(
+          attributes,
+          spacy = true,
+          force = false,
+          light = true
+        )
 
       case paragraph: Paragraph =>
         inlineToScim(paragraph.inlines)
 
       case Slist(children) => Chain.from(children).flatMap {
-          case ListItem(marker, inner, None) =>
-            marker +: inlineToScim(inner.inl) :+ "\n"
+          case ListItem(marker, inner) =>
+            marker +: inlineToScim(inner.inlines)
+        }
 
-          case ListItem(marker, Text(inl), Some(rest)) =>
+      case Sdefinition(children) =>
+        Chain.from(children).flatMap {
+          case DefinitionItem(marker, Text(inl), content) =>
             Chain(
               Chain(marker),
               inlineToScim(inl),
               Chain("\n"),
-              toScim(rest)
+              toScimS(content)
             ).flatten
         }
 
@@ -63,25 +71,19 @@ class SastToScimConverter(bibDB: BibDB):
     }.mkString
 
   def convertBlock(sb: Block): Chain[String] =
-    sb.content match
-      case Parsed(delimiter, blockContent) =>
+    sb match
+      case Parsed(_, blockContent) =>
         val content = toScimS(blockContent).mkString
-        delimiter.charAt(0) match
-          case ':' =>
-            Chain(
-              "::",
-              BCommand.print(sb.command),
-              AttributesToScim(bibDB).convert(sb.attributes, force = false, spacy = false),
-              "\n",
-              addIndent(content, "\t"),
-              "::\n"
-            )
-          // space indented blocks are currently only used for description lists
-          // they are parsed and inserted as if the indentation was not present
-          case ' ' | '\t' =>
-            Chain(addIndent(content, delimiter))
+        Chain(
+          "::",
+          BCommand.print(sb.command),
+          AttributesToScim(bibDB).convert(sb.attributes, force = false, spacy = false),
+          "\n",
+          addIndent(content, "\t"),
+          "::\n"
+        )
 
-      case Fenced(text) =>
+      case Fenced(_, _, text, _, _) =>
         val delimiter = "```"
         Chain(
           delimiter,

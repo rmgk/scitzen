@@ -1,12 +1,15 @@
 package scitzen.sast
 
-import scitzen.parser.Atoms.Container
+import scitzen.parser.Atoms.{Container, Delimiter}
 import scitzen.parser.TimeParsers
 
-type Sast = Slist | Directive | Section | Block | SpaceComment | Paragraph
+type Sast = Slist | Directive | Section | SpaceComment | Paragraph | Block | Sdefinition
 
 case class Slist(items: Seq[ListItem])
-case class ListItem(marker: String, text: Text, content: Option[Sast])
+case class ListItem(marker: String, paragraph: Paragraph):
+  def indent: String = paragraph.content.head.indent
+case class Sdefinition(items: Seq[DefinitionItem])
+case class DefinitionItem(marker: String, text: Text, content: List[Sast])
 
 sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:
@@ -69,14 +72,25 @@ case class Paragraph(content: Seq[Container[Text | Directive]]):
     content.flatMap: cont =>
       cont.content match
         case dir: Directive => List(InlineText(cont.indent), dir, InlineText("\n"))
-        case text: Text => InlineText(cont.indent) +: text.inl :+ InlineText("\n")
+        case text: Text     => InlineText(cont.indent) +: text.inl :+ InlineText("\n")
 
-case class Block(command: BCommand, attributes: Attributes, content: BlockType)(val prov: Prov)
-
-sealed trait BlockType
-case class Fenced(content: String)                       extends BlockType
-case class Parsed(delimiter: String, content: Seq[Sast]) extends BlockType
 case class SpaceComment(content: String):
   override def toString: String = s"SpaceComment(${content.replace("\n", "\\n")})"
+
+trait Block {
+  def command: BCommand
+  def attributes: Attributes
+  def prov: Prov
+  def indent: String
+  def withAttributes(attr: Attributes): Block
+}
+
+case class Fenced(command: BCommand, attributes: Attributes, content: String, indent: String, prov: Prov) extends Block:
+  override def withAttributes(attr: Attributes): Block = copy(attributes = attr)
+case class Parsed(delimiter: Container[Delimiter], content: Seq[Sast]) extends Block:
+  export delimiter.content.{command, attributes}
+  export delimiter.{prov, indent}
+  override def withAttributes(attr: Attributes): Block =
+    Parsed(delimiter.copy(content = delimiter.content.copy(attributes = attr)), content)
 
 case class Prov(start: Int = -1, end: Int = -1)

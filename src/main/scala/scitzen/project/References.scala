@@ -54,7 +54,7 @@ object References:
     targetRef.sast match
       case sec: Section => Some:
           if sec.level == -1 then "" else sec.ref
-      case Block(_, attr, _) => attr.plain("unique ref")
+      case block: Block => block.attributes.plain("unique ref")
       case other =>
         cli.warn(s"can not refer to $other")
         None

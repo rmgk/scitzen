@@ -1,6 +1,6 @@
 package scitzen.blockconverters
 
-import scitzen.sast.{Attributes, BCommand, Block, Fenced, Sast}
+import scitzen.sast.{Attributes, BCommand, Block, Fenced, Prov, Sast}
 
 import java.nio.file.Files
 
@@ -11,7 +11,7 @@ object FileContentModule extends BlockConverterModule {
     import converterParams.*
     article.doc.resolve(attributes.target) match
       case Some(path) =>
-        List(Block(BCommand.Empty, Attributes.empty, Fenced(Files.readString(path.absolute)))(block.prov))
+        List(Fenced(BCommand.Empty, Attributes.empty, Files.readString(path.absolute), "", Prov()))
       case None => Nil
   }
 }
