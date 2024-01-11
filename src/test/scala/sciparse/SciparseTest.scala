@@ -14,7 +14,10 @@ class SciparseTest extends munit.FunSuite {
   val SastToScimConverter = scitzen.outputs.SastToScimConverter(BibDB.empty)
 
   test("basic directive") {
-    rewrap(""":emph{some plaintext; key= value ; key= "[value]";"[[1, 10, 20, 30, 80]]"  }""")
+    rewrap(
+      """:emph{some plaintext; key= value ; key= "[value]";"[[1, 10, 20, 30, 80]]"  }""",
+      """:emph{some plaintext; key=value ; key=value; [1, 10, 20, 30, 80]}"""
+    )
   }
 
   test("nested") {
@@ -118,14 +121,14 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
 """)
   }
 
-  def rewrap(input: String)(using Location) =
+  def rewrap(input: String, output: String | Null = null)(using Location) =
     try
       val res =
         Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
-      //println(res)
+      // println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "", "\n")
-      assertEquals(resultStr.trim, input.trim)
+      assertEquals(resultStr.trim, Option(output).getOrElse(input).trim)
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
 
   test("more headline weirdness") {
@@ -146,7 +149,6 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
     |
     |""".stripMargin)
   }
-
 
   test("text parser") {
     val ctx = Scx("actual text\n    \n").copy(tracing = false)

@@ -18,14 +18,12 @@ object AttributesParser {
   val unquotedInlines: Scip[List[Inline]] =
     InlineParsers.full(terminationCheckB)
 
-  val maybeQuoted: Scip[Option[String]] = Scip {
+  val quotes: Scip[String] = Scip {
     anySpacesF.run
-    val quotes = (("\"".all.rep.min(1) and "[".all) or "\"".all or Scip { true }).str.trace(s"opening quotes").run
-    if quotes.isEmpty
-    then None
-    else if quotes.endsWith("[")
-    then Some("]" + quotes.stripSuffix("["))
-    else Some(quotes)
+    val quotes = (("\"".all.rep.min(1) and "[".all) or "\"".all).str.trace(s"opening quotes").run
+    if quotes.endsWith("[")
+    then s"]${quotes.stripSuffix("[")}"
+    else quotes
 
   }
 
@@ -33,7 +31,7 @@ object AttributesParser {
     * but the closing quote must match the opening quote
     */
   val text: Scip[Text] = Scip {
-    val r = maybeQuoted.run match
+    val r = quotes.opt.run match
       case None => unquotedInlines
       case Some(closing) =>
         val closeP = seq(closing)
@@ -48,7 +46,7 @@ object AttributesParser {
   }.trace("text")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], Text]] =
-    (anySpacesB ifso braces.map(Left.apply)) | text.map(Right.apply)
+    (anySpacesB ifso (braces.map(Left.apply) | text.map(Right.apply)) )
 
   val namedAttributeStart: Scip[String] = Scip {
     verticalSpaces.orFail.run
@@ -78,7 +76,6 @@ object AttributesParser {
 
   val braces: Scip[Seq[Attribute]] = Scip {
     open.all.orFail.run
-    anySpacesF.run
     val res = listOf(attribute, min = 0).trace("bracelist").run
     anySpacesF.run
     close.all.orFail.run
@@ -121,7 +118,7 @@ object AttributeDeparser {
       candidate.view.map(_.apply()).find(parses)
 
     val candidates =
-      if value.startsWith(" ") || value.startsWith("{")
+      if value.startsWith("{")
       then List(() => s""""$value"""")
       else List(() => value, () => s""""$value"""")
 
