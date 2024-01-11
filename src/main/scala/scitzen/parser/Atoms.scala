@@ -1,7 +1,7 @@
 package scitzen.parser
 
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
-import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS, withProv}
+import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.sast.{Attribute, Attributes, BCommand, Directive, Fenced, Inline, InlineText, Parsed, Prov, Section, SpaceComment, Text}
 

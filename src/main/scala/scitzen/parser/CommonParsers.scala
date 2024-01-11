@@ -46,11 +46,4 @@ object CommonParsers {
   }
 
   inline def identifierB: Scip[Boolean] = Identifier.identifier
-
-  inline def withProv[T](inline parser: Scip[T]): Scip[(T, Prov)] = Scip {
-    val s = scx.index
-    val r = parser.run
-    val e = scx.index
-    r -> Prov(s, e)
-  }
 }
