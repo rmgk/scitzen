@@ -2,7 +2,7 @@ package scitzen.parser
 
 import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
 import scitzen.compat.Logging
-import scitzen.parser.Atoms.{Atom, Container, Delimited, ListAtom, SectionAtom, annotatedAtom}
+import scitzen.parser.Atoms.{Atom, Container, DefinitionListAtom, Delimited, ListAtom, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}
@@ -79,37 +79,33 @@ object Fusion {
           case ListAtom(_, _) =>
             val (list, rest) = fuseList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
+          case DefinitionListAtom(_, _) =>
+            ???
           case _: Text =>
-            val (containers, rest) = collectType[Text | Directive](atoms)
-            val text = Text(containers.iterator.flatMap: container =>
-              val inlines = container.content match
-                case text: Text           => text.inl
-                case directive: Directive => List(directive, InlineText("\n"))
-              if container.indent.isEmpty
-              then inlines
-              else InlineText(container.indent) +: inlines
-            .toSeq).fuse
+            val (containers, rest, text) = extractTextRun(atoms)
             fuseTop(
               rest,
               Block(BCommand.Empty, Attributes.empty, Paragraph(text))(combineProvidence(containers)) :: sastAcc
             )
   }
 
+  private def extractTextRun(atoms: Atoms) = {
+    val (containers, rest) = collectType[Text | Directive](atoms)
+    val text = Text(containers.iterator.flatMap: container =>
+      val inlines = container.content match
+        case text: Text => text.inl
+        case directive: Directive => List(directive, InlineText("\n"))
+      if container.indent.isEmpty
+      then inlines
+      else InlineText(container.indent) +: inlines
+    .toSeq).fuse
+    (containers, rest, text)
+  }
+
   @tailrec
   def fuseList(atoms: Atoms, acc: List[ListItem]): (Slist, Atoms) = {
     atoms match
       case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
-        if Text(content).plainString.stripTrailing().endsWith(":")
-        then
-          val nextIndent = tail.head.indent
-          val (inner, rest) = tail.collectWhile: cont =>
-            if cont.indent.startsWith(nextIndent) then
-              Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent))(cont.prov))
-            else None
-          val innerFused = fuseTop(inner, Nil)
-          val block      = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
-          fuseList(rest, ListItem(s"$indent$pfx", Text(content), Some(block)) :: acc)
-        else
           val (textSnippets, rest) = collectType[Text | Directive](tail)
           val snippets =
             textSnippets.flatMap { cont =>
@@ -126,40 +122,27 @@ object Fusion {
             }
           fuseList(rest, ListItem(s"$indent$pfx", Text(content concat snippets), None) :: acc)
       case other =>
-        (ListConverter.listtoSast(acc.reverse), atoms)
+        (Slist(acc.reverse), atoms)
   }
 
-  object ListConverter {
-
-    private def splitted[ID, Item](items: List[(ID, Item)]): Seq[(Item, Seq[Item])] =
-      items match {
-        case Nil => Nil
-        case (marker, item) :: tail =>
-          val (take, drop) = tail.span { case (c, _) => marker != c }
-          (item -> take.map(_._2)) +: splitted(drop)
-      }
-
-    def listtoSast(items: Seq[ListItem]): Slist = {
-      /* defines which characters are distinguishing list levels */
-      def norm(m: String) = m.replaceAll("""[^\s\*\.•\-]""", "")
-
-      val split = splitted(items.iterator.map(i => (norm(i.marker), i)).toList)
-
-      if (split.isEmpty) Slist(Nil)
-      else otherList(split)
-    }
-
-    private def otherList(split: Seq[(ListItem, Seq[ListItem])]): Slist = {
-      val listItems = split.map {
-        case (item, children) =>
-          val contentSast = item.content
-          val childSasts = if (children.isEmpty) None
-          else Some(listtoSast(children))
-          ListItem(item.marker, item.text, contentSast.orElse(childSasts))
-      }
-      scitzen.sast.Slist(listItems)
-    }
-  }
+//  @tailrec
+//  def fuseDefinitionList(atoms: Atoms, acc: List[ListItem]): (Slist, Atoms) = {
+//    atoms match
+//      case (cont@Container(indent, ListAtom(pfx, content))) #:: tail =>
+//        if Text(content).plainString.stripTrailing().endsWith(":")
+//        then
+//          val nextIndent = tail.head.indent
+//          val (inner, rest) = tail.collectWhile: cont =>
+//            if cont.indent.startsWith(nextIndent) then
+//              Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent)))
+//            else None
+//          val innerFused = fuseTop(inner, Nil)
+//          val block = Block(BCommand.Empty, Attributes.empty, scitzen.sast.Parsed(nextIndent, innerFused))(Prov())
+//          fuseList(rest, ListItem(s"$indent$pfx", Text(content), Some(block)) :: acc)
+//
+//      case other =>
+//        (ListConverter.listtoSast(acc.reverse), atoms)
+//  }
 
   def fuseDelimited(indent: String, del: Delimited, prov: Prov, atoms: LazyList[Container[Atom]]) = {
     val (innerAtoms, rest) = atoms.span:
@@ -168,7 +151,7 @@ object Fusion {
       case other => true
     val adaptedIndent = innerAtoms.map:
       case cont @ Container(cindent, content) =>
-        Container(cindent.stripPrefix(indent).stripPrefix("\t"), content)(cont.prov)
+        Container(cindent.stripPrefix(indent).stripPrefix("\t"), content, cont.prov)
     val innerSast = fuseTop(adaptedIndent, Nil)
     (
       Block(del.command, del.attributes, scitzen.sast.Parsed(del.delimiter, innerSast))(prov),

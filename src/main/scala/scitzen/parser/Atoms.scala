@@ -28,8 +28,10 @@ object Atoms {
   }
 
   type Atom =
-    Directive | Text | Delimited | Block | ListAtom | Section | SpaceComment
-  case class Container[+A <: Atom](indent: String, content: A)(val prov: Prov)
+    Directive | Text | Delimited | ListAtom | Section | SpaceComment | DefinitionListAtom | Block
+  case class Container[+A <: Atom](indent: String, content: A, prov: Prov)
+  object Container:
+    def unapply[A <: Atom](cont: Container[A]): (String, A) = (cont.indent, cont.content)
 
   inline def annotatedAtom[A <: Atom](inline stripIndent: Boolean)(inline atomParser: Scip[A]): Scip[Container[A]] =
     Scip {
@@ -40,11 +42,11 @@ object Atoms {
         else CommonParsers.verticalSpaces.str.lookahead.run
       val atom = atomParser.run
       val end  = scx.index
-      Container(indent, atom)(Prov(start, end))
+      Container(indent, atom, Prov(start, end))
     }
 
-  case class SectionAtom(prefix: String, content: Seq[Inline])
-  case class ListAtom(prefix: String, content: Seq[Inline])
+  case class ListAtom(marker: String, content: Seq[Inline])
+  case class DefinitionListAtom(marker: String, content: Seq[Inline])
 
   val textline: Scip[List[Inline]] = Scip {
     val inlines = InlineParsers.full(eol, includeEnd = true).run
@@ -54,17 +56,20 @@ object Atoms {
 
   def section: Scip[Section] =
     Scip {
-      val prefix  = choice("= ", "== ", "# ", "## ", "### ").str.run
+      val marker  = choice("= ", "== ", "# ", "## ", "### ").str.run
       val inlines = textline.run
       val attrl   = AttributesParser.namedAttribute.list(eol).run
-      Section(Text(inlines), prefix.substring(0, prefix.length - 1), Attributes(attrl))
+      Section(Text(inlines), marker.substring(0, marker.length - 1), Attributes(attrl))
     }
 
-  def list: Scip[ListAtom] =
+  def list: Scip[ListAtom | DefinitionListAtom] =
     Scip {
-      val prefix  = (("-•*".any or (CommonParsers.digits and ".".all)) and " ".all).str.run
+      val marker  = (("-•*".any or (CommonParsers.digits and ".".all)) and " ".all).str.run
       val inlines = textline.run
-      ListAtom(prefix, inlines)
+      if scx.input(scx.index - 2) == ':' then
+        DefinitionListAtom(s"$marker", inlines)
+      else
+        ListAtom(s"$marker", inlines)
     }
 
   def unquoted: Scip[Text] = textline.map(Text.apply)
@@ -76,7 +81,7 @@ object Atoms {
         (CommonParsers.verticalSpaces and DirectiveParsers.commentContent.attempt and eol)
     ).rep.min(1).str.run
     val prov = Prov(start, scx.index)
-    Container("", SpaceComment(content))(prov)
+    Container("", SpaceComment(content), prov)
   }
 
   case class Delimited(delimiter: String, command: BCommand, attributes: Attributes)
@@ -114,6 +119,6 @@ object Atoms {
       attributes = Attributes(attr.getOrElse(Nil)),
       content = Fenced(strippedContent)
     )(prov)
-    Container(indent, fen)(prov)
+    Container(indent, fen, prov)
   }
 }
