@@ -53,7 +53,7 @@ class SastToTextConverter(
   override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF =
     ctx.fold(deflist.items): (ctx, child) =>
       child match
-          case DefinitionItem(_, text, inner) =>
+          case DefinitionItem(_, _, text, inner) =>
               val tctx = convertInlineSeq(ctx, text.inl)
               tctx.data ++: convertSastSeq(tctx, inner)
 

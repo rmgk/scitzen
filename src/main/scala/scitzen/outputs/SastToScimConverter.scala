@@ -46,9 +46,9 @@ class SastToScimConverter(bibDB: BibDB):
 
       case Sdefinition(children) =>
         Chain.from(children).flatMap {
-          case DefinitionItem(marker, Text(inl), content) =>
+          case DefinitionItem(marker, indent, Text(inl), content) =>
             Chain(
-              Chain(marker),
+              Chain(indent, marker),
               inlineToScim(inl),
               Chain("\n"),
               toScimS(content)

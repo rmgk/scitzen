@@ -8,7 +8,7 @@ type Sast = Slist | Directive | Section | SpaceComment | Paragraph | Block | Sde
 case class Slist(items: Seq[ListItem])
 case class ListItem(marker: String, indent: String, paragraph: Paragraph)
 case class Sdefinition(items: Seq[DefinitionItem])
-case class DefinitionItem(marker: String, text: Text, content: List[Sast])
+case class DefinitionItem(marker: String, indent: String, text: Text, content: List[Sast])
 
 sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:

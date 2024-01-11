@@ -123,11 +123,11 @@ object Fusion {
       case (cont @ Container(indent, DefinitionListAtom(pfx, content))) #:: tail =>
         val nextIndent = tail.head.indent
         val (inner, rest) = tail.collectWhile: cont =>
-          if cont.indent.startsWith(nextIndent) then
-            Some(cont.copy(indent = cont.indent.stripPrefix(nextIndent)))
+          if cont.indent.startsWith(nextIndent)
+          then Some(cont)
           else None
         val innerFused = fuseTop(inner, Nil)
-        fuseDefinitionList(rest, DefinitionItem(s"$indent$pfx", Text(content), innerFused) :: acc)
+        fuseDefinitionList(rest, DefinitionItem(s"$pfx", indent, Text(content), innerFused) :: acc)
 
       case other =>
         (Sdefinition(acc.reverse), atoms)

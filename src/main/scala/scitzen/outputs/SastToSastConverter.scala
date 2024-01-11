@@ -63,7 +63,7 @@ class SastToSastConverter(articleRef: ArticleRef):
         ctx.fold[DefinitionItem, DefinitionItem](children) { (origctx, origchild) =>
           val text = convertText(origchild.text, origctx)
           val content = convertSeq(origchild.content)(text)
-          content.ret(Chain(DefinitionItem(origchild.marker, text.data, content.data.toList)))
+          content.ret(Chain(DefinitionItem(origchild.marker, origchild.indent, text.data, content.data.toList)))
         }.map { cs =>
           Sdefinition(cs.toSeq)
         }
