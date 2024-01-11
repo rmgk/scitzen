@@ -17,7 +17,9 @@ object ProtoConverter:
     list match
       case Nil => acc.reverse
       case head :: tail =>
-        val (children, rest) = tail.span(li => li.indent.startsWith(head.indent))
+        val (children, rest) = tail.span: li =>
+          li.indent.length > head.indent.length && li.indent.startsWith(head.indent)
+
         sublists(rest, (head, children) :: acc)
 
 abstract class ProtoConverter[BlockRes, InlineRes](
