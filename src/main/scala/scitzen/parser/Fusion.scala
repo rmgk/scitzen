@@ -18,13 +18,13 @@ import scala.reflect.TypeTest
 object Fusion {
 
   def run(project: Project, absolute: List[Path]): Unit =
-    absolute.map: abs =>
-      val pp  = project.asProjectPath(abs)
-      val doc = Document(pp)
-      val res = {
-        val content = doc.content
+    absolute.foreach: abs =>
+      val pp      = project.asProjectPath(abs)
+      val doc     = Document(pp)
+      val content = doc.content
 
-        def newscx() = Scx(
+      parser.runInContext:
+        Scx(
           input = content,
           index = 0,
           maxpos = content.length,
@@ -32,11 +32,7 @@ object Fusion {
           lastFail = -1,
           tracing = false
         )
-
-        parser.runInContext(newscx())
-      }
-      res.foreach(el => println(el))
-    ()
+      .foreach(el => println(el))
 
   def parser: Scip[List[Sast]] = Scip {
     def atoms(): Atoms =
