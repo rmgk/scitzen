@@ -86,7 +86,7 @@ object Fusion {
             val (inner, rest) = collectType[Text | Directive](atoms)
             fuseTop(
               rest,
-              Block(BCommand.Empty, Attributes.empty, Paragraph(inner))(Prov()) :: sastAcc
+              Paragraph(inner) :: sastAcc
             )
   }
 

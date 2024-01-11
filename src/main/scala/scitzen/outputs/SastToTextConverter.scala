@@ -40,10 +40,11 @@ class SastToTextConverter(
     if !keepBlock then ctx.empty
     else
       blockType match
-        case paragraph: Paragraph =>
-          convertInlinesCombined(ctx, paragraph.inlines).map(r => Chain(r, "\n\n"))
         case Parsed(_, blockContent) => convertSastSeq(ctx, blockContent)
         case Fenced(text)            => ctx.retc(text)
+
+  override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
+    convertInlinesCombined(ctx, paragraph.inlines).map(r => Chain(r, "\n\n"))
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     convertInlineSeq(ctx, section.titleText.inl).mapc(inlinesAsToplevel)

@@ -36,6 +36,13 @@ class SastToSastConverter(articleRef: ArticleRef):
     sast match
       case sc: SpaceComment => ctx.ret(sc)
 
+      case Paragraph(content) =>
+        val res: Ctx[Chain[Container[Text | Directive]]] = ctx.fold(content): (ctx, cont) =>
+          cont.content match
+            case dir: Directive => convertDirective(dir)(ctx).map(res => Chain(cont.copy(content = res)))
+            case text: Text     => convertText(text, ctx).map(res => Chain(cont.copy(content = res)))
+        res.map(il => Paragraph(il.toSeq))
+
       case tlBlock: Block =>
         convertBlock(tlBlock)(ctx)
 
@@ -71,13 +78,6 @@ class SastToSastConverter(articleRef: ArticleRef):
     val refctx: Ctx[Block] = ensureBlockRef(block, ctx)
     val ublock             = refctx.data
     val resctx = ublock.content match
-      case Paragraph(content) =>
-        val res: Ctx[Chain[Container[Text | Directive]]] = refctx.fold(content): (ctx, cont) =>
-          cont.content match
-            case dir: Directive => convertDirective(dir)(ctx).map(res => Chain(cont.copy(content = res)))
-            case text: Text => convertText(text, ctx).map(res => Chain(cont.copy(content = res)))
-        res.map(il => ublock.copy(content = Paragraph(il.toSeq))(ublock.prov))
-
       case Parsed(delimiter, blockContent) =>
         convertSeq(blockContent)(refctx).map(bc =>
           ublock.copy(content = Parsed(delimiter, bc.toList))(ublock.prov)

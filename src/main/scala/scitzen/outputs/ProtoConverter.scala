@@ -54,6 +54,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertSast(ctx: Cta, singleSast: Sast): CtxCF =
     singleSast match
       case _: SpaceComment => ctx.empty
+      case paragraph: Paragraph => convertParagraph(ctx, paragraph)
       case block: Block =>
         if block.command == BCommand.Convert then
           convertSastSeq(ctx, anal.block.substitute(block))
@@ -66,6 +67,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     convertInlineDirective(ctx, directive).map(v => Chain(inlinesAsToplevel(v)))
   def convertSection(ctx: Cta, section: Section): CtxCF
+  def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF
   def convertSlist(ctx: Cta, slist: Slist): CtxCF
 
   def convertInlinesCombined(ctx: Cta, inlines: Iterable[Inline]): Ctx[BlockRes] =

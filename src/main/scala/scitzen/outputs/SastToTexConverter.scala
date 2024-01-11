@@ -126,20 +126,21 @@ class SastToTexConverter(
     convertSastSeq(ctx, content) :+
     s"\\end{$name}"
 
+
+  override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
+    val cctx = convertInlinesCombined(ctx, paragraph.inlines)
+    // appending the newline adds two newlines in the source code to separate the paragraph from the following text
+    // the latexenc text does not have any newlines at the end because of the .trim
+    if !flags.hardwrap then cctx.map(c => Chain("", c, ""))
+    else
+      cctx.map { text =>
+        val latexenc = text.trim.replace("\n", "\\newline{}\n")
+        Chain("\n\\noindent", latexenc, "")
+      }
+
   override def convertBlock(ctx: Cta, block: Block): CtxCS =
     val innerCtx: CtxCS =
       block.content match
-        case paragraph: Paragraph =>
-          val cctx = convertInlinesCombined(ctx, paragraph.inlines)
-          // appending the newline adds two newlines in the source code to separate the paragraph from the following text
-          // the latexenc text does not have any newlines at the end because of the .trim
-          if !flags.hardwrap then cctx.map(c => Chain("", c, ""))
-          else
-            cctx.map { text =>
-              val latexenc = text.trim.replace("\n", "\\newline{}\n")
-              Chain("\n\\noindent", latexenc, "")
-            }
-
         case Parsed(_, blockContent) =>
           block.command match
             case BCommand.Figure =>

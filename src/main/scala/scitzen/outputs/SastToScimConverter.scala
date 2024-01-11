@@ -31,6 +31,9 @@ class SastToScimConverter(bibDB: BibDB):
       case Section(title, prefix, attributes) =>
         Chain(prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ attributesToScim(attributes, spacy = true, force = false, light = true)
 
+      case paragraph: Paragraph =>
+        inlineToScim(paragraph.inlines)
+
       case Slist(children) => Chain.from(children).flatMap {
           case ListItem(marker, inner, None) =>
             marker +: inlineToScim(inner.inl) :+ "\n"
@@ -61,13 +64,6 @@ class SastToScimConverter(bibDB: BibDB):
 
   def convertBlock(sb: Block): Chain[String] =
     sb.content match
-      case paragraph: Paragraph =>
-        val attrres = attributesToScim(sb.attributes, spacy = false, force = false)
-        val inner   = inlineToScim(paragraph.inlines)
-        if attrres.nonEmpty
-        then Chain(attrres, Chain("\n"), inner).flatten
-        else inner
-
       case Parsed(delimiter, blockContent) =>
         val content = toScimS(blockContent).mkString
         delimiter.charAt(0) match

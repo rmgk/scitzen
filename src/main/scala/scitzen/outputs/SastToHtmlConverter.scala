@@ -148,7 +148,6 @@ class SastToHtmlConverter(
             convertSastSeq(ctx, content)
           case Fenced(content) =>
             ctx.retc(Sag.String(content))
-          case _ => ???
         inner.mapc(i => Sag.blockquote(i))
 
       case BCommand.Embed =>
@@ -167,9 +166,10 @@ class SastToHtmlConverter(
     }
   end convertBlock
 
-  def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block.content match
-    case paragraph: Paragraph => convertInlineSeq(ctx, paragraph.inlines).map(cf => Chain(Sag.p(cf)))
+  override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
+    convertInlineSeq(ctx, paragraph.inlines).map(cf => Chain(Sag.p(cf)))
 
+  def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block.content match
     case Parsed(delimiter, blockContent) =>
       val label = block.attributes.plain("label")
       if block.command == BCommand.Figure
