@@ -4,7 +4,10 @@ import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
 import scitzen.project.ArticleRef
 import scitzen.sast.DCommand.{Include, Lookup, Other}
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, DefinitionItem, Directive, Fenced, InlineText, ListItem, Paragraph, Parsed, Sast, Sdefinition, Section, Slist, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Block, FusedDefinitionItem, Directive, Fenced, InlineText, FusedListItem, Paragraph,
+  Parsed, Sast, FusedDefinitions, Section, FusedList, SpaceComment, Text
+}
 
 class SastToTextConverter(
     articleRef: ::[ArticleRef],
@@ -36,26 +39,26 @@ class SastToTextConverter(
     if !keepBlock then ctx.empty
     else
       block match
-        case Parsed(_, blockContent) => convertSastSeq(ctx, blockContent)
-        case Fenced(_, _, text, _, _)            => ctx.retc(text)
+        case Parsed(_, blockContent)  => convertSastSeq(ctx, blockContent)
+        case Fenced(_, _, text, _, _) => ctx.retc(text)
 
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
     convertInlinesCombined(ctx, paragraph.inlines).map(r => Chain(r, "\n\n"))
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     convertInlineSeq(ctx, section.titleText.inl).mapc(inlinesAsToplevel)
-  override def convertSlist(ctx: Cta, slist: Slist): CtxCF =
+  override def convertSlist(ctx: Cta, slist: FusedList): CtxCF =
     ctx.fold(slist.items): (ctx, child) =>
       child match
-        case ListItem(_, _, paragraph) =>
-          convertInlineSeq(ctx, paragraph.inlines)
+        case fli: FusedListItem =>
+          convertInlineSeq(ctx, fli.paragraph.inlines)
 
-  override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF =
+  override def convertDefinitionList(ctx: Cta, deflist: FusedDefinitions): CtxCF =
     ctx.fold(deflist.items): (ctx, child) =>
       child match
-          case DefinitionItem(_, _, text, inner) =>
-              val tctx = convertInlineSeq(ctx, text.inl)
-              tctx.data ++: convertSastSeq(tctx, inner)
+        case FusedDefinitionItem(_, _, text, inner) =>
+          val tctx = convertInlineSeq(ctx, text.inl)
+          tctx.data ++: convertSastSeq(tctx, inner)
 
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")

@@ -6,8 +6,8 @@ import de.rmgk.options.*
 import scitzen.cli.ConvertProject.executeConversions
 import scitzen.compat.Logging
 import scitzen.compat.Logging.{cli, given}
-import scitzen.parser.Fusion
 import scitzen.project.Project
+import scitzen.sast.Fusion
 
 import java.nio.file.{Files, Path}
 

@@ -1,14 +1,14 @@
-package scitzen.parser
+package scitzen.sast
 
 import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
 import scitzen.compat.Logging
 import scitzen.parser.Atoms.{Atom, Container, DefinitionListAtom, Delimiter, ListAtom, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
-import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
+import scitzen.parser.{Atoms, AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}
 import scitzen.sast.{
-  Attribute, Attributes, BCommand, DefinitionItem, Directive, Fenced, Inline, InlineText, ListItem, Paragraph, Parsed,
-  Prov, Sast, Sdefinition, Section, Slist, SpaceComment, Text
+  Attribute, Attributes, BCommand, Directive, Fenced, FusedDefinitionItem, FusedDefinitions, FusedList, FusedListItem,
+  Inline, InlineText, Paragraph, Parsed, Prov, Sast, Section, SpaceComment, Text
 }
 
 import java.nio.file.Path
@@ -97,20 +97,20 @@ object Fusion {
   }
 
   @tailrec
-  def fuseList(atoms: Atoms, acc: List[ListItem]): (Slist, Atoms) = {
+  def fuseList(atoms: Atoms, acc: List[FusedListItem]): (FusedList, Atoms) = {
     atoms match
-      case (cont @ Container(indent, ListAtom(pfx, content))) :: tail =>
+      case (cont @ Container(indent, la: ListAtom)) :: tail =>
         val (textSnippets, rest) = collectType[Text | Directive](tail)
         fuseList(
           rest,
-          ListItem(pfx, indent, Paragraph(Container("", Text(content), cont.prov) +: textSnippets)) :: acc
+          FusedListItem(cont.copy(content = la), textSnippets) :: acc
         )
       case other =>
-        (Slist(acc.reverse), atoms)
+        (FusedList(acc.reverse), atoms)
   }
 
   @tailrec
-  def fuseDefinitionList(atoms: Atoms, acc: List[DefinitionItem]): (Sdefinition, Atoms) = {
+  def fuseDefinitionList(atoms: Atoms, acc: List[FusedDefinitionItem]): (FusedDefinitions, Atoms) = {
     atoms match
       case (cont @ Container(indent, DefinitionListAtom(pfx, content))) :: tail =>
         val nextIndent = tail.head.indent
@@ -119,10 +119,10 @@ object Fusion {
           then Some(cont)
           else None
         val innerFused = fuseTop(inner, Nil)
-        fuseDefinitionList(rest, DefinitionItem(s"$pfx", indent, Text(content), innerFused) :: acc)
+        fuseDefinitionList(rest, FusedDefinitionItem(s"$pfx", indent, Text(content), innerFused) :: acc)
 
       case other =>
-        (Sdefinition(acc.reverse), atoms)
+        (FusedDefinitions(acc.reverse), atoms)
   }
 
   def fuseDelimited(indent: String, del: Delimiter, prov: Prov, atoms: Atoms) = {

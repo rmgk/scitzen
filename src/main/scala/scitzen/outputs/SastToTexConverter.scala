@@ -81,8 +81,8 @@ class SastToTexConverter(
       val label = attr.plain("unique ref").map(l => s"\\label{$l}").toList
       pushed.retc(header) :++ Chain.from(label)
 
-  override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF = {
-    ctx.fold[DefinitionItem, String](deflist.items): (ctx, item) =>
+  override def convertDefinitionList(ctx: Cta, deflist: FusedDefinitions): CtxCF = {
+    ctx.fold[FusedDefinitionItem, String](deflist.items): (ctx, item) =>
       val text  = convertInlineSeq(ctx, item.text.inl)
       val inner = convertSastSeq(text, item.content)
       inner.ret(
@@ -92,12 +92,12 @@ class SastToTexConverter(
       "\\begin{description}" +: content :+ "\\end{description}"
   }
 
-  override def convertSlist(ctx: Cta, slist: Slist): CtxCF = {
+  override def convertSlist(ctx: Cta, slist: FusedList): CtxCF = {
     if slist.items.isEmpty then return ctx.empty
-    val recipes = ctx.fold[(ListItem, List[ListItem]), String](ProtoConverter.sublists(slist.items, Nil)):
+    val recipes = ctx.fold[(FusedListItem, List[FusedListItem]), String](ProtoConverter.sublists(slist.items, Nil)):
       case (ctx, (item, children)) =>
         val para  = convertInlinesCombined(ctx, item.paragraph.inlines)
-        val inner = convertSlist(para, Slist(children))
+        val inner = convertSlist(para, FusedList(children))
         inner.ret(
           s"\\item{${para.data}}" +: inner.data
         )

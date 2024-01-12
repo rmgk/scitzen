@@ -13,7 +13,7 @@ import scitzen.sast.Attribute.Named
 import java.nio.file.{Files, Path}
 
 object ProtoConverter:
-  def sublists(list: Seq[ListItem], acc: List[(ListItem, List[ListItem])]): List[(ListItem, List[ListItem])] =
+  def sublists(list: Seq[FusedListItem], acc: List[(FusedListItem, List[FusedListItem])]): List[(FusedListItem, List[FusedListItem])] =
     list match
       case Nil => acc.reverse
       case head :: tail =>
@@ -71,16 +71,16 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         else convertBlock(ctx, block)
       case directive: Directive => convertBlockDirective(ctx, directive)
       case section: Section     => convertSection(ctx, section)
-      case slist: Slist         => convertSlist(ctx, slist)
-      case sdef: Sdefinition    => convertDefinitionList(ctx, sdef)
+      case slist: FusedList         => convertSlist(ctx, slist)
+      case sdef: FusedDefinitions    => convertDefinitionList(ctx, sdef)
 
   def convertBlock(ctx: Cta, block: Block): CtxCF
   def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     convertInlineDirective(ctx, directive).map(v => Chain(inlinesAsToplevel(v)))
   def convertSection(ctx: Cta, section: Section): CtxCF
   def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF
-  def convertSlist(ctx: Cta, slist: Slist): CtxCF
-  def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF
+  def convertSlist(ctx: Cta, slist: FusedList): CtxCF
+  def convertDefinitionList(ctx: Cta, deflist: FusedDefinitions): CtxCF
 
   def convertInlinesCombined(ctx: Cta, inlines: Iterable[Inline]): Ctx[BlockRes] =
     convertInlineSeq(ctx, inlines).map(v => inlineResToBlock(v))

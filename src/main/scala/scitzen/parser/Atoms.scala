@@ -41,8 +41,8 @@ object Atoms {
       Container(indent, atom, Prov(start, end))
     }
 
-  case class ListAtom(marker: String, content: Seq[Inline])
-  case class DefinitionListAtom(marker: String, content: Seq[Inline])
+  case class ListAtom(marker: String, text: Seq[Inline])
+  case class DefinitionListAtom(marker: String, text: Seq[Inline])
 
   val textline: Scip[List[Inline]] = Scip {
     val inlines = InlineParsers.full(eol).run

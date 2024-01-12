@@ -10,7 +10,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path, StandardOpenOption}
 import scala.jdk.CollectionConverters.*
 import scitzen.compat.Logging.given
-import scitzen.parser.Fusion.Atoms
+import scitzen.sast.Fusion.Atoms
 
 object Format:
 

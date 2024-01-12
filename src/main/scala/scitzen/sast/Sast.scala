@@ -1,14 +1,17 @@
 package scitzen.sast
 
-import scitzen.parser.Atoms.{Container, Delimiter}
+import scitzen.parser.Atoms.{Container, Delimiter, ListAtom}
 import scitzen.parser.TimeParsers
 
-type Sast = Slist | Directive | Section | SpaceComment | Paragraph | Block | Sdefinition
+type Sast = FusedList | Directive | Section | SpaceComment | Paragraph | Block | FusedDefinitions
 
-case class Slist(items: Seq[ListItem])
-case class ListItem(marker: String, indent: String, paragraph: Paragraph)
-case class Sdefinition(items: Seq[DefinitionItem])
-case class DefinitionItem(marker: String, indent: String, text: Text, content: List[Sast])
+case class FusedList(items: Seq[FusedListItem])
+case class FusedListItem(head: Container[ListAtom], rest: Seq[Container[Text | Directive]]):
+  def indent: String = head.indent
+  def marker: String = head.content.marker
+  def paragraph: Paragraph = Paragraph(Container("", Text(head.content.text), head.prov) +: rest)
+case class FusedDefinitions(items: Seq[FusedDefinitionItem])
+case class FusedDefinitionItem(marker: String, indent: String, text: Text, content: List[Sast])
 
 sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:

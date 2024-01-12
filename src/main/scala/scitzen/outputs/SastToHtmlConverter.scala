@@ -101,8 +101,8 @@ class SastToHtmlConverter(
       case 6 => Sag.h6(id = section.ref, innerFrags, link)
     (header +: tMeta(inlineCtx, section)).push(section)
 
-  override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF = {
-    ctx.fold[DefinitionItem, Recipe](deflist.items): (ctx, item) =>
+  override def convertDefinitionList(ctx: Cta, deflist: FusedDefinitions): CtxCF = {
+    ctx.fold[FusedDefinitionItem, Recipe](deflist.items): (ctx, item) =>
       val text  = convertInlineSeq(ctx, item.text.inl)
       val inner = convertSastSeq(text, item.content)
       inner.ret(Chain(Sag.dt(text.data), Sag.dd(inner.data)))
@@ -110,11 +110,11 @@ class SastToHtmlConverter(
       Sag.dl(children)
   }
 
-  override def convertSlist(ctx: Cta, slist: Slist): CtxCF = {
-    val recipes = ctx.fold[(ListItem, List[ListItem]), Recipe](ProtoConverter.sublists(slist.items, Nil)):
+  override def convertSlist(ctx: Cta, slist: FusedList): CtxCF = {
+    val recipes = ctx.fold[(FusedListItem, List[FusedListItem]), Recipe](ProtoConverter.sublists(slist.items, Nil)):
       case (ctx, (item, children)) =>
         val para  = convertInlineSeq(ctx, item.paragraph.inlines)
-        val inner = convertSlist(para, Slist(children))
+        val inner = convertSlist(para, FusedList(children))
         inner.retc(Sag.li(para.data, inner.data))
 
     recipes.mapc: i =>
