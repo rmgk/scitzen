@@ -113,7 +113,7 @@ class SastToHtmlConverter(
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF = {
     val recipes = ctx.fold[(ListItem, List[ListItem]), Recipe](ProtoConverter.sublists(slist.items, Nil)):
       case (ctx, (item, children)) =>
-        val para  = convertParagraph(ctx, item.paragraph)
+        val para  = convertInlineSeq(ctx, item.paragraph.inlines)
         val inner = convertSlist(para, Slist(children))
         inner.retc(Sag.li(para.data, inner.data))
 
