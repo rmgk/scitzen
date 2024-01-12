@@ -47,9 +47,13 @@ case class Indent(list: Int, listCheck: List[String], definition: Int, defCheck:
       case ListAtom(marker, _) =>
         (check2.formatLi, check2.copy(list = check2.list + 1, listCheck = container.head.indent :: check2.listCheck))
       case _: DefinitionListAtom =>
+        val nextIndent = container.tail.headOption.map(_.indent).getOrElse("")
+        val form       = check2.format
         (
-          check2.format,
-          check2.copy(definition = check2.definition + 1, defCheck = container.tail.head.indent :: check2.defCheck)
+          form,
+          if nextIndent.length > form.length && nextIndent.startsWith(form)
+          then check2.copy(definition = check2.definition + 1, defCheck = nextIndent :: check2.defCheck)
+          else check2
         )
       case other =>
         (check2.format, check2)
