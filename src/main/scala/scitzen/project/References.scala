@@ -1,13 +1,13 @@
 package scitzen.project
 
 import scitzen.compat.Logging.cli
-import scitzen.parser.Atoms.Atom
-import scitzen.sast.{Block, Directive, Sast, Section}
+import scitzen.parser.Atoms.{Atom, Delimiter}
+import scitzen.sast.{Block, Directive, Fenced, Sast, Section}
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters.*
 
-case class SastRef(sast: Atom, articleRef: ArticleRef):
+case class SastRef(atom: Atom, articleRef: ArticleRef):
   def scope = articleRef.document.path
 
 object References:
@@ -52,10 +52,11 @@ object References:
         (if bestOnly.size == 1 then bestOnly else sorted).map(_._1)
 
   def getLabel(targetRef: SastRef): Option[String] =
-    targetRef.sast match
+    targetRef.atom match
       case sec: Section => Some:
           if sec.level == -1 then "" else sec.ref
-      case block: Block => block.attributes.plain("unique ref")
+      case block: Fenced => block.attributes.plain("unique ref")
+      case block: Delimiter => block.attributes.plain("unique ref")
       case other =>
         cli.warn(s"can not refer to $other")
         None

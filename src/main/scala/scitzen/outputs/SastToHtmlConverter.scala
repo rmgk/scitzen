@@ -10,6 +10,7 @@ import scitzen.project.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 import scitzen.parser.Atoms
+import scitzen.parser.Atoms.Delimiter
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named
@@ -102,7 +103,7 @@ class SastToHtmlConverter(
 
   override def convertDefinitionList(ctx: Cta, deflist: Sdefinition): CtxCF = {
     ctx.fold[DefinitionItem, Recipe](deflist.items): (ctx, item) =>
-      val text = convertInlineSeq(ctx, item.text.inl)
+      val text  = convertInlineSeq(ctx, item.text.inl)
       val inner = convertSastSeq(text, item.content)
       inner.ret(Chain(Sag.dt(text.data), Sag.dd(inner.data)))
     .mapc: children =>
@@ -112,7 +113,7 @@ class SastToHtmlConverter(
   override def convertSlist(ctx: Cta, slist: Slist): CtxCF = {
     val recipes = ctx.fold[(ListItem, List[ListItem]), Recipe](ProtoConverter.sublists(slist.items, Nil)):
       case (ctx, (item, children)) =>
-        val para = convertParagraph(ctx, item.paragraph)
+        val para  = convertParagraph(ctx, item.paragraph)
         val inner = convertSlist(para, Slist(children))
         inner.retc(Sag.li(para.data, inner.data))
 
@@ -152,7 +153,7 @@ class SastToHtmlConverter(
       case BCommand.Embed =>
         val js = block match
           case Fenced(_, _, js, _, _) => Some(js)
-          case _          => None
+          case _                      => None
         ctx.retc(Sag.script(`type` = "text/javascript", js.map(str => Sag.Raw(str))))
 
       case other =>
@@ -324,7 +325,7 @@ class SastToHtmlConverter(
               cli.warn(s"invalid reference to non-included snippet", directive)
               ""
 
-      val resctx = targetDocument.sast match
+      val resctx = targetDocument.atom match
         case sec @ Section(title, _, _) =>
           convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
             val link = Sag.a(href = s"$fileRef#${References.getLabel(targetDocument).get}", titleText)
@@ -344,7 +345,7 @@ class SastToHtmlConverter(
                 categoriesSpan(categories)
               ))
             }
-        case block: Block =>
+        case block: (Fenced | Delimiter) =>
           val label = References.getLabel(targetDocument).get
           convertInlineSeq(ctx, nameOpt.map(_.inl).getOrElse(Nil)).mapc: titleText =>
             if titleText.isEmpty
