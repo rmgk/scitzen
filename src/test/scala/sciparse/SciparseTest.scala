@@ -136,6 +136,9 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
       s"""# Header
 
  indented
+""", s"""# Header
+
+indented
 """
     )
   }
@@ -154,6 +157,19 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
     val ctx = Scx("actual text\n    \n").copy(tracing = false)
     val res = Atoms.textline.runInContext(ctx)
     assertEquals(res, List(InlineText("actual text", 0)))
+  }
+
+  test("nested lists") {
+    rewrap("""• this
+             |	• is a nested
+             |	• list
+             |• with
+             |• a couple
+             |	• of
+             |		• items
+             |	• and stuff
+             |
+             |text after""".stripMargin)
   }
 
 }
