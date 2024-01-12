@@ -3,7 +3,9 @@ package scitzen.parser
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
 import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
-import scitzen.sast.{Attribute, Attributes, BCommand, Directive, Fenced, Inline, InlineText, Parsed, Prov, Section, SpaceComment, Text}
+import scitzen.sast.{
+  Attribute, Attributes, BCommand, Directive, Fenced, Inline, InlineText, Parsed, Prov, Section, SpaceComment, Text
+}
 
 import java.awt.image.ColorModel
 
@@ -15,6 +17,7 @@ object Atoms {
       Atoms.whitespace |
       annotatedAtom(
         Atoms.section.trace("section") |
+        Atoms.definitionList.trace("definition list") |
         Atoms.list.trace("list") |
         Atoms.delimited.trace("block delim") |
         (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive") |
@@ -55,14 +58,22 @@ object Atoms {
       Section(Text(inlines), marker.substring(0, marker.length - 1), Attributes(attrl))
     }
 
+  def definitionList: Scip[DefinitionListAtom] = Scip {
+    val marker  = ("-•*".any and ": ".all).str.run
+    val inlines = textline.run
+    DefinitionListAtom(marker, inlines)
+  }
+
   def list: Scip[ListAtom | DefinitionListAtom] =
     Scip {
       val marker  = (("-•*".any or (CommonParsers.digits and ".".all)) and " ".all).str.run
       val inlines = textline.run
-      if scx.input(scx.index - 2) == ':' then
-        DefinitionListAtom(s"$marker", inlines)
-      else
-        ListAtom(s"$marker", inlines)
+      // TODO: the following is a temporary measure to automatically convert definition lists to prefix style
+      inlines.last match
+        case InlineText(txt, 0) if txt.endsWith(":") =>
+          DefinitionListAtom(s"${marker.dropRight(1)}: ", inlines.init :+ InlineText(txt.dropRight(1), 0))
+        case other =>
+          ListAtom(s"$marker", inlines)
     }
 
   def unquoted: Scip[Text] = textline.map(Text.apply)
