@@ -58,22 +58,16 @@ object ScitzenCommandline {
           )
         case other =>
 
-      val fusion = named[Boolean]("fusion", "use fusion parser", false).value
-
       def run(): Unit =
         Project.fromSource(projectSearchPath) match
           case None => cli.warn(s"could not find project for", projectSearchPath)
           case Some(project) =>
-            if fusion
-            then
-              Fusion.run(project, absolute)
-            else
-              executeConversions(
-                imageMap,
-                project,
-                absolute,
-                named[Boolean]("--format-filenames", "adapt filenames to reflect article headers", false).value
-              )
+            executeConversions(
+              imageMap,
+              project,
+              absolute,
+              named[Boolean]("--format-filenames", "adapt filenames to reflect article headers", false).value
+            )
 
       if benchmark > 0
       then Range(0, benchmark).foreach(_ => run())
