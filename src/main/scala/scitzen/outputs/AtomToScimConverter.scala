@@ -74,7 +74,7 @@ class AtomToScimConverter(bibDB: BibDB):
   def addIndent(lines: String, delimiter: String): String =
     lines.linesWithSeparators.map { line =>
       if line == "\n" then line
-      else delimiter + line
+      else s"$delimiter$line"
     }.mkString
 
   def directive(dir: Directive, spacy: Boolean = false): String =
