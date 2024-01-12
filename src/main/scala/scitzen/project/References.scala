@@ -17,9 +17,7 @@ object References:
     val candidates =
       val target = directive.attributes.target
       val byPath = document.resolve(target).flatMap(directory.byPath.get).flatMap(_.headOption).map: (art: Article) =>
-        art.sast.head match
-          case sec: Section => SastRef(sec, art.ref)
-          case _ => ???
+        SastRef(art.atoms.head.content, art.ref)
       .toList
       val byLabel = directory.labels.getOrElse(directive.attributes.target, Nil)
       byPath ++ byLabel
