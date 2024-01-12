@@ -63,11 +63,12 @@ class ArticleDirectory(globalFlags: Flags, val articles: Seq[Article]):
 object ArticleProcessing:
 
   def processArticles(doc: Document): List[Article] =
-    items(doc).map: art =>
+    items(doc).map: atoms =>
       val ref = new ArticleRef(doc)
-      val ctx = new SastToSastConverter(ref).convertSeq(art)(SastContext(()))
-      val sast = Fusion.fuseTop(ctx.data.toList, Nil)
-      Article(ref, sast, doc, ctx.ret(()))
+      val ctx = new SastToSastConverter(ref).convertSeq(atoms)(SastContext(()))
+      val processedAtoms = ctx.data.toList
+      val sast = Fusion.fuseTop(processedAtoms, Nil)
+      Article(ref, sast, doc, ctx.ret(()), processedAtoms)
 
   def headerType(atom: Atom) = atom match
     case Section(_, t @ ("=" | "=="), _) => t.length

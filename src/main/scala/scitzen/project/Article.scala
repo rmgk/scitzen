@@ -2,9 +2,10 @@ package scitzen.project
 
 import scitzen.compat.Logging
 import scitzen.contexts.SastContext
+import scitzen.parser.Fusion.Atoms
 import scitzen.sast.{Sast, Section}
 
-case class Article(ref: ArticleRef, sast: List[Sast], doc: Document, context: SastContext[Unit]):
+case class Article(ref: ArticleRef, sast: List[Sast], doc: Document, context: SastContext[Unit], atoms: Atoms):
   def titled: Option[Section] = sast match
     case (h @ Section(_, _ @("=" | "=="), _)) :: rest => Some(h)
     case other                                        => None
