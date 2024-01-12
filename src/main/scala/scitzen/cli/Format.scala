@@ -31,7 +31,7 @@ object Format:
       val modified = Files.getLastModifiedTime(path.absolute)
       if !formattedHashes.get(path.absolute).contains(modified.toString)
       then
-        formatContent(path.absolute, content, articles.flatMap(_.atoms).toList, ca.bib)
+        formatContent(path.absolute, content, articles.flatMap(_.sast).toList, ca.bib)
         formattedHashes = formattedHashes.updated(path.absolute, Files.getLastModifiedTime(path.absolute).toString)
     Files.createDirectories(cachefile.getParent)
     Files.write(
@@ -63,12 +63,12 @@ object Format:
                   if Files.exists(target)
                   then
                     cli.warn(s"rename target exists")
-                    art.atoms
+                    art.sast
                   else
-                    formatContent(target, Array.emptyByteArray, art.atoms, bibDB)
+                    formatContent(target, Array.emptyByteArray, art.sast, bibDB)
                     Nil
                 case None =>
-                  art.atoms
+                  art.sast
             if remaining.isEmpty
             then Files.delete(head.doc.path.absolute)
             else formatContent(head.doc.path.absolute, head.doc.content, remaining, bibDB)
@@ -78,8 +78,8 @@ object Format:
               s"could not format ${document.absolute}, did not contain anything???",
             )
 
-  def formatContent(file: Path, originalContent: Array[Byte], atoms: Atoms, bibDB: BibDB): Unit =
-    val result      = AtomToScimConverter(bibDB).toScimS(atoms)
+  def formatContent(file: Path, originalContent: Array[Byte], atoms: List[Sast], bibDB: BibDB): Unit =
+    val result      = AtomToScimConverter(bibDB).convertSequence(atoms)
     val resultBytes = result.iterator.mkString("").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
       cli.info(s"formatting ${file.getFileName}")

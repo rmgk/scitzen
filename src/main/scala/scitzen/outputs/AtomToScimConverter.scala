@@ -12,114 +12,94 @@ import scala.annotation.tailrec
 import scala.collection.immutable.ArraySeq
 import scala.math.{max, min}
 
-case class Indent(list: Int, listCheck: List[String], definition: Int, defCheck: List[String], delimited: Int):
-  def formatLi: String = ("\t" * (delimited + definition + list))
-  def format: String   = ("\t" * (delimited + definition + max(0, list - 1))) + (if list > 0 then "  " else "")
-
-  @tailrec
-  final def update(container: ::[Atom]): (String, Indent) =
-    val head = container.head
-    val check1 =
-      head match
-        case _: (ListAtom | TextAtom | Directive) =>
-          val other = listCheck.headOption.getOrElse("")
-          if listCheck.nonEmpty
-            && (head.isInstanceOf[ListAtom] && head.meta.indent.length <= other.length)
-            || !head.meta.indent.startsWith(other)
-          then
-            return copy(list = max(0, list - 1), listCheck.drop(1)).update(container)
-          else this
-        case other => copy(list = 0, listCheck = Nil)
-    val check2 =
-      val other = check1.defCheck.headOption.getOrElse("")
-      if !head.isInstanceOf[SpaceComment]
-        && (check1.defCheck.nonEmpty
-        && !head.meta.indent.startsWith(other))
-      then return check1.copy(definition = max(0, check1.definition - 1), check1.defCheck.drop(1)).update(container)
-      else check1
-
-    container.head match
-      case del: Delimiter =>
-        val add  = if del.command == BCommand.Empty then -1 else 1
-        val copy = check2.copy(delimited = max(0, check2.delimited + add))
-        (if del.command == BCommand.Empty then copy.format else check2.format, copy)
-      case ListAtom(marker, _, meta) =>
-        (check2.formatLi, check2.copy(list = check2.list + 1, listCheck = meta.indent :: check2.listCheck))
-      case _: DefinitionListAtom =>
-        val nextIndent = container.tail.headOption.map(_.meta.indent).getOrElse("")
-        val form       = check2.format
-        (
-          form,
-          if nextIndent.length > form.length && nextIndent.startsWith(form)
-          then check2.copy(definition = check2.definition + 1, defCheck = nextIndent :: check2.defCheck)
-          else check2
-        )
-      case other =>
-        (check2.format, check2)
-
 class AtomToScimConverter(bibDB: BibDB):
 
   val attributeConverter = AttributesToScim(bibDB)
 
-  def toScimS(atoms: Atoms, acc: Chain[String] = Chain.nil, indent: Indent = Indent(0, Nil, 0, Nil, 0)): Chain[String] =
-    atoms match
-      case Nil => acc
-      case container :: rest =>
-        val (format, indent2) = indent.update(::(container, rest))
-        val chains = container match
-          case Section(title, prefix, attributes, meta) =>
-            Chain(format, prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ {
-              val attrStr = attributeConverter.convert(attributes, spacy = true, force = false, light = true)
-              if attrStr.isEmpty then Chain.nil
-              else Chain(attrStr)
-            }
+  def convertSequence(
+      atoms: Seq[Sast],
+      indent: String = ""
+  ): Chain[String] =
+    atoms.to(Chain).flatMap(sast => convertSast(sast, indent))
 
-          case TextAtom(Text(inl), meta) =>
-            val actual = if container.meta.indent.startsWith(format) then container.meta.indent else format
-            actual +: inlineToScim(inl) :+ "\n"
+  private def convertSast(container: Sast, indent: String) = {
+    container match
+      case atom: Atom       => convertAtom(atom, indent)
+      case FusedList(items) => convertFusedList(items, indent)
+      case Paragraph(content) =>
+        content.to(Chain).flatMap(at => convertAtom(at, indent))
+      case FusedDelimited(del, cont) =>
+        convertAtom(del, indent) ++ convertSequence(cont.toList, s"$indent\t") ++ Chain(
+          indent,
+          del.marker,
+          "\n"
+        )
+      case FusedDefinitions(children) =>
+        children.to(Chain).flatMap: fdi =>
+          convertAtom(fdi.head, indent) ++ convertSequence(fdi.content, s"$indent\t")
+  }
+  def convertFusedList(items: Seq[FusedListItem], indent: String): Chain[String] =
+    ProtoConverter.sublists(items, Nil).to(Chain).flatMap: (item, children) =>
+      convertAtom(item.head, indent) ++ item.rest.flatMap(r => convertAtom(r, s"$indent  ")) ++
+      convertFusedList(children, s"$indent\t")
 
-          case ListAtom(marker, content, meta) =>
-            format +: marker +: inlineToScim(content) :+ "\n"
+  def convertAtom(atom: Atom, indent: String): Chain[String] = {
+    atom match
+      case Section(title, prefix, attributes, meta) =>
+        Chain(indent, prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ {
+          val attrStr = attributeConverter.convert(attributes, spacy = true, force = false, light = true)
+          if attrStr.isEmpty then Chain.nil
+          else Chain(attrStr)
+        }
 
-          case DefinitionListAtom(marker, content, meta) =>
-            format +: marker +: inlineToScim(content) :+ "\n"
+      case TextAtom(Text(inl), meta) =>
+        val actual = if meta.indent.startsWith(indent) then meta.indent else indent
+        actual +: inlineToScim(inl) :+ "\n"
 
-          case mcro: Directive => Chain(format, directive(mcro), "\n")
+      case ListAtom(marker, content, meta) =>
+        indent +: marker +: inlineToScim(content) :+ "\n"
 
-          case SpaceComment(text, meta) =>
-            Chain(
-              text.split("\\n", -1).map(_.stripTrailing()).mkString("\n")
-            )
+      case DefinitionListAtom(marker, content, meta) =>
+        indent +: marker +: inlineToScim(content) :+ "\n"
 
-          case Delimiter(_, command, attributes, meta) =>
-            Chain(
-              format,
-              "::",
-              BCommand.print(command),
-              AttributesToScim(bibDB).convert(attributes, force = false, spacy = false, light = false),
-              "\n",
-            )
+      case mcro: Directive =>
+        val actual = if mcro.meta.indent.startsWith(indent) then mcro.meta.indent else indent
+        Chain(actual, directive(mcro), "\n")
 
-          case Fenced(command, attributes, text, meta) =>
-            val delimiter = "```"
-            val indentS   = format
-            Chain(
-              indentS,
-              delimiter,
-              BCommand.print(command),
-              AttributesToScim(bibDB).convert(
-                attributes,
-                spacy = false,
-                force = false
-              ),
-              "\n",
-              addIndent(text, s"${indentS}\t"),
-              "\n",
-              indentS,
-              delimiter,
-              "\n"
-            )
-        toScimS(rest, acc ++ chains, indent2)
+      case SpaceComment(text, meta) =>
+        Chain(
+          text.split("\\n", -1).map(_.stripTrailing()).mkString("\n")
+        )
+
+      case Delimiter(_, command, attributes, meta) =>
+        Chain(
+          indent,
+          "::",
+          BCommand.print(command),
+          AttributesToScim(bibDB).convert(attributes, force = false, spacy = false, light = false),
+          "\n",
+        )
+
+      case Fenced(command, attributes, text, meta) =>
+        val delimiter = "```"
+        val indentS   = indent
+        Chain(
+          indentS,
+          delimiter,
+          BCommand.print(command),
+          AttributesToScim(bibDB).convert(
+            attributes,
+            spacy = false,
+            force = false
+          ),
+          "\n",
+          addIndent(text, s"${indentS}\t"),
+          "\n",
+          indentS,
+          delimiter,
+          "\n"
+        )
+  }
 
   def addIndent(lines: String, delimiter: String): String =
     lines.linesWithSeparators.map { line =>

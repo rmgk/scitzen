@@ -114,7 +114,7 @@ object Fusion {
       case (dla: DefinitionListAtom) :: tail =>
         val nextIndent = tail.head.meta.indent
         val (inner, rest) = tail.collectWhile: cont =>
-          if cont.meta.indent.startsWith(nextIndent)
+          if cont.meta.indent.startsWith(nextIndent) || cont.isInstanceOf[SpaceComment]
           then Some(cont)
           else None
         val innerFused = fuseTop(inner, Nil)

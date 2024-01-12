@@ -124,9 +124,9 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
   def rewrap(input: String, output: String | Null = null)(using Location) =
     try
       val res =
-        Fusion.atoms.runInContext(Scx(input).copy(tracing = false))
+        Fusion.parser.runInContext(Scx(input).copy(tracing = false))
       // println(res)
-      val result    = SastToScimConverter.toScimS(res)
+      val result    = SastToScimConverter.convertSequence(res)
       val resultStr = result.iterator.mkString("", "", "\n")
       assertEquals(resultStr.trim, Option(output).getOrElse(input).trim)
     catch case e: ScipEx => throw new AssertionError(e.getMessage)
@@ -136,7 +136,8 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
       s"""# Header
 
  indented
-""", s"""# Header
+""",
+      s"""# Header
 
  indented
 """
@@ -172,11 +173,23 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
              |text after""".stripMargin)
   }
 
-  test("nested lists") {
+  test("list with directive") {
     rewrap(
       """• listitem
         |  :link{some directive}
-        |""".stripMargin)
+        |""".stripMargin
+    )
+  }
+
+  test("definition list with list") {
+    rewrap(
+      """•: term
+        |	definition
+        |	• inner list
+        |
+        |	• hmm
+        |""".stripMargin
+    )
   }
 
 }
