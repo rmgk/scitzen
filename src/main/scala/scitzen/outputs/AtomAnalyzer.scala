@@ -33,7 +33,6 @@ class AtomAnalyzer(articleRef: ArticleRef):
   def convertSeq(b: Atoms)(ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
 
-  // Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
   def convertSingle(container: Container[Atom])(ctx: Cta): Ctx[Container[Atom]] =
     val newContent: Ctx[Atom] = container.content match
       case sc: SpaceComment => ctx.ret(sc)

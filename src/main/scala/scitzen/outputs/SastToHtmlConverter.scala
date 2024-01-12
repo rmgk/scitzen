@@ -285,7 +285,7 @@ class SastToHtmlConverter(
             convertInlineSeq(ctx, attrs.text.inl).mapc: res =>
               Sag.del(res)
 
-          case "todo" => ctx.retc(Sag.code(`class` = "todo", SastToScimConverter(anal.bib).macroToScim(directive)))
+          case "todo" => ctx.retc(Sag.code(`class` = "todo", SastToScimConverter(anal.bib).directive(directive)))
           case "tableofcontents" => ctx.empty
           case "partition"       => ctx.empty
           case "rule"            => ctx.retc(Sag.span(attrs.target, `class` = "rule"))
@@ -359,7 +359,7 @@ class SastToHtmlConverter(
       else resctx
     }.getOrElse {
       cli.warn(s"no ref resolutions", directive)
-      ctx.retc(Sag.code(SastToScimConverter(anal.bib).macroToScim(directive)))
+      ctx.retc(Sag.code(SastToScimConverter(anal.bib).directive(directive)))
     }
   }
 

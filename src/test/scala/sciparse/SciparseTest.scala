@@ -4,7 +4,7 @@ import de.rmgk.scip.*
 import munit.Location
 import scitzen.bibliography.BibDB
 import scitzen.outputs.SastToScimConverter
-import scitzen.parser.{Atoms, AttributesParser, CommonParsers, DirectiveParsers, Parse}
+import scitzen.parser.{Atoms, AttributesParser, CommonParsers, DirectiveParsers, Fusion, Parse}
 import scitzen.sast.InlineText
 
 import java.nio.charset.StandardCharsets
@@ -124,7 +124,7 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
   def rewrap(input: String, output: String | Null = null)(using Location) =
     try
       val res =
-        Parse.parserDocument.runInContext(Scx(input).copy(tracing = false))
+        Fusion.atoms.runInContext(Scx(input).copy(tracing = false))
       // println(res)
       val result    = SastToScimConverter.toScimS(res)
       val resultStr = result.iterator.mkString("", "", "\n")

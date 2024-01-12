@@ -2,6 +2,8 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.bibliography.BibDB
+import scitzen.parser.Atoms.{Atom, Container, DefinitionListAtom, Delimiter, ListAtom}
+import scitzen.parser.Fusion.Atoms
 import scitzen.parser.{AttributeDeparser, AttributesParser}
 import scitzen.sast.*
 import scitzen.sast.Attribute.{Named, Nested, Positional}
@@ -13,56 +15,63 @@ class SastToScimConverter(bibDB: BibDB):
 
   val attributeConverter = AttributesToScim(bibDB)
 
-  def attributesToScim(
-      attributes: Attributes,
-      spacy: Boolean,
-      force: Boolean,
-      light: Boolean = false
-  ): Chain[String] =
-    val attrStr = attributeConverter.convert(attributes, spacy, force, light)
-    if attrStr.isEmpty then Chain.nil
-    else Chain(attrStr)
-
-  def toScimS(b: Seq[Sast]): Chain[String] =
+  def toScimS(b: Atoms): Chain[String] =
     Chain.from(b).flatMap(toScim)
 
-  def toScim(sast: Sast): Chain[String] =
-    sast match
+  // Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
+
+  def toScim(container: Container[Atom]): Chain[String] =
+    container.content match
       case Section(title, prefix, attributes) =>
-        Chain(prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ attributesToScim(
-          attributes,
-          spacy = true,
-          force = false,
-          light = true
-        )
-
-      case paragraph: Paragraph =>
-        inlineToScim(paragraph.inlines)
-
-      case Slist(children) => Chain.from(children).flatMap {
-          case ListItem(marker, indent, inner) =>
-            indent +: marker +: inlineToScim(inner.inlines)
+        Chain(container.indent, prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ {
+          val attrStr = attributeConverter.convert(attributes, spacy = true, force = false, light = true)
+          if attrStr.isEmpty then Chain.nil
+          else Chain(attrStr)
         }
 
-      case Sdefinition(children) =>
-        Chain.from(children).flatMap {
-          case DefinitionItem(marker, indent, Text(inl), content) =>
-            Chain(
-              Chain(indent, marker),
-              inlineToScim(inl),
-              Chain("\n"),
-              toScimS(content)
-            ).flatten
-        }
+      case Text(inl) =>
+        container.indent +: inlineToScim(inl)
 
-      case mcro: Directive => Chain(macroToScim(mcro), "\n")
+      case ListAtom(marker, content) =>
+        container.indent +: marker +: inlineToScim(content)
+
+      case DefinitionListAtom(marker, content) =>
+        container.indent +: marker +: inlineToScim(content)
+
+      case mcro: Directive => Chain(directive(mcro), "\n")
 
       case SpaceComment(text) =>
         Chain(
           text.split("\\n", -1).map(_.stripTrailing()).mkString("\n")
         )
 
-      case tlb: Block => convertBlock(tlb)
+      case Delimiter(_, command, attributes) =>
+        Chain(
+          container.indent,
+          "::",
+          BCommand.print(command),
+          AttributesToScim(bibDB).convert(attributes, force = false, spacy = false, light = false),
+          "\n",
+        )
+
+      case Fenced(command, attributes, text, _, _) =>
+        val delimiter = "```"
+        Chain(
+          container.indent,
+          delimiter,
+          BCommand.print(command),
+          AttributesToScim(bibDB).convert(
+            attributes,
+            spacy = false,
+            force = false
+          ),
+          "\n",
+          addIndent(text, s"${container.indent}\t"),
+          "\n",
+          container.indent,
+          delimiter,
+          "\n"
+        )
 
   def addIndent(lines: String, delimiter: String): String =
     lines.linesWithSeparators.map { line =>
@@ -70,42 +79,12 @@ class SastToScimConverter(bibDB: BibDB):
       else delimiter + line
     }.mkString
 
-  def convertBlock(sb: Block): Chain[String] =
-    sb match
-      case Parsed(_, blockContent) =>
-        val content = toScimS(blockContent).mkString
-        Chain(
-          "::",
-          BCommand.print(sb.command),
-          AttributesToScim(bibDB).convert(sb.attributes, force = false, spacy = false),
-          "\n",
-          addIndent(content, "\t"),
-          "::\n"
-        )
-
-      case Fenced(_, _, text, _, _) =>
-        val delimiter = "```"
-        Chain(
-          delimiter,
-          BCommand.print(sb.command),
-          AttributesToScim(bibDB).convert(
-            sb.attributes,
-            spacy = false,
-            force = false
-          ),
-          "\n",
-          addIndent(text, "\t"),
-          "\n",
-          delimiter,
-          "\n"
-        )
-
-  def macroToScim(mcro: Directive, spacy: Boolean = false): String =
-    mcro match
+  def directive(dir: Directive, spacy: Boolean = false): String =
+    dir match
       case Directive(Comment, attributes) => s":%${attributes.target}"
-      case Directive(BibQuery, _)         => macroToScim(bibDB.convert(mcro))
+      case Directive(BibQuery, _)         => directive(bibDB.convert(dir))
       case _ =>
-        s":${DCommand.printMacroCommand(mcro.command)}${attributeConverter.convert(mcro.attributes, spacy, force = true)}"
+        s":${DCommand.printMacroCommand(dir.command)}${attributeConverter.convert(dir.attributes, spacy, force = true)}"
 
   def inlineToScim(inners: Seq[Inline]): Chain[String] =
     inners.iterator.map {
@@ -113,7 +92,7 @@ class SastToScimConverter(bibDB: BibDB):
       case InlineText(str, x) =>
         val qs = "\"" * x
         s":$qs[$str]$qs"
-      case m: Directive => macroToScim(m)
+      case m: Directive => directive(m)
     }.to(Chain)
 
 class AttributesToScim(bibDB: BibDB):
@@ -126,16 +105,6 @@ class AttributesToScim(bibDB: BibDB):
       {
         case `text` => true
         case other  => false
-      }
-    )
-  def encodeString(value: String): String =
-    AttributeDeparser.quote(
-      forceEmpty = true,
-      value,
-      {
-        case Text(Nil) if value.isEmpty        => true
-        case Text(Seq(InlineText(`value`, _))) => true
-        case other                             => false
       }
     )
 

@@ -10,6 +10,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path, StandardOpenOption}
 import scala.jdk.CollectionConverters.*
 import scitzen.compat.Logging.given
+import scitzen.parser.Fusion.Atoms
 
 object Format:
 
@@ -30,7 +31,7 @@ object Format:
       val modified = Files.getLastModifiedTime(path.absolute)
       if !formattedHashes.get(path.absolute).contains(modified.toString)
       then
-        formatContent(path.absolute, content, articles.flatMap(_.sast), ca.bib)
+        formatContent(path.absolute, content, articles.flatMap(_.atoms).toList, ca.bib)
         formattedHashes = formattedHashes.updated(path.absolute, Files.getLastModifiedTime(path.absolute).toString)
     Files.createDirectories(cachefile.getParent)
     Files.write(
@@ -43,10 +44,11 @@ object Format:
 
   def formatRename(documentDirectory: ArticleDirectory, selected: List[ProjectPath], bibDB: BibDB): Unit =
     documentDirectory.byPath.foreach: (document, articles) =>
+      val articleList = articles.toList
       if !selected.contains(document)
       then ()
       else
-        articles.toList match
+        articleList match
           case Seq(article) =>
             article.titled match
               case Some(t) => renameFileFromHeader(document.absolute, t)
@@ -54,19 +56,19 @@ object Format:
                   s"could not format ${document.absolute}, did not contain a titled article"
                 )
           case head :: _ =>
-            val remaining = articles.flatMap: art =>
+            val remaining = articleList.flatMap: art =>
               art.titled match
                 case Some(title) =>
                   val target = art.doc.path.absolute.resolveSibling(canonicalName(title, ".scim"))
                   if Files.exists(target)
                   then
                     cli.warn(s"rename target exists")
-                    art.sast
+                    art.atoms
                   else
-                    formatContent(target, Array.emptyByteArray, art.sast, bibDB)
+                    formatContent(target, Array.emptyByteArray, art.atoms, bibDB)
                     Nil
                 case None =>
-                  art.sast
+                  art.atoms
             if remaining.isEmpty
             then Files.delete(head.doc.path.absolute)
             else formatContent(head.doc.path.absolute, head.doc.content, remaining, bibDB)
@@ -76,8 +78,8 @@ object Format:
               s"could not format ${document.absolute}, did not contain anything???",
             )
 
-  def formatContent(file: Path, originalContent: Array[Byte], sast: Seq[Sast], bibDB: BibDB): Unit =
-    val result      = SastToScimConverter(bibDB).toScimS(sast)
+  def formatContent(file: Path, originalContent: Array[Byte], atoms: Atoms, bibDB: BibDB): Unit =
+    val result      = SastToScimConverter(bibDB).toScimS(atoms)
     val resultBytes = result.iterator.mkString("").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
       cli.info(s"formatting ${file.getFileName}")
