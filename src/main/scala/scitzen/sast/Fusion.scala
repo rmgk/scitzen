@@ -17,7 +17,7 @@ import scala.reflect.TypeTest
 object Fusion {
 
   type Atoms = List[Atom]
-  
+
   def run(project: Project, absolute: List[Path]): Unit =
     absolute.foreach: abs =>
       val pp      = project.asProjectPath(abs)
@@ -79,7 +79,7 @@ object Fusion {
           case unchanged: (Directive | Section | SpaceComment | Fenced) => fuseTop(tail, unchanged :: sastAcc)
 
           case del: Delimiter =>
-            val (delimited, rest) = fuseDelimited(container.meta.indent, del, tail)
+            val (delimited, rest) = fuseDelimited(del.meta.indent, del, tail)
             fuseTop(rest, delimited :: sastAcc)
           case ListAtom(_, _, _) =>
             val (list, rest) = fuseList(atoms, Nil)

@@ -20,7 +20,7 @@ sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:
   override def toString: String = s"“$str”"
 
-case class Directive(command: DCommand, attributes: Attributes, meta: Meta) extends Inline with TMeta
+case class Directive(command: DCommand, attributes: Attributes, meta: Meta) extends Inline
 
 case class Text(inl: Seq[Inline]) {
   def plainString: String = {
@@ -50,7 +50,7 @@ case object Text:
     else Text(List(InlineText(str)))
   val empty: Text = Text(Nil)
 
-case class Section(titleText: Text, prefix: String, attributes: Attributes, meta: Meta) extends TMeta:
+case class Section(titleText: Text, prefix: String, attributes: Attributes, meta: Meta):
   private def label: Option[String] = attributes.plain("label")
   val title: String                 = titleText.plainString
   val autolabel: String             = label.getOrElse(title)
@@ -79,7 +79,7 @@ case class Paragraph(content: Seq[TextAtom | Directive]):
         case dir: Directive => List(InlineText(dir.meta.indent), dir, InlineText("\n"))
         case text: TextAtom => InlineText(text.meta.indent) +: text.inl :+ InlineText("\n")
 
-case class SpaceComment(content: String, meta: Meta) extends TMeta:
+case class SpaceComment(content: String, meta: Meta):
   override def toString: String = s"SpaceComment(${content.replace("\n", "\\n")})"
 
 type Block = Fenced | FusedDelimited
@@ -90,11 +90,11 @@ extension (block: Block) {
     case fuse: FusedDelimited => fuse.delimiter.attributes
 }
 
-case class Fenced(command: BCommand, attributes: Attributes, content: String, meta: Meta) extends TMeta:
+case class Fenced(command: BCommand, attributes: Attributes, content: String, meta: Meta):
   def withAttributes(attr: Attributes): Fenced = copy(attributes = attr)
 
-case class FusedDelimited(delimiter: Delimiter, content: Seq[Sast]) extends TMeta:
-  override def meta: Meta = delimiter.meta
+case class FusedDelimited(delimiter: Delimiter, content: Seq[Sast]):
+  // override def meta: Meta = delimiter.meta
   def withAttributes(attr: Attributes): FusedDelimited =
     FusedDelimited(delimiter.copy(attributes = attr), content)
 
@@ -103,18 +103,26 @@ case class Prov(start: Int = -1, end: Int = -1)
 type Atom =
   Directive | TextAtom | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
 
+extension (atom: Atom)
+  def meta: Meta = atom match
+    case a: Directive          => a.meta
+    case a: TextAtom           => a.meta
+    case a: Delimiter          => a.meta
+    case a: ListAtom           => a.meta
+    case a: Section            => a.meta
+    case a: SpaceComment       => a.meta
+    case a: DefinitionListAtom => a.meta
+    case a: Fenced             => a.meta
+
 case class Meta(indent: String)(val prov: Prov)
 object Meta:
   val synth = Meta("", Prov())
   @targetName("constructor")
   def apply(indent: String, prov: Prov): Meta = new Meta(indent)(prov)
 
-transparent trait TMeta:
-  def meta: Meta
-
-case class TextAtom(inner: Text, meta: Meta) extends TMeta:
+case class TextAtom(inner: Text, meta: Meta):
   export inner.inl
   def update(inlines: Seq[Inline]) = copy(inner = Text(inlines))
-case class ListAtom(marker: String, text: Seq[Inline], meta: Meta)                          extends TMeta
-case class DefinitionListAtom(marker: String, text: Seq[Inline], meta: Meta)                extends TMeta
-case class Delimiter(marker: String, command: BCommand, attributes: Attributes, meta: Meta) extends TMeta
+case class ListAtom(marker: String, text: Seq[Inline], meta: Meta)
+case class DefinitionListAtom(marker: String, text: Seq[Inline], meta: Meta)
+case class Delimiter(marker: String, command: BCommand, attributes: Attributes, meta: Meta)

@@ -1,6 +1,6 @@
 package scitzen.project
 
-import scitzen.sast.{Block, Directive, Prov}
+import scitzen.sast.{Block, Directive, Fenced, FusedDelimited, Prov}
 
 import java.nio.file.{Files, Path}
 import scala.collection.immutable.ArraySeq
@@ -18,7 +18,10 @@ object Document:
 
 trait Reporter:
   def apply(im: Directive): String = apply(im.meta.prov)
-  def apply(im: Block): String     = apply(im.meta.prov)
+  def apply(im: Block): String     =
+    im match
+      case fd: FusedDelimited => apply(fd.delimiter.meta.prov)
+      case fen: Fenced => apply(fen.meta.prov)
   def apply(prov: Prov): String
 
 final class FileReporter(file: ProjectPath, content: Array[Byte]) extends Reporter:
