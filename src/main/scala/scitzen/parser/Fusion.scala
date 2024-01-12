@@ -37,40 +37,40 @@ object Fusion {
   def parser: Scip[List[Sast]] = Scip {
     def atoms(): Atoms =
       if scx.index >= scx.maxpos
-      then LazyList.empty
+      then List.empty
       else
         val atom = Atoms.alternatives.runInContext(scx)
-        atom #:: atoms()
+        atom :: atoms()
 
     fuseTop(atoms(), Nil)
   }
 
-  extension [A](list: LazyList[A])
-    def collectWhile[R](f: A => Option[R]): (LazyList[R], LazyList[A]) =
+  extension [A](list: List[A])
+    def collectWhile[R](f: A => Option[R]): (List[R], List[A]) =
       list match
-        case LazyList() => (LazyList.empty, list)
-        case head #:: tail =>
+        case Nil => (List.empty, list)
+        case head :: tail =>
           f(head) match
-            case None => (LazyList.empty, list)
+            case None => (List.empty, list)
             case Some(res) =>
-              lazy val (good, bad) = tail.collectWhile(f)
-              (res #:: good, bad)
+              val (good, bad) = tail.collectWhile(f)
+              (res :: good, bad)
 
-  def collectType[As <: Atom](atoms: LazyList[Container[Atom]])(using
+  def collectType[As <: Atom](atoms: Atoms)(using
       TypeTest[Atom, As]
-  ): (LazyList[Container[As]], LazyList[Container[Atom]]) =
+  ): (List[Container[As]], List[Container[Atom]]) =
     atoms.collectWhile:
       case cont @ Container(_, ws: As) => Some(cont.asInstanceOf[Container[As]])
       case other                       => None
 
-  type Atoms = LazyList[Container[Atom]]
+  type Atoms = List[Container[Atom]]
 
   @tailrec
   def fuseTop(atoms: Atoms, sastAcc: List[Sast]): List[Sast] = {
 
     atoms match
-      case LazyList() => sastAcc.reverse
-      case container #:: tail =>
+      case List() => sastAcc.reverse
+      case container :: tail =>
         container.content match
           case unchanged: (Directive | Section | SpaceComment | Fenced) => fuseTop(tail, unchanged :: sastAcc)
 
@@ -94,7 +94,7 @@ object Fusion {
   @tailrec
   def fuseList(atoms: Atoms, acc: List[ListItem]): (Slist, Atoms) = {
     atoms match
-      case (cont @ Container(indent, ListAtom(pfx, content))) #:: tail =>
+      case (cont @ Container(indent, ListAtom(pfx, content))) :: tail =>
         val (textSnippets, rest) = collectType[Text | Directive](tail)
         fuseList(
           rest,
@@ -107,7 +107,7 @@ object Fusion {
   @tailrec
   def fuseDefinitionList(atoms: Atoms, acc: List[DefinitionItem]): (Sdefinition, Atoms) = {
     atoms match
-      case (cont @ Container(indent, DefinitionListAtom(pfx, content))) #:: tail =>
+      case (cont @ Container(indent, DefinitionListAtom(pfx, content))) :: tail =>
         val nextIndent = tail.head.indent
         val (inner, rest) = tail.collectWhile: cont =>
           if cont.indent.startsWith(nextIndent)
@@ -120,7 +120,7 @@ object Fusion {
         (Sdefinition(acc.reverse), atoms)
   }
 
-  def fuseDelimited(indent: String, del: Delimiter, prov: Prov, atoms: LazyList[Container[Atom]]) = {
+  def fuseDelimited(indent: String, del: Delimiter, prov: Prov, atoms: Atoms) = {
     val (innerAtoms, rest) = atoms.span:
       case Container(`indent`, Delimiter(del.`marker`, BCommand.Empty, Attributes.empty)) =>
         false
