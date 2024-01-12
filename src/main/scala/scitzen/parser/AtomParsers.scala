@@ -16,27 +16,24 @@ object AtomParsers {
     (
       (AtomParsers.fenced: Scip[Atom]) |
       AtomParsers.whitespace |
-      annotatedAtom(
-        AtomParsers.section.trace("section") |
-        AtomParsers.definitionList.trace("definition list") |
-        AtomParsers.list.trace("list") |
-        AtomParsers.delimited.trace("block delim") |
+      annotatedAtom((indent, start) =>
+        AtomParsers.section(indent, start).trace("section") |
+        AtomParsers.definitionList(indent, start).trace("definition list") |
+        AtomParsers.list(indent, start).trace("list") |
+        AtomParsers.delimited(indent, start).trace("block delim") |
         (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive").map(dir =>
-          (meta: Meta) =>
-            dir.copy(meta = Meta(meta.indent, dir.meta.prov))
+          dir.copy(meta = Meta(indent, dir.meta.prov))
         ) |
-        AtomParsers.unquoted
+        AtomParsers.unquoted(indent, start)
       )
     ).trace("block").run
   }
 
-  inline def annotatedAtom[Atom](inline atomParser: Scip[Meta => Atom]): Scip[Atom] =
+  inline def annotatedAtom[Atom](inline atomParser: (String, Int) => Scip[Atom]): Scip[Atom] =
     Scip {
-      val start  = scx.index
       val indent = CommonParsers.verticalSpaces.str.run
-      val atom   = atomParser.run
-      val end    = scx.index
-      atom(Meta(indent, Prov(start, end)))
+      val start  = scx.index
+      atomParser(indent, start).run
     }
 
   val textline: Scip[List[Inline]] = Scip {
@@ -45,28 +42,36 @@ object AtomParsers {
     else inlines
   }
 
-  def section: Scip[Meta => Section] =
+  def section(indent: String, start: Int): Scip[Section] =
     Scip {
       val marker  = choice("= ", "== ", "# ", "## ", "### ").str.run
       val inlines = textline.run
       val attrl   = AttributesParser.namedAttribute.list(eol).run
-      meta => Section(Text(inlines), marker.substring(0, marker.length - 1), Attributes(attrl), meta)
+      Section(
+        Text(inlines),
+        marker.substring(0, marker.length - 1),
+        Attributes(attrl),
+        Meta(indent, Prov(start, scx.index))
+      )
     }
 
-  def definitionList: Scip[Meta => DefinitionListAtom] = Scip {
+  def definitionList(indent: String, start: Int): Scip[DefinitionListAtom] = Scip {
     val marker  = ("-•*".any and ": ".all).str.run
     val inlines = textline.run
-    meta => DefinitionListAtom(marker, inlines, meta)
+    DefinitionListAtom(marker, inlines, Meta(indent, Prov(start, scx.index)))
   }
 
-  def list: Scip[Meta => (ListAtom | DefinitionListAtom)] =
+  def list(indent: String, start: Int): Scip[ListAtom] =
     Scip {
       val marker  = (("-•*".any or (CommonParsers.digits and ".".all)) and " ".all).str.run
       val inlines = textline.run
-      meta => ListAtom(s"$marker", inlines, meta)
+      ListAtom(s"$marker", inlines, Meta(indent, Prov(start, scx.index)))
     }
 
-  def unquoted: Scip[Meta => TextAtom] = textline.map(t => (meta: Meta) => TextAtom(Text(t), meta))
+  def unquoted(indent: String, start: Int): Scip[TextAtom] = Scip {
+    val t = textline.run
+    TextAtom(Text(t), Meta(indent, Prov(start, scx.index)))
+  }
 
   def whitespace: Scip[SpaceComment] = Scip {
     val start = scx.index
@@ -78,17 +83,16 @@ object AtomParsers {
     SpaceComment(content, Meta("", prov))
   }
 
-  def delimited: Scip[Meta => Delimiter] = Scip {
-    val start   = ":".any.rep.min(2).str.run
+  def delimited(indent: String, start: Int): Scip[Delimiter] = Scip {
+    val marker  = ":".any.rep.min(2).str.run
     val command = DirectiveParsers.macroCommand.opt.trace("delimited marco").run
     val attr    = (AttributesParser.braces.opt <~ CommonParsers.spaceLineF).trace("delim braces").run
-    meta =>
-      Delimiter(
-        marker = start,
-        command = BCommand.parse(command.getOrElse("")),
-        attributes = Attributes(attr.getOrElse(Nil)),
-        meta
-      )
+    Delimiter(
+      marker = marker,
+      command = BCommand.parse(command.getOrElse("")),
+      attributes = Attributes(attr.getOrElse(Nil)),
+      meta = Meta(indent, Prov(start, scx.index))
+    )
   }
 
   def fenced: Scip[Fenced] = Scip {
