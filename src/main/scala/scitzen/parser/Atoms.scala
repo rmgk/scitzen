@@ -68,12 +68,7 @@ object Atoms {
     Scip {
       val marker  = (("-•*".any or (CommonParsers.digits and ".".all)) and " ".all).str.run
       val inlines = textline.run
-      // TODO: the following is a temporary measure to automatically convert definition lists to prefix style
-      inlines.last match
-        case InlineText(txt, 0) if txt.endsWith(":") =>
-          DefinitionListAtom(s"${marker.dropRight(1)}: ", inlines.init :+ InlineText(txt.dropRight(1), 0))
-        case other =>
-          ListAtom(s"$marker", inlines)
+      ListAtom(s"$marker", inlines)
     }
 
   def unquoted: Scip[Text] = textline.map(Text.apply)
