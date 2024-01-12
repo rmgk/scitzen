@@ -5,7 +5,7 @@ import scitzen.contexts.SastContext
 import scitzen.outputs.AtomAnalyzer
 import scitzen.sast.Fusion.Atoms
 import scitzen.parser.Parse
-import scitzen.sast.{Atom, Container, Fusion, Sast, Section}
+import scitzen.sast.{Atom, Fusion, Sast, Section}
 
 import scala.annotation.tailrec
 
@@ -70,7 +70,7 @@ object ArticleProcessing:
       Article(ref, sast, doc, ctx.ret(()), processedAtoms)
 
   def headerType(atom: Atom) = atom match
-    case Section(_, t @ ("=" | "=="), _) => t.length
+    case Section(_, t @ ("=" | "=="), _, _) => t.length
     case _                               => 3
 
   /** Splits the document into 3 parts:
@@ -81,15 +81,15 @@ object ArticleProcessing:
     */
   def items(document: Document): List[Atoms] =
     val atoms        = Parse.atoms(document)
-    val (snip, rest) = atoms.span(s => headerType(s.content) == 3)
+    val (snip, rest) = atoms.span(s => headerType(s) == 3)
     @scala.annotation.tailrec
     def rec(rem: Atoms, acc: List[Atoms]): List[Atoms] =
       rem match
         case Nil => acc.reverse
-        case (cont @ Container(_, h: Section)) :: t =>
+        case (h: Section) :: t =>
           val htype        = headerType(h)
-          val (body, rest) = t.span(s => headerType(s.content) > htype)
-          rec(rest, (cont :: body) :: acc)
+          val (body, rest) = t.span(s => headerType(s) > htype)
+          rec(rest, (h :: body) :: acc)
         case other :: rest =>
           throw new IllegalStateException(s"unexpected sast when looking for item: $other")
     val res = rec(rest, Nil)

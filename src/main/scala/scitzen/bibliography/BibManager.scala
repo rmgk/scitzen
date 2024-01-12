@@ -119,8 +119,9 @@ case class BibDB(
         case Positional(q) if q.plainString.trim == query.trim =>
           Attribute(keys.mkString(", "))
         case other => other
-      } :+ Attribute("query", query))
-    )(directive.prov)
+      } :+ Attribute("query", query)),
+      directive.meta
+    )
   def bibkeys(directive: Directive): List[String] =
     directive.bibIds
 

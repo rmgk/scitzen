@@ -15,17 +15,17 @@ object MirrorToSast {
 
   def convertBlock(block: C.Block): Sast = block match {
     case CodeMirror.heading(attrs, content) =>
-      Section(Text(content.map(convertInline)), "#" * (attrs.level - 1), Attributes(Nil))
+      Section(Text(content.map(convertInline)), "#" * (attrs.level - 1), Attributes(Nil), Meta.synth)
     case CodeMirror.paragraph(content) =>
       println(s"converting $content")
-      val res = Paragraph(Seq(Container("", Text(content.map(convertInline)), Prov())))
+      val res = Paragraph(Seq(TextAtom(Text(content.map(convertInline)), Meta.synth)))
       println(s"to $res")
       res
   }
 
   def convertInline(value: C.Inline): Inline = value match {
     case CodeMirror.text(text, marks) => InlineText(text)
-    case CodeMirror.image(attrs)      => Directive(DCommand.Image, Attributes.target(attrs.src))(Prov())
+    case CodeMirror.image(attrs)      => Directive(DCommand.Image, Attributes.target(attrs.src), Meta.synth)
   }
 }
 

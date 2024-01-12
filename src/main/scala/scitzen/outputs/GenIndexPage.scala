@@ -1,7 +1,7 @@
 package scitzen.outputs
 
 import scitzen.project.{Project, TitledArticle}
-import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText, Prov, Sast, ScitzenDateTime, Section, Text}
+import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText, Meta, Prov, Sast, ScitzenDateTime, Section, Text}
 
 import scala.collection.immutable.ArraySeq
 
@@ -23,10 +23,10 @@ object GenIndexPage:
     "December"
   )
 
-  def sectionFor(name: String) =
+  def sectionFor(name: String): Section =
     if name.isBlank
-    then Section(Text(List()), prefix = "#", Attributes(Seq(Attribute("unique ref", "unnamed"))))
-    else Section(Text(List(InlineText(name))), prefix = "#", Attributes(Seq(Attribute("unique ref", name))))
+    then Section(Text(List()), prefix = "#", Attributes(Seq(Attribute("unique ref", "unnamed"))), Meta.synth)
+    else Section(Text(List(InlineText(name))), prefix = "#", Attributes(Seq(Attribute("unique ref", name))), Meta.synth)
 
   def sectionTitle(fd: TitledArticle): String =
     fd.header.date.fold("") { date =>
@@ -40,8 +40,9 @@ object GenIndexPage:
       Attributes(List(
         Attribute(doc.header.autolabel),
         Attribute("scope", doc.article.doc.path.projectAbsolute.toString)
-      ))
-    )(Prov())
+      )),
+      Meta.synth
+    )
 
   def makeIndex(
       articles: List[TitledArticle],
@@ -53,7 +54,7 @@ object GenIndexPage:
 
     val ordered = articles.sortBy(f => (f.header.date, f.header.title))
 
-    def rec(ordered: List[TitledArticle], acc: List[Sast]): List[Sast] =
+    def rec(ordered: List[TitledArticle], acc: List[Section | Directive]): List[Sast] =
       ordered match
         case Nil => acc
         case h :: tail =>
@@ -62,9 +63,9 @@ object GenIndexPage:
           val content         = (h :: include).map(art => directiveFor(project, art))
           rec(
             rest,
-            (if current.isBlank
+            ((if current.isBlank
              then content
-             else sectionFor(current) :: content)
+             else sectionFor(current) :: content): List[Section | Directive])
               .:::(acc)
           )
 

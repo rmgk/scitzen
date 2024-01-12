@@ -62,12 +62,12 @@ object Fusion {
 
   def collectType[As <: Atom](atoms: Atoms)(using
       TypeTest[Atom, As]
-  ): (List[Container[As]], List[Container[Atom]]) =
+  ): (List[As], List[Atom]) =
     atoms.collectWhile:
-      case cont @ Container(_, ws: As) => Some(cont.asInstanceOf[Container[As]])
-      case other                       => None
+      case ws: As => Some(ws)
+      case other  => None
 
-  type Atoms = List[Container[Atom]]
+  type Atoms = List[Atom]
 
   @tailrec
   def fuseTop(atoms: Atoms, sastAcc: List[Sast]): List[Sast] = {
@@ -75,20 +75,20 @@ object Fusion {
     atoms match
       case List() => sastAcc.reverse
       case container :: tail =>
-        container.content match
+        container match
           case unchanged: (Directive | Section | SpaceComment | Fenced) => fuseTop(tail, unchanged :: sastAcc)
 
           case del: Delimiter =>
-            val (delimited, rest) = fuseDelimited(container.indent, del, container.prov, tail)
+            val (delimited, rest) = fuseDelimited(container.meta.indent, del, tail)
             fuseTop(rest, delimited :: sastAcc)
-          case ListAtom(_, _) =>
+          case ListAtom(_, _, _) =>
             val (list, rest) = fuseList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
-          case DefinitionListAtom(_, _) =>
+          case DefinitionListAtom(_, _, _) =>
             val (list, rest) = fuseDefinitionList(atoms, Nil)
             fuseTop(rest, list :: sastAcc)
-          case _: Text =>
-            val (inner, rest) = collectType[Text | Directive](atoms)
+          case _: TextAtom =>
+            val (inner, rest) = collectType[TextAtom | Directive](atoms)
             fuseTop(
               rest,
               Paragraph(inner) :: sastAcc
@@ -98,11 +98,11 @@ object Fusion {
   @tailrec
   def fuseList(atoms: Atoms, acc: List[FusedListItem]): (FusedList, Atoms) = {
     atoms match
-      case (cont @ Container(indent, la: ListAtom)) :: tail =>
-        val (textSnippets, rest) = collectType[Text | Directive](tail)
+      case (la: ListAtom) :: tail =>
+        val (textSnippets, rest) = collectType[TextAtom | Directive](tail)
         fuseList(
           rest,
-          FusedListItem(cont.copy(content = la), textSnippets) :: acc
+          FusedListItem(la, textSnippets) :: acc
         )
       case other =>
         (FusedList(acc.reverse), atoms)
@@ -111,30 +111,27 @@ object Fusion {
   @tailrec
   def fuseDefinitionList(atoms: Atoms, acc: List[FusedDefinitionItem]): (FusedDefinitions, Atoms) = {
     atoms match
-      case (cont @ Container(indent, dla: DefinitionListAtom)) :: tail =>
-        val nextIndent = tail.head.indent
+      case (dla: DefinitionListAtom) :: tail =>
+        val nextIndent = tail.head.meta.indent
         val (inner, rest) = tail.collectWhile: cont =>
-          if cont.indent.startsWith(nextIndent)
+          if cont.meta.indent.startsWith(nextIndent)
           then Some(cont)
           else None
         val innerFused = fuseTop(inner, Nil)
-        fuseDefinitionList(rest, FusedDefinitionItem(cont.copy(content = dla), innerFused) :: acc)
+        fuseDefinitionList(rest, FusedDefinitionItem(dla, innerFused) :: acc)
 
       case other =>
         (FusedDefinitions(acc.reverse), atoms)
   }
 
-  def fuseDelimited(indent: String, del: Delimiter, prov: Prov, atoms: Atoms) = {
+  def fuseDelimited(indent: String, del: Delimiter, atoms: Atoms) = {
     val (innerAtoms, rest) = atoms.span:
-      case Container(`indent`, Delimiter(del.`marker`, BCommand.Empty, Attributes.empty)) =>
+      case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`, _)) =>
         false
       case other => true
-    val adaptedIndent = innerAtoms.map:
-      case cont @ Container(cindent, content) =>
-        Container(cindent.stripPrefix(indent).stripPrefix("\t"), content, cont.prov)
-    val innerSast = fuseTop(adaptedIndent, Nil)
+    val innerSast = fuseTop(innerAtoms, Nil)
     (
-      scitzen.sast.FusedDelimited(Container(indent, del, prov), innerSast),
+      scitzen.sast.FusedDelimited(del, innerSast),
       rest.drop(1)
     )
 

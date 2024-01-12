@@ -11,7 +11,7 @@ class AtomAnalyzer(articleRef: ArticleRef):
 
   def document = articleRef.document
 
-  type CtxCS   = SastContext[Chain[Container[Atom]]]
+  type CtxCS   = SastContext[Chain[Atom]]
   type Ctx[+T] = SastContext[T]
   type Cta     = Ctx[?]
 
@@ -32,12 +32,12 @@ class AtomAnalyzer(articleRef: ArticleRef):
   def convertSeq(b: Atoms)(ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
 
-  def convertSingle(container: Container[Atom])(ctx: Cta): Ctx[Container[Atom]] =
-    val newContent: Ctx[Atom] = container.content match
+  def convertSingle(container: Atom)(ctx: Cta): Ctx[Atom] =
+    container match
       case sc: SpaceComment => ctx.ret(sc)
 
-      case text: Text =>
-        convertInlines(ctx, text.inl).map(i => Text(i.toSeq))
+      case text: TextAtom =>
+        convertInlines(ctx, text.inl).map(i => text.update(i.toSeq))
 
       case fenced: Fenced =>
         val refctx = ensureRefForLabel(fenced, ctx)
@@ -47,20 +47,18 @@ class AtomAnalyzer(articleRef: ArticleRef):
 
       case delimiter: Delimiter => ensureRefForLabel(delimiter, ctx)
 
-      case sec @ Section(title, level, _) =>
+      case sec @ Section(title, level, _, meta) =>
         val ctxWithRef = ensureRefForLabel(sec, ctx)
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
         convertInlines(conCtx, title.inl).map { title =>
-          Section(Text(title.toList), level, newSection.attributes)
+          Section(Text(title.toList), level, newSection.attributes, meta)
         }
 
-      case ListAtom(m, cont)           => convertInlines(ctx, cont).map(i => ListAtom(m, cont))
-      case DefinitionListAtom(m, cont) => convertInlines(ctx, cont).map(i => DefinitionListAtom(m, cont))
+      case ListAtom(m, cont, meta)                 => convertInlines(ctx, cont).map(i => ListAtom(m, i.toSeq, meta))
+      case DefinitionListAtom(m, cont, meta) => convertInlines(ctx, cont).map(i => DefinitionListAtom(m, cont, meta))
 
       case mcro: Directive => convertDirective(mcro)(ctx)
-
-    newContent.map(c => container.copy(content = c))
 
   trait Labellable[T]:
     extension (t: T)
@@ -118,7 +116,7 @@ class AtomAnalyzer(articleRef: ArticleRef):
         val res =
           val style = directive.attributes.plain("style")
           if style.contains("name") then
-            directive.copy(attributes = directive.attributes.updated("style", "author"))(directive.prov)
+            directive.copy(attributes = directive.attributes.updated("style", "author"))
           else
             directive
         ctx.addCitation(res).ret(res)

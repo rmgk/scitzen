@@ -2,22 +2,23 @@ package scitzen.sast
 
 import scitzen.parser.TimeParsers
 
-type Sast = FusedList | Directive | Section | SpaceComment | Paragraph | Block | FusedDefinitions
+type Sast =
+  FusedList | Directive | Section | SpaceComment | Fenced | Paragraph | FusedDelimited | FusedDefinitions
 
 case class FusedList(items: Seq[FusedListItem])
-case class FusedListItem(head: Container[ListAtom], rest: Seq[Container[Text | Directive]]):
-  def indent: String            = head.indent
-  def marker: String            = head.content.marker
-  lazy val paragraph: Paragraph = Paragraph(Container("", Text(head.content.text), head.prov) +: rest)
+case class FusedListItem(head: ListAtom, rest: Seq[TextAtom | Directive]):
+  def indent: String            = head.meta.indent
+  def marker: String            = head.marker
+  lazy val paragraph: Paragraph = Paragraph(TextAtom(Text(head.text), head.meta) +: rest)
 case class FusedDefinitions(items: Seq[FusedDefinitionItem])
-case class FusedDefinitionItem(head: Container[DefinitionListAtom], content: List[Sast]):
-  def text: Text = Text(head.content.text)
+case class FusedDefinitionItem(head: DefinitionListAtom, content: List[Sast]):
+  def text: Text = Text(head.text)
 
 sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:
   override def toString: String = s"“$str”"
 
-case class Directive(command: DCommand, attributes: Attributes)(val prov: Prov) extends Inline
+case class Directive(command: DCommand, attributes: Attributes, meta: Meta) extends Inline with TMeta
 
 case class Text(inl: Seq[Inline]) {
   def plainString: String = {
@@ -47,7 +48,7 @@ case object Text:
     else Text(List(InlineText(str)))
   val empty: Text = Text(Nil)
 
-case class Section(titleText: Text, prefix: String, attributes: Attributes):
+case class Section(titleText: Text, prefix: String, attributes: Attributes, meta: Meta) extends TMeta:
   private def label: Option[String] = attributes.plain("label")
   val title: String                 = titleText.plainString
   val autolabel: String             = label.getOrElse(title)
@@ -69,41 +70,47 @@ object Section:
     def counts(str: String) = (str.count(_ != '='), str.count(_ == '='))
     Ordering.by(s => counts(s.prefix))
 
-case class Paragraph(content: Seq[Container[Text | Directive]]):
+case class Paragraph(content: Seq[TextAtom | Directive]):
   lazy val inlines: Seq[Inline] =
     content.flatMap: cont =>
-      cont.content match
-        case dir: Directive => List(InlineText(cont.indent), dir, InlineText("\n"))
-        case text: Text     => InlineText(cont.indent) +: text.inl :+ InlineText("\n")
+      cont match
+        case dir: Directive => List(InlineText(dir.meta.indent), dir, InlineText("\n"))
+        case text: TextAtom => InlineText(text.meta.indent) +: text.inl :+ InlineText("\n")
 
-case class SpaceComment(content: String):
+case class SpaceComment(content: String, meta: Meta) extends TMeta:
   override def toString: String = s"SpaceComment(${content.replace("\n", "\\n")})"
 
-trait Block {
-  def command: BCommand
-  def attributes: Attributes
-  def prov: Prov
-  def indent: String
-  def withAttributes(attr: Attributes): Block
+type Block = Fenced | FusedDelimited
+
+extension (block: Block) {
+  def attributes: Attributes = block match
+    case fenced: Fenced       => fenced.attributes
+    case fuse: FusedDelimited => fuse.delimiter.attributes
 }
 
-case class Fenced(command: BCommand, attributes: Attributes, content: String, indent: String, prov: Prov) extends Block:
-  override def withAttributes(attr: Attributes): Block = copy(attributes = attr)
+case class Fenced(command: BCommand, attributes: Attributes, content: String, meta: Meta) extends TMeta:
+  def withAttributes(attr: Attributes): Fenced = copy(attributes = attr)
 
-case class FusedDelimited(delimiter: Container[Delimiter], content: Seq[Sast]) extends Block:
-  export delimiter.content.{command, attributes}
-  export delimiter.{prov, indent}
-  override def withAttributes(attr: Attributes): Block =
-    FusedDelimited(delimiter.copy(content = delimiter.content.copy(attributes = attr)), content)
+case class FusedDelimited(delimiter: Delimiter, content: Seq[Sast]) extends TMeta:
+  override def meta: Meta = delimiter.meta
+  def withAttributes(attr: Attributes): FusedDelimited =
+    FusedDelimited(delimiter.copy(attributes = attr), content)
 
 case class Prov(start: Int = -1, end: Int = -1)
 
 type Atom =
-  Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
-case class Container[+A <: Atom](indent: String, content: A, prov: Prov)
-object Container:
-  def unapply[A <: Atom](cont: Container[A]): (String, A) = (cont.indent, cont.content)
+  Directive | TextAtom | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
 
-case class ListAtom(marker: String, text: Seq[Inline])
-case class DefinitionListAtom(marker: String, text: Seq[Inline])
-case class Delimiter(marker: String, command: BCommand, attributes: Attributes)
+case class Meta(indent: String, prov: Prov)
+object Meta:
+  val synth = Meta("", Prov())
+
+transparent trait TMeta:
+  def meta: Meta
+
+case class TextAtom(inner: Text, meta: Meta) extends TMeta:
+  export inner.inl
+  def update(inlines: Seq[Inline]) = copy(inner = Text(inlines))
+case class ListAtom(marker: String, text: Seq[Inline], meta: Meta)                          extends TMeta
+case class DefinitionListAtom(marker: String, text: Seq[Inline], meta: Meta)                extends TMeta
+case class Delimiter(marker: String, command: BCommand, attributes: Attributes, meta: Meta) extends TMeta

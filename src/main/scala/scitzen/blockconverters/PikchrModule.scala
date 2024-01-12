@@ -53,7 +53,8 @@ abstract class SvgViewboxModule(override val handles: String, processBuilder: Pr
       Attributes(converterParams.block.attributes.raw ++ Seq(
         Attribute(target.projectAbsolute.toString),
         Attribute("color", "autoinvert")
-      ))
-    )(converterParams.block.prov))
+      )),
+      converterParams.block.meta
+    ))
 
 }

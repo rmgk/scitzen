@@ -59,8 +59,8 @@ class SastToTexConverter(
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("", "", "\n")
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
-    val Section(title, prefix, attr) = section
-    val ilc                          = convertInlineSeq(ctx, title.inl).map(inlineResToBlock)
+    val Section(title, prefix, attr, _) = section
+    val ilc                             = convertInlineSeq(ctx, title.inl).map(inlineResToBlock)
 
     if prefix == "="
     then
@@ -71,7 +71,7 @@ class SastToTexConverter(
       val numbered = if attr.plain("style").contains("unnumbered") then "*"
       else ""
       val header =
-        val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _) => () }.size
+        val shift = 1 - pushed.sections.collectFirst { case Section(_, "==", _, _) => () }.size
         val sec   = sectioning(section.level - shift)
         // not entirely sure what the following does
         val chapterAdd = if section.level == 0 then s"[${ilc.data}]"
@@ -139,49 +139,35 @@ class SastToTexConverter(
       }
     else cctx.map(c => Chain("", c, ""))
 
-  override def convertBlock(ctx: Cta, block: Block): CtxCS =
+  override def convertDelimited(ctx: Cta, block: FusedDelimited): CtxCS = {
     val innerCtx: CtxCS =
-      block match
-        case FusedDelimited(_, blockContent) =>
-          block.command match
-            case BCommand.Figure =>
-              val (figContent, caption) =
-                blockContent.lastOption match
-                  case Some(paragraph: Paragraph) =>
-                    val captionstr = convertInlinesCombined(ctx, paragraph.inlines)
-                    (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
-                  case _ =>
-                    cli.warn(s"figure has no caption" + doc.reporter(block.prov))
-                    (blockContent, ctx.ret(""))
-              "\\begin{figure}" +:
-              "\\centerfloat" +:
-              convertSastSeq(caption, figContent) :++
-              Chain(
-                caption.data,
-                block.attributes.plain("unique ref").fold("")(l => s"\\label{$l}"),
-                "\\end{figure}"
-              )
+      val blockContent = block.content
+      block.delimiter.command match
+        case BCommand.Figure =>
+          val (figContent, caption) =
+            blockContent.lastOption match
+              case Some(paragraph: Paragraph) =>
+                val captionstr = convertInlinesCombined(ctx, paragraph.inlines)
+                (blockContent.init, captionstr.map(str => s"\\caption{$str}"))
+              case _ =>
+                cli.warn(s"figure has no caption" + doc.reporter(block.delimiter.meta.prov))
+                (blockContent, ctx.ret(""))
+          "\\begin{figure}" +:
+          "\\centerfloat" +:
+          convertSastSeq(caption, figContent) :++
+          Chain(
+            caption.data,
+            block.attributes.plain("unique ref").fold("")(l => s"\\label{$l}"),
+            "\\end{figure}"
+          )
 
-            case BCommand.Other(name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example")) =>
-              texbox(name, block.attributes, blockContent)(ctx).useFeature("framed")
+        case BCommand.Other(name @ ("theorem" | "definition" | "proofbox" | "proof" | "lemma" | "example")) =>
+          texbox(name, block.attributes, blockContent)(ctx).useFeature("framed")
 
-            case BCommand.Other(name @ "abstract") => texbox(name, block.attributes, blockContent)(ctx)
+        case BCommand.Other(name @ "abstract") => texbox(name, block.attributes, blockContent)(ctx)
 
-            case _ =>
-              convertSastSeq(ctx, blockContent)
-
-        case Fenced(_, _, text, _, _) =>
-          val labeltext = block.attributes.plain("unique ref") match
-            case None => text
-            case Some(label) =>
-              text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
-          val restext =
-            if block.attributes.target == "highlight" then labeltext
-            else
-              labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
-          if block.command == BCommand.Other("text")
-          then ctx.ret(Chain(s"\\begin{verbatim}", restext, "\\end{verbatim}"))
-          else ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
+        case _ =>
+          convertSastSeq(ctx, blockContent)
 
     if !flags.notes then innerCtx
     else
@@ -190,6 +176,31 @@ class SastToTexConverter(
           s"\\sidepar{$content}%" +: innerCtx.data
         }.useFeature("sidepar")
       }
+  }
+
+  override def convertFenced(ctx: Cta, block: Fenced): CtxCS = {
+    val innerCtx: CtxCS =
+      val text = block.content
+      val labeltext = block.attributes.plain("unique ref") match
+        case None => text
+        case Some(label) =>
+          text.replaceAll(""":§([^§]*?)§""", s"""(*@\\\\label{$label$$1}@*)""")
+      val restext =
+        if block.attributes.target == "highlight" then labeltext
+        else
+          labeltext.replaceAll(""":hl§([^§]*?)§""", s"""(*@\\\\textbf{$$1}@*)""")
+      if block.command == BCommand.Other("text")
+      then ctx.ret(Chain(s"\\begin{verbatim}", restext, "\\end{verbatim}"))
+      else ctx.ret(Chain(s"\\begin{lstlisting}", restext, "\\end{lstlisting}")).useFeature("listings")
+
+    if !flags.notes then innerCtx
+    else
+      block.attributes.get("note").fold(innerCtx) { note =>
+        convertInlinesCombined(innerCtx, note.text.inl).map { (content: String) =>
+          s"\\sidepar{$content}%" +: innerCtx.data
+        }.useFeature("sidepar")
+      }
+  }
 
   def nbrs(attributes: Attributes)(ctx: Cta): Ctx[String] =
     attributes.textOption match
@@ -222,13 +233,12 @@ class SastToTexConverter(
             Ref,
             Attributes(
               Seq(
-                Named("", Text(Seq(Directive(Other("smallcaps"), attributes)(directive.prov)))),
+                Named("", Text(Seq(Directive(Other("smallcaps"), attributes, directive.meta)))),
                 Attribute("style", "plain"),
                 Attribute("", s"rule-${attributes.target}")
               )
-            )
-          )(
-            directive.prov
+            ),
+            directive.meta
           )
         )
       case Other("smallcaps") => ctx.retc(s"\\textsc{${attributes.target}}")

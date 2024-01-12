@@ -21,7 +21,7 @@ object ImageReferences:
 
       val blockImageDirectives: List[Directive] = art.context.convertBlocks.flatMap: block =>
         anal.block.substitute(block).flatMap:
-          case img @ Directive(DCommand.Image, _) => Some(img)
+          case img @ Directive(DCommand.Image, _, _) => Some(img)
           case _                                  => None
 
       val images = (art.context.imageDirectives ++ blockImageDirectives).flatMap { directive =>
@@ -35,8 +35,8 @@ object ImageReferences:
             (
               Reference(
                 path.absolute.toString,
-                art.doc.reporter.bytePosToCodepointPos(directive.prov.start),
-                art.doc.reporter.bytePosToCodepointPos(directive.prov.end)
+                art.doc.reporter.bytePosToCodepointPos(directive.meta.prov.start),
+                art.doc.reporter.bytePosToCodepointPos(directive.meta.prov.end)
               ),
               TargetedFileDependency(FileDependency(path, orig, path.absolute), path)
             )

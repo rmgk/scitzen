@@ -2,7 +2,7 @@ package scitzen.blockconverters
 
 import scitzen.compat.Logging.cli
 import scitzen.extern.Hashes
-import scitzen.sast.{Attributes, DCommand, Directive, Sast, Attribute}
+import scitzen.sast.{Attributes, DCommand, Directive, Sast, Attribute, attributes}
 
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
@@ -14,7 +14,7 @@ object GraphvizModule extends BlockConverterModule {
   override def handles: String = "graphviz"
 
   override def convert(converterParams: ConverterParams): List[Sast] =
-    import converterParams.*
+    import converterParams.{content, project, attributes, block}
     val bytes  = content.getBytes(StandardCharsets.UTF_8)
     val name   = Hashes.sha1hex(bytes)
     val format = "pdf"
@@ -43,6 +43,7 @@ object GraphvizModule extends BlockConverterModule {
       Attributes(block.attributes.raw ++ Seq(
         Attribute(target.projectAbsolute.toString),
         Attribute("color", "autoinvert")
-      ))
-    )(block.prov))
+      )),
+      block.meta
+    ))
 }

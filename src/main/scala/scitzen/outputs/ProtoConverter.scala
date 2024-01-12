@@ -13,7 +13,10 @@ import scitzen.sast.Attribute.Named
 import java.nio.file.{Files, Path}
 
 object ProtoConverter:
-  def sublists(list: Seq[FusedListItem], acc: List[(FusedListItem, List[FusedListItem])]): List[(FusedListItem, List[FusedListItem])] =
+  def sublists(
+      list: Seq[FusedListItem],
+      acc: List[(FusedListItem, List[FusedListItem])]
+  ): List[(FusedListItem, List[FusedListItem])] =
     list match
       case Nil => acc.reverse
       case head :: tail =>
@@ -65,16 +68,21 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     singleSast match
       case _: SpaceComment      => ctx.empty
       case paragraph: Paragraph => convertParagraph(ctx, paragraph)
-      case block: Block =>
+      case block: Fenced =>
         if block.command == BCommand.Convert then
           convertSastSeq(ctx, anal.block.substitute(block))
-        else convertBlock(ctx, block)
-      case directive: Directive => convertBlockDirective(ctx, directive)
-      case section: Section     => convertSection(ctx, section)
-      case slist: FusedList         => convertSlist(ctx, slist)
-      case sdef: FusedDefinitions    => convertDefinitionList(ctx, sdef)
+        else convertFenced(ctx, block)
+      case block: FusedDelimited =>
+        if block.delimiter.command == BCommand.Convert then
+          convertSastSeq(ctx, anal.block.substitute(block))
+        else convertDelimited(ctx, block)
+      case directive: Directive   => convertBlockDirective(ctx, directive)
+      case section: Section       => convertSection(ctx, section)
+      case slist: FusedList       => convertSlist(ctx, slist)
+      case sdef: FusedDefinitions => convertDefinitionList(ctx, sdef)
 
-  def convertBlock(ctx: Cta, block: Block): CtxCF
+  def convertDelimited(ctx: Cta, block: FusedDelimited): CtxCF
+  def convertFenced(ctx: Cta, block: Fenced): CtxCF
   def convertBlockDirective(ctx: Cta, directive: Directive): CtxCF =
     convertInlineDirective(ctx, directive).map(v => Chain(inlinesAsToplevel(v)))
   def convertSection(ctx: Cta, section: Section): CtxCF
@@ -159,9 +167,9 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   given Loggable[Directive] with
     override def normal(dir: Directive): String =
       s"⸢${directiveString(dir)}⸥${doc.reporter(dir)}"
-  given Loggable[Block] with
-    override def normal(block: Block): String =
-      s"${block.command}${doc.reporter(block.prov)}"
+  given Loggable[FusedDelimited] with
+    override def normal(block: FusedDelimited): String =
+      s"${block.delimiter.command}${doc.reporter(block.delimiter.meta.prov)}"
 
   def directiveString(directive: Directive) = AtomToScimConverter(anal.bib).directive(directive)
 
@@ -172,7 +180,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         doc.resolve(attributes.target) match
           case None => convertInlineSeq(ctx, List(directive))
           case Some(file) =>
-            convertSast(ctx, Fenced(BCommand.Code, attributes, Files.readString(file.absolute), "", directive.prov))
+            convertSast(ctx, Fenced(BCommand.Code, attributes, Files.readString(file.absolute), directive.meta))
 
       case other =>
         val resolution = References.resolve(directive, document = doc, directory = anal.directory).map: sr =>
@@ -185,7 +193,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
         else
           cli.warn(
             s"unknown include article ${attributes.target}",
-            directive.prov
+            directive.meta.prov
           )
           ctx.empty: CtxCF
 

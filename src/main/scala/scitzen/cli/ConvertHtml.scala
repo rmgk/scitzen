@@ -6,7 +6,7 @@ import scitzen.extern.ResourceUtil
 import scitzen.project.*
 import scitzen.html.sag.{Recipe, Sag, SagContext}
 import scitzen.outputs.{HtmlPages, SastToHtmlConverter}
-import scitzen.sast.{Attribute, Attributes, Prov, Section}
+import scitzen.sast.{Attribute, Attributes, Meta, Prov, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
@@ -78,7 +78,8 @@ class ConvertHtml(anal: ConversionAnalysis):
       Section(
         scitzen.sast.Text(List(scitzen.sast.InlineText(bibname))),
         "==",
-        Attributes(Seq(scitzen.sast.Attribute("unique ref", bibid)))
+        Attributes(Seq(scitzen.sast.Attribute("unique ref", bibid))),
+        Meta.synth
       )
     ).toList
     val citations: Recipe =

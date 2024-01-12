@@ -31,5 +31,5 @@ object MermaidModule extends BlockConverterModule {
         target.absolute.toString
       ).inheritIO().start().waitFor()
       cli.info(s"mermaid compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
-    List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString))(block.prov))
+    List(Directive(DCommand.Image, Attributes.target(target.projectAbsolute.toString), block.meta))
 }

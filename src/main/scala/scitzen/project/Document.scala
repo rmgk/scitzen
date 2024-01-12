@@ -17,8 +17,8 @@ object Document:
     Document(file, content)
 
 trait Reporter:
-  def apply(im: Directive): String = apply(im.prov)
-  def apply(im: Block): String     = apply(im.prov)
+  def apply(im: Directive): String = apply(im.meta.prov)
+  def apply(im: Block): String     = apply(im.meta.prov)
   def apply(prov: Prov): String
 
 final class FileReporter(file: ProjectPath, content: Array[Byte]) extends Reporter:

@@ -35,7 +35,7 @@ object ScalaCliModule extends BlockConverterModule {
       cli.info(s"scala compilation of »$sourcepath« finished in ${(System.nanoTime() - start) / 1000000}ms")
       val pp = project.asProjectPath(outpath)
       List(
-        Directive(DCommand.Script, Attributes.target(pp.projectAbsolute.toString))(block.prov)
+        Directive(DCommand.Script, Attributes.target(pp.projectAbsolute.toString), block.meta)
       )
     else
       cli.warn(s"error scala compiling »$sourcepath« see »$errorFile«")

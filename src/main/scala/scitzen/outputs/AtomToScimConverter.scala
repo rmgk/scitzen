@@ -17,36 +17,36 @@ case class Indent(list: Int, listCheck: List[String], definition: Int, defCheck:
   def format: String   = ("\t" * (delimited + definition + max(0, list - 1))) + (if list > 0 then "  " else "")
 
   @tailrec
-  final def update(container: ::[Container[Atom]]): (String, Indent) =
+  final def update(container: ::[Atom]): (String, Indent) =
     val head = container.head
     val check1 =
-      head.content match
+      head match
         case _: (ListAtom | Text | Directive) =>
           val other = listCheck.headOption.getOrElse("")
           if listCheck.nonEmpty
-            && (head.content.isInstanceOf[ListAtom] && head.indent.length <= other.length)
-            || !head.indent.startsWith(other)
+            && (head.isInstanceOf[ListAtom] && head.meta.indent.length <= other.length)
+            || !head.meta.indent.startsWith(other)
           then
             return copy(list = max(0, list - 1), listCheck.drop(1)).update(container)
           else this
         case other => copy(list = 0, listCheck = Nil)
     val check2 =
       val other = check1.defCheck.headOption.getOrElse("")
-      if !head.content.isInstanceOf[SpaceComment]
+      if !head.isInstanceOf[SpaceComment]
         && (check1.defCheck.nonEmpty
-        && !head.indent.startsWith(other))
+        && !head.meta.indent.startsWith(other))
       then return check1.copy(definition = max(0, check1.definition - 1), check1.defCheck.drop(1)).update(container)
       else check1
 
-    container.head.content match
+    container.head match
       case del: Delimiter =>
         val add  = if del.command == BCommand.Empty then -1 else 1
         val copy = check2.copy(delimited = max(0, check2.delimited + add))
         (if del.command == BCommand.Empty then copy.format else check2.format, copy)
-      case ListAtom(marker, _) =>
-        (check2.formatLi, check2.copy(list = check2.list + 1, listCheck = container.head.indent :: check2.listCheck))
+      case ListAtom(marker, _, meta) =>
+        (check2.formatLi, check2.copy(list = check2.list + 1, listCheck = meta.indent :: check2.listCheck))
       case _: DefinitionListAtom =>
-        val nextIndent = container.tail.headOption.map(_.indent).getOrElse("")
+        val nextIndent = container.tail.headOption.map(_.meta.indent).getOrElse("")
         val form       = check2.format
         (
           form,
@@ -66,32 +66,32 @@ class AtomToScimConverter(bibDB: BibDB):
       case Nil => acc
       case container :: rest =>
         val (format, indent2) = indent.update(::(container, rest))
-        val chains = container.content match
-          case Section(title, prefix, attributes) =>
+        val chains = container match
+          case Section(title, prefix, attributes, meta) =>
             Chain(format, prefix, " ") ++ inlineToScim(title.inl) ++ Chain("\n") ++ {
               val attrStr = attributeConverter.convert(attributes, spacy = true, force = false, light = true)
               if attrStr.isEmpty then Chain.nil
               else Chain(attrStr)
             }
 
-          case Text(inl) =>
-            val actual = if container.indent.startsWith(format) then container.indent else format
+          case TextAtom(Text(inl), meta) =>
+            val actual = if container.meta.indent.startsWith(format) then container.meta.indent else format
             actual +: inlineToScim(inl) :+ "\n"
 
-          case ListAtom(marker, content) =>
+          case ListAtom(marker, content, meta) =>
             format +: marker +: inlineToScim(content) :+ "\n"
 
-          case DefinitionListAtom(marker, content) =>
+          case DefinitionListAtom(marker, content, meta) =>
             format +: marker +: inlineToScim(content) :+ "\n"
 
           case mcro: Directive => Chain(format, directive(mcro), "\n")
 
-          case SpaceComment(text) =>
+          case SpaceComment(text, meta) =>
             Chain(
               text.split("\\n", -1).map(_.stripTrailing()).mkString("\n")
             )
 
-          case Delimiter(_, command, attributes) =>
+          case Delimiter(_, command, attributes, meta) =>
             Chain(
               format,
               "::",
@@ -100,7 +100,7 @@ class AtomToScimConverter(bibDB: BibDB):
               "\n",
             )
 
-          case Fenced(command, attributes, text, _, _) =>
+          case Fenced(command, attributes, text, meta) =>
             val delimiter = "```"
             val indentS   = format
             Chain(
@@ -129,8 +129,8 @@ class AtomToScimConverter(bibDB: BibDB):
 
   def directive(dir: Directive, spacy: Boolean = false): String =
     dir match
-      case Directive(Comment, attributes) => s":%${attributes.target}"
-      case Directive(BibQuery, _)         => directive(bibDB.convert(dir))
+      case Directive(Comment, attributes, meta) => s":%${attributes.target}"
+      case Directive(BibQuery, _, meta)         => directive(bibDB.convert(dir))
       case _ =>
         s":${DCommand.printMacroCommand(dir.command)}${attributeConverter.convert(dir.attributes, spacy, force = true)}"
 

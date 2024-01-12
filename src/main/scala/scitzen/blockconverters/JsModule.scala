@@ -8,5 +8,5 @@ object JsModule extends BlockConverterModule {
   def convert(converterParams: ConverterParams): List[Sast] =
     import converterParams.{attributes, block, content}
     val res = scitzen.extern.JsRunner().run(content, attributes)
-    List(Fenced(BCommand.Code, Attributes.empty, res, block.indent, block.prov))
+    List(Fenced(BCommand.Code, Attributes.empty, res, block.meta))
 }

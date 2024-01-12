@@ -39,11 +39,11 @@ object HtmlPages:
     def recurse(remaining: List[Section], depth: Int): Option[Recipe] =
       remaining match
         case Nil => None
-        case (head @ Section(title, _, _)) :: rest =>
+        case (head : Section) :: rest =>
           val (sub, other) = rest.span(e => e > head)
           val subtags = if depth < maxdepth then recurse(sub, depth + 1)
           else None
-          val res     = converter.convertInlineSeq(ConversionContext(()), title.inl)
+          val res     = converter.convertInlineSeq(ConversionContext(()), head.titleText.inl)
           val thistag = Sag.li(Sag.a(href = s"#${head.ref}", res.data), subtags.map(Sag.ol(_)).toList)
           val nexttag = recurse(other, depth)
           Some:

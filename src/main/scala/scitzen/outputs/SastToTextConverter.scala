@@ -21,26 +21,29 @@ class SastToTextConverter(
   ): ProtoConverter[String, String] =
     SastToTextConverter(::(aref, articleRef), anal, attr)
 
-  override def convertBlock(ctx: Cta, block: Block): CtxCF =
+  override def convertDelimited(ctx: Cta, block: FusedDelimited): CtxCF =
+    convertBlock(ctx, block.delimiter.command, block.delimiter.attributes, block)
+  override def convertFenced(ctx: Cta, block: Fenced): CtxCF = convertBlock(ctx, block.command, block.attributes, block)
+  def convertBlock(ctx: Cta, command: BCommand, attributes: Attributes, block: Block): CtxCF =
     val keepBlock =
-      block.command match
+      command match
         case BCommand.If =>
           val res =
-            settings.get(block.attributes.target) match
-              case Some(_) if block.attributes.plain("equals").isEmpty =>
+            settings.get(attributes.target) match
+              case Some(_) if attributes.plain("equals").isEmpty =>
                 true
               case Some(Attribute.Named(id, value)) =>
-                block.attributes.get("equals").forall(_ == value)
+                attributes.get("equals").forall(_ == value)
               case other => false
-          if block.attributes.get("not").isDefined then !res
+          if attributes.get("not").isDefined then !res
           else res
         case _ => true
 
     if !keepBlock then ctx.empty
     else
       block match
-        case FusedDelimited(_, blockContent)  => convertSastSeq(ctx, blockContent)
-        case Fenced(_, _, text, _, _) => ctx.retc(text)
+        case FusedDelimited(_, blockContent) => convertSastSeq(ctx, blockContent)
+        case Fenced(_, _, text, _)        => ctx.retc(text)
 
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
     convertInlinesCombined(ctx, paragraph.inlines).map(r => Chain(r, "\n\n"))

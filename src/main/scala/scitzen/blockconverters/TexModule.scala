@@ -41,8 +41,9 @@ object TexModule extends BlockConverterModule {
             Attributes(List(
               Attribute(target.projectAbsolute.toString),
               Attribute("color", "autoinvert")
-            ))
-          )(block.prov)
+            )),
+            block.meta
+          )
         )
       case None =>
         Nil

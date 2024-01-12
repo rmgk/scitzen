@@ -77,9 +77,9 @@ class SastToHtmlConverter(
 
   override def convertSection(ctx: Cta, section: Section): CtxCF =
     if section.attributes.plain("hide").isDefined then return ctx.ret(Chain.empty)
-    val Section(title, level, _) = section
-    val inlineCtx                = convertInlineSeq(ctx, title.inl)
-    val innerFrags               = inlineCtx.data
+    val Section(title, level, _, _) = section
+    val inlineCtx                   = convertInlineSeq(ctx, title.inl)
+    val innerFrags                  = inlineCtx.data
     val addDepth: Int =
       if level.contains("=") then 0
       else
@@ -137,42 +137,20 @@ class SastToHtmlConverter(
         convertInlineSeq(ctx, List(directive))
   end convertBlockDirective
 
-  def convertBlock(ctx: Cta, block: Block): CtxCF =
-
-    val innerCtx = block.command match
-      case BCommand.Other("quote") =>
-        val inner = block match
-          case FusedDelimited(_, content) =>
-            convertSastSeq(ctx, content)
-          case Fenced(_, _, content, _, _) =>
-            ctx.retc(Sag.String(content))
-        inner.mapc(i => Sag.blockquote(i))
-
-      case BCommand.Embed =>
-        val js = block match
-          case Fenced(_, _, js, _, _) => Some(js)
-          case _                      => None
-        ctx.retc(Sag.script(`type` = "text/javascript", js.map(str => Sag.Raw(str))))
-
-      case other =>
-        convertStandardBlock(block, ctx)
-
-    block.attributes.get("note").fold(innerCtx) { note =>
+  def convertDelimited(ctx: Cta, block: FusedDelimited): CtxCF =
+    /*
+        block.attributes.get("note").fold(innerCtx) { note =>
       convertInlineSeq(innerCtx, note.text.inl).map { content =>
         innerCtx.data :+ Sag.p(`class` = "marginnote", content)
       }
     }
-  end convertBlock
-
-  override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
-    convertInlineSeq(ctx, paragraph.inlines).map(cf => Chain(Sag.p(cf)))
-
-  def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block match
-    case FusedDelimited(delimiter, blockContent) =>
-      val label = block.attributes.plain("label")
-      if block.command == BCommand.Figure
-      then
-        blockContent.splitAt(blockContent.size - 1) match
+     */
+    val label = block.attributes.plain("label")
+    block.delimiter.command match
+      case BCommand.Other("quote") =>
+        convertSastSeq(ctx, block.content).mapc(i => Sag.blockquote(i))
+      case BCommand.Figure =>
+        block.content.splitAt(block.content.size - 1) match
           case (content, Seq(caption: Paragraph)) =>
             val contentCtx = convertSastSeq(ctx, content)
             val captionCtx = convertInlinesCombined(contentCtx, caption.inlines)
@@ -180,16 +158,25 @@ class SastToHtmlConverter(
           case other =>
             cli.warn(s"figure needs to end with a paragraph as its caption", block)
             ctx.empty
-      else
-        convertSastSeq(ctx, blockContent).map { blockContent =>
-          if delimiter.content.marker.isBlank then
+      case other =>
+        convertSastSeq(ctx, block.content).map { blockContent =>
+          if block.delimiter.marker.isBlank then
             blockContent
           else
             Chain(Sag.section(blockContent, id = label))
         }
 
-    case Fenced(_, _, text, _, _) => handleCodeListing(ctx, block, text)
-  end convertStandardBlock
+  def convertFenced(ctx: Cta, block: Fenced): CtxCF = {
+    block.command match
+      case BCommand.Embed =>
+        ctx.retc(Sag.script(`type` = "text/javascript", Sag.Raw(block.content)))
+
+      case other =>
+        handleCodeListing(ctx, block, block.content)
+  }
+
+  override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
+    convertInlineSeq(ctx, paragraph.inlines).map(cf => Chain(Sag.p(cf)))
 
   def handleCodeListing(ctx: Cta, block: Block, text: String): CtxCF =
     // Code listing
@@ -303,7 +290,7 @@ class SastToHtmlConverter(
     if candidates.sizeIs > 1 then
       cli.warn(
         s"multiple resolutions for ${attrs.target}",
-        reporter(directive.prov)
+        reporter(directive.meta.prov)
       )
       cli.warn(s"\tresolutions are in: ${candidates.map(c => c.scope).mkString("\n\t", "\n\t", "\n\t")}")
 
@@ -324,8 +311,8 @@ class SastToHtmlConverter(
               ""
 
       val resctx = targetDocument.atom match
-        case sec @ Section(title, _, _) =>
-          convertInlineSeq(ctx, nameOpt.getOrElse(title).inl).map: titleText =>
+        case sec: Section =>
+          convertInlineSeq(ctx, nameOpt.getOrElse(sec.titleText).inl).map: titleText =>
             val link = Sag.a(href = s"$fileRef#${References.getLabel(targetDocument).get}", titleText)
             if !produceBlock
             then Chain(link)
