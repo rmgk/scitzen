@@ -3,7 +3,7 @@ package sciparse
 import de.rmgk.scip.*
 import munit.Location
 import scitzen.bibliography.BibDB
-import scitzen.outputs.AtomToScimConverter
+import scitzen.outputs.SastToScimConverter
 import scitzen.parser.{AtomParsers, AttributesParser, CommonParsers, DirectiveParsers, Parse}
 import scitzen.sast.{Fusion, InlineText}
 
@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets
 
 class SciparseTest extends munit.FunSuite {
 
-  val SastToScimConverter = scitzen.outputs.AtomToScimConverter(BibDB.empty)
+  val SastToScimConverter = scitzen.outputs.SastToScimConverter(BibDB.empty)
 
   test("basic directive") {
     rewrap(

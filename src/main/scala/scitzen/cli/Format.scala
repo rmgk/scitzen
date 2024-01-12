@@ -3,7 +3,7 @@ package scitzen.cli
 import scitzen.bibliography.BibDB
 import scitzen.compat.Logging.cli
 import scitzen.project.{ArticleDirectory, ProjectPath}
-import scitzen.outputs.AtomToScimConverter
+import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -79,7 +79,7 @@ object Format:
             )
 
   def formatContent(file: Path, originalContent: Array[Byte], atoms: List[Sast], bibDB: BibDB): Unit =
-    val result      = AtomToScimConverter(bibDB).convertSequence(atoms)
+    val result      = SastToScimConverter(bibDB).convertSequence(atoms)
     val resultBytes = result.iterator.mkString("").getBytes(StandardCharsets.UTF_8)
     if !java.util.Arrays.equals(resultBytes, originalContent) then
       cli.info(s"formatting ${file.getFileName}")

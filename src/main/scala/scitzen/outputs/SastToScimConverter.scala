@@ -12,7 +12,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.ArraySeq
 import scala.math.{max, min}
 
-class AtomToScimConverter(bibDB: BibDB):
+class SastToScimConverter(bibDB: BibDB):
 
   val attributeConverter = AttributesToScim(bibDB)
 
@@ -126,7 +126,7 @@ class AtomToScimConverter(bibDB: BibDB):
 class AttributesToScim(bibDB: BibDB):
 
   def encodeText(text: Text): String =
-    val value = AtomToScimConverter(bibDB).inlineToScim(text.inl).mkString("")
+    val value = SastToScimConverter(bibDB).inlineToScim(text.inl).mkString("")
     AttributeDeparser.quote(
       forceEmpty = false,
       value,

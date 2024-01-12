@@ -6,7 +6,7 @@ import munit.Location
 import scitzen.bibliography.BibDB
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
-import scitzen.outputs.{HtmlPages, AtomToScimConverter}
+import scitzen.outputs.{HtmlPages, SastToScimConverter}
 import scitzen.parser.{AttributesParser, CommonParsers, DirectiveParsers, Parse}
 
 import java.io.ByteArrayOutputStream
@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets
 
 class SagTest extends munit.FunSuite {
 
-  val SastToScimConverter = scitzen.outputs.AtomToScimConverter(BibDB.empty)
+  val SastToScimConverter = scitzen.outputs.SastToScimConverter(BibDB.empty)
 
   test("basic directive") {
 
