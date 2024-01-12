@@ -3,7 +3,7 @@ package scitzen.parser
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
 import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
-import scitzen.sast.{Atom, Attribute, Attributes, BCommand, Container, DefinitionListAtom, Delimiter, Directive, Fenced, Inline, InlineText, ListAtom, Parsed, Prov, Section, SpaceComment, Text}
+import scitzen.sast.{Atom, Attribute, Attributes, BCommand, Container, DefinitionListAtom, Delimiter, Directive, Fenced, Inline, InlineText, ListAtom, FusedDelimited, Prov, Section, SpaceComment, Text}
 
 import java.awt.image.ColorModel
 

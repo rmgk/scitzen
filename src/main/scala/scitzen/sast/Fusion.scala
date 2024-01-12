@@ -7,7 +7,7 @@ import scitzen.parser.{AtomParsers, AttributesParser, CommonParsers, DelimitedBl
 import scitzen.project.{Document, Project}
 import scitzen.sast.{
   Attribute, Attributes, BCommand, Directive, Fenced, FusedDefinitionItem, FusedDefinitions, FusedList, FusedListItem,
-  Inline, InlineText, Paragraph, Parsed, Prov, Sast, Section, SpaceComment, Text
+  Inline, InlineText, Paragraph, FusedDelimited, Prov, Sast, Section, SpaceComment, Text
 }
 
 import java.nio.file.Path
@@ -134,7 +134,7 @@ object Fusion {
         Container(cindent.stripPrefix(indent).stripPrefix("\t"), content, cont.prov)
     val innerSast = fuseTop(adaptedIndent, Nil)
     (
-      scitzen.sast.Parsed(Container(indent, del, prov), innerSast),
+      scitzen.sast.FusedDelimited(Container(indent, del, prov), innerSast),
       rest.drop(1)
     )
 

@@ -2,7 +2,7 @@ package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.parser.CommonParsers.*
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, Parsed, Prov, Sast}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, FusedDelimited, Prov, Sast}
 
 object DelimitedBlockParsers {
 

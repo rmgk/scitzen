@@ -89,11 +89,12 @@ trait Block {
 
 case class Fenced(command: BCommand, attributes: Attributes, content: String, indent: String, prov: Prov) extends Block:
   override def withAttributes(attr: Attributes): Block = copy(attributes = attr)
-case class Parsed(delimiter: Container[Delimiter], content: Seq[Sast]) extends Block:
+
+case class FusedDelimited(delimiter: Container[Delimiter], content: Seq[Sast]) extends Block:
   export delimiter.content.{command, attributes}
   export delimiter.{prov, indent}
   override def withAttributes(attr: Attributes): Block =
-    Parsed(delimiter.copy(content = delimiter.content.copy(attributes = attr)), content)
+    FusedDelimited(delimiter.copy(content = delimiter.content.copy(attributes = attr)), content)
 
 case class Prov(start: Int = -1, end: Int = -1)
 

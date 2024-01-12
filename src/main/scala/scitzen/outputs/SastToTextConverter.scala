@@ -6,7 +6,7 @@ import scitzen.project.ArticleRef
 import scitzen.sast.DCommand.{Include, Lookup, Other}
 import scitzen.sast.{
   Attribute, Attributes, BCommand, Block, FusedDefinitionItem, Directive, Fenced, InlineText, FusedListItem, Paragraph,
-  Parsed, Sast, FusedDefinitions, Section, FusedList, SpaceComment, Text
+  FusedDelimited, Sast, FusedDefinitions, Section, FusedList, SpaceComment, Text
 }
 
 class SastToTextConverter(
@@ -39,7 +39,7 @@ class SastToTextConverter(
     if !keepBlock then ctx.empty
     else
       block match
-        case Parsed(_, blockContent)  => convertSastSeq(ctx, blockContent)
+        case FusedDelimited(_, blockContent)  => convertSastSeq(ctx, blockContent)
         case Fenced(_, _, text, _, _) => ctx.retc(text)
 
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =

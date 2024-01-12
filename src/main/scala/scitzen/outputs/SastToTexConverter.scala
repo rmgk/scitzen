@@ -142,7 +142,7 @@ class SastToTexConverter(
   override def convertBlock(ctx: Cta, block: Block): CtxCS =
     val innerCtx: CtxCS =
       block match
-        case Parsed(_, blockContent) =>
+        case FusedDelimited(_, blockContent) =>
           block.command match
             case BCommand.Figure =>
               val (figContent, caption) =

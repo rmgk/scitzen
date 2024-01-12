@@ -142,7 +142,7 @@ class SastToHtmlConverter(
     val innerCtx = block.command match
       case BCommand.Other("quote") =>
         val inner = block match
-          case Parsed(_, content) =>
+          case FusedDelimited(_, content) =>
             convertSastSeq(ctx, content)
           case Fenced(_, _, content, _, _) =>
             ctx.retc(Sag.String(content))
@@ -168,7 +168,7 @@ class SastToHtmlConverter(
     convertInlineSeq(ctx, paragraph.inlines).map(cf => Chain(Sag.p(cf)))
 
   def convertStandardBlock(block: Block, ctx: Cta): CtxCF = block match
-    case Parsed(delimiter, blockContent) =>
+    case FusedDelimited(delimiter, blockContent) =>
       val label = block.attributes.plain("label")
       if block.command == BCommand.Figure
       then

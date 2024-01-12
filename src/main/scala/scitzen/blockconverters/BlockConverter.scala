@@ -8,7 +8,7 @@ import scitzen.contexts.ConversionContext
 import scitzen.outputs.SastToTextConverter
 import scitzen.project.{Article, ArticleDirectory, Project}
 import scitzen.sast.Attribute.Nested
-import scitzen.sast.{Attribute, Attributes, BCommand, Fenced, Parsed, Sast, Block}
+import scitzen.sast.{Attribute, Attributes, BCommand, Fenced, FusedDelimited, Sast, Block}
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
@@ -55,7 +55,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       return Nil
 
     val (resctx, transformed) = block match
-      case Parsed(del, content) =>
+      case FusedDelimited(del, content) =>
         val resctx = new SastToTextConverter(
           ::(article.ref, Nil),
           ConversionAnalysis.minimal(project, articleDirectory),
