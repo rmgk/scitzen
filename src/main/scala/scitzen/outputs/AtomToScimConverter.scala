@@ -11,14 +11,12 @@ import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import scala.collection.immutable.ArraySeq
 
-class SastToScimConverter(bibDB: BibDB):
+class AtomToScimConverter(bibDB: BibDB):
 
   val attributeConverter = AttributesToScim(bibDB)
 
   def toScimS(b: Atoms): Chain[String] =
     Chain.from(b).flatMap(toScim)
-
-  // Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
 
   def toScim(container: Container[Atom]): Chain[String] =
     container.content match
@@ -98,7 +96,7 @@ class SastToScimConverter(bibDB: BibDB):
 class AttributesToScim(bibDB: BibDB):
 
   def encodeText(text: Text): String =
-    val value = SastToScimConverter(bibDB).inlineToScim(text.inl).mkString("")
+    val value = AtomToScimConverter(bibDB).inlineToScim(text.inl).mkString("")
     AttributeDeparser.quote(
       forceEmpty = false,
       value,

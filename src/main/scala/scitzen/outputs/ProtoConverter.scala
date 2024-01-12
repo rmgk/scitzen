@@ -163,7 +163,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     override def normal(block: Block): String =
       s"${block.command}${doc.reporter(block.prov)}"
 
-  def directiveString(directive: Directive) = SastToScimConverter(anal.bib).directive(directive)
+  def directiveString(directive: Directive) = AtomToScimConverter(anal.bib).directive(directive)
 
   def handleInclude(ctx: Cta, directive: Directive): Ctx[Chain[BlockRes | InlineRes]] = {
     val attributes = directive.attributes
