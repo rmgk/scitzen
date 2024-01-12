@@ -15,7 +15,7 @@ class SastToSastConverter(articleRef: ArticleRef):
   type Ctx[+T] = SastContext[T]
   type Cta     = Ctx[?]
 
-  def ensureUniqueRef[A <: Sast](
+  def ensureUniqueRef(
       ctx: Cta,
       ref1: String,
       attr: Attributes,
