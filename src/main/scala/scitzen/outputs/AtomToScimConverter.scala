@@ -28,13 +28,13 @@ class AtomToScimConverter(bibDB: BibDB):
         }
 
       case Text(inl) =>
-        container.indent +: inlineToScim(inl)
+        container.indent +: inlineToScim(inl) :+ "\n"
 
       case ListAtom(marker, content) =>
-        container.indent +: marker +: inlineToScim(content)
+        container.indent +: marker +: inlineToScim(content) :+ "\n"
 
       case DefinitionListAtom(marker, content) =>
-        container.indent +: marker +: inlineToScim(content)
+        container.indent +: marker +: inlineToScim(content) :+ "\n"
 
       case mcro: Directive => Chain(directive(mcro), "\n")
 
