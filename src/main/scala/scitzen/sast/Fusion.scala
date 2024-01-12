@@ -111,14 +111,14 @@ object Fusion {
   @tailrec
   def fuseDefinitionList(atoms: Atoms, acc: List[FusedDefinitionItem]): (FusedDefinitions, Atoms) = {
     atoms match
-      case (cont @ Container(indent, DefinitionListAtom(pfx, content))) :: tail =>
+      case (cont @ Container(indent, dla: DefinitionListAtom)) :: tail =>
         val nextIndent = tail.head.indent
         val (inner, rest) = tail.collectWhile: cont =>
           if cont.indent.startsWith(nextIndent)
           then Some(cont)
           else None
         val innerFused = fuseTop(inner, Nil)
-        fuseDefinitionList(rest, FusedDefinitionItem(s"$pfx", indent, Text(content), innerFused) :: acc)
+        fuseDefinitionList(rest, FusedDefinitionItem(cont.copy(content = dla), innerFused) :: acc)
 
       case other =>
         (FusedDefinitions(acc.reverse), atoms)

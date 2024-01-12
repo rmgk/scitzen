@@ -56,9 +56,9 @@ class SastToTextConverter(
   override def convertDefinitionList(ctx: Cta, deflist: FusedDefinitions): CtxCF =
     ctx.fold(deflist.items): (ctx, child) =>
       child match
-        case FusedDefinitionItem(_, _, text, inner) =>
-          val tctx = convertInlineSeq(ctx, text.inl)
-          tctx.data ++: convertSastSeq(tctx, inner)
+        case fdi: FusedDefinitionItem =>
+          val tctx = convertInlineSeq(ctx, fdi.text.inl)
+          tctx.data ++: convertSastSeq(tctx, fdi.content)
 
   override def inlineResToBlock(inl: Chain[String]): String  = inl.mkString("")
   override def inlinesAsToplevel(inl: Chain[String]): String = inl.mkString("")

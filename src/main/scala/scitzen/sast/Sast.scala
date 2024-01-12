@@ -6,11 +6,12 @@ type Sast = FusedList | Directive | Section | SpaceComment | Paragraph | Block |
 
 case class FusedList(items: Seq[FusedListItem])
 case class FusedListItem(head: Container[ListAtom], rest: Seq[Container[Text | Directive]]):
-  def indent: String       = head.indent
-  def marker: String       = head.content.marker
-  def paragraph: Paragraph = Paragraph(Container("", Text(head.content.text), head.prov) +: rest)
+  def indent: String            = head.indent
+  def marker: String            = head.content.marker
+  lazy val paragraph: Paragraph = Paragraph(Container("", Text(head.content.text), head.prov) +: rest)
 case class FusedDefinitions(items: Seq[FusedDefinitionItem])
-case class FusedDefinitionItem(marker: String, indent: String, text: Text, content: List[Sast])
+case class FusedDefinitionItem(head: Container[DefinitionListAtom], content: List[Sast]):
+  def text: Text = Text(head.content.text)
 
 sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:
