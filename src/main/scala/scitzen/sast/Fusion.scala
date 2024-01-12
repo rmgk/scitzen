@@ -7,7 +7,7 @@ import scitzen.parser.{AtomParsers, AttributesParser, CommonParsers, DelimitedBl
 import scitzen.project.{Document, Project}
 import scitzen.sast.{
   Attribute, Attributes, BCommand, Directive, Fenced, FusedDefinitionItem, FusedDefinitions, FusedList, FusedListItem,
-  Inline, InlineText, Paragraph, FusedDelimited, Prov, Sast, Section, SpaceComment, Text
+  Inline, InlineText, Paragraph, FusedDelimited, Prov, Sast, Section, SpaceComment
 }
 
 import java.nio.file.Path
@@ -126,7 +126,7 @@ object Fusion {
 
   def fuseDelimited(indent: String, del: Delimiter, atoms: Atoms) = {
     val (innerAtoms, rest) = atoms.span:
-      case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`, _)) =>
+      case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`)) =>
         false
       case other => true
     val innerSast = fuseTop(innerAtoms, Nil)

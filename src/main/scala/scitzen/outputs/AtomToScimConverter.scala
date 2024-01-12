@@ -21,7 +21,7 @@ case class Indent(list: Int, listCheck: List[String], definition: Int, defCheck:
     val head = container.head
     val check1 =
       head match
-        case _: (ListAtom | Text | Directive) =>
+        case _: (ListAtom | TextAtom | Directive) =>
           val other = listCheck.headOption.getOrElse("")
           if listCheck.nonEmpty
             && (head.isInstanceOf[ListAtom] && head.meta.indent.length <= other.length)

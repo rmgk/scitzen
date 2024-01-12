@@ -138,7 +138,7 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
  indented
 """, s"""# Header
 
-indented
+ indented
 """
     )
   }
@@ -170,6 +170,13 @@ indented
              |	• and stuff
              |
              |text after""".stripMargin)
+  }
+
+  test("nested lists") {
+    rewrap(
+      """• listitem
+        |  :link{some directive}
+        |""".stripMargin)
   }
 
 }

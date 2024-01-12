@@ -22,7 +22,8 @@ object AtomParsers {
         AtomParsers.list.trace("list") |
         AtomParsers.delimited.trace("block delim") |
         (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive").map(dir =>
-          (meta: Meta) => dir.copy(meta = meta)
+          (meta: Meta) =>
+            dir.copy(meta = Meta(meta.indent, dir.meta.prov))
         ) |
         AtomParsers.unquoted
       )

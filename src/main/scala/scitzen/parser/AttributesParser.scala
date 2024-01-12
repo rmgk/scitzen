@@ -48,7 +48,7 @@ object AttributesParser {
   }.trace("text")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], Text]] =
-    (anySpacesB ifso (braces.map(Left.apply) | text.map(Right.apply)) )
+    (anySpacesB ifso (braces.map(Left.apply) | text.map(Right.apply)))
 
   val namedAttributeStart: Scip[String] = Scip {
     verticalSpaces.orFail.run

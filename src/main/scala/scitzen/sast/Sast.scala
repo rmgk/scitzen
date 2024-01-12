@@ -2,6 +2,8 @@ package scitzen.sast
 
 import scitzen.parser.TimeParsers
 
+import scala.annotation.targetName
+
 type Sast =
   FusedList | Directive | Section | SpaceComment | Fenced | Paragraph | FusedDelimited | FusedDefinitions
 
@@ -101,9 +103,11 @@ case class Prov(start: Int = -1, end: Int = -1)
 type Atom =
   Directive | TextAtom | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
 
-case class Meta(indent: String, prov: Prov)
+case class Meta(indent: String)(val prov: Prov)
 object Meta:
   val synth = Meta("", Prov())
+  @targetName("constructor")
+  def apply(indent: String, prov: Prov): Meta = new Meta(indent)(prov)
 
 transparent trait TMeta:
   def meta: Meta
