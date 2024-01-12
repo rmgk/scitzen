@@ -8,7 +8,7 @@ type Sast =
   FusedList | Directive | Section | SpaceComment | Fenced | Paragraph | FusedDelimited | FusedDefinitions
 
 case class FusedList(items: Seq[FusedListItem])
-case class FusedListItem(head: ListAtom, rest: Seq[TextAtom | Directive]):
+case class FusedListItem(head: ListAtom, rest: Seq[TextAtom | Directive], children: Seq[FusedListItem]):
   def indent: String            = head.meta.indent
   def marker: String            = head.marker
   lazy val paragraph: Paragraph = Paragraph(TextAtom(Text(head.text), head.meta) +: rest)

@@ -94,10 +94,10 @@ class SastToTexConverter(
 
   override def convertSlist(ctx: Cta, slist: FusedList): CtxCF = {
     if slist.items.isEmpty then return ctx.empty
-    val recipes = ctx.fold[(FusedListItem, List[FusedListItem]), String](ProtoConverter.sublists(slist.items, Nil)):
-      case (ctx, (item, children)) =>
+    val recipes = ctx.fold[FusedListItem, String](slist.items):
+      case (ctx, item) =>
         val para  = convertInlinesCombined(ctx, item.paragraph.inlines)
-        val inner = convertSlist(para, FusedList(children))
+        val inner = convertSlist(para, FusedList(item.children))
         inner.ret(
           s"\\item{${para.data}}" +: inner.data
         )

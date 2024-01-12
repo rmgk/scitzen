@@ -12,19 +12,6 @@ import scitzen.sast.Attribute.Named
 
 import java.nio.file.{Files, Path}
 
-object ProtoConverter:
-  def sublists(
-      list: Seq[FusedListItem],
-      acc: List[(FusedListItem, List[FusedListItem])]
-  ): List[(FusedListItem, List[FusedListItem])] =
-    list match
-      case Nil => acc.reverse
-      case head :: tail =>
-        val (children, rest) = tail.span: li =>
-          li.indent.length > head.indent.length && li.indent.startsWith(head.indent)
-
-        sublists(rest, (head, children) :: acc)
-
 abstract class ProtoConverter[BlockRes, InlineRes](
     articleRef: ::[ArticleRef],
     anal: ConversionAnalysis,

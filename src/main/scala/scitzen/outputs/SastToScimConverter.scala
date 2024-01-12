@@ -39,9 +39,9 @@ class SastToScimConverter(bibDB: BibDB):
           convertAtom(fdi.head, indent) ++ convertSequence(fdi.content, s"$indent\t")
   }
   def convertFusedList(items: Seq[FusedListItem], indent: String): Chain[String] =
-    ProtoConverter.sublists(items, Nil).to(Chain).flatMap: (item, children) =>
+    items.to(Chain).flatMap: item =>
       convertAtom(item.head, indent) ++ item.rest.flatMap(r => convertAtom(r, s"$indent  ")) ++
-      convertFusedList(children, s"$indent\t")
+      convertFusedList(item.children, s"$indent\t")
 
   def convertAtom(atom: Atom, indent: String): Chain[String] = {
     atom match

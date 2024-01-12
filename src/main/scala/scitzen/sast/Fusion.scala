@@ -102,11 +102,24 @@ object Fusion {
         val (textSnippets, rest) = collectType[TextAtom | Directive](tail)
         fuseList(
           rest,
-          FusedListItem(la, textSnippets) :: acc
+          FusedListItem(la, textSnippets, Nil) :: acc
         )
       case other =>
-        (FusedList(acc.reverse), atoms)
+        (FusedList(sublists(acc.reverse, Nil)), atoms)
   }
+
+  def sublists(
+      list: Seq[FusedListItem],
+      acc: List[FusedListItem]
+  ): List[FusedListItem] =
+    list match
+      case Nil => acc.reverse
+      case head :: tail =>
+        val (children, rest) = tail.span: li =>
+          li.indent.length > head.indent.length && li.indent.startsWith(head.indent)
+
+        val item = head.copy(children = sublists(children, Nil))
+        sublists(rest, item :: acc)
 
   @tailrec
   def fuseDefinitionList(atoms: Atoms, acc: List[FusedDefinitionItem]): (FusedDefinitions, Atoms) = {
