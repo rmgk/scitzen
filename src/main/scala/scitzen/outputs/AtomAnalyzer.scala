@@ -8,7 +8,7 @@ import scitzen.project.{ArticleRef, SastRef}
 import scitzen.sast.*
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include, Index, Ref}
 
-class SastToSastConverter(articleRef: ArticleRef):
+class AtomAnalyzer(articleRef: ArticleRef):
 
   def document = articleRef.document
 

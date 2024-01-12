@@ -2,7 +2,7 @@ package scitzen.project
 
 import scitzen.compat.Logging
 import scitzen.contexts.SastContext
-import scitzen.outputs.SastToSastConverter
+import scitzen.outputs.AtomAnalyzer
 import scitzen.parser.Atoms.{Atom, Container}
 import scitzen.parser.Fusion.Atoms
 import scitzen.parser.{Fusion, Parse}
@@ -65,7 +65,7 @@ object ArticleProcessing:
   def processArticles(doc: Document): List[Article] =
     items(doc).map: atoms =>
       val ref = new ArticleRef(doc)
-      val ctx = new SastToSastConverter(ref).convertSeq(atoms)(SastContext(()))
+      val ctx = new AtomAnalyzer(ref).convertSeq(atoms)(SastContext(()))
       val processedAtoms = ctx.data.toList
       val sast = Fusion.fuseTop(processedAtoms, Nil)
       Article(ref, sast, doc, ctx.ret(()), processedAtoms)
