@@ -1,12 +1,13 @@
 package scitzen.project
 
 import scitzen.compat.Logging.cli
+import scitzen.parser.Atoms.Atom
 import scitzen.sast.{Block, Directive, Sast, Section}
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters.*
 
-case class SastRef(sast: Sast, articleRef: ArticleRef):
+case class SastRef(sast: Atom, articleRef: ArticleRef):
   def scope = articleRef.document.path
 
 object References:
@@ -16,7 +17,9 @@ object References:
     val candidates =
       val target = directive.attributes.target
       val byPath = document.resolve(target).flatMap(directory.byPath.get).flatMap(_.headOption).map: (art: Article) =>
-        SastRef(art.sast.head, art.ref)
+        art.sast.head match
+          case sec: Section => SastRef(sec, art.ref)
+          case _ => ???
       .toList
       val byLabel = directory.labels.getOrElse(directive.attributes.target, Nil)
       byPath ++ byLabel

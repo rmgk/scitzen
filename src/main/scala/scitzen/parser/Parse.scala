@@ -2,6 +2,7 @@ package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.compat.Logging
+import scitzen.parser.Fusion.Atoms
 import scitzen.project.Document
 import scitzen.sast.{Inline, Prov, Sast}
 
@@ -38,7 +39,14 @@ object Parse {
       Fusion.parser,
       Some(doc)
     )
+  }
 
+  def atoms(doc: Document): Atoms = {
+    parseResult(
+      doc.content,
+      Fusion.atoms,
+      Some(doc)
+    )
   }
 
   def bibfileUnwrap(bibfile: Array[Byte]): List[Biblet] = {

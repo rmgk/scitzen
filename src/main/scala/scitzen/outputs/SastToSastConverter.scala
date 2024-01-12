@@ -2,7 +2,8 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
-import scitzen.parser.Atoms.Container
+import scitzen.parser.Atoms.{Atom, Container, DefinitionListAtom, Delimiter, ListAtom}
+import scitzen.parser.Fusion.Atoms
 import scitzen.project.{ArticleRef, SastRef}
 import scitzen.sast.*
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include, Index, Ref}
@@ -11,7 +12,7 @@ class SastToSastConverter(articleRef: ArticleRef):
 
   def document = articleRef.document
 
-  type CtxCS   = SastContext[Chain[Sast]]
+  type CtxCS   = SastContext[Chain[Container[Atom]]]
   type Ctx[+T] = SastContext[T]
   type Cta     = Ctx[?]
 
@@ -29,85 +30,72 @@ class SastToSastConverter(articleRef: ArticleRef):
     val aliases  = ref1 :: newLabel :: attr.plain("aliases").toList.flatMap(_.split(',').toList)
     counter.ret((aliases, attr.updated("unique ref", newLabel)))
 
-  def convertSeq(b: Seq[Sast])(ctx: Cta): CtxCS =
+  def convertSeq(b: Atoms)(ctx: Cta): CtxCS =
     ctx.fold(b) { (ctx, sast) => convertSingle(sast)(ctx).single }
 
-  def convertSingle(sast: Sast)(ctx: Cta): Ctx[Sast] =
-    sast match
+  // Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
+  def convertSingle(container: Container[Atom])(ctx: Cta): Ctx[Container[Atom]] =
+    val newContent: Ctx[Atom] = container.content match
       case sc: SpaceComment => ctx.ret(sc)
 
-      case Paragraph(content) =>
-        val res = convertParagraph(ctx, content)
-        res.map(il => Paragraph(il.toSeq))
+      case text: Text =>
+        convertInlines(ctx, text.inl).map(i => Text(i.toSeq))
 
-      case tlBlock: Block =>
-        convertBlock(tlBlock)(ctx)
+      case fenced: Fenced =>
+        val refctx = ensureRefForLabel(fenced, ctx)
+        if refctx.data.command == BCommand.Convert
+        then refctx.addConversionBlock(refctx.data)
+        else refctx
+
+      case delimiter: Delimiter => ensureRefForLabel(delimiter, ctx)
 
       case sec @ Section(title, level, _) =>
-        val ctxWithRef = ensureSectionRef(sec, ctx)
+        val ctxWithRef = ensureRefForLabel(sec, ctx)
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
-        convertInlines(title.inl)(conCtx).map { title =>
+        convertInlines(conCtx, title.inl).map { title =>
           Section(Text(title.toList), level, newSection.attributes)
         }
 
-      case Slist(children) =>
-        ctx.fold[ListItem, ListItem](children) { (origctx, origchild) =>
-          convertParagraph(origctx, origchild.paragraph.content).map: text =>
-            Chain(ListItem(origchild.marker, origchild.indent, Paragraph(text.toSeq)))
-        }.map { cs =>
-          Slist(cs.toSeq)
-        }
+      case ListAtom(m, cont)           => convertInlines(ctx, cont).map(i => ListAtom(m, cont))
+      case DefinitionListAtom(m, cont) => convertInlines(ctx, cont).map(i => DefinitionListAtom(m, cont))
 
-      case Sdefinition(children) =>
-        ctx.fold[DefinitionItem, DefinitionItem](children) { (origctx, origchild) =>
-          val text = convertText(origchild.text, origctx)
-          val content = convertSeq(origchild.content)(text)
-          content.ret(Chain(DefinitionItem(origchild.marker, origchild.indent, text.data, content.data.toList)))
-        }.map { cs =>
-          Sdefinition(cs.toSeq)
-        }
+      case mcro: Directive => convertDirective(mcro)(ctx)
 
-      case mcro: Directive =>
-        convertDirective(mcro)(ctx)
+    newContent.map(c => container.copy(content = c))
 
-  private def convertParagraph(ctx: Cta, content: Seq[Container[Text | Directive]]) = {
-    val res: Ctx[Chain[Container[Text | Directive]]] = ctx.fold(content): (ctx, cont) =>
-      cont.content match
-        case dir: Directive => convertDirective(dir)(ctx).map(res => Chain(cont.copy(content = res)))
-        case text: Text     => convertText(text, ctx).map(res => Chain(cont.copy(content = res)))
-    res
-  }
-  def convertBlock(block: Block)(ctx: Cta): Ctx[Sast] =
-    // make all blocks labellable
-    val refctx: Ctx[Block] = ensureBlockRef(block, ctx)
-    val ublock             = refctx.data
-    val resctx = ublock match
-      case Parsed(delimiter, blockContent) =>
-        convertSeq(blockContent)(refctx).map(bc =>
-          Parsed(delimiter, bc.toList)
-        )
+  trait Labellable[T]:
+    extension (t: T)
+      def label: Option[String]
+      def attributes: Attributes
+      def withAttributes(attributes: Attributes): T
+  object Labellable:
+    given Labellable[Section] with {
+      extension (t: Section)
+        override def label: Option[String]                           = Some(t.autolabel)
+        override def attributes: Attributes                          = t.attributes
+        override def withAttributes(attributes: Attributes): Section = t.copy(attributes = attributes)
+    }
+    given Labellable[Fenced] with {
+      extension (t: Fenced)
+        override def label: Option[String]                          = t.attributes.plain("label")
+        override def attributes: Attributes                         = t.attributes
+        override def withAttributes(attributes: Attributes): Fenced = t.copy(attributes = attributes)
+    }
+    given Labellable[Delimiter] with {
+      extension (t: Delimiter)
+        override def label: Option[String]                             = t.attributes.plain("label")
+        override def attributes: Attributes                            = t.attributes
+        override def withAttributes(attributes: Attributes): Delimiter = t.copy(attributes = attributes)
+    }
 
-      case _: Fenced => refctx.ret(ublock)
-    if resctx.data.command == BCommand.Convert
-    then resctx.addConversionBlock(resctx.data)
-    else resctx
-
-  private def ensureSectionRef(sec: Section, ctx: Cta): Ctx[Section] = {
-    val resctx          = ensureUniqueRef(ctx, sec.autolabel, sec.attributes)
-    val (aliases, attr) = resctx.data
-    val ublock          = sec.copy(attributes = attr)
-    val target          = SastRef(ublock, articleRef)
-    refAliases(resctx, aliases, target).ret(ublock)
-  }
-
-  private def ensureBlockRef(block: Block, ctx: Cta) = {
-    block.attributes.plain("label") match
-      case None => ctx.ret(block)
+  private def ensureRefForLabel[T <: Atom: Labellable](entity: T, ctx: Cta): Ctx[T] = {
+    entity.label match
+      case None => ctx.ret(entity)
       case Some(ref) =>
-        val resctx          = ensureUniqueRef(ctx, ref, block.attributes)
+        val resctx          = ensureUniqueRef(ctx, ref, entity.attributes)
         val (aliases, attr) = resctx.data
-        val ublock          = block.withAttributes(attr)
+        val ublock          = entity.withAttributes(attr)
         val target          = SastRef(ublock, articleRef)
         refAliases(resctx, aliases, target).ret(ublock)
   }
@@ -115,9 +103,7 @@ class SastToSastConverter(articleRef: ArticleRef):
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
 
-  def convertText(text: Text, ctx: Cta) = convertInlines(text.inl)(ctx).map(il => Text(il.toList))
-
-  def convertInlines(inners: Seq[Inline])(ctx: Cta): Ctx[Chain[Inline]] =
+  def convertInlines(ctx: Cta, inners: Seq[Inline]): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>
       inline match
         case inlineText: InlineText => ctx.ret(Chain.one(inlineText))

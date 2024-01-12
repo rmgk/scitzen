@@ -3,7 +3,9 @@ package scitzen.project
 import scitzen.compat.Logging
 import scitzen.contexts.SastContext
 import scitzen.outputs.SastToSastConverter
-import scitzen.parser.Parse
+import scitzen.parser.Atoms.{Atom, Container}
+import scitzen.parser.Fusion.Atoms
+import scitzen.parser.{Fusion, Parse}
 import scitzen.sast.{Sast, Section}
 
 import scala.annotation.tailrec
@@ -64,9 +66,10 @@ object ArticleProcessing:
     items(doc).map: art =>
       val ref = new ArticleRef(doc)
       val ctx = new SastToSastConverter(ref).convertSeq(art)(SastContext(()))
-      Article(ref, ctx.data.toList, doc, ctx.ret(()), art)
+      val sast = Fusion.fuseTop(ctx.data.toList, Nil)
+      Article(ref, sast, doc, ctx.ret(()))
 
-  def headerType(sast: Sast) = sast match
+  def headerType(atom: Atom) = atom match
     case Section(_, t @ ("=" | "=="), _) => t.length
     case _                               => 3
 
@@ -76,17 +79,17 @@ object ArticleProcessing:
     * • all full articles
     * Any sub articles within a full article are not returned on their own.
     */
-  def items(document: Document): List[List[Sast]] =
-    val sast         = Parse.documentUnwrap(document)
-    val (snip, rest) = sast.span(s => headerType(s) == 3)
+  def items(document: Document): List[Atoms] =
+    val atoms        = Parse.atoms(document)
+    val (snip, rest) = atoms.span(s => headerType(s.content) == 3)
     @scala.annotation.tailrec
-    def rec(rem: List[Sast], acc: List[List[Sast]]): List[List[Sast]] =
+    def rec(rem: Atoms, acc: List[Atoms]): List[Atoms] =
       rem match
         case Nil => acc.reverse
-        case (h: Section) :: t =>
+        case (cont @ Container(_, h: Section)) :: t =>
           val htype        = headerType(h)
-          val (body, rest) = t.span(s => headerType(s) > htype)
-          rec(rest, (h :: body) :: acc)
+          val (body, rest) = t.span(s => headerType(s.content) > htype)
+          rec(rest, (cont :: body) :: acc)
         case other :: rest =>
           throw new IllegalStateException(s"unexpected sast when looking for item: $other")
     val res = rec(rest, Nil)
