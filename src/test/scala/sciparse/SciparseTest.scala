@@ -21,7 +21,7 @@ class SciparseTest extends munit.FunSuite {
   }
 
   test("nested") {
-    rewrap(""":emph{ :{ note } }""")
+    rewrap(""":emph{ :{ note } }""", """:emph{:{note } }""")
   }
 
   test("basic header") {

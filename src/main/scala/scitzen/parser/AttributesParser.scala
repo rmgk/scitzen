@@ -32,7 +32,9 @@ object AttributesParser {
     */
   val text: Scip[Text] = Scip {
     val r = quotes.opt.run match
-      case None => unquotedInlines
+      case None =>
+        verticalSpaces.run
+        unquotedInlines.run
       case Some(closing) =>
         val closeP = seq(closing)
         InlineParsers.full(
@@ -41,8 +43,8 @@ object AttributesParser {
             verticalSpaces.trace("spaces") and
             terminationCheckB.trace("terminate")
           ).trace("endingfun")
-        ).trace("inline full")
-    scitzen.sast.Text(r.run)
+        ).trace("inline full").run
+    scitzen.sast.Text(r)
   }.trace("text")
 
   val namedAttributeValue: Scip[Either[Seq[Attribute], Text]] =
@@ -118,7 +120,7 @@ object AttributeDeparser {
       candidate.view.map(_.apply()).find(parses)
 
     val candidates =
-      if value.startsWith("{")
+      if value.startsWith(" ") || value.startsWith("{")
       then List(() => s""""$value"""")
       else List(() => value, () => s""""$value"""")
 
