@@ -2,7 +2,6 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
-import scitzen.parser.Atoms.{Atom, Container, DefinitionListAtom, Delimiter, ListAtom}
 import scitzen.sast.Fusion.Atoms
 import scitzen.project.{ArticleRef, SastRef}
 import scitzen.sast.*

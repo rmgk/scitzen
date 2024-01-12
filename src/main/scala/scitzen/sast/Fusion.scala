@@ -2,9 +2,8 @@ package scitzen.sast
 
 import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
 import scitzen.compat.Logging
-import scitzen.parser.Atoms.{Atom, Container, DefinitionListAtom, Delimiter, ListAtom, annotatedAtom}
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
-import scitzen.parser.{Atoms, AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
+import scitzen.parser.{AtomParsers, AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}
 import scitzen.sast.{
   Attribute, Attributes, BCommand, Directive, Fenced, FusedDefinitionItem, FusedDefinitions, FusedList, FusedListItem,
@@ -40,7 +39,7 @@ object Fusion {
       if scx.index >= scx.maxpos
       then acc.reverse
       else
-        val atom = Atoms.alternatives.runInContext(scx)
+        val atom = AtomParsers.alternatives.runInContext(scx)
         rec(atom :: acc)
     }
     rec(Nil)

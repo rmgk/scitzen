@@ -1,8 +1,7 @@
 package scitzen.project
 
 import scitzen.compat.Logging.cli
-import scitzen.parser.Atoms.{Atom, Delimiter}
-import scitzen.sast.{Block, Directive, Fenced, Sast, Section}
+import scitzen.sast.{Atom, Block, Delimiter, Directive, Fenced, Sast, Section}
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters.*

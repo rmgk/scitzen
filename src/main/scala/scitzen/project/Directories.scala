@@ -3,10 +3,9 @@ package scitzen.project
 import scitzen.compat.Logging
 import scitzen.contexts.SastContext
 import scitzen.outputs.AtomAnalyzer
-import scitzen.parser.Atoms.{Atom, Container}
 import scitzen.sast.Fusion.Atoms
 import scitzen.parser.Parse
-import scitzen.sast.{Fusion, Sast, Section}
+import scitzen.sast.{Atom, Container, Fusion, Sast, Section}
 
 import scala.annotation.tailrec
 

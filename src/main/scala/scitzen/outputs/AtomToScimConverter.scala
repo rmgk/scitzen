@@ -2,7 +2,6 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.bibliography.BibDB
-import scitzen.parser.Atoms.{Atom, Container, DefinitionListAtom, Delimiter, ListAtom}
 import scitzen.sast.Fusion.Atoms
 import scitzen.parser.{AttributeDeparser, AttributesParser}
 import scitzen.sast.*

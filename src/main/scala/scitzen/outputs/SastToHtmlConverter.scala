@@ -9,8 +9,6 @@ import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.project.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
-import scitzen.parser.Atoms
-import scitzen.parser.Atoms.Delimiter
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
 import scitzen.sast.Attribute.Named

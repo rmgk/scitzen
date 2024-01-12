@@ -3,34 +3,26 @@ package scitzen.parser
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
 import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
-import scitzen.sast.{
-  Attribute, Attributes, BCommand, Directive, Fenced, Inline, InlineText, Parsed, Prov, Section, SpaceComment, Text
-}
+import scitzen.sast.{Atom, Attribute, Attributes, BCommand, Container, DefinitionListAtom, Delimiter, Directive, Fenced, Inline, InlineText, ListAtom, Parsed, Prov, Section, SpaceComment, Text}
 
 import java.awt.image.ColorModel
 
-object Atoms {
+object AtomParsers {
 
   def alternatives: Scip[Container[Atom]] = Scip {
     (
-      Atoms.fenced |
-      Atoms.whitespace |
+      AtomParsers.fenced |
+      AtomParsers.whitespace |
       annotatedAtom(
-        Atoms.section.trace("section") |
-        Atoms.definitionList.trace("definition list") |
-        Atoms.list.trace("list") |
-        Atoms.delimited.trace("block delim") |
+        AtomParsers.section.trace("section") |
+        AtomParsers.definitionList.trace("definition list") |
+        AtomParsers.list.trace("list") |
+        AtomParsers.delimited.trace("block delim") |
         (DirectiveParsers.full <~ CommonParsers.spaceLineF).trace("block directive") |
-        Atoms.unquoted
+        AtomParsers.unquoted
       )
     ).trace("block").run
   }
-
-  type Atom =
-    Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
-  case class Container[+A <: Atom](indent: String, content: A, prov: Prov)
-  object Container:
-    def unapply[A <: Atom](cont: Container[A]): (String, A) = (cont.indent, cont.content)
 
   inline def annotatedAtom[A <: Atom](inline atomParser: Scip[A]): Scip[Container[A]] =
     Scip {
@@ -41,8 +33,7 @@ object Atoms {
       Container(indent, atom, Prov(start, end))
     }
 
-  case class ListAtom(marker: String, text: Seq[Inline])
-  case class DefinitionListAtom(marker: String, text: Seq[Inline])
+
 
   val textline: Scip[List[Inline]] = Scip {
     val inlines = InlineParsers.full(eol).run
@@ -83,7 +74,6 @@ object Atoms {
     Container("", SpaceComment(content), prov)
   }
 
-  case class Delimiter(marker: String, command: BCommand, attributes: Attributes)
 
   def delimited: Scip[Delimiter] = Scip {
     val start   = ":".any.rep.min(2).str.run

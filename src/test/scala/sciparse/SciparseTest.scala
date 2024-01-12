@@ -4,7 +4,7 @@ import de.rmgk.scip.*
 import munit.Location
 import scitzen.bibliography.BibDB
 import scitzen.outputs.AtomToScimConverter
-import scitzen.parser.{Atoms, AttributesParser, CommonParsers, DirectiveParsers, Parse}
+import scitzen.parser.{AtomParsers, AttributesParser, CommonParsers, DirectiveParsers, Parse}
 import scitzen.sast.{Fusion, InlineText}
 
 import java.nio.charset.StandardCharsets
@@ -155,7 +155,7 @@ indented
 
   test("text parser") {
     val ctx = Scx("actual text\n    \n").copy(tracing = false)
-    val res = Atoms.textline.runInContext(ctx)
+    val res = AtomParsers.textline.runInContext(ctx)
     assertEquals(res, List(InlineText("actual text", 0)))
   }
 

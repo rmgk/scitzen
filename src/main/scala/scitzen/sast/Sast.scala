@@ -1,14 +1,13 @@
 package scitzen.sast
 
-import scitzen.parser.Atoms.{Container, Delimiter, ListAtom}
 import scitzen.parser.TimeParsers
 
 type Sast = FusedList | Directive | Section | SpaceComment | Paragraph | Block | FusedDefinitions
 
 case class FusedList(items: Seq[FusedListItem])
 case class FusedListItem(head: Container[ListAtom], rest: Seq[Container[Text | Directive]]):
-  def indent: String = head.indent
-  def marker: String = head.content.marker
+  def indent: String       = head.indent
+  def marker: String       = head.content.marker
   def paragraph: Paragraph = Paragraph(Container("", Text(head.content.text), head.prov) +: rest)
 case class FusedDefinitions(items: Seq[FusedDefinitionItem])
 case class FusedDefinitionItem(marker: String, indent: String, text: Text, content: List[Sast])
@@ -96,3 +95,13 @@ case class Parsed(delimiter: Container[Delimiter], content: Seq[Sast]) extends B
     Parsed(delimiter.copy(content = delimiter.content.copy(attributes = attr)), content)
 
 case class Prov(start: Int = -1, end: Int = -1)
+
+type Atom =
+  Directive | Text | Delimiter | ListAtom | Section | SpaceComment | DefinitionListAtom | Fenced
+case class Container[+A <: Atom](indent: String, content: A, prov: Prov)
+object Container:
+  def unapply[A <: Atom](cont: Container[A]): (String, A) = (cont.indent, cont.content)
+
+case class ListAtom(marker: String, text: Seq[Inline])
+case class DefinitionListAtom(marker: String, text: Seq[Inline])
+case class Delimiter(marker: String, command: BCommand, attributes: Attributes)
