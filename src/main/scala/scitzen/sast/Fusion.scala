@@ -16,6 +16,8 @@ import scala.reflect.TypeTest
 
 object Fusion {
 
+  type Atoms = List[Atom]
+  
   def run(project: Project, absolute: List[Path]): Unit =
     absolute.foreach: abs =>
       val pp      = project.asProjectPath(abs)
@@ -66,8 +68,6 @@ object Fusion {
     atoms.collectWhile:
       case ws: As => Some(ws)
       case other  => None
-
-  type Atoms = List[Atom]
 
   @tailrec
   def fuseTop(atoms: Atoms, sastAcc: List[Sast]): List[Sast] = {
