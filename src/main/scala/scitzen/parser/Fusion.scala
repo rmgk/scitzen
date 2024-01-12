@@ -35,14 +35,15 @@ object Fusion {
       .foreach(el => println(el))
 
   def parser: Scip[List[Sast]] = Scip {
-    def atoms(): Atoms =
+    @tailrec
+    def atoms(acc: Atoms): Atoms =
       if scx.index >= scx.maxpos
-      then List.empty
+      then acc.reverse
       else
         val atom = Atoms.alternatives.runInContext(scx)
-        atom :: atoms()
+        atoms(atom :: acc)
 
-    fuseTop(atoms(), Nil)
+    fuseTop(atoms(Nil), Nil)
   }
 
   extension [A](list: List[A])
