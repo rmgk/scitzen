@@ -17,7 +17,7 @@ object Dependencies {
   def quicklens     = libraryDependencies += "com.softwaremill.quicklens" %%% "quicklens"        % "1.9.0"
   def scalacheck    = libraryDependencies += "org.scalacheck"             %%% "scalacheck"       % "1.17.0"    % Test
   def scalaJavaTime = libraryDependencies += "io.github.cquiroz"          %%% "scala-java-time"  % "2.3.0"
-  def scalajsDom    = libraryDependencies += "org.scala-js"               %%% "scalajs-dom"      % "2.6.0"
+  def scalajsDom    = libraryDependencies += "org.scala-js"               %%% "scalajs-dom"      % "2.8.0"
   def scalatags     = libraryDependencies += "com.lihaoyi"                %%% "scalatags"        % "0.12.0"
   def scribe        = libraryDependencies += "com.outr"                   %%% "scribe"           % "3.10.7"
   def scribeSlf4j   = libraryDependencies += "com.outr"                    %% "scribe-slf4j"     % "3.10.7"
@@ -27,8 +27,8 @@ object Dependencies {
   def upickle       = libraryDependencies += "com.lihaoyi"                %%% "upickle"          % "3.1.3"
   def jsoniterScala =
     libraryDependencies ++= Seq(
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core"   % "2.27.2",
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % "2.27.2" % "provided"
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core"   % "2.27.3",
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % "2.27.3" % "provided"
     )
 
   object slips {
