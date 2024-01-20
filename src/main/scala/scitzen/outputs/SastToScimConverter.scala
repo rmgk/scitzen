@@ -142,13 +142,11 @@ class AttributesToScim(bibDB: BibDB):
     val pairs = attributes.raw.map {
       case Attribute("", _, v) => encodeText(v)
       case Attribute(k, _, v) =>
-        val spaces = " " * max(keylen - k.length, 0)
-        if spacy then s"""$k $spaces= ${encodeText(v)}"""
+        if spacy
+        then
+          val spaces = " " * max(keylen - k.length, 0)
+          s"""$k $spaces= ${encodeText(v)}"""
         else s"""$k=${encodeText(v)}"""
-//      case Nested(k, v) =>
-//        val spaces = " " * max(keylen - k.length, 0)
-//        if spacy then s"""$k $spaces= ${convert(v, spacy, force, light)}"""
-//        else s"""$k=${convert(v, spacy, force, light)}"""
     }
 
     if !(spacy && attributes.raw.size > 1) then
