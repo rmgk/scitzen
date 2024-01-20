@@ -79,11 +79,11 @@ object ConvertProject:
         .runToFuture(using ())
     .flatten
 
-    cli.info(s"scheduled bib ${timediff()}")
+    cli.trace(s"scheduled bib ${timediff()}")
 
     val blockConversions = BlockConverter(project, directory).run()
 
-    cli.info(s"block converted ${blockConversions.mapping.size} ${timediff()}")
+    cli.trace(s"block converted ${blockConversions.mapping.size} ${timediff()}")
 
     val cachedConverter = new CachedConverterRouter(
       project.cacheDir.resolve("inlineConverter.json"),
@@ -97,7 +97,7 @@ object ConvertProject:
       .toList
 
     val bibdb: BibDB = Await.result(dblpFuture, 30.seconds)
-    cli.info(s"awaited bib (entries ${bibdb.entries.size}) (queried ${bibdb.queried.size}) ${timediff()}")
+    cli.trace(s"awaited bib (entries ${bibdb.entries.size}) (queried ${bibdb.queried.size}) ${timediff()}")
 
     val anal = ConversionAnalysis(
       project = project,
@@ -107,14 +107,14 @@ object ConvertProject:
       converter = Some(cachedConverter)
     )
 
-    cli.info(s"completed conversions ${timediff()}")
+    cli.trace(s"completed conversions ${timediff()}")
 
     if !project.adhoc.isDefined then
       Format.formatContents(anal)
-      cli.info(s"formatted contents ${timediff()}")
+      cli.trace(s"formatted contents ${timediff()}")
     if formatFilenames then
       Format.formatRename(directory, selected.map(_.article.doc.path).distinct, bibdb)
-      cli.info(s"formatted filenames ${timediff()}")
+      cli.trace(s"formatted filenames ${timediff()}")
 
     val htmlresult = ConvertHtml(anal).convertToHtml(selected)
     cli.info(s"generated html ${timediff()}")
@@ -160,7 +160,7 @@ object ConvertProject:
             ()
         .run(using ())(_ => cdl.countDown())
       cdl.await()
-      cli.info(s"ensured conversions for ${convertees.size} images ${timediff()}")
+      cli.trace(s"ensured conversions for ${convertees.size} images ${timediff()}")
     }
 
     {

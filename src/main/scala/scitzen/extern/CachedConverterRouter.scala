@@ -16,7 +16,7 @@ class CachedConverterRouter(cachePath: Path, katexLibrary: KatexLibrary):
   val cache: AtomicReference[Map[String, String]] = AtomicReference:
     val start = System.nanoTime()
     val res = Using(Files.newInputStream(cachePath)) { is => readFromStream[Map[String, String]](is) }.getOrElse(Map())
-    Logging.cli.info(s"loading cache took ${(System.nanoTime() - start) / 1000000}ms")
+    Logging.cli.trace(s"loading cache took ${(System.nanoTime() - start) / 1000000}ms")
     res
 
   def convert(lang: String, str: String): String =
