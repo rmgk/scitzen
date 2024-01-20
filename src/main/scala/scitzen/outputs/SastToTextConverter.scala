@@ -54,7 +54,7 @@ class SastToTextConverter(
     ctx.fold(slist.items): (ctx, child) =>
       child match
         case fli: FusedListItem =>
-          convertInlineSeq(ctx, fli.paragraph.inlines)
+          convertInlineSeq(ctx, fli.inlines)
 
   override def convertDefinitionList(ctx: Cta, deflist: FusedDefinitions): CtxCF =
     ctx.fold(deflist.items): (ctx, child) =>

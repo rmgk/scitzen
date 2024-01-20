@@ -11,7 +11,7 @@ case class FusedList(items: Seq[FusedListItem])
 case class FusedListItem(head: ListAtom, rest: Seq[TextAtom | Directive], children: Seq[FusedListItem]):
   def indent: String            = head.meta.indent
   def marker: String            = head.marker
-  lazy val paragraph: Paragraph = Paragraph(TextAtom(head.text, head.meta) +: rest)
+  lazy val inlines: Seq[Inline] = Paragraph(TextAtom(head.text, head.meta) +: rest).inlines
 case class FusedDefinitions(items: Seq[FusedDefinitionItem])
 case class FusedDefinitionItem(head: DefinitionListAtom, content: List[Sast]):
   def text: Text = Text(head.text)
