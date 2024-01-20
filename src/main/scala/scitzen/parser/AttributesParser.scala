@@ -46,9 +46,6 @@ object AttributesParser {
     scitzen.sast.Text(r)
   }.trace("text")
 
-  val namedAttributeValue: Scip[Either[Seq[Attribute], Text]] =
-    (anySpacesB ifso (braces.map(Left.apply) | text.map(Right.apply)))
-
   val namedAttributeStart: Scip[String] = Scip {
     verticalSpaces.orFail.run
     val id = identifierB.str.run
@@ -58,26 +55,17 @@ object AttributesParser {
   }
 
   val namedAttribute: Scip[Attribute] = Scip {
-    val id = namedAttributeStart.run
+    val id    = namedAttributeStart.run
     val start = scx.index
-    val res = namedAttributeValue.trace("attr value").run
-    val raw = scx.str(start, scx.index)
-    res match {
-      case Left(attr)   =>
-        assert(attr.sizeIs <= 1, s"nested attributes no longer supported: $attr")
-        if attr.isEmpty
-        then
-          Attribute(id, "", Text.empty)
-        else
-          Attribute(id, attr.head.raw, attr.head.text)
-      case Right(text) => Attribute(id, raw, text)
-    }
+    val res   = text.trace("attr value").run
+    val raw   = scx.str(start, scx.index)
+    Attribute(id, raw, res)
   }.trace("named attr")
 
   val positionalAttribute: Scip[Attribute] = Scip {
     val start = scx.index
-    val mtxt = text.run
-    val raw = scx.str(start, scx.index)
+    val mtxt  = text.run
+    val raw   = scx.str(start, scx.index)
     Attribute("", raw, mtxt)
   }.trace("pos attr")
 
@@ -124,7 +112,7 @@ object AttributeDeparser {
         (AttributesParser.attribute <~ de.rmgk.scip.end.orFail).opt.runInContext(Scx(str).copy(tracing = false))
       } match
         case Success(Some(Attribute("", _, text))) if check(text) => true
-        case other                                          => false
+        case other                                                => false
 
     def pickFirst(candidate: List[() => String]): Option[String] =
       candidate.view.map(_.apply()).find(parses)
