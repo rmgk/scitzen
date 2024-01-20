@@ -18,23 +18,6 @@ object Fusion {
 
   type Atoms = List[Atom]
 
-  def run(project: Project, absolute: List[Path]): Unit =
-    absolute.foreach: abs =>
-      val pp      = project.asProjectPath(abs)
-      val doc     = Document(pp)
-      val content = doc.content
-
-      parser.runInContext:
-        Scx(
-          input = content,
-          index = 0,
-          maxpos = content.length,
-          depth = 0,
-          lastFail = -1,
-          tracing = false
-        )
-      .foreach(el => println(el))
-
   def atoms: Scip[Atoms] = Scip {
     @tailrec
     def rec(acc: Atoms): Atoms = {
