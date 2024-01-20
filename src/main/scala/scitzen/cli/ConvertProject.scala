@@ -174,6 +174,5 @@ object ConvertProject:
       cli.trace(s"converted ${pdfresult.size} pdfs ${timediff()}")
     }
 
-
     cachedConverter.writeCache()
     cli.info(s"done ${timediff()}")

@@ -1,7 +1,9 @@
 package scitzen.outputs
 
 import scitzen.project.{Project, TitledArticle}
-import scitzen.sast.{Attribute, Attributes, DCommand, Directive, InlineText, Meta, Prov, Sast, ScitzenDateTime, Section, Text}
+import scitzen.sast.{
+  Attribute, Attributes, DCommand, Directive, InlineText, Meta, Prov, Sast, ScitzenDateTime, Section, Text
+}
 
 import scala.collection.immutable.ArraySeq
 
@@ -64,8 +66,8 @@ object GenIndexPage:
           rec(
             rest,
             ((if current.isBlank
-             then content
-             else sectionFor(current) :: content): List[Section | Directive])
+              then content
+              else sectionFor(current) :: content): List[Section | Directive])
               .:::(acc)
           )
 

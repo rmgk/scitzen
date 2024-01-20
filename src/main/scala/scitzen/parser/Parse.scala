@@ -22,7 +22,7 @@ object Parse {
       parser.runInContext(scx)
     catch
       case f: ScipEx =>
-        Logging.cli.warn(s"error parsing ${document.map{_.path} }")
+        Logging.cli.warn(s"error parsing ${document.map { _.path }}")
         try parser.runInContext(newscx().copy(tracing = true))
         catch
           case f: ScipEx => ()

@@ -39,7 +39,7 @@ object HtmlPages:
     def recurse(remaining: List[Section], depth: Int): Option[Recipe] =
       remaining match
         case Nil => None
-        case (head : Section) :: rest =>
+        case (head: Section) :: rest =>
           val (sub, other) = rest.span(e => e > head)
           val subtags = if depth < maxdepth then recurse(sub, depth + 1)
           else None

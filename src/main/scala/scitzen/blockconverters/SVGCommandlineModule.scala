@@ -31,7 +31,9 @@ abstract class SvgViewboxModule(override val handles: String, processBuilder: Pr
         .redirectError(Redirect.DISCARD)
         .start()
       Using.resource(subprocess.getOutputStream) { os => os.write(bytes) }
-      val svg = Using.resource(subprocess.getInputStream) { is => new String(is.readAllBytes(), StandardCharsets.UTF_8) }
+      val svg = Using.resource(subprocess.getInputStream) { is =>
+        new String(is.readAllBytes(), StandardCharsets.UTF_8)
+      }
       if subprocess.waitFor() != 0
       then
         cli.warn(s"${handles} compilation returned error code:")

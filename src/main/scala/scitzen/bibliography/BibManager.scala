@@ -115,7 +115,7 @@ case class BibDB(
     Directive(
       command = Cite,
       attributes = Attributes(directive.attributes.all.map {
-        case attr@Attribute("",  _) if attr.asTarget == query.trim =>
+        case attr @ Attribute("", _) if attr.asTarget == query.trim =>
           Attribute(keys.mkString(", "))
         case other => other
       } :+ Attribute("query", query)),

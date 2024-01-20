@@ -63,15 +63,15 @@ object ArticleProcessing:
 
   def processArticles(doc: Document): List[Article] =
     items(doc).map: atoms =>
-      val ref = new ArticleRef(doc)
-      val ctx = new AtomAnalyzer(ref).convertSeq(atoms)(SastContext(()))
+      val ref            = new ArticleRef(doc)
+      val ctx            = new AtomAnalyzer(ref).convertSeq(atoms)(SastContext(()))
       val processedAtoms = ctx.data.toList
-      val sast = Fusion.fuseTop(processedAtoms, Nil)
+      val sast           = Fusion.fuseTop(processedAtoms, Nil)
       Article(ref, sast, doc, ctx.ret(()), processedAtoms)
 
   def headerType(atom: Atom) = atom match
     case Section(_, t @ ("=" | "=="), _, _) => t.length
-    case _                               => 3
+    case _                                  => 3
 
   /** Splits the document into 3 parts:
     * • any initial text (not in any article)

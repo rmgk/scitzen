@@ -30,7 +30,7 @@ case object Text:
   def of(str: String): Text =
     if str.isEmpty then empty
     else Text(List(InlineText(str)), str)
-  val empty: Text = Text(Nil, "")
+  val empty: Text                   = Text(Nil, "")
   def synth(inl: Seq[Inline]): Text = Text(inl, "")
 
 case class Section(titleText: Text, prefix: String, attributes: Attributes, meta: Meta):

@@ -54,7 +54,7 @@ object References:
     targetRef.atom match
       case sec: Section => Some:
           if sec.level == -1 then "" else sec.ref
-      case block: Fenced => block.attributes.plain("unique ref")
+      case block: Fenced    => block.attributes.plain("unique ref")
       case block: Delimiter => block.attributes.plain("unique ref")
       case other =>
         cli.warn(s"can not refer to $other")

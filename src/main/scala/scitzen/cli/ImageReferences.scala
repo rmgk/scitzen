@@ -22,7 +22,7 @@ object ImageReferences:
       val blockImageDirectives: List[Directive] = art.context.convertBlocks.flatMap: block =>
         anal.block.substitute(block).flatMap:
           case img @ Directive(DCommand.Image, _, _) => Some(img)
-          case _                                  => None
+          case _                                     => None
 
       val images = (art.context.imageDirectives ++ blockImageDirectives).flatMap { directive =>
         References.resolveResource(anal.project, art.doc, directive.attributes.target).flatMap: orig =>

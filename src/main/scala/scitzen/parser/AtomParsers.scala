@@ -44,9 +44,9 @@ object AtomParsers {
 
   def section(indent: String, start: Int): Scip[Section] =
     Scip {
-      val marker  = choice("= ", "== ", "# ", "## ", "### ").str.run
-      val text = textline.run
-      val attrl   = AttributesParser.namedAttribute.list(eol).run
+      val marker = choice("= ", "== ", "# ", "## ", "### ").str.run
+      val text   = textline.run
+      val attrl  = AttributesParser.namedAttribute.list(eol).run
       Section(
         text,
         marker.substring(0, marker.length - 1),
