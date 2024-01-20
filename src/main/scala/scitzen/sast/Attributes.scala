@@ -40,12 +40,4 @@ case class Attribute(id: String, raw: String, text: Text):
 object Attribute {
   def apply(value: String): Attribute             = apply("", value)
   def apply(id: String, value: String): Attribute = apply(id, value, Text.of(value))
-
-//  case class Positional(text: Text) extends Attribute:
-//    def id: String = ""
-//  case class Named(id: String, text: Text) extends Attribute
-//  case class Nested(id: String, inner: Attributes) extends Attribute {
-//    def text: Text = inner.text
-//  }
-
 }
