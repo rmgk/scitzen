@@ -50,7 +50,7 @@ abstract class SvgViewboxModule(override val handles: String, processBuilder: Pr
       cli.info(s"${handles} compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     List(Directive(
       DCommand.Image,
-      Attributes(converterParams.block.attributes.raw ++ Seq(
+      Attributes(converterParams.block.attributes.all ++ Seq(
         Attribute(target.projectAbsolute.toString),
         Attribute("color", "autoinvert")
       )),

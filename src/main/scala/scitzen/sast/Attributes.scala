@@ -26,9 +26,9 @@ import scala.collection.View
   * • text: Text.empty
   * • description: None
   */
-case class Attributes(raw: Seq[Attribute]) {
+case class Attributes(all: Seq[Attribute]) {
 
-  def positional: View[Attribute] = raw.view.filter:
+  def positional: View[Attribute] = all.view.filter:
     case Attribute(id, raw, text) => id.isEmpty
 
   def target: String = positional.lastOption.fold("")(_.asTarget)
@@ -45,16 +45,16 @@ case class Attributes(raw: Seq[Attribute]) {
       Some(text)
     else None
 
-  def get(id: String): Option[Attribute] = raw.findLast(_.id == id)
+  def get(id: String): Option[Attribute] = all.findLast(_.id == id)
   def plain(id: String): Option[String]  = get(id).map(_.asTarget)
 
   def plainList(id: String) =
     def splitlist(attribute: Attribute) = attribute.raw.split(',').map(_.strip()).filter(_.nonEmpty)
-    raw.iterator.filter(_.id == id).flatMap(splitlist)
+    all.iterator.filter(_.id == id).flatMap(splitlist)
 
-  private def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other)
+  private def append(other: Seq[Attribute]): Attributes = Attributes(all ++ other)
 
-  private def remove(key: String): Attributes = Attributes(raw.filterNot(_.id == key))
+  private def remove(key: String): Attributes = Attributes(all.filterNot(_.id == key))
   def updated(key: String, value: String) = {
     remove(key).append(List(Attribute.apply(key, value)))
   }

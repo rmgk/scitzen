@@ -34,7 +34,7 @@ object GraphvizModule extends BlockConverterModule {
       cli.info(s"graphviz compilation finished in ${(System.nanoTime() - start) / 1000000}ms")
     List(Directive(
       DCommand.Image,
-      Attributes(block.attributes.raw ++ Seq(
+      Attributes(block.attributes.all ++ Seq(
         Attribute(target.projectAbsolute.toString),
         Attribute("color", "autoinvert")
       )),

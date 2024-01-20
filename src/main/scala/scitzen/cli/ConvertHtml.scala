@@ -63,7 +63,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val converter = new SastToHtmlConverter(
       articleRef = ::(titled.article.ref, Nil),
       anal = anal,
-      Attributes(project.config.attrs.raw ++ titled.header.attributes.raw),
+      Attributes(project.config.attrs.all ++ titled.header.attributes.all),
     )
     val cssrelpath = project.outputdirWeb.relativize(cssfile).toString
 
@@ -130,7 +130,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           sagctx.resultString
 
         val templateSettings =
-          Attributes(project.config.attrs.raw ++ titled.header.attributes.raw ++
+          Attributes(project.config.attrs.all ++ titled.header.attributes.all ++
             convertedArticleCtx.features.map(s => Attribute(s"feature $s", "")) :+
             Attribute("template content", content))
 

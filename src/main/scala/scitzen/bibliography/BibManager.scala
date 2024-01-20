@@ -114,7 +114,7 @@ case class BibDB(
     val keys  = queried.get(query).toList.flatten.map(info => s"DBLP:${info.key}")
     Directive(
       command = Cite,
-      attributes = Attributes(directive.attributes.raw.map {
+      attributes = Attributes(directive.attributes.all.map {
         case Attribute("", raw, _) if raw.trim == query.trim =>
           Attribute(keys.mkString(", "))
         case other => other

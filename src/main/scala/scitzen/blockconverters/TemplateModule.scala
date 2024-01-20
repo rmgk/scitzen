@@ -15,7 +15,7 @@ object TemplateModule extends BlockConverterModule {
       project,
       articleDirectory,
       References.resolveResource(project, article.doc, pathString).headOption,
-      Attributes(project.config.attrs.raw :+ Attribute("template content", content))
+      Attributes(project.config.attrs.all :+ Attribute("template content", content))
     )
     List(Fenced(block.command, block.attributes, resolved, block.meta))
 

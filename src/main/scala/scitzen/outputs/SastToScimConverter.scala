@@ -108,7 +108,7 @@ class SastToScimConverter(bibDB: BibDB):
 
   def directive(dir: Directive, spacy: Boolean = false): String =
     dir match
-      case Directive(Comment, attributes, meta) => s":%${attributes.raw.headOption.map(_.raw).getOrElse("")}"
+      case Directive(Comment, attributes, meta) => s":%${attributes.all.headOption.map(_.raw).getOrElse("")}"
       case Directive(BibQuery, _, meta)         => directive(bibDB.convertBibQuery(dir))
       case _ =>
         s":${DCommand.printMacroCommand(dir.command)}${attributeConverter.convert(dir.attributes, spacy, force = true)}"
@@ -136,10 +136,10 @@ class AttributesToScim(bibDB: BibDB):
     )
 
   def convert(attributesInput: Attributes, spacy: Boolean, force: Boolean, light: Boolean = false): String =
-    val attributes = Attributes(attributesInput.raw.filter(p => !p.id.contains(' ')))
-    if !force && attributes.raw.isEmpty then return ""
-    val keylen = (attributes.raw.map { _.id.length }).maxOption.getOrElse(0)
-    val pairs = attributes.raw.map {
+    val attributes = Attributes(attributesInput.all.filter(p => !p.id.contains(' ')))
+    if !force && attributes.all.isEmpty then return ""
+    val keylen = (attributes.all.map { _.id.length }).maxOption.getOrElse(0)
+    val pairs = attributes.all.map {
       case Attribute("", _, v) => encodeText(v)
       case Attribute(k, _, v) =>
         if spacy
@@ -149,7 +149,7 @@ class AttributesToScim(bibDB: BibDB):
         else s"""$k=${encodeText(v)}"""
     }
 
-    if !(spacy && attributes.raw.size > 1) then
+    if !(spacy && attributes.all.size > 1) then
       if light && attributes.positional.isEmpty then pairs.mkString("; ")
       else pairs.mkString(AttributesParser.open, "; ", AttributesParser.close)
     else if light && attributes.positional.isEmpty then pairs.mkString("\n")

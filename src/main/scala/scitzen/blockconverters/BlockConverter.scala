@@ -47,7 +47,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
 
   def applyConversions(article: Article, block: Block): List[Sast] =
     cli.trace("converting block")
-    val (conversions, additionalAttributes) = block.attributes.raw.span(attr => attr.asTarget != "done")
+    val (conversions, additionalAttributes) = block.attributes.all.span(attr => attr.asTarget != "done")
     if conversions.isEmpty then
       cli.warn(s"conversion block has no converters", article.doc.reporter.apply(block))
       return Nil
@@ -57,7 +57,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         val resctx = new SastToTextConverter(
           ::(article.ref, Nil),
           ConversionAnalysis.minimal(project, articleDirectory),
-          Attributes(project.config.attrs.raw ++ article.titled.map(_.attributes.raw).getOrElse(Nil))
+          Attributes(project.config.attrs.all ++ article.titled.map(_.attributes.all).getOrElse(Nil))
         ).convertSastSeq(ConversionContext(()), content)
         (
           Some(resctx),
@@ -87,7 +87,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
           Nil
     }
     converted match
-      case Directive(c, a, m) :: rest => Directive(c, Attributes(a.raw ++ additionalAttributes.drop(1)), m) :: rest
+      case Directive(c, a, m) :: rest => Directive(c, Attributes(a.all ++ additionalAttributes.drop(1)), m) :: rest
       case other                      => other
 
 }

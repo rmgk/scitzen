@@ -57,7 +57,7 @@ class SastToHtmlConverter(
     val categories = Seq("categories", "people", "tags", "folder").flatMap(section.attributes.plain)
       .flatMap(_.split(","))
 
-    val extraAttributes = ctx.fold[(String, Text), Recipe](section.attributes.raw.collect:
+    val extraAttributes = ctx.fold[(String, Text), Recipe](section.attributes.all.collect:
       case Attribute(id, _, text) if id.nonEmpty && !id.contains(' ') && !excludedFromMeta.contains(id) => (id, text)
     ):
       case (ctx, (id, text)) =>
@@ -359,7 +359,7 @@ class SastToHtmlConverter(
     }.dropRight(1)
     val cctx          = ctx.cite(citations.flatMap(_._2))
     val styledAnchors = Sag.span(`class` = "citations", "(", anchors, ")")
-    if attrs.raw.sizeIs > 1 then
+    if attrs.all.sizeIs > 1 then
       attrs.description match
         case None => cctx.retc(styledAnchors)
         case Some(text) =>
