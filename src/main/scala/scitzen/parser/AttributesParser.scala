@@ -2,7 +2,6 @@ package scitzen.parser
 
 import de.rmgk.scip.*
 import scitzen.parser.CommonParsers.*
-import scitzen.sast.Attribute.Positional
 import scitzen.sast.{Attribute, Attributes, Inline, Text}
 
 import java.nio.charset.StandardCharsets
@@ -60,15 +59,26 @@ object AttributesParser {
 
   val namedAttribute: Scip[Attribute] = Scip {
     val id = namedAttributeStart.run
-    namedAttributeValue.trace("attr value").run match {
-      case Left(attr)   => scitzen.sast.Attribute.Nested(id, Attributes(attr))
-      case Right(value) => scitzen.sast.Attribute.Named(id, value)
+    val start = scx.index
+    val res = namedAttributeValue.trace("attr value").run
+    val raw = scx.str(start, scx.index)
+    res match {
+      case Left(attr)   =>
+        assert(attr.sizeIs <= 1, s"nested attributes no longer supported: $attr")
+        if attr.isEmpty
+        then
+          Attribute(id, "", Text.empty)
+        else
+          Attribute(id, attr.head.raw, attr.head.text)
+      case Right(text) => Attribute(id, raw, text)
     }
   }.trace("named attr")
 
   val positionalAttribute: Scip[Attribute] = Scip {
+    val start = scx.index
     val mtxt = text.run
-    scitzen.sast.Attribute.Positional(mtxt)
+    val raw = scx.str(start, scx.index)
+    Attribute("", raw, mtxt)
   }.trace("pos attr")
 
   val attribute: Scip[Attribute] = (namedAttribute | positionalAttribute).trace("attribute")
@@ -113,7 +123,7 @@ object AttributeDeparser {
       Try {
         (AttributesParser.attribute <~ de.rmgk.scip.end.orFail).opt.runInContext(Scx(str).copy(tracing = false))
       } match
-        case Success(Some(Positional(text))) if check(text) => true
+        case Success(Some(Attribute("", _, text))) if check(text) => true
         case other                                          => false
 
     def pickFirst(candidate: List[() => String]): Option[String] =

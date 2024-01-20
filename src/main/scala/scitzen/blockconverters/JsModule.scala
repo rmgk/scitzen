@@ -6,7 +6,7 @@ object JsModule extends BlockConverterModule {
 
   override def handles: String = "js"
   def convert(converterParams: ConverterParams): List[Sast] =
-    import converterParams.{attributes, block, content}
-    val res = scitzen.extern.JsRunner().run(content, attributes)
+    import converterParams.{attribute, block, content}
+    val res = scitzen.extern.JsRunner().run(content, attribute)
     List(Fenced(BCommand.Code, Attributes.empty, res, block.meta))
 }

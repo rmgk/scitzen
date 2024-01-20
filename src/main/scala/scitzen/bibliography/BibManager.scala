@@ -7,7 +7,6 @@ import scitzen.bibliography.BibManager.bibIds
 import scitzen.compat.Logging
 import scitzen.parser.{Biblet, Parse}
 import scitzen.project.{Project, ProjectPath}
-import scitzen.sast.Attribute.Positional
 import scitzen.sast.DCommand.{BibQuery, Cite}
 import scitzen.sast.{Attribute, Attributes, Directive}
 
@@ -110,13 +109,13 @@ case class BibDB(
     queried: Map[String, List[DBLPApi.Info]],
     bibletmap: Map[String, Seq[Biblet]]
 ):
-  def convert(directive: Directive): Directive =
+  def convertBibQuery(directive: Directive): Directive =
     val query = directive.attributes.target
     val keys  = queried.get(query).toList.flatten.map(info => s"DBLP:${info.key}")
     Directive(
       command = Cite,
       attributes = Attributes(directive.attributes.raw.map {
-        case Positional(q) if q.plainString.trim == query.trim =>
+        case Attribute("", raw, _) if raw.trim == query.trim =>
           Attribute(keys.mkString(", "))
         case other => other
       } :+ Attribute("query", query)),

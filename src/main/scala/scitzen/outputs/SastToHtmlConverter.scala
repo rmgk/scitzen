@@ -11,7 +11,6 @@ import scitzen.html.sag
 import scitzen.html.sag.{Recipe, Sag}
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
-import scitzen.sast.Attribute.Named
 import scitzen.sast.DCommand.*
 
 import java.nio.charset.StandardCharsets
@@ -59,7 +58,7 @@ class SastToHtmlConverter(
       .flatMap(_.split(","))
 
     val extraAttributes = ctx.fold[(String, Text), Recipe](section.attributes.raw.collect:
-      case Named(id, text) if !id.contains(' ') && !excludedFromMeta.contains(id) => (id, text)
+      case Attribute(id, _, text) if id.nonEmpty && !id.contains(' ') && !excludedFromMeta.contains(id) => (id, text)
     ):
       case (ctx, (id, text)) =>
         convertInlineSeq(ctx, text.inl).mapc: inner =>
@@ -235,7 +234,7 @@ class SastToHtmlConverter(
         ctx.retc(Sag.math(Sag.Raw(anal.converter.get.convert("katex", inner))))
 
       case BibQuery =>
-        convertInlineDirective(ctx, anal.bib.convert(directive))
+        convertInlineDirective(ctx, anal.bib.convertBibQuery(directive))
 
       case Cite =>
         handleCite(ctx, directive)

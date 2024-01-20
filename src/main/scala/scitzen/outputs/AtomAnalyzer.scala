@@ -65,7 +65,7 @@ class AtomAnalyzer(articleRef: ArticleRef):
       def label: Option[String]
       def attributes: Attributes
       def withAttributes(attributes: Attributes): T
-  object Labellable:
+  object Labellable {
     given Labellable[Section] with {
       extension (t: Section)
         override def label: Option[String]                           = Some(t.autolabel)
@@ -84,6 +84,7 @@ class AtomAnalyzer(articleRef: ArticleRef):
         override def attributes: Attributes                            = t.attributes
         override def withAttributes(attributes: Attributes): Delimiter = t.copy(attributes = attributes)
     }
+}
 
   private def ensureRefForLabel[T <: Atom: Labellable](entity: T, ctx: Cta): Ctx[T] = {
     entity.label match

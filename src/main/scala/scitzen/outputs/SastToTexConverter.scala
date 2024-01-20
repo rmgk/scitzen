@@ -8,7 +8,6 @@ import scitzen.project.{ArticleRef, Flags, References, SastRef}
 import scitzen.outputs.SastToTexConverter.latexencode
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
-import scitzen.sast.Attribute.Named
 import scitzen.sast.DCommand.*
 
 object SastToTexConverter {
@@ -233,7 +232,7 @@ class SastToTexConverter(
             Ref,
             Attributes(
               Seq(
-                Named("", Text(Seq(Directive(Other("smallcaps"), attributes, directive.meta)))),
+                Attribute("", "", Text(Seq(Directive(Other("smallcaps"), attributes, directive.meta)))),
                 Attribute("style", "plain"),
                 Attribute("", s"rule-${attributes.target}")
               )
@@ -249,7 +248,7 @@ class SastToTexConverter(
       case Other("partition") =>
         convertInlinesCombined(ctx, attributes.text.inl).mapc(str => s"\\part{${str}}")
 
-      case BibQuery => convertInline(ctx, anal.bib.convert(directive))
+      case BibQuery => convertInline(ctx, anal.bib.convertBibQuery(directive))
       case Cite =>
         val usedctx = ctx.cite(
           attributes.target.split(',').iterator.map(_.trim).filterNot(_.isEmpty).flatMap(anal.bib.entries.get).toList

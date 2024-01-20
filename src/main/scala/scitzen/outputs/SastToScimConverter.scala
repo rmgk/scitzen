@@ -5,7 +5,6 @@ import scitzen.bibliography.BibDB
 import scitzen.sast.Fusion.Atoms
 import scitzen.parser.{AttributeDeparser, AttributesParser}
 import scitzen.sast.*
-import scitzen.sast.Attribute.{Named, Nested, Positional}
 import scitzen.sast.DCommand.{BibQuery, Comment}
 
 import scala.annotation.tailrec
@@ -110,7 +109,7 @@ class SastToScimConverter(bibDB: BibDB):
   def directive(dir: Directive, spacy: Boolean = false): String =
     dir match
       case Directive(Comment, attributes, meta) => s":%${attributes.target}"
-      case Directive(BibQuery, _, meta)         => directive(bibDB.convert(dir))
+      case Directive(BibQuery, _, meta)         => directive(bibDB.convertBibQuery(dir))
       case _ =>
         s":${DCommand.printMacroCommand(dir.command)}${attributeConverter.convert(dir.attributes, spacy, force = true)}"
 
@@ -141,15 +140,15 @@ class AttributesToScim(bibDB: BibDB):
     if !force && attributes.raw.isEmpty then return ""
     val keylen = (attributes.raw.map { _.id.length }).maxOption.getOrElse(0)
     val pairs = attributes.raw.map {
-      case Positional(v) => encodeText(v)
-      case Named(k, v) =>
+      case Attribute("", _, v) => encodeText(v)
+      case Attribute(k,_, v) =>
         val spaces = " " * max(keylen - k.length, 0)
         if spacy then s"""$k $spaces= ${encodeText(v)}"""
         else s"""$k=${encodeText(v)}"""
-      case Nested(k, v) =>
-        val spaces = " " * max(keylen - k.length, 0)
-        if spacy then s"""$k $spaces= ${convert(v, spacy, force, light)}"""
-        else s"""$k=${convert(v, spacy, force, light)}"""
+//      case Nested(k, v) =>
+//        val spaces = " " * max(keylen - k.length, 0)
+//        if spacy then s"""$k $spaces= ${convert(v, spacy, force, light)}"""
+//        else s"""$k=${convert(v, spacy, force, light)}"""
     }
 
     if !(spacy && attributes.raw.size > 1) then

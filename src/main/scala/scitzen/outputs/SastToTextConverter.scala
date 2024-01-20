@@ -32,8 +32,8 @@ class SastToTextConverter(
             settings.get(attributes.target) match
               case Some(_) if attributes.plain("equals").isEmpty =>
                 true
-              case Some(Attribute.Named(id, value)) =>
-                attributes.get("equals").forall(_ == value)
+              case Some(Attribute(id, _, text)) if id.nonEmpty =>
+                attributes.get("equals").forall(_.text == text)
               case other => false
           if attributes.get("not").isDefined then !res
           else res

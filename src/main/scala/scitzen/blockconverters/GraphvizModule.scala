@@ -14,7 +14,7 @@ object GraphvizModule extends BlockConverterModule {
   override def handles: String = "graphviz"
 
   override def convert(converterParams: ConverterParams): List[Sast] =
-    import converterParams.{content, project, attributes, block}
+    import converterParams.{content, project, attribute, block}
     val bytes  = content.getBytes(StandardCharsets.UTF_8)
     val name   = Hashes.sha1hex(bytes)
     val format = "pdf"
@@ -23,7 +23,7 @@ object GraphvizModule extends BlockConverterModule {
       Files.createDirectories(target.absolute.getParent)
 
       val layoutEngine =
-        val lay = attributes.target.trim
+        val lay = attribute.raw.strip()
         if lay.isEmpty then "dot"
         else lay
 

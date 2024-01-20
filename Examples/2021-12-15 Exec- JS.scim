@@ -5,7 +5,7 @@ texTemplate = /templates/memoir.scim
 So maybe Scitzen got the ability to execute JS now? Lets see:
 
 ::figure
-	```convert{js={[1, 10, 20, 30, 80]}; template={templates/tikz.scim}; tex={}}
+	```convert{js=[1, 10, 20, 30, 80]; template=templates/tikz.scim; tex}
 		console.log(`
 		  \\begin{tikzpicture}
 		  \\begin{axis}[
@@ -16,7 +16,7 @@ So maybe Scitzen got the ability to execute JS now? Lets see:
 		  ]`);
 		console.log(`\\addplot[color=blue, mark=square,] coordinates {`);
 
-		let xcoord = JSON.parse(argv[0]);
+		let xcoord = JSON.parse(scitzenArgument);
 		let pairs = xcoord.map(x => `(${x}, ${Math.log(x*x*x)})`);
 		console.log(pairs.join(""));
 

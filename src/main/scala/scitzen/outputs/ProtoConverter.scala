@@ -8,7 +8,6 @@ import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.project.{ArticleRef, ProjectPath, References, TitledArticle}
 import scitzen.resources.ImageTarget
 import scitzen.sast.*
-import scitzen.sast.Attribute.Named
 
 import java.nio.file.{Files, Path}
 

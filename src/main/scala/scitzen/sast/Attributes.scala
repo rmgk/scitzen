@@ -1,15 +1,13 @@
 package scitzen.sast
 
-import scitzen.sast.Attribute.Positional
-
 import scala.collection.View
 
 case class Attributes(raw: Seq[Attribute]) {
 
-  def positional: View[Positional] = raw.view.collect:
-    case p: Positional => p
+  def positional: View[Attribute] = raw.view.filter:
+    case Attribute(id, raw, text) => id.isEmpty
 
-  def target: String = positional.lastOption.fold("")(_.text.plainString)
+  def target: String = positional.lastOption.fold("")(_.asTarget)
   def text: Text     = positional.headOption.fold(Text.empty)(_.text)
   def textOption: Option[Text] =
     if positional.sizeIs > 1 then
@@ -17,7 +15,7 @@ case class Attributes(raw: Seq[Attribute]) {
     else None
 
   def get(id: String): Option[Attribute] = raw.findLast(_.id == id)
-  def plain(id: String): Option[String]  = get(id).map(_.text.plainString)
+  def plain(id: String): Option[String]  = get(id).map(_.asTarget)
 
   def plainList(id: String) =
     def splitlist(attribute: Attribute) = attribute.text.plainString.split(',').map(_.trim).filter(_.nonEmpty)
@@ -36,26 +34,18 @@ object Attributes {
   val empty                              = Attributes(Nil)
 }
 
-sealed trait Attribute {
-  def id: String
-  def text: Text
-}
+case class Attribute(id: String, raw: String, text: Text):
+  def asTarget: String = raw.strip()
 
 object Attribute {
-  def apply(value: String): Positional = apply(Text.of(value))
-  def apply(value: Text): Positional   = Positional(value)
-  def apply(id: String, value: String): Attribute =
-    apply(id, Text.of(value))
-  def apply(id: String, value: Text): Attribute =
-    if id == ""
-    then Positional(value)
-    else Named(id, value)
+  def apply(value: String): Attribute             = apply("", value)
+  def apply(id: String, value: String): Attribute = apply(id, value, Text.of(value))
 
-  case class Positional(text: Text) extends Attribute:
-    def id: String = ""
-  case class Named(id: String, text: Text) extends Attribute
-  case class Nested(id: String, inner: Attributes) extends Attribute {
-    def text: Text = inner.text
-  }
+//  case class Positional(text: Text) extends Attribute:
+//    def id: String = ""
+//  case class Named(id: String, text: Text) extends Attribute
+//  case class Nested(id: String, inner: Attributes) extends Attribute {
+//    def text: Text = inner.text
+//  }
 
 }

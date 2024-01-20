@@ -7,8 +7,7 @@ import scitzen.compat.Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.outputs.SastToTextConverter
 import scitzen.project.{Article, ArticleDirectory, Project}
-import scitzen.sast.Attribute.Nested
-import scitzen.sast.{Attribute, Attributes, BCommand, Block, Fenced, FusedDelimited, Sast, attributes}
+import scitzen.sast.{Attribute, Attributes, BCommand, Block, Directive, Fenced, FusedDelimited, Sast, attributes}
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
@@ -48,8 +47,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
 
   def applyConversions(article: Article, block: Block): List[Sast] =
     cli.trace("converting block")
-    val conversions = block.attributes.raw.collect:
-      case n: Nested => n
+    val (conversions, additionalAttributes) = block.attributes.raw.span(attr => attr.asTarget != "done")
     if conversions.isEmpty then
       cli.warn(s"conversion block has no converters", article.doc.reporter.apply(block))
       return Nil
@@ -67,7 +65,8 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         )
       case other => (None, other)
 
-    conversions.foldLeft(List[Sast](transformed)) { case (current, Nested(name, attrs)) =>
+    val converted = conversions.foldLeft(List[Sast](transformed)) { case (current, attr) =>
+      val name = Option.when(!attr.id.isBlank)(attr.id).getOrElse(attr.asTarget)
       current match
         case Nil => Nil
         case List(block @ Fenced(_, _, content, _)) =>
@@ -78,7 +77,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
                 cli.warn(s"could not convert, no handler for $name")
                 Nil
               case Some(module) =>
-                module.convert(ConverterParams(project, articleDirectory, article, block, content, attrs, resctx))
+                module.convert(ConverterParams(project, articleDirectory, article, block, content, attr, resctx))
           catch
             case NonFatal(ex) =>
               cli.warn(s"could not convert $name", ex)
@@ -86,7 +85,9 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
         case other =>
           cli.warn(s"can not convert $other")
           Nil
-
     }
+    converted match
+      case Directive(c, a, m) :: rest => Directive(c, Attributes(a.raw ++ additionalAttributes.drop(1)), m) :: rest
+      case other                      => other
 
 }
