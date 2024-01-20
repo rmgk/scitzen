@@ -301,6 +301,7 @@ img, video {
 figure:has(.sizing-max) {
 	max-width: initial;
 	width: 100%;
+	box-sizing: border-box;
 }
 
 
