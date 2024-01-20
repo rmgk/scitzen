@@ -83,7 +83,8 @@ class SastToTextConverter(
     case Other("path") =>
       val res = handlePath(ctx, directive)
       res.data match
-        case Some(path) =>
+        case Some(relative) =>
+          val path = project.root.resolve(relative)
           res.retc(path.toString)
         case None => res.retc("")
     case other => ctx.retc("")

@@ -1,6 +1,8 @@
 package scitzen.blockconverters
 
 import scitzen.cli.ConvertTemplate
+import scitzen.cli.ImageReferences.Reference
+import scitzen.project.References
 import scitzen.sast.{Attribute, Attributes, Fenced, Sast}
 
 object TemplateModule extends BlockConverterModule {
@@ -12,7 +14,7 @@ object TemplateModule extends BlockConverterModule {
     val resolved = ConvertTemplate.fillTemplate(
       project,
       articleDirectory,
-      article.doc.resolve(pathString),
+      References.resolveResource(project, article.doc, pathString).headOption,
       Attributes(project.config.attrs.raw :+ Attribute("template content", content))
     )
     List(Fenced(block.command, block.attributes, resolved, block.meta))
