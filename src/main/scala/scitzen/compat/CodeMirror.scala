@@ -15,10 +15,10 @@ object MirrorToSast {
 
   def convertBlock(block: C.Block): Sast = block match {
     case CodeMirror.heading(attrs, content) =>
-      Section(Text(content.map(convertInline)), "#" * (attrs.level - 1), Attributes(Nil), Meta.synth)
+      Section(Text(content.map(convertInline), ""), "#" * (attrs.level - 1), Attributes(Nil), Meta.synth)
     case CodeMirror.paragraph(content) =>
       println(s"converting $content")
-      val res = Paragraph(Seq(TextAtom(content.map(convertInline), Meta.synth)))
+      val res = Paragraph(Seq(TextAtom(Text(content.map(convertInline), ""), Meta.synth)))
       println(s"to $res")
       res
   }

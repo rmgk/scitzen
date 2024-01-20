@@ -14,7 +14,7 @@ object AttributesParser {
   inline val close = "}"
 
   val terminationCheckB: Scip[Boolean] = (";".all or close.all or eol).lookahead
-  val unquotedInlines: Scip[List[Inline]] =
+  val unquotedInlines: Scip[Text] =
     InlineParsers.full(terminationCheckB)
 
   val quotes: Scip[String] = Scip {
@@ -30,7 +30,7 @@ object AttributesParser {
     * but the closing quote must match the opening quote
     */
   val text: Scip[Text] = Scip {
-    val r = quotes.opt.run match
+    quotes.opt.run match
       case None =>
         verticalSpaces.run
         unquotedInlines.run
@@ -43,7 +43,6 @@ object AttributesParser {
             terminationCheckB.trace("terminate")
           ).trace("endingfun")
         ).trace("inline full").run
-    scitzen.sast.Text(r)
   }.trace("text")
 
   val namedAttributeStart: Scip[String] = Scip {

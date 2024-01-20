@@ -36,8 +36,8 @@ class AtomAnalyzer(articleRef: ArticleRef):
     container match
       case sc: SpaceComment => ctx.ret(sc)
 
-      case text: TextAtom =>
-        convertInlines(ctx, text.inl).map(i => text.update(i.toSeq))
+      case ta: TextAtom =>
+        convertInlines(ctx, ta.text.inl).map(i => ta.copy(text = ta.text.copy(inl = i.toSeq)))
 
       case fenced: Fenced =>
         val refctx = ensureRefForLabel(fenced, ctx)
@@ -51,12 +51,12 @@ class AtomAnalyzer(articleRef: ArticleRef):
         val ctxWithRef = ensureRefForLabel(sec, ctx)
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
-        convertInlines(conCtx, title.inl).map { title =>
-          Section(Text(title.toList), level, newSection.attributes, meta)
+        convertInlines(conCtx, title.inl).map { titleInl =>
+          Section(title.copy(inl = titleInl.toList), level, newSection.attributes, meta)
         }
 
-      case ListAtom(m, cont, meta)                 => convertInlines(ctx, cont).map(i => ListAtom(m, i.toSeq, meta))
-      case DefinitionListAtom(m, cont, meta) => convertInlines(ctx, cont).map(i => DefinitionListAtom(m, cont, meta))
+      case ListAtom(m, text, meta)           => convertInlines(ctx, text.inl).map(i => ListAtom(m, text.copy(inl = i.toSeq), meta))
+      case DefinitionListAtom(m, text, meta) => convertText(ctx, text).map(t => DefinitionListAtom(m, t, meta))
 
       case mcro: Directive => convertDirective(mcro)(ctx)
 
@@ -84,7 +84,7 @@ class AtomAnalyzer(articleRef: ArticleRef):
         override def attributes: Attributes                            = t.attributes
         override def withAttributes(attributes: Attributes): Delimiter = t.copy(attributes = attributes)
     }
-}
+  }
 
   private def ensureRefForLabel[T <: Atom: Labellable](entity: T, ctx: Cta): Ctx[T] = {
     entity.label match
@@ -99,6 +99,8 @@ class AtomAnalyzer(articleRef: ArticleRef):
 
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
+
+  def convertText(ctx: Cta, text: Text) = convertInlines(ctx, text.inl).map(inl => text.copy(inl = inl.toSeq))
 
   def convertInlines(ctx: Cta, inners: Seq[Inline]): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>

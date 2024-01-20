@@ -157,7 +157,7 @@ Use like this :{someAlias} and and maybe even this :emph{:{note}}.
   test("text parser") {
     val ctx = Scx("actual text\n    \n").copy(tracing = false)
     val res = AtomParsers.textline.runInContext(ctx)
-    assertEquals(res, List(InlineText("actual text", 0)))
+    assertEquals(res.inl, List(InlineText("actual text", 0)))
   }
 
   test("nested lists") {

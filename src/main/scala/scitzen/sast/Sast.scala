@@ -14,7 +14,7 @@ case class FusedListItem(head: ListAtom, rest: Seq[TextAtom | Directive], childr
   lazy val inlines: Seq[Inline] = Paragraph(TextAtom(head.text, head.meta) +: rest).inlines
 case class FusedDefinitions(items: Seq[FusedDefinitionItem])
 case class FusedDefinitionItem(head: DefinitionListAtom, content: List[Sast]):
-  def text: Text = Text(head.text)
+  def text: Text = head.text
 
 sealed trait Inline
 case class InlineText(str: String, quoted: Int = 0) extends Inline:
@@ -22,12 +22,13 @@ case class InlineText(str: String, quoted: Int = 0) extends Inline:
 
 case class Directive(command: DCommand, attributes: Attributes, meta: Meta) extends Inline
 
-case class Text(inl: Seq[Inline])
+case class Text(inl: Seq[Inline], raw: String)
 case object Text:
   def of(str: String): Text =
     if str.isEmpty then empty
-    else Text(List(InlineText(str)))
-  val empty: Text = Text(Nil)
+    else Text(List(InlineText(str)), str)
+  val empty: Text = Text(Nil, "")
+  def synth(inl: Seq[Inline]): Text = Text(inl, "")
 
 case class Section(titleText: Text, prefix: String, attributes: Attributes, meta: Meta):
   private def label: Option[String] = attributes.plain("label")
@@ -64,7 +65,7 @@ case class Paragraph(content: Seq[TextAtom | Directive]):
     content.flatMap: cont =>
       cont match
         case dir: Directive => List(InlineText(dir.meta.indent), dir, InlineText("\n"))
-        case text: TextAtom => InlineText(text.meta.indent) +: text.inl :+ InlineText("\n")
+        case text: TextAtom => InlineText(text.meta.indent) +: text.text.inl :+ InlineText("\n")
 
 case class SpaceComment(content: String, meta: Meta):
   override def toString: String = s"SpaceComment(${content.replace("\n", "\\n")})"
@@ -107,8 +108,7 @@ object Meta:
   @targetName("constructor")
   def apply(indent: String, prov: Prov): Meta = new Meta(indent)(prov)
 
-case class TextAtom(inl: Seq[Inline], meta: Meta):
-  def update(inlines: Seq[Inline]) = copy(inl = inlines)
-case class ListAtom(marker: String, text: Seq[Inline], meta: Meta)
-case class DefinitionListAtom(marker: String, text: Seq[Inline], meta: Meta)
+case class TextAtom(text: Text, meta: Meta)
+case class ListAtom(marker: String, text: Text, meta: Meta)
+case class DefinitionListAtom(marker: String, text: Text, meta: Meta)
 case class Delimiter(marker: String, command: BCommand, attributes: Attributes, meta: Meta)

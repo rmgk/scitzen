@@ -51,15 +51,15 @@ class SastToScimConverter(bibDB: BibDB):
           else Chain(attrStr)
         }
 
-      case TextAtom(inl, meta) =>
+      case TextAtom(text, meta) =>
         val actual = if meta.indent.startsWith(indent) then meta.indent else indent
-        actual +: inlineToScim(inl) :+ "\n"
+        actual +: inlineToScim(text.inl) :+ "\n"
 
       case ListAtom(marker, content, meta) =>
-        indent +: marker +: inlineToScim(content) :+ "\n"
+        indent +: marker +: inlineToScim(content.inl) :+ "\n"
 
       case DefinitionListAtom(marker, content, meta) =>
-        indent +: marker +: inlineToScim(content) :+ "\n"
+        indent +: marker +: inlineToScim(content.inl) :+ "\n"
 
       case mcro: Directive =>
         val actual = if mcro.meta.indent.startsWith(indent) then mcro.meta.indent else indent

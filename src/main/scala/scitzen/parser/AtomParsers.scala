@@ -36,19 +36,19 @@ object AtomParsers {
       atomParser(indent, start).run
     }
 
-  val textline: Scip[List[Inline]] = Scip {
+  val textline: Scip[Text] = Scip {
     val inlines = InlineParsers.full(eol).run
-    if inlines.isEmpty then scx.fail
+    if inlines.raw.isEmpty then scx.fail
     else inlines
   }
 
   def section(indent: String, start: Int): Scip[Section] =
     Scip {
       val marker  = choice("= ", "== ", "# ", "## ", "### ").str.run
-      val inlines = textline.run
+      val text = textline.run
       val attrl   = AttributesParser.namedAttribute.list(eol).run
       Section(
-        Text(inlines),
+        text,
         marker.substring(0, marker.length - 1),
         Attributes(attrl),
         Meta(indent, Prov(start, scx.index))

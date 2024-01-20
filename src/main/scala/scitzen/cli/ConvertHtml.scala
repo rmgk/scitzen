@@ -76,7 +76,7 @@ class ConvertHtml(anal: ConversionAnalysis):
     val bibid   = s"bibliography (gen)"
     val bibsection = Option.when(bibEntries.nonEmpty)(
       Section(
-        scitzen.sast.Text(List(scitzen.sast.InlineText(bibname))),
+        scitzen.sast.Text.of(bibname),
         "==",
         Attributes(Seq(scitzen.sast.Attribute("unique ref", bibid))),
         Meta.synth

@@ -1,7 +1,7 @@
 package scitzen.parser
 
 import de.rmgk.scip.*
-import scitzen.sast.{Inline, InlineText}
+import scitzen.sast.{Inline, InlineText, Text}
 
 import scala.annotation.tailrec
 
@@ -12,10 +12,12 @@ object InlineParsers {
 
   inline def full(
       inline ending: Scip[Boolean]
-  ): Scip[List[Inline]] = Scip {
+  ): Scip[Text] = Scip {
 
+    val start = scx.index
     // start of the current text segment
-    var textStart = scx.index
+    var textStart       = scx.index
+    var beforePrevMatch = scx.index
 
     @tailrec
     def inlineOptions(acc: List[Inline]): List[Inline] = {
@@ -32,17 +34,21 @@ object InlineParsers {
       // be aware that this limits what `ending` may start with
       until(endingChars).run
 
-      val beforeMatch = scx.index
-      if ending.run then addPlain(beforeMatch)
+      beforePrevMatch = scx.index
+      if ending.run
+      then addPlain(beforePrevMatch)
       else
         (DirectiveParsers.comment | DirectiveParsers.raw | DirectiveParsers.full).opt.run match
-          case Some(inl) => inlineOptions(inl :: addPlain(beforeMatch))
+          case Some(inl) => inlineOptions(inl :: addPlain(beforePrevMatch))
           case None =>
             if scx.next then inlineOptions(acc)
-            else addPlain(beforeMatch)
+            else addPlain(beforePrevMatch)
     }
 
-    inlineOptions(Nil).reverse
+    val inl = inlineOptions(Nil).reverse
+    val raw = scx.str(start, beforePrevMatch)
+    Text(inl, raw)
+
   }
 
 }
