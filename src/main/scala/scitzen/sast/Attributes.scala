@@ -29,7 +29,7 @@ import scala.collection.View
 case class Attributes(all: Seq[Attribute]) {
 
   def positional: View[Attribute] = all.view.filter:
-    case Attribute(id, raw, text) => id.isEmpty
+    case Attribute(id, text) => id.isEmpty
 
   def target: String = positional.lastOption.fold("")(_.asTarget)
 
@@ -49,7 +49,7 @@ case class Attributes(all: Seq[Attribute]) {
   def plain(id: String): Option[String]  = get(id).map(_.asTarget)
 
   def plainList(id: String) =
-    def splitlist(attribute: Attribute) = attribute.raw.split(',').map(_.strip()).filter(_.nonEmpty)
+    def splitlist(attribute: Attribute) = attribute.text.raw.split(',').map(_.strip()).filter(_.nonEmpty)
     all.iterator.filter(_.id == id).flatMap(splitlist)
 
   private def append(other: Seq[Attribute]): Attributes = Attributes(all ++ other)
@@ -65,10 +65,10 @@ object Attributes {
   val empty                              = Attributes(Nil)
 }
 
-case class Attribute(id: String, raw: String, text: Text):
-  def asTarget: String = raw.strip()
+case class Attribute(id: String, text: Text):
+  def asTarget: String = text.raw.strip()
 
 object Attribute {
   def apply(value: String): Attribute             = apply("", value)
-  def apply(id: String, value: String): Attribute = apply(id, value, Text.of(value))
+  def apply(id: String, value: String): Attribute = apply(id, Text.of(value))
 }

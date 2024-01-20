@@ -119,7 +119,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleArticleQuery(directive: Directive): Iterable[TitledArticle] =
     val pathpart =
-      directive.attributes.get("prefix").map(p => doc.path.absolute.resolveSibling(p.raw).normalize())
+      directive.attributes.get("prefix").map(p => doc.path.absolute.resolveSibling(p.text.raw).normalize())
     val tags =
       directive.attributes.plain("tags").getOrElse("").split(',').map(_.trim).filter(_.nonEmpty)
     val it: Iterable[TitledArticle] = anal.directory.titled.view

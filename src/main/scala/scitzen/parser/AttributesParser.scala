@@ -54,18 +54,14 @@ object AttributesParser {
   }
 
   val namedAttribute: Scip[Attribute] = Scip {
-    val id    = namedAttributeStart.run
-    val start = scx.index
-    val res   = text.trace("attr value").run
-    val raw   = scx.str(start, scx.index)
-    Attribute(id, raw, res)
+    val id  = namedAttributeStart.run
+    val res = text.trace("attr value").run
+    Attribute(id, res)
   }.trace("named attr")
 
   val positionalAttribute: Scip[Attribute] = Scip {
-    val start = scx.index
-    val mtxt  = text.run
-    val raw   = scx.str(start, scx.index)
-    Attribute("", raw, mtxt)
+    val mtxt = text.run
+    Attribute("", mtxt)
   }.trace("pos attr")
 
   val attribute: Scip[Attribute] = (namedAttribute | positionalAttribute).trace("attribute")
@@ -110,8 +106,8 @@ object AttributeDeparser {
       Try {
         (AttributesParser.attribute <~ de.rmgk.scip.end.orFail).opt.runInContext(Scx(str).copy(tracing = false))
       } match
-        case Success(Some(Attribute("", _, text))) if check(text) => true
-        case other                                                => false
+        case Success(Some(Attribute("", text))) if check(text) => true
+        case other                                             => false
 
     def pickFirst(candidate: List[() => String]): Option[String] =
       candidate.view.map(_.apply()).find(parses)

@@ -58,7 +58,7 @@ class SastToHtmlConverter(
       .flatMap(_.split(","))
 
     val extraAttributes = ctx.fold[(String, Text), Recipe](section.attributes.all.collect:
-      case Attribute(id, _, text) if id.nonEmpty && !id.contains(' ') && !excludedFromMeta.contains(id) => (id, text)
+      case Attribute(id, text) if id.nonEmpty && !id.contains(' ') && !excludedFromMeta.contains(id) => (id, text)
     ):
       case (ctx, (id, text)) =>
         convertInlineSeq(ctx, text.inl).mapc: inner =>

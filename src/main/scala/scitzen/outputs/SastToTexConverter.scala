@@ -232,7 +232,7 @@ class SastToTexConverter(
             Ref,
             Attributes(
               Seq(
-                Attribute("", "", Text.synth(Seq(Directive(Other("smallcaps"), attributes, directive.meta)))),
+                Attribute("", Text.synth(Seq(Directive(Other("smallcaps"), attributes, directive.meta)))),
                 Attribute("style", "plain"),
                 Attribute("", s"rule-${attributes.target}")
               )
