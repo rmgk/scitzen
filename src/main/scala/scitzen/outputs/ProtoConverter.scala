@@ -188,7 +188,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
     val search = Path.of(directive.attributes.target)
     project.projectFiles.find: p =>
       p.projectAbsolute.endsWith(search)
-    .match
+    match
       case None => ctx.ret(None)
       case Some(pp) =>
         val relative = anal.project.root.relativize(pp.absolute)
