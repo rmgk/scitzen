@@ -117,9 +117,9 @@ object ConvertProject:
       cli.trace(s"formatted filenames ${timediff()}")
 
     val htmlresult = ConvertHtml(anal).convertToHtml(selected)
-    cli.info(s"generated html ${timediff()}")
+    cli.trace(s"generated html ${timediff()}")
     val pdfresult = ConvertPdf.convertToPdf(anal, selected).toArray
-    cli.info(s"generated tex ${timediff()}")
+    cli.trace(s"generated tex ${timediff()}")
     val ifmres =
       if imageFileMap.isEmpty
       then Nil
@@ -171,7 +171,9 @@ object ConvertProject:
           pdftask.task.bind
         .run(using ())(_ => cdl.countDown())
       cdl.await()
-      cli.info(s"converted ${pdfresult.size} pdfs ${timediff()}")
+      cli.trace(s"converted ${pdfresult.size} pdfs ${timediff()}")
     }
 
+
     cachedConverter.writeCache()
+    cli.info(s"done ${timediff()}")
