@@ -1,7 +1,7 @@
 package scitzen.parser
 
 import de.rmgk.scip.{Scip, all, any, choice, scx, seq}
-import scitzen.parser.CommonParsers.{eol, newline, spaceLineF, untilIS}
+import scitzen.parser.CommonParsers.{eol, newline, spaceLineB, spaceLineF, untilIS}
 import scitzen.parser.{AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.sast.{
   Atom, Attribute, Attributes, BCommand, DefinitionListAtom, Delimiter, Directive, Fenced, FusedDelimited, Inline,
@@ -101,7 +101,10 @@ object AtomParsers {
     val start   = "`".any.rep.min(2).str.run
     val command = DirectiveParsers.macroCommand.opt.trace("fenced macro").run
     val attr    = (AttributesParser.braces.opt <~ CommonParsers.spaceLineF).trace("fenced braces").run
-    val content = untilIS(newline and seq(indent) and seq(start) and eol).run
+    val content =
+      val ending = seq(indent) and seq(start) and spaceLineB
+      if ending.run then ""
+      else untilIS(newline and ending).run
 
     val innerContent = content.linesWithSeparators.map(line => line.stripPrefix(indent)).mkString
 
