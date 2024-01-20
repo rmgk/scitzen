@@ -22,8 +22,11 @@ case class InlineText(str: String, quoted: Int = 0) extends Inline:
 
 case class Directive(command: DCommand, attributes: Attributes, meta: Meta) extends Inline
 
-case class Text(inl: Seq[Inline], raw: String)
+case class Text(inl: Seq[Inline])(val raw: String):
+  def update(inl: Seq[Inline]): Text = Text(inl)(raw)
 case object Text:
+  @targetName("applySingle")
+  def apply(inl: Seq[Inline], raw: String): Text = Text(inl)(raw)
   def of(str: String): Text =
     if str.isEmpty then empty
     else Text(List(InlineText(str)), str)

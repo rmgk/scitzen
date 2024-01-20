@@ -37,7 +37,7 @@ class AtomAnalyzer(articleRef: ArticleRef):
       case sc: SpaceComment => ctx.ret(sc)
 
       case ta: TextAtom =>
-        convertInlines(ctx, ta.text.inl).map(i => ta.copy(text = ta.text.copy(inl = i.toSeq)))
+        convertInlines(ctx, ta.text.inl).map(i => ta.copy(text = ta.text.update(i.toSeq)))
 
       case fenced: Fenced =>
         val refctx = ensureRefForLabel(fenced, ctx)
@@ -52,10 +52,10 @@ class AtomAnalyzer(articleRef: ArticleRef):
         val newSection = ctxWithRef.data
         val conCtx     = ctxWithRef.addSection(newSection)
         convertInlines(conCtx, title.inl).map { titleInl =>
-          Section(title.copy(inl = titleInl.toList), level, newSection.attributes, meta)
+          Section(title.update(titleInl.toList), level, newSection.attributes, meta)
         }
 
-      case ListAtom(m, text, meta)           => convertInlines(ctx, text.inl).map(i => ListAtom(m, text.copy(inl = i.toSeq), meta))
+      case ListAtom(m, text, meta)           => convertText(ctx, text).map(t => ListAtom(m, t, meta))
       case DefinitionListAtom(m, text, meta) => convertText(ctx, text).map(t => DefinitionListAtom(m, t, meta))
 
       case mcro: Directive => convertDirective(mcro)(ctx)
@@ -100,7 +100,7 @@ class AtomAnalyzer(articleRef: ArticleRef):
   private def refAliases(resctx: Ctx[?], aliases: List[String], target: SastRef): Ctx[Unit] =
     aliases.foldLeft(resctx.ret(()))((c: Ctx[?], a) => c.addRefTarget(a, target).ret(()))
 
-  def convertText(ctx: Cta, text: Text) = convertInlines(ctx, text.inl).map(inl => text.copy(inl = inl.toSeq))
+  def convertText(ctx: Cta, text: Text): Ctx[Text] = convertInlines(ctx, text.inl).map(inl => text.update(inl.toSeq))
 
   def convertInlines(ctx: Cta, inners: Seq[Inline]): Ctx[Chain[Inline]] =
     ctx.fold(inners) { (ctx, inline) =>
