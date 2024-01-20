@@ -27,12 +27,12 @@ abstract class SvgViewboxModule(override val handles: String, processBuilder: Pr
     if !Files.exists(target.absolute) then
       Files.createDirectories(target.absolute.getParent)
       val start = System.nanoTime()
-      val pikchr = processBuilder
+      val subprocess = processBuilder
         .redirectError(Redirect.DISCARD)
         .start()
-      Using.resource(pikchr.getOutputStream) { os => os.write(bytes) }
-      val svg = Using.resource(pikchr.getInputStream) { is => new String(is.readAllBytes(), StandardCharsets.UTF_8) }
-      if pikchr.waitFor() != 0
+      Using.resource(subprocess.getOutputStream) { os => os.write(bytes) }
+      val svg = Using.resource(subprocess.getInputStream) { is => new String(is.readAllBytes(), StandardCharsets.UTF_8) }
+      if subprocess.waitFor() != 0
       then
         cli.warn(s"${handles} compilation returned error code:")
         cli.warn(svg.indent(2))
