@@ -22,15 +22,9 @@ object GraphvizModule extends BlockConverterModule {
     if !Files.exists(target.absolute) then
       Files.createDirectories(target.absolute.getParent)
 
-      val layoutEngine =
-        val lay = attribute.asTarget
-        if attribute.id.nonEmpty && lay.isEmpty then "dot"
-        else lay
-
       val start = System.nanoTime()
       val process = new ProcessBuilder(
         "dot",
-        s"-K${layoutEngine}",
         s"-T$format",
         s"-o${target.absolute.toString}",
       )
