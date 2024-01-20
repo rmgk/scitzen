@@ -43,8 +43,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
   def handleLookup(directive: Directive): Option[Text] =
     val id = directive.attributes.target
     val res =
-      settings.get(id).orElse(directive.attributes.get("default")).collect:
-        case Named(_, value) => value
+      settings.get(id).orElse(directive.attributes.get("default")).map(_.text)
     if res.isEmpty then
       cli.warn(s"unknown name ${id}" + reporter(directive))
     res
