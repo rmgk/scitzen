@@ -108,7 +108,7 @@ class SastToScimConverter(bibDB: BibDB):
 
   def directive(dir: Directive, spacy: Boolean = false): String =
     dir match
-      case Directive(Comment, attributes, meta) => s":%${attributes.target}"
+      case Directive(Comment, attributes, meta) => s":%${attributes.raw.headOption.map(_.raw).getOrElse("")}"
       case Directive(BibQuery, _, meta)         => directive(bibDB.convertBibQuery(dir))
       case _ =>
         s":${DCommand.printMacroCommand(dir.command)}${attributeConverter.convert(dir.attributes, spacy, force = true)}"
@@ -141,7 +141,7 @@ class AttributesToScim(bibDB: BibDB):
     val keylen = (attributes.raw.map { _.id.length }).maxOption.getOrElse(0)
     val pairs = attributes.raw.map {
       case Attribute("", _, v) => encodeText(v)
-      case Attribute(k,_, v) =>
+      case Attribute(k, _, v) =>
         val spaces = " " * max(keylen - k.length, 0)
         if spacy then s"""$k $spaces= ${encodeText(v)}"""
         else s"""$k=${encodeText(v)}"""
