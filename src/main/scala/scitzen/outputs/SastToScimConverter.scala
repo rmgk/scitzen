@@ -52,7 +52,7 @@ class SastToScimConverter(bibDB: BibDB):
           else Chain(attrStr)
         }
 
-      case TextAtom(Text(inl), meta) =>
+      case TextAtom(inl, meta) =>
         val actual = if meta.indent.startsWith(indent) then meta.indent else indent
         actual +: inlineToScim(inl) :+ "\n"
 

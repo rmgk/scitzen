@@ -11,7 +11,7 @@ case class FusedList(items: Seq[FusedListItem])
 case class FusedListItem(head: ListAtom, rest: Seq[TextAtom | Directive], children: Seq[FusedListItem]):
   def indent: String            = head.meta.indent
   def marker: String            = head.marker
-  lazy val paragraph: Paragraph = Paragraph(TextAtom(Text(head.text), head.meta) +: rest)
+  lazy val paragraph: Paragraph = Paragraph(TextAtom(head.text, head.meta) +: rest)
 case class FusedDefinitions(items: Seq[FusedDefinitionItem])
 case class FusedDefinitionItem(head: DefinitionListAtom, content: List[Sast]):
   def text: Text = Text(head.text)
@@ -120,9 +120,8 @@ object Meta:
   @targetName("constructor")
   def apply(indent: String, prov: Prov): Meta = new Meta(indent)(prov)
 
-case class TextAtom(inner: Text, meta: Meta):
-  export inner.inl
-  def update(inlines: Seq[Inline]) = copy(inner = Text(inlines))
+case class TextAtom(inl: Seq[Inline], meta: Meta):
+  def update(inlines: Seq[Inline]) = copy(inl = inlines)
 case class ListAtom(marker: String, text: Seq[Inline], meta: Meta)
 case class DefinitionListAtom(marker: String, text: Seq[Inline], meta: Meta)
 case class Delimiter(marker: String, command: BCommand, attributes: Attributes, meta: Meta)

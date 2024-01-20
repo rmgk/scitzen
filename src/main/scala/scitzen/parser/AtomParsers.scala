@@ -70,7 +70,7 @@ object AtomParsers {
 
   def unquoted(indent: String, start: Int): Scip[TextAtom] = Scip {
     val t = textline.run
-    TextAtom(Text(t), Meta(indent, Prov(start, scx.index)))
+    TextAtom(t, Meta(indent, Prov(start, scx.index)))
   }
 
   def whitespace: Scip[SpaceComment] = Scip {
