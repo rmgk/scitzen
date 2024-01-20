@@ -34,7 +34,7 @@ object DirectiveParsers {
   val comment: Scip[Directive] = Scip {
     val start = scx.index
     val text  = commentContent.run
-    Directive(Comment, Attribute("", text).toAttributes, Meta("", Prov(start, scx.index)))
+    Directive(Comment, Attributes.target(text), Meta("", Prov(start, scx.index)))
   }
 
   val commentContent: Scip[String] = (commentStart ifso until(eol).min(0).str)

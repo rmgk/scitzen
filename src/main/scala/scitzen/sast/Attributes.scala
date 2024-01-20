@@ -32,12 +32,11 @@ case class Attributes(raw: Seq[Attribute]) {
 }
 
 object Attributes {
-  def target(string: String): Attributes = Attribute("", string).toAttributes
+  def target(string: String): Attributes = Attributes(List(Attribute("", string)))
   val empty                              = Attributes(Nil)
 }
 
 sealed trait Attribute {
-  def toAttributes: Attributes = Attributes(List(this))
   def id: String
   def text: Text
 }
