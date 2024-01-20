@@ -1,7 +1,7 @@
 = d2 example
 date = 2023-07-24
 
-```convert{d2={}; size=vertical}
+```convert{d2; done; size=vertical}
 	runner: JobRunner {
 	  shape: class
 
