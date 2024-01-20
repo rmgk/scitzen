@@ -293,6 +293,16 @@ img, video {
 	max-width: min(100%, var(--main-content-width));
 }
 
+:is(img, video).sizing-max {
+	max-width: initial;
+	width: 100%;
+}
+
+figure:has(.sizing-max) {
+	max-width: initial;
+	width: 100%;
+}
+
 
 @media (prefers-color-scheme: dark) {
 	:is(img, video).color-autoinvert {
@@ -345,6 +355,7 @@ del {
 input.footnote:not(:checked) + span.footnote {
 	display: none;
 }
+
 input.footnote:checked + span.footnote {
 	text-decoration: underline;
 }
