@@ -202,7 +202,7 @@ class SastToTexConverter(
   }
 
   def nbrs(attributes: Attributes)(ctx: Cta): Ctx[String] =
-    attributes.textOption match
+    attributes.description match
       case None => ctx.ret("")
       case Some(arg) =>
         convertInlinesCombined(ctx, arg.inl).map { str =>
@@ -297,7 +297,7 @@ class SastToTexConverter(
       case Link =>
         val target   = latexencode(attributes.target)
         val plainurl = s"\\url{$target}"
-        attributes.textOption match
+        attributes.description match
           case Some(text) =>
             convertInlinesCombined(ctx, text.inl).mapc: res =>
               val name    = "{" + res + "}"

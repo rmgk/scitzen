@@ -2,14 +2,45 @@ package scitzen.sast
 
 import scala.collection.View
 
+/** Attributes handle access to a sequence of Attribute values.
+  * For the most part, directives have zero, one, or two positional attributes, and these have shorthand accessors as follows.
+  *
+  * If we have an attribute { " :{a} "; " :{b} "; " :{c} "} then:
+  *
+  * • target: ":{c}"
+  * • specifier: Some(":{a}")
+  * • text: resolved a
+  * • description: Some(resolved a)
+  *
+  * For a singular attribute { " :{a} "}:
+  *
+  * • target: ":{a}"
+  * • specifier: None
+  * • text: resolved a
+  * • description: None
+  *
+  * For an empty attribute {}:
+  *
+  * • target: ""
+  * • specifier: None
+  * • text: Text.empty
+  * • description: None
+  */
 case class Attributes(raw: Seq[Attribute]) {
 
   def positional: View[Attribute] = raw.view.filter:
     case Attribute(id, raw, text) => id.isEmpty
 
   def target: String = positional.lastOption.fold("")(_.asTarget)
-  def text: Text     = positional.headOption.fold(Text.empty)(_.text)
-  def textOption: Option[Text] =
+
+  def specifier: Option[String] =
+    if positional.sizeIs > 1 then
+      positional.headOption.map(_.asTarget)
+    else None
+
+  def text: Text = positional.headOption.fold(Text.empty)(_.text)
+
+  def description: Option[Text] =
     if positional.sizeIs > 1 then
       Some(text)
     else None
@@ -18,7 +49,7 @@ case class Attributes(raw: Seq[Attribute]) {
   def plain(id: String): Option[String]  = get(id).map(_.asTarget)
 
   def plainList(id: String) =
-    def splitlist(attribute: Attribute) = attribute.text.plainString.split(',').map(_.trim).filter(_.nonEmpty)
+    def splitlist(attribute: Attribute) = attribute.raw.split(',').map(_.strip()).filter(_.nonEmpty)
     raw.iterator.filter(_.id == id).flatMap(splitlist)
 
   private def append(other: Seq[Attribute]): Attributes = Attributes(raw ++ other)

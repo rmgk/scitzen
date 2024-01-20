@@ -188,11 +188,7 @@ class SastToHtmlConverter(
 
     val language = block.attributes.plain("lang").map(l => s"language-${l}")
     val initTag: Recipe =
-      if block.attributes.text.plainString != "highlight" then
-        block.attributes.plain("lang") match
-          case None       => Sag.code(`class` = language, labeltext)
-          case Some(lang) => Sag.code(`class` = language, Sag.Raw(anal.converter.get.convert(lang, labeltext)))
-      else
+      if block.attributes.positional.headOption.map(_.asTarget).contains("highlight") then
         val lines = labeltext.linesIterator.zipWithIndex.filter { case (s, _) =>
           s.contains(":hl§")
         }.map {
@@ -200,6 +196,10 @@ class SastToHtmlConverter(
         }.mkString(",")
         val txt = labeltext.replaceAll(""":hl§([^§]*?)§""", "$1")
         Sag.code(txt, `class` = language, `data-line-numbers` = lines)
+      else
+        block.attributes.plain("lang") match
+          case None       => Sag.code(`class` = language, labeltext)
+          case Some(lang) => Sag.code(`class` = language, Sag.Raw(anal.converter.get.convert(lang, labeltext)))
 
     val respre = Sag.pre(initTag, id = block.attributes.plain("label"))
     ctx.useFeature("prism").retc(respre)
@@ -296,7 +296,7 @@ class SastToHtmlConverter(
     val includes = anal.directory.includesFix(articleRef.last)
 
     candidates.headOption.map[CtxCF] { (targetDocument: SastRef) =>
-      val nameOpt   = attrs.textOption
+      val nameOpt   = attrs.description
       val titledOpt = anal.directory.byRef.get(targetDocument.articleRef)
       val fileRef =
         if includes.contains(targetDocument.articleRef)
@@ -360,7 +360,7 @@ class SastToHtmlConverter(
     val cctx          = ctx.cite(citations.flatMap(_._2))
     val styledAnchors = Sag.span(`class` = "citations", "(", anchors, ")")
     if attrs.raw.sizeIs > 1 then
-      attrs.textOption match
+      attrs.description match
         case None => cctx.retc(styledAnchors)
         case Some(text) =>
           convertInlineSeq(cctx, text.inl) :++ Chain(Sag.String("\u2009"), styledAnchors)

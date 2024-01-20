@@ -22,28 +22,7 @@ case class InlineText(str: String, quoted: Int = 0) extends Inline:
 
 case class Directive(command: DCommand, attributes: Attributes, meta: Meta) extends Inline
 
-case class Text(inl: Seq[Inline]) {
-  def plainString: String = {
-    inl.map {
-      case InlineText(string, _) => string
-      case m: Directive =>
-        m.attributes.text.plainString
-    }.mkString("")
-  }
-
-  def fuse: Text = {
-    def rec(rem: Seq[Inline], acc: List[Inline]): List[Inline] =
-      rem match
-        case Seq(InlineText(a, aq), InlineText(b, bq), rest*) if aq == bq =>
-          rec(InlineText(s"$a$b", aq) +: rest, acc)
-        case Seq(first, second, rest*) =>
-          rec(rem.tail, first :: acc)
-        case other =>
-          (rem.toList reverse_::: acc).reverse
-
-    Text(rec(inl, Nil))
-  }
-}
+case class Text(inl: Seq[Inline])
 case object Text:
   def of(str: String): Text =
     if str.isEmpty then empty
@@ -52,8 +31,16 @@ case object Text:
 
 case class Section(titleText: Text, prefix: String, attributes: Attributes, meta: Meta):
   private def label: Option[String] = attributes.plain("label")
-  val title: String                 = titleText.plainString
-  val autolabel: String             = label.getOrElse(title)
+  val title: String =
+    def plain(text: Text): String = {
+      text.inl.map {
+        case InlineText(string, _) => string
+        case m: Directive =>
+          plain(m.attributes.text)
+      }.mkString("")
+    }
+    plain(titleText)
+  val autolabel: String = label.getOrElse(title)
   def ref: String = attributes.plain("unique ref").getOrElse { throw new IllegalStateException(s"has no ref $title") }
   lazy val language: Option[String] = attributes.plain("language").orElse(attributes.plain("lang")).map(_.trim)
   lazy val date: Option[ScitzenDateTime] = attributes.plain("date").flatMap: s =>

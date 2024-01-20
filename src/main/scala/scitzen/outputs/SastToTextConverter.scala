@@ -43,7 +43,7 @@ class SastToTextConverter(
     else
       block match
         case FusedDelimited(_, blockContent) => convertSastSeq(ctx, blockContent)
-        case Fenced(_, _, text, _)        => ctx.retc(text)
+        case Fenced(_, _, text, _)           => ctx.retc(text)
 
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =
     convertInlinesCombined(ctx, paragraph.inlines).map(r => Chain(r, "\n\n"))

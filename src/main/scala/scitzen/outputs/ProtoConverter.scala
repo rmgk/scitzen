@@ -160,7 +160,7 @@ abstract class ProtoConverter[BlockRes, InlineRes](
 
   def handleInclude(ctx: Cta, directive: Directive): Ctx[Chain[BlockRes | InlineRes]] = {
     val attributes = directive.attributes
-    attributes.textOption.map(_.plainString) match
+    attributes.specifier match
       case Some("code") =>
         doc.resolve(attributes.target) match
           case None => convertInlineSeq(ctx, List(directive))
