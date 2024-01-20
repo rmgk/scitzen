@@ -23,8 +23,8 @@ object GraphvizModule extends BlockConverterModule {
       Files.createDirectories(target.absolute.getParent)
 
       val layoutEngine =
-        val lay = attribute.raw.strip()
-        if lay.isEmpty then "dot"
+        val lay = attribute.asTarget
+        if attribute.id.nonEmpty && lay.isEmpty then "dot"
         else lay
 
       val start = System.nanoTime()
