@@ -19,8 +19,8 @@ lazy val scitzen = project.in(file("."))
       "org.webjars.npm"                 % "katex"   % "0.16.9",
       "org.jbibtex"                     % "jbibtex" % "1.0.20",
       "de.undercouch" % "citeproc-java" % "2.0.0" exclude ("org.graalvm.js", "js") exclude ("org.graalvm.sdk", "graal-sdk"),
-      "org.graalvm.polyglot" % "polyglot"        % "23.1.1",
-      "org.graalvm.polyglot" % "js-community"    % "23.1.1",
-      "org.graalvm.polyglot" % "tools-community" % "23.1.1",
+      "org.graalvm.polyglot" % "polyglot"        % "23.1.2",
+      "org.graalvm.polyglot" % "js-community"    % "23.1.2",
+      "org.graalvm.polyglot" % "tools-community" % "23.1.2",
     ),
   )
