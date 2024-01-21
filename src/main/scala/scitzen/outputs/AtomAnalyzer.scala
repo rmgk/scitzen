@@ -2,10 +2,10 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.contexts.SastContext
-import scitzen.sast.Fusion.Atoms
 import scitzen.project.{ArticleRef, SastRef}
 import scitzen.sast.*
 import scitzen.sast.DCommand.{BibQuery, Cite, Image, Include, Index, Ref}
+import scitzen.sast.Fusion.Atoms
 
 class AtomAnalyzer(articleRef: ArticleRef):
 
@@ -114,13 +114,5 @@ class AtomAnalyzer(articleRef: ArticleRef):
       case Image           => ctx.addImage(directive).ret(directive)
       case Include         => ctx.addInclude(directive).ret(directive)
       case Ref | Index     => ctx.addReference(directive).ret(directive)
-      case Cite | BibQuery =>
-        // TODO this is a temporary way to rename the parameter, remove at some point
-        val res =
-          val style = directive.attributes.plain("style")
-          if style.contains("name") then
-            directive.copy(attributes = directive.attributes.updated("style", "author"))
-          else
-            directive
-        ctx.addCitation(res).ret(res)
-      case _ => ctx.ret(directive)
+      case Cite | BibQuery => ctx.addCitation(directive).ret(directive)
+      case _               => ctx.ret(directive)
