@@ -4,7 +4,7 @@ import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, scanJsonValue
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 import de.rmgk.delay.{Async, Sync}
 import scitzen.bibliography.BibManager.bibIds
-import scitzen.compat.Logging
+import scitzen.cli.Logging
 import scitzen.parser.{Biblet, Parse}
 import scitzen.project.{Project, ProjectPath}
 import scitzen.sast.DCommand.{BibQuery, Cite}

@@ -1,6 +1,6 @@
 package scitzen.project
 
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.sast.{Atom, Block, Delimiter, Directive, Fenced, Sast, Section}
 
 import java.nio.file.Path

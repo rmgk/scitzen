@@ -1,6 +1,6 @@
 package scitzen.project
 
-import scitzen.compat.Logging
+import scitzen.cli.Logging
 import scitzen.contexts.SastContext
 import scitzen.outputs.AtomAnalyzer
 import scitzen.sast.Fusion.Atoms

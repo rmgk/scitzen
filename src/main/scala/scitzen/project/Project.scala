@@ -1,6 +1,6 @@
 package scitzen.project
 
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.resources.ImagePaths
 
 import java.nio.file.{FileVisitOption, Files, Path}

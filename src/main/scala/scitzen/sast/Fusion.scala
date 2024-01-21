@@ -1,7 +1,7 @@
 package scitzen.sast
 
 import de.rmgk.scip.{Scip, Scx, all, any, choice, scx, seq, until}
-import scitzen.compat.Logging
+import scitzen.cli.Logging
 import scitzen.parser.CommonParsers.{eol, newline, untilI, untilIS}
 import scitzen.parser.{AtomParsers, AttributesParser, CommonParsers, DelimitedBlockParsers, DirectiveParsers}
 import scitzen.project.{Document, Project}

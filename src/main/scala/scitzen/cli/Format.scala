@@ -1,7 +1,7 @@
 package scitzen.cli
 
 import scitzen.bibliography.BibDB
-import scitzen.compat.Logging.cli
+import Logging.cli
 import scitzen.project.{ArticleDirectory, ProjectPath}
 import scitzen.outputs.SastToScimConverter
 import scitzen.sast.{Sast, Section}
@@ -9,7 +9,7 @@ import scitzen.sast.{Sast, Section}
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path, StandardOpenOption}
 import scala.jdk.CollectionConverters.*
-import scitzen.compat.Logging.given
+import Logging.given
 import scitzen.sast.Fusion.Atoms
 
 object Format:

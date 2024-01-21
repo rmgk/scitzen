@@ -1,8 +1,8 @@
 package scitzen.resources
 
 import de.rmgk.delay.Async
-import scitzen.compat.Logging
-import scitzen.compat.Logging.given
+import scitzen.cli.Logging
+import Logging.given
 import scitzen.project.{Project, ProjectPath}
 
 import java.nio.file.Files

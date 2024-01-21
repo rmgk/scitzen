@@ -3,7 +3,7 @@ package scitzen.extern
 import com.github.plokhotnyuk.jsoniter_scala.core.writeToString
 import org.graalvm.polyglot.*
 import org.jsoup.Jsoup
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.project.ProjectPath
 
 import java.io.ByteArrayOutputStream

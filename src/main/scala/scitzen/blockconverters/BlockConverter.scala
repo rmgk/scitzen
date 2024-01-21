@@ -1,9 +1,8 @@
 package scitzen.blockconverters
 
 import de.rmgk.logging.Loggable
-import scitzen.cli.ConversionAnalysis
-import scitzen.compat.Logging
-import scitzen.compat.Logging.cli
+import scitzen.cli.{ConversionAnalysis, Logging}
+import Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.outputs.SastToTextConverter
 import scitzen.project.{Article, ArticleDirectory, Project}

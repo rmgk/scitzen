@@ -3,7 +3,7 @@ package scitzen.cli
 import de.rmgk.delay.Async
 import scitzen.bibliography.{BibDB, BibManager}
 import scitzen.blockconverters.{BlockConversions, BlockConverter}
-import scitzen.compat.Logging.cli
+import Logging.cli
 import scitzen.contexts.TargetedFileDependency
 import scitzen.extern.Katex.KatexLibrary
 import scitzen.extern.{CachedConverterRouter, ResourceUtil}

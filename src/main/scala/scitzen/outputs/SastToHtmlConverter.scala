@@ -4,7 +4,7 @@ import de.rmgk.Chain
 import de.rmgk.delay.Sync
 import scitzen.bibliography.BibEntry
 import scitzen.cli.{ConversionAnalysis, Format}
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.project.{ArticleRef, ProjectPath, References, SastRef}
 import scitzen.html.sag

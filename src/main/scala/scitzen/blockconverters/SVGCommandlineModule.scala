@@ -1,7 +1,7 @@
 package scitzen.blockconverters
 
 import de.rmgk.script
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.extern.Hashes
 import scitzen.sast.{Attribute, Attributes, DCommand, Directive, Sast}
 

@@ -3,7 +3,7 @@ package scitzen.outputs
 import de.rmgk.Chain
 import de.rmgk.logging.Loggable
 import scitzen.cli.ConversionAnalysis
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.contexts.{ConversionContext, FileDependency}
 import scitzen.project.{ArticleRef, ProjectPath, References, TitledArticle}
 import scitzen.resources.ImageTarget

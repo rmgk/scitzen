@@ -2,7 +2,7 @@ package scitzen.extern
 
 import de.rmgk.delay.*
 import de.rmgk.script.*
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 
 import java.nio.file.{Files, Path}
 

@@ -1,7 +1,7 @@
 package scitzen.extern
 
 import org.graalvm.polyglot.*
-import scitzen.compat.Logging
+import scitzen.cli.Logging
 
 import java.io.ByteArrayOutputStream
 import scala.jdk.CollectionConverters.*

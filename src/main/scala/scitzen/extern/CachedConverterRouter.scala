@@ -2,7 +2,7 @@ package scitzen.extern
 
 import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, WriterConfig, readFromStream, writeToArray}
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
-import scitzen.compat.Logging
+import scitzen.cli.Logging
 import scitzen.extern.Katex.KatexLibrary
 
 import java.nio.file.{Files, Path}

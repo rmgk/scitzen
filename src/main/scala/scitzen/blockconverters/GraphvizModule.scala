@@ -1,6 +1,6 @@
 package scitzen.blockconverters
 
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.extern.Hashes
 import scitzen.sast.{Attributes, DCommand, Directive, Sast, Attribute, attributes}
 

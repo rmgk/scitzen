@@ -1,4 +1,4 @@
-package scitzen.compat
+package scitzen.cli
 
 import de.rmgk.logging.{Level, Loggable, Logger}
 

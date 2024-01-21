@@ -2,7 +2,7 @@ package scitzen.outputs
 
 import de.rmgk.Chain
 import scitzen.cli.ConversionAnalysis
-import scitzen.compat.Logging.cli
+import scitzen.cli.Logging.cli
 import scitzen.contexts.ConversionContext
 import scitzen.project.{ArticleRef, Flags, References, SastRef}
 import scitzen.outputs.SastToTexConverter.latexencode
