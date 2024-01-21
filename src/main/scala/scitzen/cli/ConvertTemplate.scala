@@ -13,11 +13,11 @@ object ConvertTemplate:
       directory: ArticleDirectory,
       templatePath: Option[ProjectPath],
       templateSettings: Attributes
-  ): String =
+  ): ConversionContext[String] =
     templatePath match
       case None =>
         Logging.cli.warn(s"could not find template file")
-        templateSettings.plain("template content").getOrElse("")
+        ConversionContext(templateSettings.plain("template content").getOrElse(""))
       case Some(templateFile) =>
         val templateArticle = directory.byPath(templateFile).head
         val documentString = new SastToTextConverter(
@@ -31,4 +31,4 @@ object ConvertTemplate:
           ),
           templateSettings,
         ).convertSastSeq(ConversionContext(()), templateArticle.sast)
-        documentString.data.mkString("")
+        documentString.map(_.mkString(""))

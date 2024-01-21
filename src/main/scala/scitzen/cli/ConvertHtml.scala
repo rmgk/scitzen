@@ -139,7 +139,7 @@ class ConvertHtml(anal: ConversionAnalysis):
           anal.directory,
           titled.article.doc.resolve(templatePath),
           templateSettings
-        )
+        ).data
 
     val targetPath = ProjectPath(project, project.outputdirWeb.resolve(Format.canonicalName(titled.header, ".html")))
     Files.writeString(targetPath.absolute, res)

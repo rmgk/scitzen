@@ -82,7 +82,7 @@ object ConvertPdf:
               titled.article.doc.resolve
             ).orElse(Some(project.pdfTemplatePath)),
             templateSettings
-          )
+          ).data
 
         PdfTask(
           resultContext.fileDependencies.map(fd => TargetedFileDependency(fd, ProjectPath(project, temptexfile))), {
