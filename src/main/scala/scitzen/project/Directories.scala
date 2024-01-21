@@ -5,7 +5,7 @@ import scitzen.contexts.SastContext
 import scitzen.outputs.AtomAnalyzer
 import scitzen.sast.Fusion.Atoms
 import scitzen.parser.Parse
-import scitzen.sast.{Atom, Fusion, Sast, Section}
+import scitzen.sast.{Atom, BCommand, FusedDelimited, Fusion, Sast, Section}
 
 import scala.annotation.tailrec
 
@@ -67,7 +67,9 @@ object ArticleProcessing:
       val ctx            = new AtomAnalyzer(ref).convertSeq(atoms)(SastContext(()))
       val processedAtoms = ctx.data.toList
       val sast           = Fusion.fuseTop(processedAtoms, Nil)
-      Article(ref, sast, doc, ctx.ret(()), processedAtoms)
+      val fds = Sast.nestedIterator(sast).collect:
+        case fd: FusedDelimited if fd.delimiter.command == BCommand.Convert => fd
+      Article(ref, sast, doc, ctx.ret(()).copy(delimitedConvert = fds.toList), processedAtoms)
 
   def headerType(atom: Atom) = atom match
     case Section(_, t @ ("=" | "=="), _, _) => t.length

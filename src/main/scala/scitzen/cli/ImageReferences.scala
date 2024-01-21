@@ -19,7 +19,7 @@ object ImageReferences:
 
       def art = titled.article
 
-      val blockImageDirectives: List[Directive] = art.context.convertBlocks.flatMap: block =>
+      val blockImageDirectives: List[Directive] = art.context.fencedConvert.flatMap: block =>
         anal.block.substitute(block).flatMap:
           case img @ Directive(DCommand.Image, _, _) => Some(img)
           case _                                     => None

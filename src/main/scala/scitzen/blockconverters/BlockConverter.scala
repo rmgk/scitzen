@@ -40,8 +40,10 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
   def run(): BlockConversions =
     BlockConversions:
       articleDirectory.articles.flatMap: art =>
-        art.context.convertBlocks.map: block =>
-          block -> applyConversions(art, block)
+        art.context.fencedConvert.map: fenced =>
+          fenced -> applyConversions(art, fenced)
+        art.context.delimitedConvert.map: delimited =>
+          delimited -> applyConversions(art, delimited)
       .toMap
 
   def applyConversions(article: Article, block: Block): List[Sast] =

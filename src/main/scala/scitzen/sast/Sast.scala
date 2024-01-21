@@ -1,11 +1,21 @@
 package scitzen.sast
 
+import de.rmgk.Chain
 import scitzen.parser.TimeParsers
 
 import scala.annotation.targetName
 
 type Sast =
   FusedList | Directive | Section | SpaceComment | Fenced | Paragraph | FusedDelimited | FusedDefinitions
+
+object Sast {
+  def nestedIterator(sast: Seq[Sast]): Iterator[Sast] = sast.iterator.flatMap(nestedIterator)
+  def nestedIterator(sast: Sast): Iterator[Sast] =
+    sast match
+      case sast: (FusedList | Directive | Section | SpaceComment | Fenced | Paragraph) => Iterator(sast)
+      case FusedDelimited(del, cont) => Iterator(sast) ++ nestedIterator(cont)
+      case FusedDefinitions(items)   => Iterator(sast) ++ items.iterator.flatMap(it => nestedIterator(it.content))
+}
 
 case class FusedList(items: Seq[FusedListItem])
 case class FusedListItem(head: ListAtom, rest: Seq[TextAtom | Directive], children: Seq[FusedListItem]):
