@@ -12,6 +12,6 @@
   "methods":[{"name":"loadClass","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"jdk.internal.loader.Loader"
+  "name":"jdk.internal.loader.ClassLoaders$AppClassLoader"
 }
 ]
