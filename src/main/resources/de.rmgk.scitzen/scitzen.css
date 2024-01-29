@@ -124,7 +124,11 @@ h1, h2, hr {
 	/* hr is basically a header without text */
 	border: none;
 
+	/* Center and try to keep lines of even length */
 	text-align: center;
+	/* Might also try pretty, which tries to prevent single words on the last line, but seems unsupported in firefox */
+	text-wrap: balance;
+
 	/* safe aligns left in case of overflow */
 	justify-self: safe center;
 
