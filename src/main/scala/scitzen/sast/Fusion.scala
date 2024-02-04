@@ -134,12 +134,12 @@ object Fusion {
           case other => true
 
     val innerSast = fuseTop(innerAtoms, Nil)
-    (
-      scitzen.sast.FusedDelimited(del, innerSast),
-      rest match
-        case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`)) :: more => more
-        case other                                                                             => other
-    )
+
+    rest match
+      case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`)) :: more =>
+        (scitzen.sast.FusedDelimited(del, true, innerSast), more)
+      case other =>
+        (scitzen.sast.FusedDelimited(del, false, innerSast), other)
 
   }
 

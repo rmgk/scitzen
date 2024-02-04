@@ -54,7 +54,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       return Nil
 
     val (resctx, transformed) = block match
-      case FusedDelimited(del, content) =>
+      case FusedDelimited(del, _, content) =>
         val resctx = new SastToTextConverter(
           ::(article.ref, Nil),
           ConversionAnalysis.minimal(project, articleDirectory),

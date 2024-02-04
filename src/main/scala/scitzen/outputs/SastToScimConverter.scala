@@ -27,11 +27,11 @@ class SastToScimConverter(bibDB: BibDB):
       case FusedList(items) => convertFusedList(items, indent)
       case Paragraph(content) =>
         content.to(Chain).flatMap(at => convertAtom(at, indent))
-      case FusedDelimited(del, cont) =>
-        convertAtom(del, indent) ++ convertSequence(cont.toList, s"$indent\t") ++ Chain(
-          indent,
-          del.marker,
-          "\n"
+      case FusedDelimited(del, closed, cont) =>
+        convertAtom(del, indent) ++ convertSequence(cont.toList, s"$indent\t") ++ (
+          if closed then
+            Chain(indent, del.marker, "\n")
+          else Chain.nil
         )
       case FusedDefinitions(children) =>
         children.to(Chain).flatMap: fdi =>

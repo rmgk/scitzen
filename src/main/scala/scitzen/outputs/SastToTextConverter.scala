@@ -42,7 +42,7 @@ class SastToTextConverter(
     if !keepBlock then ctx.empty
     else
       block match
-        case FusedDelimited(_, blockContent) => convertSastSeq(ctx, blockContent)
+        case FusedDelimited(_, _, blockContent) => convertSastSeq(ctx, blockContent)
         case Fenced(_, _, text, _)           => ctx.retc(text)
 
   override def convertParagraph(ctx: Cta, paragraph: Paragraph): CtxCF =

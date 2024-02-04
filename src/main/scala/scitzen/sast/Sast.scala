@@ -13,7 +13,7 @@ object Sast {
   def nestedIterator(sast: Sast): Iterator[Sast] =
     sast match
       case sast: (FusedList | Directive | Section | SpaceComment | Fenced | Paragraph) => Iterator(sast)
-      case FusedDelimited(del, cont) => Iterator(sast) ++ nestedIterator(cont)
+      case FusedDelimited(del, _, cont) => Iterator(sast) ++ nestedIterator(cont)
       case FusedDefinitions(items)   => Iterator(sast) ++ items.iterator.flatMap(it => nestedIterator(it.content))
 }
 
@@ -94,10 +94,10 @@ extension (block: Block) {
 case class Fenced(command: BCommand, attributes: Attributes, content: String, meta: Meta):
   def withAttributes(attr: Attributes): Fenced = copy(attributes = attr)
 
-case class FusedDelimited(delimiter: Delimiter, content: Seq[Sast]):
+case class FusedDelimited(delimiter: Delimiter, closed: Boolean, content: Seq[Sast]):
   // override def meta: Meta = delimiter.meta
   def withAttributes(attr: Attributes): FusedDelimited =
-    FusedDelimited(delimiter.copy(attributes = attr), content)
+    FusedDelimited(delimiter.copy(attributes = attr), closed, content)
 
 case class Prov(start: Int = -1, end: Int = -1)
 
