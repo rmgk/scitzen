@@ -121,14 +121,24 @@ object Fusion {
   }
 
   def fuseDelimited(indent: String, del: Delimiter, atoms: Atoms) = {
-    val (innerAtoms, rest) = atoms.span:
-      case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`)) =>
-        false
-      case other => true
+
+    val (innerAtoms, rest) =
+      val (innerAtoms, rest) = atoms.span: atom =>
+        atom.meta.within(indent) || atom.isInstanceOf[SpaceComment]
+      if innerAtoms.nonEmpty then
+        (innerAtoms, rest)
+      else
+        atoms.span:
+          case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`)) =>
+            false
+          case other => true
+
     val innerSast = fuseTop(innerAtoms, Nil)
     (
       scitzen.sast.FusedDelimited(del, innerSast),
-      rest.drop(1)
+      rest match
+        case Delimiter(del.`marker`, BCommand.Empty, Attributes.empty, Meta(`indent`)) :: more => more
+        case other                                                                             => other
     )
 
   }

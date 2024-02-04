@@ -115,7 +115,9 @@ extension (atom: Atom)
     case a: DefinitionListAtom => a.meta
     case a: Fenced             => a.meta
 
-case class Meta(indent: String)(val prov: Prov)
+case class Meta(indent: String)(val prov: Prov):
+  def within(outerIndent: String): Boolean =
+    indent.length > outerIndent.length && indent.startsWith(outerIndent)
 object Meta:
   val synth = Meta("", Prov())
   @targetName("constructor")
