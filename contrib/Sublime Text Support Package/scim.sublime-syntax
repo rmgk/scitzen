@@ -95,8 +95,9 @@ contexts:
         - block_parsed_inside
 
   block_parsed_inside:
-  - meta_scope: meta.block.scim markup.raw.block.scim
-  - match: '^\1(\2)\s*$'
+  - meta_scope: meta.block.scim
+  - match: '^\s+'
+  - match: '^\1(\2)\s*$|^(?!\1[\t ]+\S)'
     captures:
       1: keyword.operator.block.scim
     pop: true
@@ -108,12 +109,12 @@ contexts:
         2: keyword.operator.block.scim
         3: variable.function.scim
         4: keyword.operator.braces.scim punctuation.section.braces.begin.scim
-      push: 
+      push:
         - block_source_inside
         - inside_macro
 
   block_source_fenced_plain:
-    - match: '^(\s*)(``+)(\w*)'
+    - match: '^(\s*)(``+)(\w*)\n'
       captures:
         2: keyword.operator.block.scim
         3: variable.function.scim
@@ -122,7 +123,8 @@ contexts:
         - block_source_inside
 
   block_source_inside:
-  - meta_scope: meta.block.scim markup.raw.block.scim
+  - meta_scope: meta.block.scim
+  - meta_content_scope: markup.raw.block.scim
   - match: '^\1(\2)\s*$'
     captures:
       1: keyword.operator.block.scim
