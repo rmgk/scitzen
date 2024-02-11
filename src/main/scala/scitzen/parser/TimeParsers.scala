@@ -4,6 +4,7 @@ import de.rmgk.scip.*
 import scitzen.sast.{ScitzenDate, ScitzenDateTime, ScitzenTime}
 
 import java.nio.charset.StandardCharsets
+import scala.annotation.nowarn
 import scala.util.Try
 
 object TimeParsers {
@@ -20,16 +21,16 @@ object TimeParsers {
       (":".all ifso digits.str).opt.run,
       (":".all ifso digits.str).opt.run
     )
-    (".".all.orFail ~> digits).attempt.run
+    (".".all.orFail ~> digits).attempt.run: @nowarn
     res
   }
   inline def timezone = "+".all.ifso(digits <~> (":".all ifso digits))
   inline def dateTime = Scip {
     val sdate = date.run
     val stime = Scip {
-      ("T".all or cpred(Character.isWhitespace)).str.run
+      ("T".all or cpred(Character.isWhitespace)).run: @nowarn
       val t = time.run
-      timezone.attempt.run
+      timezone.attempt.run: @nowarn
       t
     }.opt.run
     ScitzenDateTime(sdate, stime)

@@ -16,8 +16,8 @@ object ScalaCliModule extends BlockConverterModule {
     val sourcepath = project.cachePath(Path.of("scala-cli").resolve(hash + ".scala")).absolute
     Files.createDirectories(sourcepath.getParent)
     Files.writeString(sourcepath, content)
-    val outpath   = sourcepath resolveSibling s"$hash.js"
-    val errorFile = sourcepath resolveSibling s"log-$hash.txt"
+    val outpath   = sourcepath `resolveSibling` s"$hash.js"
+    val errorFile = sourcepath `resolveSibling` s"log-$hash.txt"
     val returnCode =
       new ProcessBuilder(
         "scala-cli",

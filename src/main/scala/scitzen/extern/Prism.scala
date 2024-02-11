@@ -27,6 +27,7 @@ object Prism:
         val bo = new ByteArrayOutputStream()
         Using.resource(getClass.getClassLoader.getResourceAsStream(s"$resolvePath/prism-$lang.min.js")) { r =>
           r.transferTo(bo)
+          ()
         }
         bo.toString()
 

@@ -42,6 +42,7 @@ class BlockConverter(project: Project, articleDirectory: ArticleDirectory) {
       articleDirectory.articles.flatMap: art =>
         art.context.fencedConvert.map: fenced =>
           fenced -> applyConversions(art, fenced)
+        ++
         art.context.delimitedConvert.map: delimited =>
           delimited -> applyConversions(art, delimited)
       .toMap

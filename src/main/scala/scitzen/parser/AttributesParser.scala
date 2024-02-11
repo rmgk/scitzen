@@ -32,7 +32,7 @@ object AttributesParser {
   val text: Scip[Text] = Scip {
     quotes.opt.run match
       case None =>
-        verticalSpaces.run
+        val _ = verticalSpaces.run
         unquotedInlines.run
       case Some(closing) =>
         val closeP = seq(closing)
@@ -80,7 +80,7 @@ object AttributesParser {
   val noBraces: Scip[Seq[Attribute]] = Scip {
     val res = listOf(namedAttribute, min = 1).run
     spaceLineF.run
-    spaceLineB.run
+    val _ = spaceLineB.run
     res
   }.trace("no braces")
 

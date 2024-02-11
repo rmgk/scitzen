@@ -45,18 +45,18 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
 
     ProjectPath(project, targetPath)
 
-  def convert(input: ProjectPath): Async[Unit, Boolean] =
+  def convert(input: ProjectPath): Async[Unit, Unit] =
     val absoluteInput = input.absolute
     converterFor(input) match
       case None =>
         Logging.cli.warn(s"no converter to ${imageTarget.choices} from ", absoluteInput)
-        Async(false)
+        Async(())
       case Some(converter) =>
         val targetfile = predictTargetOf(input, converter.produces).absolute
 
         val sourceModified = Files.getLastModifiedTime(absoluteInput)
         if Files.exists(targetfile) && Files.getLastModifiedTime(targetfile) == sourceModified
-        then Async(true)
+        then Async(())
         else
           Files.createDirectories(targetfile.getParent)
           Logging.cli.trace(s"converting $input to $targetfile")
@@ -66,4 +66,4 @@ class ConversionDispatch(project: Project, imageTarget: ImageTarget):
             then
               Files.setLastModifiedTime(targetfile, Files.getLastModifiedTime(absoluteInput))
               ()
-            res
+            ()

@@ -3,7 +3,7 @@ package scitzen.parser
 import de.rmgk.scip.*
 import scitzen.sast.{Inline, InlineText, Text}
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 
 object InlineParsers {
 
@@ -32,7 +32,7 @@ object InlineParsers {
 
       // quickly discard everything assumed to be unimportant
       // be aware that this limits what `ending` may start with
-      until(endingChars).run
+      until(endingChars).run: @nowarn
 
       beforePrevMatch = scx.index
       if ending.run

@@ -1,11 +1,11 @@
-import Dependencies._
-import Settings._
+import Dependencies.*
+import Settings.*
 
 lazy val scitzen = project.in(file("."))
   .settings(
     name         := "scitzen",
     organization := "de.rmgk",
-    scalaVersion_3,
+    scala3defaults,
     Dependencies.jsoup,
     Dependencies.slips.chain,
     Dependencies.slips.logging,

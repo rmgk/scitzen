@@ -4,7 +4,7 @@ import de.rmgk.scip.*
 
 import java.io.{ByteArrayInputStream, InputStream, SequenceInputStream}
 import java.nio.charset.StandardCharsets
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 
 case class Inputrange(start: Int, end: Int, full: Array[Byte]):
   def inputstream: InputStream =
@@ -17,19 +17,19 @@ case class Biblet(format: String, id: String, inner: Inputrange, alias: List[Str
 object BibPreparser {
 
   def entry: Scip[Biblet] = Scip:
-    until("@".any).run
-    scx.next
+    until("@".any).run: @nowarn
+    scx.next: @nowarn
     val format = until("{".any).min(1).str.run
-    scx.next
+    scx.next: @nowarn
     val id = until(",".any).min(1).str.run.trim
-    scx.next
+    scx.next: @nowarn
     val startInner = scx.index
 
     Predef.require(!id.contains(' '), s"something went wrong when parsing a bibfile for id: ${id}")
 
     @tailrec def rec(opened: Int): Unit =
       until("{}\\".any).min(0).orFail.run
-      if "\\".any.run then { scx.next; return rec(opened) }
+      if "\\".any.run then { scx.next: @nowarn; return rec(opened) }
       if "{".any.run then return rec(opened + 1)
       if "}".any.run && opened > 0 then return rec(opened - 1)
       ()

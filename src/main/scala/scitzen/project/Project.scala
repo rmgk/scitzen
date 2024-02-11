@@ -28,16 +28,16 @@ object ProjectPath:
 
 case class Project private (root: Path, adhoc: Option[Path], config: ProjectConfig):
 
-  val outputdir: Path = root resolve config.output
+  val outputdir: Path = root `resolve` config.output
   val cacheDir: Path = config.cache match
-    case None    => outputdir resolve "cache"
-    case Some(p) => root resolve p
+    case None    => outputdir `resolve` "cache"
+    case Some(p) => root `resolve` p
 
-  val outputdirWeb: Path = outputdir resolve "web"
-  val outputdirPdf: Path = outputdir resolve "pdfs"
+  val outputdirWeb: Path = outputdir `resolve` "web"
+  val outputdirPdf: Path = outputdir `resolve` "pdfs"
 
   val pdfTemplatePath: ProjectPath =
-    ProjectPath(this, outputdir.resolve("templates").resolve("default-template.tex.scim"))
+    ProjectPath(this: @unchecked, outputdir.resolve("templates").resolve("default-template.tex.scim"))
 
   /** Does follow symlinks.
     * Ignores files and folders starting with a .
@@ -75,12 +75,12 @@ case class Project private (root: Path, adhoc: Option[Path], config: ProjectConf
   val imagePaths = ImagePaths(this)
 
   def cachePath(target: Path): ProjectPath     = ProjectPath(this, cacheDir.resolve(target))
-  def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this, target)
+  def asProjectPath(target: Path): ProjectPath = ProjectPath.apply(this: @unchecked, target)
 
   def resolveUnchecked(currentWorkingDirectory: Path, rawPath: Path): Path =
     val res =
       if rawPath.isAbsolute then root.resolve(Path.of("/").relativize(rawPath))
-      else currentWorkingDirectory resolve rawPath
+      else currentWorkingDirectory `resolve` rawPath
     cli.trace(s"lookup of $rawPath in $currentWorkingDirectory was $res")
     res.normalize()
 
@@ -104,7 +104,7 @@ object Project:
     new Project(absolutelyNormal, adhoc, config)
 
   def findRoot(source: Path): Option[Path] =
-    if Files.isRegularFile(source resolve scitzenconfig) then Some(source)
+    if Files.isRegularFile(source `resolve` scitzenconfig) then Some(source)
     else Option(source.getParent).flatMap(findRoot)
 
   def fromSource(file: Path): Option[Project] =
@@ -115,6 +115,6 @@ object Project:
       case Some(file) => fromConfig(file)
 
   def fromConfig(file: Path): Option[Project] =
-    val configContent = Files.readAllBytes(file resolve scitzenconfig)
+    val configContent = Files.readAllBytes(file `resolve` scitzenconfig)
     val value         = ProjectConfig.parse(configContent)
     Some(Project(file, None, value))
