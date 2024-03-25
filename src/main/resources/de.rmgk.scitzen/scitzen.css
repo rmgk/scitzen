@@ -72,10 +72,11 @@ main {
 		grid-row-gap: var(--small-gap);
 	}
 
-	/* usually margins should collapse, but because of grid they dont. */
-	/* thus we replace margins by grid gaps */
 	main > * {
+		/* usually margins should collapse, but because of grid they dont. */
+		/* thus we replace margins by grid gaps */
 		margin: 0;
+
 		grid-column: content-start / content-end;
 	}
 
@@ -257,6 +258,7 @@ code {
 	hyphens: none;
 }
 
+/* Inline code */
 :not(pre) > code {
 	background-color: var(--theme-plate-color);
 	padding: calc(var(--normal-gap) / 10);
