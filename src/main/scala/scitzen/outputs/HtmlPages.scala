@@ -58,7 +58,10 @@ class HtmlPages(cssPath: String):
   inline def tHead(inline title: Recipe): Recipe =
     Sag.head(
       Sag.meta(charset = "UTF-8"),
-      Sag.meta(name = "viewport", content = "width=device-width, initial-scale=1, user-scalable=yes, minimal-ui"),
+      Sag.meta(name = "viewport",
+        // minimum scale prevents firefox mobile to “zoom out” when overflow happens
+        // this otherwise causes a weird rendering mode where the sidebar glitches
+        content = "width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=1"),
       Sag.link(href = cssPath, rel = "stylesheet", `type` = "text/css"),
       title
     )
